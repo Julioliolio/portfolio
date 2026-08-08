@@ -1,0 +1,22 @@
+{
+  "name": "portfolio",
+  "private": true,
+  "packageManager": "pnpm@10.30.0",
+  "engines": {
+    "node": ">=22"
+  },
+  "scripts": {
+    "dev": "pnpm --filter web dev",
+    "demos": "node scripts/build-demos.mjs",
+    "build": "pnpm --filter web build",
+    "analyze": "pnpm --filter web analyze",
+    "typecheck": "pnpm -r --if-present typecheck",
+    "lint": "pnpm -r --if-present lint",
+    "format": "prettier --write ."
+  },
+  "devDependencies": {
+    "prettier": "^3.9.6",
+    "prettier-plugin-tailwindcss": "^0.8.1",
+    "typescript": "^5.9.3"
+  }
+}

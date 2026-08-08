@@ -1,0 +1,22 @@
+# dependencies
+node_modules/
+
+# builds
+.next/
+out/
+dist/
+*.tsbuildinfo
+
+# generated demo output (rebuilt by scripts/build-demos.mjs)
+apps/web/public/demos/
+
+# deploy
+.vercel/
+
+# env
+.env*
+!.env.example
+
+# misc
+.DS_Store
+npm-debug.log*
