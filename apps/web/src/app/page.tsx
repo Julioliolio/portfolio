@@ -13,6 +13,18 @@ export default function Home() {
           — embedded demo pipeline
         </li>
         <li>
+          <Link className="underline" href="/work/localpal">
+            /work/localpal
+          </Link>{" "}
+          — LocalPal, live in a phone frame
+        </li>
+        <li>
+          <Link className="underline" href="/work/convertr">
+            /work/convertr
+          </Link>{" "}
+          — Convertr, mocked conversion flow
+        </li>
+        <li>
           <Link className="underline" href="/lab">
             /lab
           </Link>{" "}

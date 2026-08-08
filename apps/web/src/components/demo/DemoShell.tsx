@@ -26,12 +26,15 @@ export function DemoShell({
   variant,
   autoload = false,
   poster,
+  query = "",
 }: {
   demo: string;
   title: string;
   variant: DeviceVariant;
   autoload?: boolean;
   poster?: ReactNode;
+  /** Optional query string passed to the demo, e.g. "?embed". */
+  query?: string;
 }) {
   const [state, setState] = useState<ShellState>("idle");
   const rootRef = useRef<HTMLDivElement>(null);
@@ -99,7 +102,7 @@ export function DemoShell({
         )}
         {state !== "idle" && (
           <iframe
-            src={`/demos/${demo}/index.html`}
+            src={`/demos/${demo}/index.html${query}`}
             title={title}
             loading="lazy"
             className="absolute inset-0 size-full border-0"
