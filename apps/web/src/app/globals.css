@@ -24,3 +24,12 @@ body {
   color: var(--foreground);
   font-family: Arial, Helvetica, sans-serif;
 }
+
+/* Native cursor hides only while the ClayCursor component is mounted and
+   active (fine pointer, JS running) — it owns this class. Iframes have
+   their own documents; ClayCursor injects the same rule into same-origin
+   frames. */
+html.clay-cursor,
+html.clay-cursor * {
+  cursor: none !important;
+}

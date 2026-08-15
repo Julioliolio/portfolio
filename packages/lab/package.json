@@ -4,7 +4,8 @@
   "private": true,
   "type": "module",
   "exports": {
-    "./registry": "./src/registry.ts"
+    "./registry": "./src/registry.ts",
+    "./cursor-tuning": "./src/cursor-tuning.ts"
   },
   "scripts": {
     "typecheck": "tsc --noEmit"

@@ -18,6 +18,10 @@ export type LabPiece = {
   slug: string;
   title: string;
   description?: string;
+  /** Stage background for the piece's lab page; default follows the site
+   *  theme. "white" is the studio wall — for pieces whose read depends on
+   *  it (e.g. a cast shadow). */
+  background?: "white";
   load: () => Promise<{ default: ComponentType }>;
 };
 
@@ -28,5 +32,20 @@ export const registry: LabPiece[] = [
     description:
       "A card that tilts toward the pointer — the pointer-tracking baseline for future pieces.",
     load: () => import("./pieces/pointer-tilt"),
+  },
+  {
+    slug: "clay-cursor",
+    title: "Clay cursor",
+    description:
+      "Live tuning bench for the site-wide clay cursor — size, lean, and settle-wobble physics.",
+    load: () => import("./pieces/clay-cursor"),
+  },
+  {
+    slug: "cartel",
+    title: "Cartel",
+    description:
+      "A lightbox street sign that watches the pointer — nine photos walked through at 12fps.",
+    background: "white",
+    load: () => import("./pieces/cartel"),
   },
 ];

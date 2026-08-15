@@ -14,6 +14,14 @@ export default function LabIndexPage() {
             {piece.description && <p>{piece.description}</p>}
           </li>
         ))}
+        {/* Layout trials live outside the registry — they're page-level
+            arrangements of a piece, not pieces themselves. */}
+        <li>
+          <Link className="underline" href="/lab/cartel-trial">
+            Cartel — trial
+          </Link>
+          <p>The sign alone on a white wall, with its cast shadow.</p>
+        </li>
       </ul>
     </main>
   );

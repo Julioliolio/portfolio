@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import { Geist, Geist_Mono } from "next/font/google";
 import { MotionProvider } from "@/lib/motion";
+import { ClayCursor } from "@/components/cursor/ClayCursor";
 import "./globals.css";
 
 const geistSans = Geist({
@@ -26,6 +27,7 @@ export default function RootLayout({ children }: LayoutProps<"/">) {
     >
       <body className="flex min-h-full flex-col">
         <MotionProvider>{children}</MotionProvider>
+        <ClayCursor />
       </body>
     </html>
   );
