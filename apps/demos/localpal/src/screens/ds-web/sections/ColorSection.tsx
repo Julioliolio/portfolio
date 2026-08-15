@@ -1,6 +1,6 @@
-import { Squircle } from '../../../components/Squircle';
-import { color } from '../../../theme/tokens';
-import { copy } from '../copy';
+import { Squircle } from "../../../components/Squircle";
+import { color } from "../../../theme/tokens";
+import { copy } from "../copy";
 
 /**
  * Color. Los valores salen de theme/tokens.ts (fuente de verdad); los nombres,
@@ -49,13 +49,17 @@ function SwatchCard({ s, tag }: { s: Swatch; tag: string }) {
       <Squircle
         role="card"
         fill={s.alpha ? color.brand : s.value}
-        stroke={s.outline ? 'rgba(0,29,51,0.12)' : undefined}
+        stroke={s.outline ? "rgba(0,29,51,0.12)" : undefined}
         className="dsw-swatch-chip"
       >
         {s.alpha && (
           <>
             <span className="dsw-swatch-onbrand-tag">{tag}</span>
-            <div className="dsw-swatch-sample" style={{ background: s.value }} aria-hidden />
+            <div
+              className="dsw-swatch-sample"
+              style={{ background: s.value }}
+              aria-hidden
+            />
           </>
         )}
       </Squircle>

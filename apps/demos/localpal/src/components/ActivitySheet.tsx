@@ -20,20 +20,26 @@
  * pinned to the bottom edge across all levels — label scrambles, plate width
  * and price morph, plus glyph and back chevron persist.
  */
-import type { CSSProperties, ReactNode, Ref } from 'react';
-import { useCallback, useRef } from 'react';
-import { motion } from 'framer-motion';
-import { Squircle } from './Squircle';
-import { PeerPin } from './PeerPin';
-import { useDragScroll } from './useDragScroll';
-import { layerZoomStyle } from '../theme/motion';
-import { AvatarCluster } from './AvatarCluster';
-import { usePressFeedback } from './MotionProvider';
-import { figmaIcons } from './icons/figmaIcons';
-import { color } from '../theme/tokens';
-import { VENUES, dayLabel, type VenueId, type VenueEvent, type Venue } from '../data/venues';
-import { PEER_PLANS, planOthers, type PeerPlan } from '../data/peerPlans';
-import { personByFirstName, type PersonId } from '../data/people';
+import type { CSSProperties, ReactNode, Ref } from "react";
+import { useCallback, useRef } from "react";
+import { motion } from "framer-motion";
+import { Squircle } from "./Squircle";
+import { PeerPin } from "./PeerPin";
+import { useDragScroll } from "./useDragScroll";
+import { layerZoomStyle } from "../theme/motion";
+import { AvatarCluster } from "./AvatarCluster";
+import { usePressFeedback } from "./MotionProvider";
+import { figmaIcons } from "./icons/figmaIcons";
+import { color } from "../theme/tokens";
+import {
+  VENUES,
+  dayLabel,
+  type VenueId,
+  type VenueEvent,
+  type Venue,
+} from "../data/venues";
+import { PEER_PLANS, planOthers, type PeerPlan } from "../data/peerPlans";
+import { personByFirstName, type PersonId } from "../data/people";
 
 /** Surface geometry the BottomBar morphs to (Figma 1300:3897). `h` is only the
  *  fallback/initial height — the real height is measured from the content.
@@ -45,16 +51,16 @@ export const ACTIVITY_BOTTOM = ACTIVITY.y + ACTIVITY.h; // ≈ 803.9
 
 /** One entry of the activity navigation stack. */
 export type ActivityView =
-  | { kind: 'event'; venueId: VenueId; eventId: string }
-  | { kind: 'going'; venueId: VenueId; eventId: string }
-  | { kind: 'peer'; plan: PeerPlan }
+  | { kind: "event"; venueId: VenueId; eventId: string }
+  | { kind: "going"; venueId: VenueId; eventId: string }
+  | { kind: "peer"; plan: PeerPlan }
   // Confirmation the peer card morphs into after tapping Join (Figma 1431:5282).
-  | { kind: 'joined'; plan: PeerPlan };
+  | { kind: "joined"; plan: PeerPlan };
 
 const viewKey = (v: ActivityView) =>
-  v.kind === 'peer'
+  v.kind === "peer"
     ? `peer:${v.plan.id}`
-    : v.kind === 'joined'
+    : v.kind === "joined"
       ? `joined:${v.plan.id}`
       : `${v.kind}:${v.venueId}:${v.eventId}`;
 
@@ -87,15 +93,15 @@ const MAX_SCROLL_H = ACTIVITY_MAX_H - PAD_TOP - PAD_BOTTOM - COL_GAP - CTA_H; //
 
 // Cap-trimmed text (Figma measures type cap-to-cap). Chromium 133+.
 const capTrim = {
-  textBoxTrim: 'trim-both',
-  textBoxEdge: 'cap text',
+  textBoxTrim: "trim-both",
+  textBoxEdge: "cap text",
 } as CSSProperties;
 
 const buttonReset: CSSProperties = {
-  background: 'transparent',
-  border: 'none',
+  background: "transparent",
+  border: "none",
   padding: 0,
-  cursor: 'pointer',
+  cursor: "pointer",
 };
 
 // View swaps ride the shared hierarchical zoom (theme/motion layerZoomStyle),
@@ -116,18 +122,18 @@ function ActivityColumn({
   contentGap?: number;
   content: ReactNode;
 }) {
-  const dragScroll = useDragScroll('y');
+  const dragScroll = useDragScroll("y");
   return (
     <div
       ref={colRef}
       style={{
-        position: 'absolute',
+        position: "absolute",
         top: 0,
         left: 0,
         width: ACTIVITY.w,
-        boxSizing: 'border-box',
-        display: 'flex',
-        flexDirection: 'column',
+        boxSizing: "border-box",
+        display: "flex",
+        flexDirection: "column",
         gap: COL_GAP,
         paddingTop: PAD_TOP,
         paddingBottom: PAD_BOTTOM,
@@ -136,17 +142,17 @@ function ActivityColumn({
       <div
         {...dragScroll}
         style={{
-          display: 'flex',
-          flexDirection: 'column',
+          display: "flex",
+          flexDirection: "column",
           gap: contentGap,
           padding: `0 ${PAD_X}px`,
           minHeight: 0,
           maxHeight: MAX_SCROLL_H,
-          overflowY: 'auto',
-          scrollbarWidth: 'none',
-          touchAction: 'pan-y',
-          overscrollBehavior: 'contain',
-          WebkitOverflowScrolling: 'touch',
+          overflowY: "auto",
+          scrollbarWidth: "none",
+          touchAction: "pan-y",
+          overscrollBehavior: "contain",
+          WebkitOverflowScrolling: "touch",
         }}
       >
         {content}
@@ -164,20 +170,64 @@ function ActivityColumn({
 /* Shared bits                                                          */
 /* ------------------------------------------------------------------ */
 
-function TitleBlock({ title, address, when }: { title: string; address: string; when: string }) {
+function TitleBlock({
+  title,
+  address,
+  when,
+}: {
+  title: string;
+  address: string;
+  when: string;
+}) {
   return (
-    <div style={{ display: 'flex', flexDirection: 'column', gap: 12, flexShrink: 0 }}>
-      <div style={{ display: 'flex', flexDirection: 'column', gap: 4 }}>
-        <span style={{ color: color.onBrand, fontSize: 24, fontWeight: 600, lineHeight: '26px' }}>
+    <div
+      style={{
+        display: "flex",
+        flexDirection: "column",
+        gap: 12,
+        flexShrink: 0,
+      }}
+    >
+      <div style={{ display: "flex", flexDirection: "column", gap: 4 }}>
+        <span
+          style={{
+            color: color.onBrand,
+            fontSize: 24,
+            fontWeight: 600,
+            lineHeight: "26px",
+          }}
+        >
           {title}
         </span>
-        <span style={{ color: color.lavender, fontSize: 12, fontWeight: 400, ...capTrim }}>
+        <span
+          style={{
+            color: color.lavender,
+            fontSize: 12,
+            fontWeight: 400,
+            ...capTrim,
+          }}
+        >
           {address}
         </span>
       </div>
-      <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
-        <img src={figmaIcons.clock} alt="" width={14} height={14} style={{ display: 'block' }} />
-        <span style={{ color: color.onBrand, fontSize: 16, fontWeight: 500, ...capTrim }}>{when}</span>
+      <div style={{ display: "flex", alignItems: "center", gap: 6 }}>
+        <img
+          src={figmaIcons.clock}
+          alt=""
+          width={14}
+          height={14}
+          style={{ display: "block" }}
+        />
+        <span
+          style={{
+            color: color.onBrand,
+            fontSize: 16,
+            fontWeight: 500,
+            ...capTrim,
+          }}
+        >
+          {when}
+        </span>
       </div>
     </div>
   );
@@ -205,12 +255,43 @@ function HostRow({
   const person = hostName ? personByFirstName(hostName) : null;
   const tappable = person != null && onOpenProfile != null;
   const row = (
-    <div style={{ display: 'flex', alignItems: 'center', gap: 12, flexShrink: 0 }}>
+    <div
+      style={{ display: "flex", alignItems: "center", gap: 12, flexShrink: 0 }}
+    >
       {/* venue hosts wear the square 40 tile; peer hosts the 40×42 arch tile */}
-      <PeerPin size={40} height={venueHost ? 40 : 42} stroke={venueHost ? color.offWhite : undefined} />
-      <div style={{ display: 'flex', flexDirection: 'column', gap: 6, alignItems: 'flex-start' }}>
-        <span style={{ color: color.onBrand, fontSize: 16, fontWeight: 500, ...capTrim }}>{name}</span>
-        <span style={{ color: color.lavender, fontSize: 12, fontWeight: 400, ...capTrim }}>{sub}</span>
+      <PeerPin
+        size={40}
+        height={venueHost ? 40 : 42}
+        stroke={venueHost ? color.offWhite : undefined}
+      />
+      <div
+        style={{
+          display: "flex",
+          flexDirection: "column",
+          gap: 6,
+          alignItems: "flex-start",
+        }}
+      >
+        <span
+          style={{
+            color: color.onBrand,
+            fontSize: 16,
+            fontWeight: 500,
+            ...capTrim,
+          }}
+        >
+          {name}
+        </span>
+        <span
+          style={{
+            color: color.lavender,
+            fontSize: 12,
+            fontWeight: 400,
+            ...capTrim,
+          }}
+        >
+          {sub}
+        </span>
       </div>
     </div>
   );
@@ -219,7 +300,7 @@ function HostRow({
     <motion.button
       {...press}
       onClick={() => onOpenProfile(person.id)}
-      style={{ ...buttonReset, flexShrink: 0, textAlign: 'left' }}
+      style={{ ...buttonReset, flexShrink: 0, textAlign: "left" }}
     >
       {row}
     </motion.button>
@@ -255,23 +336,40 @@ function VenueActivityCard({
             address={venue.address}
             when={`${dayLabel(event.day)} - ${event.time}`}
           />
-          <p style={{ color: color.lavender, fontSize: 12, fontWeight: 400, lineHeight: '13px', margin: 0, flexShrink: 0 }}>
+          <p
+            style={{
+              color: color.lavender,
+              fontSize: 12,
+              fontWeight: 400,
+              lineHeight: "13px",
+              margin: 0,
+              flexShrink: 0,
+            }}
+          >
             {event.description}
           </p>
-          <HostRow name={`Hosted by ${venue.name}`} sub={venue.category} venueHost />
+          <HostRow
+            name={`Hosted by ${venue.name}`}
+            sub={venue.category}
+            venueHost
+          />
 
           {/* Going together → the peer-plans list */}
-          <motion.button {...press} onClick={onOpenGoing} style={{ ...buttonReset, flexShrink: 0 }}>
+          <motion.button
+            {...press}
+            onClick={onOpenGoing}
+            style={{ ...buttonReset, flexShrink: 0 }}
+          >
             <Squircle
               role="card"
               fill={color.brandDeep}
               style={{
                 width: COL_W,
                 height: ROW_H,
-                display: 'flex',
-                alignItems: 'center',
+                display: "flex",
+                alignItems: "center",
                 gap: 8,
-                padding: '0 14px 0 13px',
+                padding: "0 14px 0 13px",
               }}
             >
               <AvatarCluster />
@@ -279,20 +377,43 @@ function VenueActivityCard({
                 style={{
                   flex: 1,
                   minWidth: 0,
-                  display: 'flex',
-                  flexDirection: 'column',
-                  alignItems: 'flex-start',
+                  display: "flex",
+                  flexDirection: "column",
+                  alignItems: "flex-start",
                   gap: 8,
                 }}
               >
-                <span style={{ color: color.onBrand, fontSize: 16, fontWeight: 500, lineHeight: '16px' }}>
+                <span
+                  style={{
+                    color: color.onBrand,
+                    fontSize: 16,
+                    fontWeight: 500,
+                    lineHeight: "16px",
+                  }}
+                >
                   Going together
                 </span>
-                <span style={{ color: color.lavender, fontSize: 12, fontWeight: 500, ...capTrim }}>
+                <span
+                  style={{
+                    color: color.lavender,
+                    fontSize: 12,
+                    fontWeight: 500,
+                    ...capTrim,
+                  }}
+                >
                   {plans.length} groups - {people} people going
                 </span>
               </div>
-              <img src={figmaIcons.chevron} alt="" style={{ width: 8, height: 11.33, display: 'block', flexShrink: 0 }} />
+              <img
+                src={figmaIcons.chevron}
+                alt=""
+                style={{
+                  width: 8,
+                  height: 11.33,
+                  display: "block",
+                  flexShrink: 0,
+                }}
+              />
             </Squircle>
           </motion.button>
         </>
@@ -334,10 +455,10 @@ function GoingTogetherList({
             style={{
               width: COL_W,
               height: ROW_H,
-              display: 'flex',
-              alignItems: 'center',
+              display: "flex",
+              alignItems: "center",
               gap: 12,
-              padding: '0 12px',
+              padding: "0 12px",
             }}
           >
             <PeerPin size={45} height={47.27} />
@@ -345,20 +466,44 @@ function GoingTogetherList({
               style={{
                 flex: 1,
                 minWidth: 0,
-                display: 'flex',
-                flexDirection: 'column',
-                alignItems: 'flex-start',
+                display: "flex",
+                flexDirection: "column",
+                alignItems: "flex-start",
                 gap: 8,
               }}
             >
-              <span style={{ color: color.onBrand, fontSize: 16, fontWeight: 500, lineHeight: '16px', ...capTrim }}>
+              <span
+                style={{
+                  color: color.onBrand,
+                  fontSize: 16,
+                  fontWeight: 500,
+                  lineHeight: "16px",
+                  ...capTrim,
+                }}
+              >
                 {plan.title}
               </span>
-              <span style={{ color: color.lavender, fontSize: 12, fontWeight: 500, ...capTrim }}>
+              <span
+                style={{
+                  color: color.lavender,
+                  fontSize: 12,
+                  fontWeight: 500,
+                  ...capTrim,
+                }}
+              >
                 {plan.host} - {plan.goingCount} going
               </span>
             </div>
-            <img src={figmaIcons.chevron} alt="" style={{ width: 8, height: 11.33, display: 'block', flexShrink: 0 }} />
+            <img
+              src={figmaIcons.chevron}
+              alt=""
+              style={{
+                width: 8,
+                height: 11.33,
+                display: "block",
+                flexShrink: 0,
+              }}
+            />
           </Squircle>
         </motion.button>
       ))}
@@ -384,7 +529,11 @@ function PeerActivityCard({
       colRef={colRef}
       content={
         <>
-          <TitleBlock title={plan.title} address={plan.address} when={plan.when} />
+          <TitleBlock
+            title={plan.title}
+            address={plan.address}
+            when={plan.when}
+          />
           <HostRow
             name={`Hosted by ${plan.host}`}
             sub={plan.hostLine}
@@ -393,15 +542,19 @@ function PeerActivityCard({
           />
 
           {/* Description plate — the darker rounded box on the peer card */}
-          <Squircle role="card" fill={color.brandDeep} style={{ width: COL_W, padding: 13, flexShrink: 0 }}>
+          <Squircle
+            role="card"
+            fill={color.brandDeep}
+            style={{ width: COL_W, padding: 13, flexShrink: 0 }}
+          >
             <p
               style={{
                 color: color.lavender,
                 fontSize: 12,
                 fontWeight: 400,
-                lineHeight: '13px',
+                lineHeight: "13px",
                 margin: 0,
-                whiteSpace: 'pre-line',
+                whiteSpace: "pre-line",
               }}
             >
               {plan.description}
@@ -409,13 +562,34 @@ function PeerActivityCard({
           </Squircle>
 
           {/* Who's going */}
-          <div style={{ display: 'flex', alignItems: 'center', gap: 8, flexShrink: 0 }}>
+          <div
+            style={{
+              display: "flex",
+              alignItems: "center",
+              gap: 8,
+              flexShrink: 0,
+            }}
+          >
             <AvatarCluster />
-            <div style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
-              <span style={{ color: color.onBrand, fontSize: 16, fontWeight: 500, ...capTrim }}>
+            <div style={{ display: "flex", flexDirection: "column", gap: 6 }}>
+              <span
+                style={{
+                  color: color.onBrand,
+                  fontSize: 16,
+                  fontWeight: 500,
+                  ...capTrim,
+                }}
+              >
                 {plan.goingNames}
               </span>
-              <span style={{ color: color.lavender, fontSize: 12, fontWeight: 500, ...capTrim }}>
+              <span
+                style={{
+                  color: color.lavender,
+                  fontSize: 12,
+                  fontWeight: 500,
+                  ...capTrim,
+                }}
+              >
                 and +{planOthers(plan)} others are going
               </span>
             </div>
@@ -444,8 +618,8 @@ function JoinedCard({ colRef }: { colRef?: Ref<HTMLDivElement> }) {
             color: color.onBrand,
             fontSize: 32,
             fontWeight: 600,
-            lineHeight: '32px',
-            wordBreak: 'break-word',
+            lineHeight: "32px",
+            wordBreak: "break-word",
             flexShrink: 0,
           }}
         >
@@ -479,7 +653,8 @@ export function ActivitySheet({
   const layersRef = useRef<ActivityView[]>([]);
   const prev = layersRef.current;
   const isPrefix =
-    stack.length < prev.length && stack.every((v, i) => viewKey(v) === viewKey(prev[i]));
+    stack.length < prev.length &&
+    stack.every((v, i) => viewKey(v) === viewKey(prev[i]));
   const layers = isPrefix ? prev : stack;
   layersRef.current = layers;
   const topKey = stack.length > 0 ? viewKey(stack[stack.length - 1]) : null;
@@ -507,39 +682,57 @@ export function ActivitySheet({
         radius={2}
         smoothing={1}
         fill="#fefefe"
-        style={{ position: 'absolute', left: (ACTIVITY.w - 53) / 2, top: 8.5, width: 53, height: 4, zIndex: 1 }}
+        style={{
+          position: "absolute",
+          left: (ACTIVITY.w - 53) / 2,
+          top: 8.5,
+          width: 53,
+          height: 4,
+          zIndex: 1,
+        }}
       />
-
 
       {layers.map((view, i) => {
         const key = viewKey(view);
         const visible = key === topKey;
         // Hidden layers BELOW the top are ancestors you zoomed through;
         // layers past the live stack are popped children shrinking back.
-        const hiddenAs = i < stack.length - 1 ? 'parent' : 'child';
+        const hiddenAs = i < stack.length - 1 ? "parent" : "child";
         const ref = visible ? measureRef : undefined;
         let content = null;
-        if (view.kind === 'event' || view.kind === 'going') {
+        if (view.kind === "event" || view.kind === "going") {
           const venue = VENUES[view.venueId];
           const event = venue.events.find((ev) => ev.id === view.eventId);
           if (!event) return null;
           content =
-            view.kind === 'event' ? (
+            view.kind === "event" ? (
               <VenueActivityCard
                 venue={venue}
                 event={event}
                 colRef={ref}
-                onOpenGoing={() => onPush({ kind: 'going', venueId: view.venueId, eventId: view.eventId })}
+                onOpenGoing={() =>
+                  onPush({
+                    kind: "going",
+                    venueId: view.venueId,
+                    eventId: view.eventId,
+                  })
+                }
               />
             ) : (
               <GoingTogetherList
                 event={event}
                 colRef={ref}
-                onOpenPlan={(plan) => onPush({ kind: 'peer', plan })}
+                onOpenPlan={(plan) => onPush({ kind: "peer", plan })}
               />
             );
-        } else if (view.kind === 'peer') {
-          content = <PeerActivityCard plan={view.plan} colRef={ref} onOpenProfile={onOpenProfile} />;
+        } else if (view.kind === "peer") {
+          content = (
+            <PeerActivityCard
+              plan={view.plan}
+              colRef={ref}
+              onOpenProfile={onOpenProfile}
+            />
+          );
         } else {
           content = <JoinedCard colRef={ref} />;
         }
@@ -547,13 +740,13 @@ export function ActivitySheet({
           <div
             key={key}
             style={{
-              position: 'absolute',
+              position: "absolute",
               inset: 0,
               // undefined (inherit), not 'auto': 'auto' would re-enable this
               // view for hit-testing even while the WHOLE activity layer is
               // closed (pointer-events is inherited, and explicit values beat
               // the ancestor's 'none') — an invisible card eating clicks.
-              pointerEvents: visible ? undefined : 'none',
+              pointerEvents: visible ? undefined : "none",
               ...layerZoomStyle(visible, hiddenAs),
             }}
           >

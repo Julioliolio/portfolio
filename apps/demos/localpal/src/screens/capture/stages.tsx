@@ -1,27 +1,27 @@
-import { useEffect, useRef, useState } from 'react';
-import { motion, useMotionValue } from 'framer-motion';
-import Map, { type MapRef } from 'react-map-gl/maplibre';
-import 'maplibre-gl/dist/maplibre-gl.css';
-import { MorphVenuePin } from '../../components/MorphVenuePin';
-import { MorphSearchCross } from '../../components/icons/MorphSearchCross';
-import { InterestBubbles } from '../../components/onboarding/InterestBubbles';
-import { BottomBar } from '../../components/BottomBar';
-import { CtaRow, type CtaView } from '../../components/CtaRow';
-import { EdgeZoom } from '../../components/EdgeZoom';
-import { ConfirmProvider } from '../../components/ConfirmProvider';
-import { PlansProvider, usePlansState } from '../../components/PlansProvider';
-import { FocusedPlanCard } from '../../components/PlansSheet';
-import { LocationDot } from '../../components/LocationDot';
-import { Squircle } from '../../components/Squircle';
-import { usePressFeedback } from '../../components/MotionProvider';
-import { LocateIcon } from '../../components/icons/LocateIcon';
-import { figmaIcons } from '../../components/icons/figmaIcons';
-import { VENUES } from '../../data/venues';
-import { MAP_PEER_PLANS } from '../../data/peerPlans';
-import type { ActivityView } from '../../components/ActivitySheet';
-import { INTEREST_FIELD, type InterestId } from '../../theme/interests';
-import { color, device } from '../../theme/tokens';
-import { FitScale } from './CaptureShell';
+import { useEffect, useRef, useState } from "react";
+import { motion, useMotionValue } from "framer-motion";
+import Map, { type MapRef } from "react-map-gl/maplibre";
+import "maplibre-gl/dist/maplibre-gl.css";
+import { MorphVenuePin } from "../../components/MorphVenuePin";
+import { MorphSearchCross } from "../../components/icons/MorphSearchCross";
+import { InterestBubbles } from "../../components/onboarding/InterestBubbles";
+import { BottomBar } from "../../components/BottomBar";
+import { CtaRow, type CtaView } from "../../components/CtaRow";
+import { EdgeZoom } from "../../components/EdgeZoom";
+import { ConfirmProvider } from "../../components/ConfirmProvider";
+import { PlansProvider, usePlansState } from "../../components/PlansProvider";
+import { FocusedPlanCard } from "../../components/PlansSheet";
+import { LocationDot } from "../../components/LocationDot";
+import { Squircle } from "../../components/Squircle";
+import { usePressFeedback } from "../../components/MotionProvider";
+import { LocateIcon } from "../../components/icons/LocateIcon";
+import { figmaIcons } from "../../components/icons/figmaIcons";
+import { VENUES } from "../../data/venues";
+import { MAP_PEER_PLANS } from "../../data/peerPlans";
+import type { ActivityView } from "../../components/ActivitySheet";
+import { INTEREST_FIELD, type InterestId } from "../../theme/interests";
+import { color, device } from "../../theme/tokens";
+import { FitScale } from "./CaptureShell";
 
 /**
  * Capture stages — each mounts ONE micro-interaction in isolation for social
@@ -35,7 +35,12 @@ import { FitScale } from './CaptureShell';
 export type StageProps = { auto: boolean };
 
 /** Scripted on/off cycle: on for `onMs`, off for `offMs`, after a short lead. */
-function useToggleLoop(enabled: boolean, onMs: number, offMs: number, set: (v: boolean) => void) {
+function useToggleLoop(
+  enabled: boolean,
+  onMs: number,
+  offMs: number,
+  set: (v: boolean) => void,
+) {
   useEffect(() => {
     if (!enabled) return;
     let alive = true;
@@ -65,9 +70,20 @@ export function VenuePinStage({ auto }: StageProps) {
     <FitScale w={340} h={200} margin={0.78}>
       <div
         onClick={() => setSel((s) => !s)}
-        style={{ position: 'absolute', inset: 0, display: 'grid', placeItems: 'center', cursor: 'pointer' }}
+        style={{
+          position: "absolute",
+          inset: 0,
+          display: "grid",
+          placeItems: "center",
+          cursor: "pointer",
+        }}
       >
-        <MorphVenuePin icon={figmaIcons.music} name="Rita’s" selected={sel} hasActivity />
+        <MorphVenuePin
+          icon={figmaIcons.music}
+          name="Rita’s"
+          selected={sel}
+          hasActivity
+        />
       </div>
     </FitScale>
   );
@@ -84,9 +100,20 @@ export function SearchMorphStage({ auto }: StageProps) {
     <FitScale w={240} h={240} margin={0.55}>
       <div
         onClick={() => setToCross((v) => !v)}
-        style={{ position: 'absolute', inset: 0, display: 'grid', placeItems: 'center', cursor: 'pointer' }}
+        style={{
+          position: "absolute",
+          inset: 0,
+          display: "grid",
+          placeItems: "center",
+          cursor: "pointer",
+        }}
       >
-        <MorphSearchCross toCross={toCross} size={240} color={color.brand} strokeWidth={2.2} />
+        <MorphSearchCross
+          toCross={toCross}
+          size={240}
+          color={color.brand}
+          strokeWidth={2.2}
+        />
       </div>
     </FitScale>
   );
@@ -133,7 +160,12 @@ export function BubblesStage({ auto }: StageProps) {
   return (
     <FitScale w={INTEREST_FIELD.w} h={INTEREST_FIELD.h} margin={0.8}>
       <div ref={hostRef}>
-        <InterestBubbles key={runKey} active selected={selected} onToggle={toggle} />
+        <InterestBubbles
+          key={runKey}
+          active
+          selected={selected}
+          onToggle={toggle}
+        />
       </div>
     </FitScale>
   );
@@ -150,7 +182,7 @@ export function BottomBarStage({ auto }: StageProps) {
   return (
     <FitScale w={device.width} h={device.height} margin={0.94}>
       <ConfirmProvider>
-        <div style={{ position: 'absolute', inset: 0, overflow: 'hidden' }}>
+        <div style={{ position: "absolute", inset: 0, overflow: "hidden" }}>
           <BottomBar
             filters={[]}
             onFiltersChange={() => {}}
@@ -165,9 +197,21 @@ export function BottomBarStage({ auto }: StageProps) {
 /** Simulate a real press (pointerdown → pointerup + click) so framer's
  *  whileTap squish plays even when a script does the tapping. */
 function pressEl(el: HTMLElement) {
-  el.dispatchEvent(new PointerEvent('pointerdown', { bubbles: true, pointerId: 98, isPrimary: true }));
+  el.dispatchEvent(
+    new PointerEvent("pointerdown", {
+      bubbles: true,
+      pointerId: 98,
+      isPrimary: true,
+    }),
+  );
   window.setTimeout(() => {
-    el.dispatchEvent(new PointerEvent('pointerup', { bubbles: true, pointerId: 98, isPrimary: true }));
+    el.dispatchEvent(
+      new PointerEvent("pointerup", {
+        bubbles: true,
+        pointerId: 98,
+        isPrimary: true,
+      }),
+    );
     el.click();
   }, 140);
 }
@@ -177,11 +221,17 @@ function pressEl(el: HTMLElement) {
  *  layers (visibility-hidden layerZoom swaps) are skipped. */
 function clickByText(root: HTMLElement | null, re: RegExp) {
   if (!root) return;
-  const hit = Array.from(root.querySelectorAll<HTMLElement>('button, span, div'))
+  const hit = Array.from(
+    root.querySelectorAll<HTMLElement>("button, span, div"),
+  )
     .filter((el) => {
-      if (!re.test((el.textContent ?? '').trim())) return false;
+      if (!re.test((el.textContent ?? "").trim())) return false;
       const r = el.getBoundingClientRect();
-      return r.width > 0 && r.height > 0 && getComputedStyle(el).visibility !== 'hidden';
+      return (
+        r.width > 0 &&
+        r.height > 0 &&
+        getComputedStyle(el).visibility !== "hidden"
+      );
     })
     .pop();
   hit?.click();
@@ -209,12 +259,12 @@ export function LocateStage({ auto }: StageProps) {
     <FitScale w={200} h={280} margin={0.78}>
       <div
         style={{
-          position: 'absolute',
+          position: "absolute",
           inset: 0,
-          display: 'flex',
-          flexDirection: 'column',
-          alignItems: 'center',
-          justifyContent: 'center',
+          display: "flex",
+          flexDirection: "column",
+          alignItems: "center",
+          justifyContent: "center",
           gap: 40,
         }}
       >
@@ -227,14 +277,23 @@ export function LocateStage({ auto }: StageProps) {
           {...press}
           whileTap={{ ...press.whileTap, rotate: 90 }}
           style={{
-            background: 'transparent',
-            border: 'none',
+            background: "transparent",
+            border: "none",
             padding: 0,
-            cursor: 'pointer',
-            filter: 'drop-shadow(0 2px 6px rgba(0,29,51,0.16))',
+            cursor: "pointer",
+            filter: "drop-shadow(0 2px 6px rgba(0,29,51,0.16))",
           }}
         >
-          <Squircle role="control" fill="#fff" style={{ width: 40, height: 40, display: 'grid', placeItems: 'center' }}>
+          <Squircle
+            role="control"
+            fill="#fff"
+            style={{
+              width: 40,
+              height: 40,
+              display: "grid",
+              placeItems: "center",
+            }}
+          >
             <LocateIcon size={22} />
           </Squircle>
         </motion.button>
@@ -260,29 +319,42 @@ function RsvpInner({ auto }: StageProps) {
     let alive = true;
     let raf = 0;
     const timers: number[] = [];
-    const at = (ms: number, fn: () => void) => timers.push(window.setTimeout(() => alive && fn(), ms));
+    const at = (ms: number, fn: () => void) =>
+      timers.push(window.setTimeout(() => alive && fn(), ms));
     const cycle = () => {
       if (!alive) return;
       // Drag the knob across the plate with a real (synthesized) pointer.
       at(1500, () => {
         const host = hostRef.current;
-        const knob = host && Array.from(host.querySelectorAll<HTMLElement>('div')).find((d) => d.style.cursor === 'grab');
+        const knob =
+          host &&
+          Array.from(host.querySelectorAll<HTMLElement>("div")).find(
+            (d) => d.style.cursor === "grab",
+          );
         if (!knob) return;
         const r = knob.getBoundingClientRect();
         const sx = r.left + r.width / 2;
         const sy = r.top + r.height / 2;
         const fire = (type: string, x: number) =>
-          knob.dispatchEvent(new PointerEvent(type, { bubbles: true, clientX: x, clientY: sy, pointerId: 97, isPrimary: true }));
-        fire('pointerdown', sx);
+          knob.dispatchEvent(
+            new PointerEvent(type, {
+              bubbles: true,
+              clientX: x,
+              clientY: sy,
+              pointerId: 97,
+              isPrimary: true,
+            }),
+          );
+        fire("pointerdown", sx);
         const t0 = performance.now();
         const D = 950;
         const step = (now: number) => {
           if (!alive) return;
           const t = Math.min(1, (now - t0) / D);
           const x = sx + 340 * easeOut(t); // overshoot the clamp — commit is certain
-          fire('pointermove', x);
+          fire("pointermove", x);
           if (t < 1) raf = requestAnimationFrame(step);
-          else fire('pointerup', x);
+          else fire("pointerup", x);
         };
         raf = requestAnimationFrame(step);
       });
@@ -302,7 +374,15 @@ function RsvpInner({ auto }: StageProps) {
   }, [auto, setDayOf]);
 
   return (
-    <div ref={hostRef} style={{ position: 'absolute', inset: 0, display: 'grid', placeItems: 'center' }}>
+    <div
+      ref={hostRef}
+      style={{
+        position: "absolute",
+        inset: 0,
+        display: "grid",
+        placeItems: "center",
+      }}
+    >
       <FocusedPlanCard onOpen={() => {}} />
     </div>
   );
@@ -323,17 +403,17 @@ export function RsvpStage({ auto }: StageProps) {
 /* CTA button morph — label scramble + glyph swap across states      */
 /* ---------------------------------------------------------------- */
 
-const PARTY = MAP_PEER_PLANS['mp-lluc']; // "Party at Rita's + afterparty…"
+const PARTY = MAP_PEER_PLANS["mp-lluc"]; // "Party at Rita's + afterparty…"
 
 // The persistent CTA row as it appears across the whole flow. Each state
 // changes the label (scrambles), the small square's glyph (× ⇄ ‹ ⇄ share),
 // the plate width, and — on the event — opens the price slot.
 const CTA_VIEWS: CtaView[] = [
-  { kind: 'venue' }, //                                    "＋ Create plan"  ×
-  { kind: 'event', venueId: 'ritas', eventId: 'r1' }, //   "$8  ＋ Get tickets" ‹
-  { kind: 'going', venueId: 'ritas', eventId: 'r1' }, //   "＋ Create a plan" ‹
-  { kind: 'peer', plan: PARTY }, //                        "＋ Join"          ‹
-  { kind: 'joined', plan: PARTY }, //                      "Enter groupchat" share
+  { kind: "venue" }, //                                    "＋ Create plan"  ×
+  { kind: "event", venueId: "ritas", eventId: "r1" }, //   "$8  ＋ Get tickets" ‹
+  { kind: "going", venueId: "ritas", eventId: "r1" }, //   "＋ Create a plan" ‹
+  { kind: "peer", plan: PARTY }, //                        "＋ Join"          ‹
+  { kind: "joined", plan: PARTY }, //                      "Enter groupchat" share
 ];
 
 export function CtaMorphStage({ auto }: StageProps) {
@@ -352,7 +432,14 @@ export function CtaMorphStage({ auto }: StageProps) {
     // The row lives on the blue card in-app, so the brand backdrop reproduces
     // the white-plate-on-blue contrast exactly (changeable in the stage chrome).
     <FitScale w={344} h={90} margin={0.9}>
-      <CtaRow view={CTA_VIEWS[i]} visible showcase dragY={dragY} onMain={advance} onSmall={advance} />
+      <CtaRow
+        view={CTA_VIEWS[i]}
+        visible
+        showcase
+        dragY={dragY}
+        onMain={advance}
+        onSmall={advance}
+      />
     </FitScale>
   );
 }
@@ -378,14 +465,15 @@ export function VenueFlowStage({ auto }: StageProps) {
     if (!auto) return;
     let alive = true;
     const timers: number[] = [];
-    const at = (ms: number, fn: () => void) => timers.push(window.setTimeout(() => alive && fn(), ms));
+    const at = (ms: number, fn: () => void) =>
+      timers.push(window.setTimeout(() => alive && fn(), ms));
     const cycle = () => {
       if (!alive) return;
       setResetKey((k) => k + 1); // fresh providers — un-joins the last run
       setVenueOn(false);
       setStack([]);
       at(1300, () => setVenueOn(true));
-      at(4300, () => setStack([{ kind: 'peer', plan: PARTY }]));
+      at(4300, () => setStack([{ kind: "peer", plan: PARTY }]));
       at(7600, () => clickByText(hostRef.current, /^Join$/));
       at(9200, () => clickByText(hostRef.current, /^Join plan$/));
       at(13200, () => setStack([])); // joined card → back onto the venue sheet
@@ -407,10 +495,10 @@ export function VenueFlowStage({ auto }: StageProps) {
     <FitScale w={device.width} h={device.height} margin={0.94}>
       {/* hostRef wraps the ConfirmProvider so the scripted clicks can reach
           the confirm sheet too (it renders as the provider's own child). */}
-      <div ref={hostRef} style={{ position: 'absolute', inset: 0 }}>
+      <div ref={hostRef} style={{ position: "absolute", inset: 0 }}>
         <ConfirmProvider key={resetKey}>
           <PlansProvider>
-            <div style={{ position: 'absolute', inset: 0, overflow: 'hidden' }}>
+            <div style={{ position: "absolute", inset: 0, overflow: "hidden" }}>
               <BottomBar
                 filters={[]}
                 onFiltersChange={() => {}}
@@ -459,20 +547,26 @@ export function EdgeZoomStage({ auto }: StageProps) {
       if (!target) return;
       const fire = (type: string, x: number, y: number) =>
         target.dispatchEvent(
-          new PointerEvent(type, { bubbles: true, clientX: x, clientY: y, pointerId: 99, isPrimary: true }),
+          new PointerEvent(type, {
+            bubbles: true,
+            clientX: x,
+            clientY: y,
+            pointerId: 99,
+            isPrimary: true,
+          }),
         );
-      fire('pointerdown', edgeX, startY);
+      fire("pointerdown", edgeX, startY);
       const t0 = performance.now();
       const D = 3200;
       const step = (now: number) => {
         if (!alive) return;
         const t = Math.min(1, (now - t0) / D);
         const pull = easeOut(Math.min(1, t * 3)); // goo fully out in the first third
-        const x = edgeX - (56 * r.width) / device.width * pull;
+        const x = edgeX - ((56 * r.width) / device.width) * pull;
         const y = startY - Math.sin(t * Math.PI * 2) * r.height * 0.24; // up, then down, back
-        fire('pointermove', x, y);
+        fire("pointermove", x, y);
         if (t < 1) raf = requestAnimationFrame(step);
-        else fire('pointerup', x, y);
+        else fire("pointerup", x, y);
       };
       raf = requestAnimationFrame(step);
     };
@@ -491,17 +585,19 @@ export function EdgeZoomStage({ auto }: StageProps) {
       <FitScale w={device.width} h={device.height} margin={0.94}>
         <div
           ref={phoneRef}
-          style={{ position: 'absolute', inset: 0, overflow: 'hidden' }}
+          style={{ position: "absolute", inset: 0, overflow: "hidden" }}
           onPointerDownCapture={(e) => setDot({ x: e.clientX, y: e.clientY })}
-          onPointerMoveCapture={(e) => setDot((d) => (d ? { x: e.clientX, y: e.clientY } : d))}
+          onPointerMoveCapture={(e) =>
+            setDot((d) => (d ? { x: e.clientX, y: e.clientY } : d))
+          }
           onPointerUpCapture={() => setDot(null)}
           onPointerCancelCapture={() => setDot(null)}
         >
           <Map
             ref={mapRef}
             initialViewState={{ ...MADRID, zoom: 14.4 }}
-            mapStyle={import.meta.env.BASE_URL + 'map-style.json'}
-            style={{ width: '100%', height: '100%' }}
+            mapStyle={import.meta.env.BASE_URL + "map-style.json"}
+            style={{ width: "100%", height: "100%" }}
             attributionControl={false}
           />
           <EdgeZoom
@@ -514,16 +610,16 @@ export function EdgeZoomStage({ auto }: StageProps) {
         <div
           aria-hidden
           style={{
-            position: 'fixed',
+            position: "fixed",
             left: dot.x - 16,
             top: dot.y - 16,
             width: 32,
             height: 32,
             borderRadius: 16,
-            background: 'rgba(255,255,255,0.35)',
-            border: '1.5px solid rgba(255,255,255,0.7)',
-            boxShadow: '0 2px 10px rgba(0,0,0,0.25)',
-            pointerEvents: 'none',
+            background: "rgba(255,255,255,0.35)",
+            border: "1.5px solid rgba(255,255,255,0.7)",
+            boxShadow: "0 2px 10px rgba(0,0,0,0.25)",
+            pointerEvents: "none",
             zIndex: 99,
           }}
         />

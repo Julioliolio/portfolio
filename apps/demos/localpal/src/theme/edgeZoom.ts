@@ -43,5 +43,5 @@ export const defaultEdgeZoom: EdgeZoomConfig = {
   blobWidth: 56,
   blobHeight: 340,
   growDistance: 90,
-  blobColor: '#000',
+  blobColor: "#000",
 };

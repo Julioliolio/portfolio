@@ -1,4 +1,4 @@
-export type AppViewState = 'idle' | 'loaded' | 'interaction';
+export type AppViewState = "idle" | "loaded" | "interaction";
 
 export interface BBoxTargets {
   x1: number;
@@ -14,7 +14,7 @@ const PADDING = 32;
 // balanced so that as the idle aspect cycles (see IDLE_RATIOS in IdleView),
 // both width AND height change — letting the existing top→bottom / left→right
 // stagger in IdleView's guide-transition effect read clearly.
-const IDLE_W_RATIO = 0.60;
+const IDLE_W_RATIO = 0.6;
 const IDLE_H_RATIO = 0.65;
 
 export function calculateBBoxTargets(
@@ -27,7 +27,7 @@ export function calculateBBoxTargets(
     return { x1: 0, y1: 0, x2: 0, y2: 0 };
   }
 
-  if (state === 'idle') {
+  if (state === "idle") {
     // Default centered box; mediaAspect lets the idle bbox cycle through
     // common video shapes (passed in by IdleView for the spin-driven cycle).
     const aspect = mediaAspect ?? DEFAULT_ASPECT;

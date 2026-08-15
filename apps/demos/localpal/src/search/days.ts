@@ -9,26 +9,27 @@
  * bucket — a day chip simply hides it, which is correct. No Date math on
  * purpose: the demo must behave identically whatever real day it runs on.
  */
-export type DayBucket = 'today' | 'tomorrow' | 'weekend';
+export type DayBucket = "today" | "tomorrow" | "weekend";
 
-export const PROTO_TODAY = 'THU';
+export const PROTO_TODAY = "THU";
 
-export const DAY_BUCKETS: Record<DayBucket, { id: DayBucket; label: string }> = {
-  today: { id: 'today', label: 'Today' },
-  tomorrow: { id: 'tomorrow', label: 'Tomorrow' },
-  weekend: { id: 'weekend', label: 'Weekend' },
-};
+export const DAY_BUCKETS: Record<DayBucket, { id: DayBucket; label: string }> =
+  {
+    today: { id: "today", label: "Today" },
+    tomorrow: { id: "tomorrow", label: "Tomorrow" },
+    weekend: { id: "weekend", label: "Weekend" },
+  };
 
 /** Venue event `day` tag ("TODAY", "FRI"…) → bucket, or null (out of range). */
 export function bucketVenueDay(day: string): DayBucket | null {
   switch (day) {
-    case 'TODAY':
-      return 'today';
-    case 'FRI':
-      return 'tomorrow';
-    case 'SAT':
-    case 'SUN':
-      return 'weekend';
+    case "TODAY":
+      return "today";
+    case "FRI":
+      return "tomorrow";
+    case "SAT":
+    case "SUN":
+      return "weekend";
     default:
       return null;
   }
@@ -38,13 +39,13 @@ export function bucketVenueDay(day: string): DayBucket | null {
 export function bucketWhen(when: string): DayBucket | null {
   const lead = when.split(/[\s-]/, 1)[0].toLowerCase();
   switch (lead) {
-    case 'today':
-      return 'today';
-    case 'friday':
-      return 'tomorrow';
-    case 'saturday':
-    case 'sunday':
-      return 'weekend';
+    case "today":
+      return "today";
+    case "friday":
+      return "tomorrow";
+    case "saturday":
+    case "sunday":
+      return "weekend";
     default:
       return null;
   }

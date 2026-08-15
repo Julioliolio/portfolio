@@ -12,16 +12,16 @@
  */
 
 /** A flow MapHome opens on mount (null = plain map). */
-export type InitialFlow = 'plans' | 'create' | 'profile' | 'messages' | null;
+export type InitialFlow = "plans" | "create" | "profile" | "messages" | null;
 
 export type DemoIntent =
-  | 'default' // the main CTA: full first-run — onboarding on + day-of primed
-  | 'onboarding'
-  | 'dayOfPlan'
-  | 'create'
-  | 'profile'
-  | 'messages'
-  | 'map';
+  | "default" // the main CTA: full first-run — onboarding on + day-of primed
+  | "onboarding"
+  | "dayOfPlan"
+  | "create"
+  | "profile"
+  | "messages"
+  | "map";
 
 export type LaunchConfig = {
   onboarding: boolean;
@@ -31,29 +31,29 @@ export type LaunchConfig = {
 
 export function resolveIntent(intent: DemoIntent): LaunchConfig {
   switch (intent) {
-    case 'default':
+    case "default":
       return { onboarding: true, dayOf: true, initialFlow: null };
-    case 'onboarding':
+    case "onboarding":
       return { onboarding: true, dayOf: false, initialFlow: null };
-    case 'dayOfPlan':
-      return { onboarding: false, dayOf: true, initialFlow: 'plans' };
-    case 'create':
-      return { onboarding: false, dayOf: false, initialFlow: 'create' };
-    case 'profile':
-      return { onboarding: false, dayOf: false, initialFlow: 'profile' };
-    case 'messages':
-      return { onboarding: false, dayOf: false, initialFlow: 'messages' };
-    case 'map':
+    case "dayOfPlan":
+      return { onboarding: false, dayOf: true, initialFlow: "plans" };
+    case "create":
+      return { onboarding: false, dayOf: false, initialFlow: "create" };
+    case "profile":
+      return { onboarding: false, dayOf: false, initialFlow: "profile" };
+    case "messages":
+      return { onboarding: false, dayOf: false, initialFlow: "messages" };
+    case "map":
       return { onboarding: false, dayOf: false, initialFlow: null };
   }
 }
 
 /** Chips shown in the landing launcher (the main CTA covers 'default'). */
 export const DEMO_FLOWS: Array<{ intent: DemoIntent; label: string }> = [
-  { intent: 'onboarding', label: 'Onboarding' },
-  { intent: 'dayOfPlan', label: 'Día del plan' },
-  { intent: 'create', label: 'Crear un plan' },
-  { intent: 'profile', label: 'Mi perfil' },
-  { intent: 'messages', label: 'Mensajes' },
-  { intent: 'map', label: 'Solo el mapa' },
+  { intent: "onboarding", label: "Onboarding" },
+  { intent: "dayOfPlan", label: "Día del plan" },
+  { intent: "create", label: "Crear un plan" },
+  { intent: "profile", label: "Mi perfil" },
+  { intent: "messages", label: "Mensajes" },
+  { intent: "map", label: "Solo el mapa" },
 ];

@@ -1,5 +1,5 @@
-import { text } from '../../../theme/tokens';
-import { copy } from '../copy';
+import { text } from "../../../theme/tokens";
+import { copy } from "../copy";
 
 /**
  * Tipografía. Tamaños/pesos salen de theme/tokens.ts; los textos (lede,
@@ -17,7 +17,9 @@ export function TypographySection() {
 
       {/* Specimen */}
       <div className="dsw-type-specimen">
-        <div className="dsw-type-aa" aria-hidden>Aa</div>
+        <div className="dsw-type-aa" aria-hidden>
+          Aa
+        </div>
         <div className="dsw-type-pangram">{c.pangram}</div>
       </div>
 
@@ -25,7 +27,10 @@ export function TypographySection() {
       <div className="dsw-type-weights">
         {c.weights.map((w) => (
           <div key={w.w} className="dsw-type-weight">
-            <span className="dsw-type-weight-sample" style={{ fontWeight: w.w }}>
+            <span
+              className="dsw-type-weight-sample"
+              style={{ fontWeight: w.w }}
+            >
               Ag
             </span>
             <span className="dsw-type-weight-name">{w.name}</span>
@@ -49,7 +54,11 @@ export function TypographySection() {
               </div>
               <div
                 className="dsw-type-row-sample"
-                style={{ fontSize: t.size, lineHeight: `${t.line}px`, fontWeight: t.weight }}
+                style={{
+                  fontSize: t.size,
+                  lineHeight: `${t.line}px`,
+                  fontWeight: t.weight,
+                }}
               >
                 {c.sample}
               </div>

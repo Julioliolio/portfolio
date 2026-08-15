@@ -1,6 +1,6 @@
-import { useCallback, useEffect, useState } from 'react';
+import { useCallback, useEffect, useState } from "react";
 
-export type DeviceMode = 'mobile' | 'desktop';
+export type DeviceMode = "mobile" | "desktop";
 
 /**
  * Auto-detects whether the visitor is on a phone or a desktop so the public
@@ -15,10 +15,10 @@ export type DeviceMode = 'mobile' | 'desktop';
 const MOBILE_MAX_WIDTH = 520;
 
 function detect(): DeviceMode {
-  if (typeof window === 'undefined') return 'desktop';
-  const coarse = window.matchMedia('(pointer: coarse)').matches;
+  if (typeof window === "undefined") return "desktop";
+  const coarse = window.matchMedia("(pointer: coarse)").matches;
   const narrow = window.innerWidth <= MOBILE_MAX_WIDTH;
-  return coarse && narrow ? 'mobile' : 'desktop';
+  return coarse && narrow ? "mobile" : "desktop";
 }
 
 export function useDeviceMode(): {
@@ -32,12 +32,12 @@ export function useDeviceMode(): {
 
   useEffect(() => {
     const update = () => setDetected(detect());
-    const mq = window.matchMedia('(pointer: coarse)');
-    window.addEventListener('resize', update);
-    mq.addEventListener('change', update);
+    const mq = window.matchMedia("(pointer: coarse)");
+    window.addEventListener("resize", update);
+    mq.addEventListener("change", update);
     return () => {
-      window.removeEventListener('resize', update);
-      mq.removeEventListener('change', update);
+      window.removeEventListener("resize", update);
+      mq.removeEventListener("change", update);
     };
   }, []);
 

@@ -1,20 +1,20 @@
-import { motion } from 'framer-motion';
-import { Squircle } from '../../../components/Squircle';
-import { VenuePin } from '../../../components/VenuePin';
-import { PeerPin } from '../../../components/PeerPin';
-import { SearchGlyph } from '../../../components/icons/SearchGlyph';
-import { Glyph } from '../../../components/icons/Glyph';
-import { CrossIcon } from '../../../components/icons/CrossIcon';
-import { CheckIcon } from '../../../components/icons/CheckIcon';
-import { BookmarkIcon } from '../../../components/icons/BookmarkIcon';
-import { ShareIcon } from '../../../components/icons/ShareIcon';
-import { PersonIcon } from '../../../components/icons/PersonIcon';
-import { figmaIcons } from '../../../components/icons/figmaIcons';
-import activityCluster from '../../../assets/ds-web/activity-cluster.svg';
-import { color } from '../../../theme/tokens';
-import { CATEGORIES } from '../../../theme/categories';
-import { usePressFeedback } from '../../../components/MotionProvider';
-import { copy } from '../copy';
+import { motion } from "framer-motion";
+import { Squircle } from "../../../components/Squircle";
+import { VenuePin } from "../../../components/VenuePin";
+import { PeerPin } from "../../../components/PeerPin";
+import { SearchGlyph } from "../../../components/icons/SearchGlyph";
+import { Glyph } from "../../../components/icons/Glyph";
+import { CrossIcon } from "../../../components/icons/CrossIcon";
+import { CheckIcon } from "../../../components/icons/CheckIcon";
+import { BookmarkIcon } from "../../../components/icons/BookmarkIcon";
+import { ShareIcon } from "../../../components/icons/ShareIcon";
+import { PersonIcon } from "../../../components/icons/PersonIcon";
+import { figmaIcons } from "../../../components/icons/figmaIcons";
+import activityCluster from "../../../assets/ds-web/activity-cluster.svg";
+import { color } from "../../../theme/tokens";
+import { CATEGORIES } from "../../../theme/categories";
+import { usePressFeedback } from "../../../components/MotionProvider";
+import { copy } from "../copy";
 
 const CC = copy.componentes;
 const K = CC.cards;
@@ -42,7 +42,10 @@ export function ComponentsSection() {
         <MiniButtonDemo />
       </Group>
 
-      <Group title={CC.groups.superficies.title} note={CC.groups.superficies.note}>
+      <Group
+        title={CC.groups.superficies.title}
+        note={CC.groups.superficies.note}
+      >
         <VenuePinDemo />
         <PeerPinDemo />
         <PlanCardDemo />
@@ -98,8 +101,10 @@ function Card({
   children: React.ReactNode;
 }) {
   return (
-    <article className={'dsw-comp-card' + (wide ? ' is-wide' : '')}>
-      <div className={'dsw-comp-stage' + (dark ? ' is-dark' : '')}>{children}</div>
+    <article className={"dsw-comp-card" + (wide ? " is-wide" : "")}>
+      <div className={"dsw-comp-stage" + (dark ? " is-dark" : "")}>
+        {children}
+      </div>
       <div className="dsw-comp-meta">
         <span className="dsw-comp-title">{title}</span>
         <span className="dsw-comp-hint">{hint}</span>
@@ -112,7 +117,10 @@ function Card({
 function Press({ children }: { children: React.ReactNode }) {
   const press = usePressFeedback();
   return (
-    <motion.div {...press} style={{ cursor: 'pointer', display: 'inline-flex' }}>
+    <motion.div
+      {...press}
+      style={{ cursor: "pointer", display: "inline-flex" }}
+    >
       {children}
     </motion.div>
   );
@@ -127,10 +135,17 @@ function SearchButtonDemo() {
         <Squircle
           role="button"
           fill={color.brand}
-          style={{ display: 'flex', alignItems: 'center', gap: 10, padding: '14px 22px' }}
+          style={{
+            display: "flex",
+            alignItems: "center",
+            gap: 10,
+            padding: "14px 22px",
+          }}
         >
           <SearchGlyph size={22} color={color.onBrand} ambient={false} />
-          <span style={{ color: color.onBrand, fontWeight: 500, fontSize: 16 }}>{K.search.sample}</span>
+          <span style={{ color: color.onBrand, fontWeight: 500, fontSize: 16 }}>
+            {K.search.sample}
+          </span>
         </Squircle>
       </Press>
     </Card>
@@ -144,9 +159,16 @@ function CtaButtonDemo() {
         <Squircle
           role="cta"
           fill={color.white}
-          style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '18px 30px' }}
+          style={{
+            display: "flex",
+            alignItems: "center",
+            justifyContent: "center",
+            padding: "18px 30px",
+          }}
         >
-          <span style={{ color: color.brand, fontWeight: 600, fontSize: 17 }}>{K.cta.sample}</span>
+          <span style={{ color: color.brand, fontWeight: 600, fontSize: 17 }}>
+            {K.cta.sample}
+          </span>
         </Squircle>
       </Press>
     </Card>
@@ -160,7 +182,12 @@ function ControlButtonDemo() {
         <Squircle
           role="control"
           fill={color.brand}
-          style={{ width: 52, height: 52, display: 'grid', placeItems: 'center' }}
+          style={{
+            width: 52,
+            height: 52,
+            display: "grid",
+            placeItems: "center",
+          }}
         >
           <Glyph name="coffee" size={24} color={color.onBrand} />
         </Squircle>
@@ -176,7 +203,12 @@ function MiniButtonDemo() {
         <Squircle
           role="miniButton"
           fill={color.white}
-          style={{ width: 32, height: 32, display: 'grid', placeItems: 'center' }}
+          style={{
+            width: 32,
+            height: 32,
+            display: "grid",
+            placeItems: "center",
+          }}
         >
           <CrossIcon size={13} color={color.brand} />
         </Squircle>
@@ -206,11 +238,30 @@ function PeerPinDemo() {
 function PlanCardDemo() {
   return (
     <Card title={K.planCard.title} hint={K.planCard.hint} dark wide>
-      <Squircle role="planCard" fill={color.white} style={{ width: 280, padding: 22 }}>
-        <p style={{ margin: 0, fontSize: 18, fontWeight: 600, color: color.ink, letterSpacing: '-0.01em' }}>
+      <Squircle
+        role="planCard"
+        fill={color.white}
+        style={{ width: 280, padding: 22 }}
+      >
+        <p
+          style={{
+            margin: 0,
+            fontSize: 18,
+            fontWeight: 600,
+            color: color.ink,
+            letterSpacing: "-0.01em",
+          }}
+        >
           {K.planCard.sampleTitle}
         </p>
-        <p style={{ margin: '8px 0 0', fontSize: 14, fontWeight: 500, color: color.muted }}>
+        <p
+          style={{
+            margin: "8px 0 0",
+            fontSize: 14,
+            fontWeight: 500,
+            color: color.muted,
+          }}
+        >
           {K.planCard.sampleMeta}
         </p>
       </Squircle>
@@ -224,12 +275,27 @@ function BadgeDemo() {
       <Squircle
         role="badge"
         fill={color.white}
-        style={{ width: 90, height: 56, display: 'grid', placeItems: 'center', textAlign: 'center' }}
+        style={{
+          width: 90,
+          height: 56,
+          display: "grid",
+          placeItems: "center",
+          textAlign: "center",
+        }}
       >
-        <span style={{ fontSize: 11, fontWeight: 600, letterSpacing: '0.06em', color: color.muted }}>
+        <span
+          style={{
+            fontSize: 11,
+            fontWeight: 600,
+            letterSpacing: "0.06em",
+            color: color.muted,
+          }}
+        >
           {K.badge.sampleTop}
         </span>
-        <span style={{ fontSize: 17, fontWeight: 600, color: color.ink }}>{K.badge.sampleBottom}</span>
+        <span style={{ fontSize: 17, fontWeight: 600, color: color.ink }}>
+          {K.badge.sampleBottom}
+        </span>
       </Squircle>
     </Card>
   );
@@ -241,10 +307,34 @@ function StatCardDemo() {
       <Squircle
         role="statCard"
         fill={color.white}
-        style={{ width: 120, height: 110, display: 'grid', placeItems: 'center', textAlign: 'center' }}
+        style={{
+          width: 120,
+          height: 110,
+          display: "grid",
+          placeItems: "center",
+          textAlign: "center",
+        }}
       >
-        <span style={{ fontSize: 32, fontWeight: 600, color: color.ink, lineHeight: 1 }}>{K.stat.sampleNum}</span>
-        <span style={{ fontSize: 13, fontWeight: 500, color: color.muted, marginTop: 6 }}>{K.stat.sampleLabel}</span>
+        <span
+          style={{
+            fontSize: 32,
+            fontWeight: 600,
+            color: color.ink,
+            lineHeight: 1,
+          }}
+        >
+          {K.stat.sampleNum}
+        </span>
+        <span
+          style={{
+            fontSize: 13,
+            fontWeight: 500,
+            color: color.muted,
+            marginTop: 6,
+          }}
+        >
+          {K.stat.sampleLabel}
+        </span>
       </Squircle>
     </Card>
   );
@@ -255,16 +345,32 @@ function StatCardDemo() {
 function ChipsDemo() {
   return (
     <Card title={K.chips.title} hint={K.chips.hint} dark wide>
-      <div style={{ display: 'flex', flexWrap: 'wrap', gap: 10, justifyContent: 'center' }}>
+      <div
+        style={{
+          display: "flex",
+          flexWrap: "wrap",
+          gap: 10,
+          justifyContent: "center",
+        }}
+      >
         {Object.values(CATEGORIES).map((c) => (
           <Squircle
             key={c.id}
             role="chip"
             fill={color.cardOnBrand}
-            style={{ display: 'flex', alignItems: 'center', gap: 7, padding: '9px 14px' }}
+            style={{
+              display: "flex",
+              alignItems: "center",
+              gap: 7,
+              padding: "9px 14px",
+            }}
           >
             <Glyph name={c.glyph} size={16} color={color.lavender} />
-            <span style={{ color: color.onBrand, fontSize: 14, fontWeight: 500 }}>{c.label}</span>
+            <span
+              style={{ color: color.onBrand, fontSize: 14, fontWeight: 500 }}
+            >
+              {c.label}
+            </span>
           </Squircle>
         ))}
       </div>
@@ -278,7 +384,13 @@ function FieldDemo() {
       <Squircle
         role="field"
         fill={color.cardOnBrand}
-        style={{ width: 320, display: 'flex', alignItems: 'center', gap: 10, padding: '14px 16px' }}
+        style={{
+          width: 320,
+          display: "flex",
+          alignItems: "center",
+          gap: 10,
+          padding: "14px 16px",
+        }}
       >
         <SearchGlyph size={18} color={color.lavender} ambient={false} />
         <span style={{ color: color.lavender, fontSize: 15, fontWeight: 500 }}>
@@ -294,7 +406,11 @@ function FieldDemo() {
 function ActivityGlyphsDemo() {
   return (
     <Card title={K.glyphs.title} hint={K.glyphs.hint} dark wide>
-      <img src={activityCluster} alt="" style={{ height: 132, width: 'auto', display: 'block' }} />
+      <img
+        src={activityCluster}
+        alt=""
+        style={{ height: 132, width: "auto", display: "block" }}
+      />
     </Card>
   );
 }
@@ -310,7 +426,7 @@ function SearchGlyphDemo() {
 function UtilityIconsDemo() {
   return (
     <Card title={K.utils.title} hint={K.utils.hint} wide>
-      <div style={{ display: 'flex', gap: 28, alignItems: 'center' }}>
+      <div style={{ display: "flex", gap: 28, alignItems: "center" }}>
         <CrossIcon size={20} color={color.brand} plus />
         <CheckIcon size={20} color={color.brand} />
         <BookmarkIcon size={22} color={color.brand} />

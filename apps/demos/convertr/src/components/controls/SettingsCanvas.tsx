@@ -1,16 +1,44 @@
-import { Component, createSignal, createEffect, For, Show, onCleanup, onMount } from 'solid-js';
-import { appState, setAppState } from '../../state/app';
-import { ACCENT, ACCENT_75, BG, MONO } from '../../shared/tokens';
-import { FormatButton, Chip } from '../../shared/ui';
-import { scrambleText } from '../../shared/utils';
+import {
+  Component,
+  createSignal,
+  createEffect,
+  For,
+  Show,
+  onCleanup,
+  onMount,
+} from "solid-js";
+import { appState, setAppState } from "../../state/app";
+import { ACCENT, ACCENT_75, BG, MONO } from "../../shared/tokens";
+import { FormatButton, Chip } from "../../shared/ui";
+import { scrambleText } from "../../shared/utils";
 
-const DITHER_SCRAMBLE_CHARS = 'abcdefghijklmnopqrstuvwxyz0123456789';
+const DITHER_SCRAMBLE_CHARS = "abcdefghijklmnopqrstuvwxyz0123456789";
 
 const DITHER_OPTIONS = [
-  { value: 'sierra2_4a', label: 'sierra42a', title: 'best balance', desc: 'smooth gradients with small file size. good default for most videos.' },
-  { value: 'floyd_steinberg', label: 'floid steinberg', title: 'best quality', desc: 'preserves the most detail but produces slightly larger files.' },
-  { value: 'bayer', label: 'bayer', title: 'fastest processing', desc: 'gives a stylized retro grid look. great for pixel art or looping gifs.' },
-  { value: 'none', label: 'none', title: 'smallest file', desc: 'no smoothing, so you get hard color bands. best when file size matters most.' },
+  {
+    value: "sierra2_4a",
+    label: "sierra42a",
+    title: "best balance",
+    desc: "smooth gradients with small file size. good default for most videos.",
+  },
+  {
+    value: "floyd_steinberg",
+    label: "floid steinberg",
+    title: "best quality",
+    desc: "preserves the most detail but produces slightly larger files.",
+  },
+  {
+    value: "bayer",
+    label: "bayer",
+    title: "fastest processing",
+    desc: "gives a stylized retro grid look. great for pixel art or looping gifs.",
+  },
+  {
+    value: "none",
+    label: "none",
+    title: "smallest file",
+    desc: "no smoothing, so you get hard color bands. best when file size matters most.",
+  },
 ] as const;
 
 // ── Dithering algorithms ─────────────────────────────────────────────────────
@@ -19,25 +47,32 @@ let _ditherBuf: Float32Array | null = null;
 const applyDither = (data: ImageData, method: string, levels = 4) => {
   const { width, height, data: px } = data;
   const step = 255 / (levels - 1);
-  const q = (v: number) => Math.min(255, Math.max(0, Math.round(Math.round(v / step) * step)));
+  const q = (v: number) =>
+    Math.min(255, Math.max(0, Math.round(Math.round(v / step) * step)));
 
-  if (method === 'none') {
+  if (method === "none") {
     for (let i = 0; i < px.length; i += 4) {
-      px[i] = q(px[i]); px[i + 1] = q(px[i + 1]); px[i + 2] = q(px[i + 2]);
+      px[i] = q(px[i]);
+      px[i + 1] = q(px[i + 1]);
+      px[i + 2] = q(px[i + 2]);
     }
     return;
   }
 
-  if (method === 'bayer') {
+  if (method === "bayer") {
     const m = [
-      [0, 8, 2, 10], [12, 4, 14, 6],
-      [3, 11, 1, 9], [15, 7, 13, 5],
+      [0, 8, 2, 10],
+      [12, 4, 14, 6],
+      [3, 11, 1, 9],
+      [15, 7, 13, 5],
     ];
     for (let y = 0; y < height; y++) {
       for (let x = 0; x < width; x++) {
         const i = (y * width + x) * 4;
         const t = (m[y % 4][x % 4] / 16 - 0.5) * step;
-        px[i] = q(px[i] + t); px[i + 1] = q(px[i + 1] + t); px[i + 2] = q(px[i + 2] + t);
+        px[i] = q(px[i] + t);
+        px[i + 1] = q(px[i + 1] + t);
+        px[i + 2] = q(px[i + 2] + t);
       }
     }
     return;
@@ -45,17 +80,29 @@ const applyDither = (data: ImageData, method: string, levels = 4) => {
 
   // Error diffusion (floyd_steinberg / sierra2_4a) — reuse buffer across calls
   const needed = width * height * 3;
-  if (!_ditherBuf || _ditherBuf.length < needed) _ditherBuf = new Float32Array(needed);
+  if (!_ditherBuf || _ditherBuf.length < needed)
+    _ditherBuf = new Float32Array(needed);
   const buf = _ditherBuf;
   for (let i = 0; i < px.length; i += 4) {
     const j = (i >> 2) * 3;
-    buf[j] = px[i]; buf[j + 1] = px[i + 1]; buf[j + 2] = px[i + 2];
+    buf[j] = px[i];
+    buf[j + 1] = px[i + 1];
+    buf[j + 2] = px[i + 2];
   }
 
-  const spread = (x: number, y: number, er: number, eg: number, eb: number, w: number) => {
+  const spread = (
+    x: number,
+    y: number,
+    er: number,
+    eg: number,
+    eb: number,
+    w: number,
+  ) => {
     if (x < 0 || x >= width || y >= height) return;
     const j = (y * width + x) * 3;
-    buf[j] += er * w; buf[j + 1] += eg * w; buf[j + 2] += eb * w;
+    buf[j] += er * w;
+    buf[j + 1] += eg * w;
+    buf[j + 2] += eb * w;
   };
 
   for (let y = 0; y < height; y++) {
@@ -65,16 +112,23 @@ const applyDither = (data: ImageData, method: string, levels = 4) => {
       const or = Math.min(255, Math.max(0, buf[j]));
       const og = Math.min(255, Math.max(0, buf[j + 1]));
       const ob = Math.min(255, Math.max(0, buf[j + 2]));
-      const nr = q(or), ng = q(og), nb = q(ob);
-      px[i] = nr; px[i + 1] = ng; px[i + 2] = nb;
-      const er = or - nr, eg = og - ng, eb = ob - nb;
+      const nr = q(or),
+        ng = q(og),
+        nb = q(ob);
+      px[i] = nr;
+      px[i + 1] = ng;
+      px[i + 2] = nb;
+      const er = or - nr,
+        eg = og - ng,
+        eb = ob - nb;
 
-      if (method === 'floyd_steinberg') {
+      if (method === "floyd_steinberg") {
         spread(x + 1, y, er, eg, eb, 7 / 16);
         spread(x - 1, y + 1, er, eg, eb, 3 / 16);
         spread(x, y + 1, er, eg, eb, 5 / 16);
         spread(x + 1, y + 1, er, eg, eb, 1 / 16);
-      } else { // sierra2_4a
+      } else {
+        // sierra2_4a
         spread(x + 1, y, er, eg, eb, 2 / 4);
         spread(x - 1, y + 1, er, eg, eb, 1 / 4);
         spread(x, y + 1, er, eg, eb, 1 / 4);
@@ -94,16 +148,20 @@ const SettingsCanvas: Component<{
   type Tip = { title: string; desc: string } | null;
   const [tooltipRaw, setTooltip] = createSignal<Tip>(null);
   const [tooltipVisible, setTooltipVisible] = createSignal(false);
-  const [displayTitle, setDisplayTitle] = createSignal('');
-  const [displayDesc, setDisplayDesc] = createSignal('');
+  const [displayTitle, setDisplayTitle] = createSignal("");
+  const [displayDesc, setDisplayDesc] = createSignal("");
   let tipScrambleRaf = 0;
   let tipHideTimer = 0;
 
   const scrambleTooltip = (tip: { title: string; desc: string }) => {
-    tipScrambleRaf = scrambleText([
-      { target: tip.title, setter: setDisplayTitle },
-      { target: tip.desc, setter: setDisplayDesc },
-    ], tipScrambleRaf, { frames: 10, frameMs: 20, chars: DITHER_SCRAMBLE_CHARS });
+    tipScrambleRaf = scrambleText(
+      [
+        { target: tip.title, setter: setDisplayTitle },
+        { target: tip.desc, setter: setDisplayDesc },
+      ],
+      tipScrambleRaf,
+      { frames: 10, frameMs: 20, chars: DITHER_SCRAMBLE_CHARS },
+    );
   };
 
   createEffect(() => {
@@ -133,13 +191,14 @@ const SettingsCanvas: Component<{
   // Close the dither dropdown whenever the output format leaves GIF so the
   // menu isn't stranded open behind the (now hidden) trigger button.
   createEffect(() => {
-    if (appState.outputFormat !== 'gif' && ditherOpen()) setDitherOpen(false);
+    if (appState.outputFormat !== "gif" && ditherOpen()) setDitherOpen(false);
   });
 
   let containerRef!: HTMLDivElement;
 
   const currentDither = () =>
-    DITHER_OPTIONS.find(o => o.value === appState.dither) ?? DITHER_OPTIONS[0];
+    DITHER_OPTIONS.find((o) => o.value === appState.dither) ??
+    DITHER_OPTIONS[0];
 
   // ── Pan & Zoom ─────────────────────────────────────────────────────────────
   const [panPos, setPan] = createSignal({ x: 0, y: 0 });
@@ -157,10 +216,11 @@ const SettingsCanvas: Component<{
   // the user can see the full frame at once.
   const fitToContainer = () => {
     const { w: cw, h: ch } = containerSize();
-    const pw = previewW(), ph = previewH();
+    const pw = previewW(),
+      ph = previewH();
     if (!cw || !ch || !pw || !ph) return;
     const pad = 32;
-    const widthScale  = (cw - pad) / pw;
+    const widthScale = (cw - pad) / pw;
     const heightScale = (ch - pad) / ph;
     const scale = Math.min(widthScale, heightScale) * 0.6;
     setPan({ x: 0, y: 0 });
@@ -169,7 +229,10 @@ const SettingsCanvas: Component<{
 
   onMount(() => {
     const ro = new ResizeObserver(() => {
-      setContainerSize({ w: containerRef.clientWidth, h: containerRef.clientHeight });
+      setContainerSize({
+        w: containerRef.clientWidth,
+        h: containerRef.clientHeight,
+      });
     });
     ro.observe(containerRef);
     onCleanup(() => ro.disconnect());
@@ -212,11 +275,14 @@ const SettingsCanvas: Component<{
       // zoom toward cursor
       const worldX = (cursorX - cx - panPos().x) / oldZ;
       const worldY = (cursorY - cy - panPos().y) / oldZ;
-      setPan({ x: cursorX - cx - worldX * newZ, y: cursorY - cy - worldY * newZ });
+      setPan({
+        x: cursorX - cx - worldX * newZ,
+        y: cursorY - cy - worldY * newZ,
+      });
       setZoom(newZ);
     } else {
       // ── Pan: two-finger scroll or regular scroll wheel ──
-      setPan(p => ({ x: p.x - e.deltaX, y: p.y - e.deltaY }));
+      setPan((p) => ({ x: p.x - e.deltaX, y: p.y - e.deltaY }));
     }
   };
 
@@ -232,7 +298,10 @@ const SettingsCanvas: Component<{
     if (!dragging()) return;
     const dx = e.clientX - dragStart.x;
     const dy = e.clientY - dragStart.y;
-    if (Math.abs(dx) > 2 || Math.abs(dy) > 2) { didDrag = true; userAdjusted = true; }
+    if (Math.abs(dx) > 2 || Math.abs(dy) > 2) {
+      didDrag = true;
+      userAdjusted = true;
+    }
     setPan({ x: dragStart.px + dx, y: dragStart.py + dy });
   };
 
@@ -253,9 +322,9 @@ const SettingsCanvas: Component<{
   onCleanup(() => cancelAnimationFrame(scrambleRaf));
 
   const selectDither = (value: string) => {
-    const opt = DITHER_OPTIONS.find(o => o.value === value);
+    const opt = DITHER_OPTIONS.find((o) => o.value === value);
     if (opt) scrambleTo(opt.label);
-    setAppState('dither', value);
+    setAppState("dither", value);
     setDitherOpen(false);
   };
 
@@ -275,12 +344,13 @@ const SettingsCanvas: Component<{
   const targetDims = () => {
     const v = props.videoEl;
     if (!v || !v.videoWidth) return null;
-    const srcW = v.videoWidth, srcH = v.videoHeight;
-    const isGif = appState.outputFormat === 'gif';
-    const setW  = isGif ? appState.width : appState.vidWidth;
-    const rawW  = setW > 0 ? setW : srcW;
+    const srcW = v.videoWidth,
+      srcH = v.videoHeight;
+    const isGif = appState.outputFormat === "gif";
+    const setW = isGif ? appState.width : appState.vidWidth;
+    const rawW = setW > 0 ? setW : srcW;
     const w = Math.max(1, Math.min(PROCESS_MAX_W, rawW));
-    const h = Math.max(1, Math.round(w * srcH / srcW));
+    const h = Math.max(1, Math.round((w * srcH) / srcW));
     return { w, h, srcW, srcH };
   };
 
@@ -293,9 +363,9 @@ const SettingsCanvas: Component<{
     if (!v || !v.videoWidth || v.readyState < 2) return;
     const d = targetDims();
     if (!d) return;
-    if (canvasEl.width  !== d.w) canvasEl.width  = d.w;
+    if (canvasEl.width !== d.w) canvasEl.width = d.w;
     if (canvasEl.height !== d.h) canvasEl.height = d.h;
-    const ctx = canvasEl.getContext('2d')!;
+    const ctx = canvasEl.getContext("2d")!;
     ctx.drawImage(v, 0, 0, d.w, d.h);
     setPreviewW(d.w);
     setPreviewH(d.h);
@@ -306,13 +376,13 @@ const SettingsCanvas: Component<{
     if (!v || !v.videoWidth || v.readyState < 2) return;
     const d = targetDims();
     if (!d) return;
-    if (canvasEl.width  !== d.w) canvasEl.width  = d.w;
+    if (canvasEl.width !== d.w) canvasEl.width = d.w;
     if (canvasEl.height !== d.h) canvasEl.height = d.h;
-    const ctx = canvasEl.getContext('2d')!;
+    const ctx = canvasEl.getContext("2d")!;
     ctx.drawImage(v, 0, 0, d.w, d.h);
     // Dither only runs for GIF output — other formats render the raw video
     // frame at target resolution so users see the actual "scaled" preview.
-    if (appState.outputFormat === 'gif') {
+    if (appState.outputFormat === "gif") {
       const img = ctx.getImageData(0, 0, d.w, d.h);
       applyDither(img, appState.dither);
       ctx.putImageData(img, 0, 0);
@@ -350,13 +420,13 @@ const SettingsCanvas: Component<{
   createEffect(() => {
     const v = props.videoEl;
     if (!v) return;
-    v.addEventListener('seeked',     scheduleDraw);
-    v.addEventListener('loadeddata', scheduleDraw);
-    v.addEventListener('pause',      scheduleDraw);
+    v.addEventListener("seeked", scheduleDraw);
+    v.addEventListener("loadeddata", scheduleDraw);
+    v.addEventListener("pause", scheduleDraw);
     onCleanup(() => {
-      v.removeEventListener('seeked',     scheduleDraw);
-      v.removeEventListener('loadeddata', scheduleDraw);
-      v.removeEventListener('pause',      scheduleDraw);
+      v.removeEventListener("seeked", scheduleDraw);
+      v.removeEventListener("loadeddata", scheduleDraw);
+      v.removeEventListener("pause", scheduleDraw);
     });
   });
 
@@ -378,14 +448,17 @@ const SettingsCanvas: Component<{
   let lastFrameTime = 0;
   const videoTick = (now: number) => {
     videoLoopRaf = requestAnimationFrame(videoTick);
-    const targetFps = Math.max(1, Math.min(120, Math.round(appState.fps) || 24));
+    const targetFps = Math.max(
+      1,
+      Math.min(120, Math.round(appState.fps) || 24),
+    );
     const frameInterval = 1000 / targetFps;
     if (now - lastFrameTime < frameInterval) return;
     lastFrameTime = now;
     drawVideoFrame();
   };
   createEffect(() => {
-    const isGif = appState.outputFormat === 'gif';
+    const isGif = appState.outputFormat === "gif";
     cancelAnimationFrame(videoLoopRaf);
     videoLoopRaf = 0;
     if (!isGif && props.videoEl) {
@@ -405,81 +478,91 @@ const SettingsCanvas: Component<{
       ref={containerRef!}
       onWheel={handleWheel}
       style={{
-        position: 'relative',
-        width: '100%',
-        flex: '1 1 0',
-        'min-height': '0',
+        position: "relative",
+        width: "100%",
+        flex: "1 1 0",
+        "min-height": "0",
         background: BG,
         border: `1px solid ${ACCENT}`,
-        overflow: 'clip',
-        'box-sizing': 'border-box',
+        overflow: "clip",
+        "box-sizing": "border-box",
       }}
     >
       {/* ── Pannable / zoomable canvas layer ── */}
       <div
         style={{
-          position: 'absolute',
-          inset: '0',
-          cursor: dragging() ? 'grabbing' : 'grab',
-          'touch-action': 'none',
+          position: "absolute",
+          inset: "0",
+          cursor: dragging() ? "grabbing" : "grab",
+          "touch-action": "none",
         }}
         onPointerDown={handlePointerDown}
         onPointerMove={handlePointerMove}
         onPointerUp={handlePointerUp}
       >
         {/* Transform group — centered, then offset by pan/zoom */}
-        <div style={{
-          position: 'absolute',
-          left: '50%',
-          top: '50%',
-          transform: `translate(${panPos().x}px, ${panPos().y}px) scale(${zoom()})`,
-          'transform-origin': '0 0',
-          transition: animate() ? 'transform 250ms ease-in-out' : 'none',
-        }}>
+        <div
+          style={{
+            position: "absolute",
+            left: "50%",
+            top: "50%",
+            transform: `translate(${panPos().x}px, ${panPos().y}px) scale(${zoom()})`,
+            "transform-origin": "0 0",
+            transition: animate() ? "transform 250ms ease-in-out" : "none",
+          }}
+        >
           {/* Dotted background — moves with canvas like Figma */}
-          <div style={{
-            position: 'absolute',
-            left: '-5000px',
-            top: '-5000px',
-            width: '10000px',
-            height: '10000px',
-            'background-color': BG,
-            'background-image': `radial-gradient(circle, ${ACCENT} 1px, transparent 1px)`,
-            'background-size': '32px 32px',
-          }} />
+          <div
+            style={{
+              position: "absolute",
+              left: "-5000px",
+              top: "-5000px",
+              width: "10000px",
+              height: "10000px",
+              "background-color": BG,
+              "background-image": `radial-gradient(circle, ${ACCENT} 1px, transparent 1px)`,
+              "background-size": "32px 32px",
+            }}
+          />
           <canvas
             ref={canvasEl!}
             style={{
-              position: 'relative',
-              display: 'block',
+              position: "relative",
+              display: "block",
               width: `${previewW()}px`,
               height: `${previewH()}px`,
-              translate: '-50% -50%',
+              translate: "-50% -50%",
               border: `1px solid ${ACCENT_75}`,
               // Preserve the true pixel grid when the canvas is zoomed up.
-              'image-rendering': 'pixelated',
+              "image-rendering": "pixelated",
             }}
           />
         </div>
       </div>
 
       {/* ── UI Overlay (fixed, doesn't pan/zoom) ── */}
-      <div style={{
-        position: 'absolute',
-        inset: '0',
-        'pointer-events': 'none',
-        'z-index': '3',
-      }}>
+      <div
+        style={{
+          position: "absolute",
+          inset: "0",
+          "pointer-events": "none",
+          "z-index": "3",
+        }}
+      >
         {/* Target dimensions/fps caption — visible for non-GIF outputs in
             place of the dither dropdown. The live preview below is sampled
             at exactly these target dims + fps, so the caption doubles as a
             legend for what the user is seeing. */}
-        <Show when={appState.outputFormat !== 'gif'}>
-          <div style={{
-            position: 'absolute',
-            left: '16px', top: '14px',
-            'pointer-events': 'none', 'user-select': 'none',
-          }}>
+        <Show when={appState.outputFormat !== "gif"}>
+          <div
+            style={{
+              position: "absolute",
+              left: "16px",
+              top: "14px",
+              "pointer-events": "none",
+              "user-select": "none",
+            }}
+          >
             <Chip size="xs">
               {(() => {
                 const d = targetDims();
@@ -491,137 +574,218 @@ const SettingsCanvas: Component<{
           </div>
         </Show>
         {/* Dithering dropdown — GIF only */}
-        <Show when={appState.outputFormat === 'gif'}>{(() => {
-          const ITEM_H = 20;
-          const ITEM_GAP = 4;
-          const ITEMS_PAD_TOP = 4;
-          const BTN_H = 20;
-          const nItems = () => DITHER_OPTIONS.filter(o => o.value !== appState.dither).length;
-          const closedH = () => BTN_H;
-          const openH = () => BTN_H + ITEMS_PAD_TOP + nItems() * ITEM_H + (nItems() - 1) * ITEM_GAP;
+        <Show when={appState.outputFormat === "gif"}>
+          {(() => {
+            const ITEM_H = 20;
+            const ITEM_GAP = 4;
+            const ITEMS_PAD_TOP = 4;
+            const BTN_H = 20;
+            const nItems = () =>
+              DITHER_OPTIONS.filter((o) => o.value !== appState.dither).length;
+            const closedH = () => BTN_H;
+            const openH = () =>
+              BTN_H +
+              ITEMS_PAD_TOP +
+              nItems() * ITEM_H +
+              (nItems() - 1) * ITEM_GAP;
 
-          return (
-            <div
-              onMouseLeave={() => props.isPortrait && setTooltip(null)}
-              style={{
-                position: 'absolute',
-                left: '16px', top: '14px',
-                display: 'flex', 'flex-direction': 'column',
-                'align-items': 'flex-start',
-                overflow: 'hidden',
-                height: `${ditherOpen() ? openH() : closedH()}px`,
-                transition: 'height 200ms cubic-bezier(0.006, 0.984, 0.000, 1.109)',
-                'pointer-events': 'auto',
-              }}
-            >
-              <div onMouseEnter={() => ditherOpen() && setTooltip({ title: currentDither().title, desc: currentDither().desc })}>
-                <FormatButton
-                  format={displayDither()}
-                  open={ditherOpen()}
-                  onClick={() => setDitherOpen(o => !o)}
-                  spring={{ dur: 0.200, x1: 0.006, y1: 0.984, x2: 0.000, y2: 1.109 }}
-                  title="Dither algorithm"
-                />
+            return (
+              <div
+                onMouseLeave={() => props.isPortrait && setTooltip(null)}
+                style={{
+                  position: "absolute",
+                  left: "16px",
+                  top: "14px",
+                  display: "flex",
+                  "flex-direction": "column",
+                  "align-items": "flex-start",
+                  overflow: "hidden",
+                  height: `${ditherOpen() ? openH() : closedH()}px`,
+                  transition:
+                    "height 200ms cubic-bezier(0.006, 0.984, 0.000, 1.109)",
+                  "pointer-events": "auto",
+                }}
+              >
+                <div
+                  onMouseEnter={() =>
+                    ditherOpen() &&
+                    setTooltip({
+                      title: currentDither().title,
+                      desc: currentDither().desc,
+                    })
+                  }
+                >
+                  <FormatButton
+                    format={displayDither()}
+                    open={ditherOpen()}
+                    onClick={() => setDitherOpen((o) => !o)}
+                    spring={{
+                      dur: 0.2,
+                      x1: 0.006,
+                      y1: 0.984,
+                      x2: 0.0,
+                      y2: 1.109,
+                    }}
+                    title="Dither algorithm"
+                  />
+                </div>
+                <div
+                  style={{
+                    display: "flex",
+                    "flex-direction": "column",
+                    "align-items": "flex-start",
+                    "padding-top": `${ITEMS_PAD_TOP}px`,
+                    gap: `${ITEM_GAP}px`,
+                    "pointer-events": ditherOpen() ? "auto" : "none",
+                  }}
+                >
+                  <For
+                    each={DITHER_OPTIONS.filter(
+                      (o) => o.value !== appState.dither,
+                    )}
+                  >
+                    {(opt) => (
+                      <div
+                        style={{
+                          "font-family": MONO,
+                          "font-size": "16px",
+                          "line-height": "20px",
+                          color: ACCENT,
+                          cursor: "pointer",
+                          "user-select": "none",
+                        }}
+                        onMouseEnter={() =>
+                          setTooltip({ title: opt.title, desc: opt.desc })
+                        }
+                        onClick={() => {
+                          selectDither(opt.value);
+                          setTooltip(null);
+                        }}
+                      >
+                        {opt.label}
+                      </div>
+                    )}
+                  </For>
+                </div>
               </div>
-              <div style={{
-                display: 'flex', 'flex-direction': 'column',
-                'align-items': 'flex-start',
-                'padding-top': `${ITEMS_PAD_TOP}px`,
-                gap: `${ITEM_GAP}px`,
-                'pointer-events': ditherOpen() ? 'auto' : 'none',
-              }}>
-                <For each={DITHER_OPTIONS.filter(o => o.value !== appState.dither)}>
-                  {(opt) => (
-                    <div
-                      style={{
-                        'font-family': MONO, 'font-size': '16px', 'line-height': '20px',
-                        color: ACCENT, cursor: 'pointer', 'user-select': 'none',
-                      }}
-                      onMouseEnter={() => setTooltip({ title: opt.title, desc: opt.desc })}
-                      onClick={() => { selectDither(opt.value); setTooltip(null); }}
-                    >
-                      {opt.label}
-                    </div>
-                  )}
-                </For>
-              </div>
-            </div>
-          );
-        })()}</Show>
+            );
+          })()}
+        </Show>
 
         {/* Tooltip box — positioned at top-right */}
         <Show when={tooltipVisible()}>
-          <div style={{
-            position: 'absolute',
-            right: '16px', top: '14px',
-            width: '320px',
-            border: `1px solid ${ACCENT}`,
-            background: BG,
-            padding: '8px 10px',
-            'font-family': MONO,
-            'font-size': '11px',
-            'line-height': '15px',
-            color: ACCENT,
-            'pointer-events': 'none',
-            'box-sizing': 'border-box',
-            opacity: tooltipRaw() ? '1' : '0',
-            transform: tooltipRaw() ? 'translate(0, 0)' : 'translate(0, -4px)',
-            transition: 'opacity 150ms ease, transform 150ms ease',
-          }}>
-            <div style={{ 'font-weight': '700', 'font-size': '12px', 'margin-bottom': '4px' }}>{displayTitle()}</div>
+          <div
+            style={{
+              position: "absolute",
+              right: "16px",
+              top: "14px",
+              width: "320px",
+              border: `1px solid ${ACCENT}`,
+              background: BG,
+              padding: "8px 10px",
+              "font-family": MONO,
+              "font-size": "11px",
+              "line-height": "15px",
+              color: ACCENT,
+              "pointer-events": "none",
+              "box-sizing": "border-box",
+              opacity: tooltipRaw() ? "1" : "0",
+              transform: tooltipRaw()
+                ? "translate(0, 0)"
+                : "translate(0, -4px)",
+              transition: "opacity 150ms ease, transform 150ms ease",
+            }}
+          >
+            <div
+              style={{
+                "font-weight": "700",
+                "font-size": "12px",
+                "margin-bottom": "4px",
+              }}
+            >
+              {displayTitle()}
+            </div>
             <div>{displayDesc()}</div>
           </div>
         </Show>
 
         {/* Zoom controls — bottom right */}
-        <div style={{
-          position: 'absolute',
-          right: '10px', bottom: '10px',
-          display: 'flex', gap: '4px',
-          'pointer-events': 'auto',
-        }}>
-            {[
-              { label: '+', action: () => {
+        <div
+          style={{
+            position: "absolute",
+            right: "10px",
+            bottom: "10px",
+            display: "flex",
+            gap: "4px",
+            "pointer-events": "auto",
+          }}
+        >
+          {[
+            {
+              label: "+",
+              action: () => {
                 userAdjusted = true;
                 const oldZ = zoom();
                 const newZ = Math.min(oldZ * 1.3, 20);
-                setPan(p => ({ x: p.x * newZ / oldZ, y: p.y * newZ / oldZ }));
+                setPan((p) => ({
+                  x: (p.x * newZ) / oldZ,
+                  y: (p.y * newZ) / oldZ,
+                }));
                 setZoom(newZ);
-              }},
-              { label: '−', action: () => {
+              },
+            },
+            {
+              label: "−",
+              action: () => {
                 userAdjusted = true;
                 const oldZ = zoom();
                 const newZ = Math.max(oldZ / 1.3, 0.1);
-                setPan(p => ({ x: p.x * newZ / oldZ, y: p.y * newZ / oldZ }));
+                setPan((p) => ({
+                  x: (p.x * newZ) / oldZ,
+                  y: (p.y * newZ) / oldZ,
+                }));
                 setZoom(newZ);
-              }},
-              // Re-arms auto-fit — any subsequent container/preview resize
-              // will snap the preview back to the fit scale until the user
-              // pan/zooms again.
-              { label: '⊙', action: () => { userAdjusted = false; fitToContainer(); } },
-            ].map(btn => (
-              <div
-                style={{
-                  width: '25px', height: '25px',
-                  display: 'flex', 'align-items': 'center', 'justify-content': 'center',
-                  border: `1px solid ${ACCENT_75}`,
-                  background: BG,
-                  color: ACCENT,
-                  'font-family': MONO,
-                  'font-size': '14px',
-                  'line-height': '1',
-                  cursor: 'pointer',
-                  'user-select': 'none',
-                  'box-sizing': 'border-box',
-                }}
-                onClick={() => { setAnimate(true); btn.action(); setTimeout(() => setAnimate(false), 260); }}
-              >
-                {btn.label}
-              </div>
-            ))}
+              },
+            },
+            // Re-arms auto-fit — any subsequent container/preview resize
+            // will snap the preview back to the fit scale until the user
+            // pan/zooms again.
+            {
+              label: "⊙",
+              action: () => {
+                userAdjusted = false;
+                fitToContainer();
+              },
+            },
+          ].map((btn) => (
+            <div
+              style={{
+                width: "25px",
+                height: "25px",
+                display: "flex",
+                "align-items": "center",
+                "justify-content": "center",
+                border: `1px solid ${ACCENT_75}`,
+                background: BG,
+                color: ACCENT,
+                "font-family": MONO,
+                "font-size": "14px",
+                "line-height": "1",
+                cursor: "pointer",
+                "user-select": "none",
+                "box-sizing": "border-box",
+              }}
+              onClick={() => {
+                setAnimate(true);
+                btn.action();
+                setTimeout(() => setAnimate(false), 260);
+              }}
+            >
+              {btn.label}
+            </div>
+          ))}
         </div>
       </div>
-
     </div>
   );
 };

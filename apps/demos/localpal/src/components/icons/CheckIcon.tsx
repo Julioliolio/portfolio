@@ -5,7 +5,7 @@
  */
 export function CheckIcon({
   size = 13,
-  color = '#FEFEFE',
+  color = "#FEFEFE",
   strokeWidth = 2.6,
 }: {
   size?: number;
@@ -13,7 +13,14 @@ export function CheckIcon({
   strokeWidth?: number;
 }) {
   return (
-    <svg width={size} height={size} viewBox="0 0 14 14" fill="none" aria-hidden style={{ display: 'block' }}>
+    <svg
+      width={size}
+      height={size}
+      viewBox="0 0 14 14"
+      fill="none"
+      aria-hidden
+      style={{ display: "block" }}
+    >
       <path
         d="M2.4 7.6 5.5 10.6 11.6 3.6"
         stroke={color}

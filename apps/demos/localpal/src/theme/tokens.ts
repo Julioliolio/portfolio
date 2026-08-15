@@ -11,39 +11,39 @@
 
 export const color = {
   // Brand — the electric indigo used for sheets, primary buttons, active pins
-  brand: '#3121FF',
-  brandDeep: '#2C1EDF', // slightly darker variant seen on some fills
-  brandPressed: '#2417C4',
+  brand: "#3121FF",
+  brandDeep: "#2C1EDF", // slightly darker variant seen on some fills
+  brandPressed: "#2417C4",
 
   // Lavender accents (secondary text / meta on top of indigo surfaces)
-  lavender: '#A59FFF',
-  lavenderDim: '#968FFB',
+  lavender: "#A59FFF",
+  lavenderDim: "#968FFB",
 
   // Text
-  ink: '#001D33', // "CONTENT/BLACK" — primary text on light surfaces
-  muted: '#6F6A8D', // secondary text / captions on light surfaces
-  black: '#000000',
+  ink: "#001D33", // "CONTENT/BLACK" — primary text on light surfaces
+  muted: "#6F6A8D", // secondary text / captions on light surfaces
+  black: "#000000",
 
   // Surfaces
-  white: '#FFFFFF',
-  offWhite: '#FEFEFE',
+  white: "#FFFFFF",
+  offWhite: "#FEFEFE",
 
   // On-indigo surfaces
-  onBrand: '#FEFEFE', // primary text on indigo
-  onBrandMuted: '#A59FFF', // secondary text on indigo
-  cardOnBrand: 'rgba(255,255,255,0.10)', // translucent list cards over indigo
-  bubbleOnBrand: 'rgba(255,255,255,0.12)', // activity search bubbles over indigo (reads #4A3DFF; overlaps lighten, per Figma 165:774 / 165:1416)
-  bubbleOnMap: 'rgba(73,61,255,0.6)', // interest bubbles over the onboarding toy-city stage — brand-tinted so unpicked bubbles still read over street texture
+  onBrand: "#FEFEFE", // primary text on indigo
+  onBrandMuted: "#A59FFF", // secondary text on indigo
+  cardOnBrand: "rgba(255,255,255,0.10)", // translucent list cards over indigo
+  bubbleOnBrand: "rgba(255,255,255,0.12)", // activity search bubbles over indigo (reads #4A3DFF; overlaps lighten, per Figma 165:774 / 165:1416)
+  bubbleOnMap: "rgba(73,61,255,0.6)", // interest bubbles over the onboarding toy-city stage — brand-tinted so unpicked bubbles still read over street texture
 
   // Map (the home map is a flattened raster; these approximate its palette)
-  mapLand: '#EDEAE3',
-  mapRoad: '#FFFFFF',
-  mapWater: '#C7DBEF',
-  mapPark: '#DCE6CD',
+  mapLand: "#EDEAE3",
+  mapRoad: "#FFFFFF",
+  mapWater: "#C7DBEF",
+  mapPark: "#DCE6CD",
 
   // User location dot + halo
-  locationDot: '#3121FF',
-  locationHalo: 'rgba(49,33,255,0.18)',
+  locationDot: "#3121FF",
+  locationHalo: "rgba(49,33,255,0.18)",
 } as const;
 
 /**
@@ -96,9 +96,9 @@ export const radius = {
 export const smoothing = 0.6;
 
 export const shadow = {
-  fab: '0 8px 24px rgba(20,16,80,0.28)',
-  card: '0 2px 12px rgba(0,0,0,0.06)',
-  sheet: '0 -8px 40px rgba(0,0,0,0.16)',
+  fab: "0 8px 24px rgba(20,16,80,0.28)",
+  card: "0 2px 12px rgba(0,0,0,0.06)",
+  sheet: "0 -8px 40px rgba(0,0,0,0.16)",
 } as const;
 
 /**

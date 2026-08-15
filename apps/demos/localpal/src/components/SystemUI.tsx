@@ -7,18 +7,25 @@
  */
 export function SystemUI() {
   return (
-    <div style={{ position: 'absolute', inset: 0, zIndex: 60, pointerEvents: 'none' }}>
+    <div
+      style={{
+        position: "absolute",
+        inset: 0,
+        zIndex: 60,
+        pointerEvents: "none",
+      }}
+    >
       {/* Dynamic Island */}
       <div
         style={{
-          position: 'absolute',
+          position: "absolute",
           top: 11,
-          left: '50%',
-          transform: 'translateX(-50%)',
+          left: "50%",
+          transform: "translateX(-50%)",
           width: 126,
           height: 37,
           borderRadius: 20,
-          background: '#000',
+          background: "#000",
         }}
       />
 
@@ -29,7 +36,7 @@ export function SystemUI() {
         viewBox="0 0 393 852"
         fill="none"
         xmlns="http://www.w3.org/2000/svg"
-        style={{ position: 'absolute', inset: 0 }}
+        style={{ position: "absolute", inset: 0 }}
       >
         <rect x="124.827" y="836" width="144" height="6" rx="3" fill="black" />
         <g clipPath="url(#clip0_1277_3605)">
@@ -76,7 +83,12 @@ export function SystemUI() {
         </g>
         <defs>
           <clipPath id="clip0_1277_3605">
-            <rect width="393" height="62" fill="white" transform="translate(-0.172974)" />
+            <rect
+              width="393"
+              height="62"
+              fill="white"
+              transform="translate(-0.172974)"
+            />
           </clipPath>
         </defs>
       </svg>

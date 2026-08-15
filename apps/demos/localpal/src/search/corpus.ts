@@ -10,14 +10,18 @@
  * map and the list agree on what a chip hides: a venue pin survives a day chip
  * if ANY of its events fall in that bucket.
  */
-import { figmaIcons } from '../components/icons/figmaIcons';
-import type { CategoryId } from '../theme/categories';
-import { tagCategories, venuePrimaryCategory, planPrimaryCategory } from '../data/categorize';
-import { VENUES, dayLabel, type VenueId } from '../data/venues';
-import { MAP_PEER_PLANS, type PeerPlan } from '../data/peerPlans';
-import { tagItemVibes, type VibeId } from './vibes';
-import { bucketVenueDay, bucketWhen, hourOf, type DayBucket } from './days';
-import type { FilterFacts } from './filters';
+import { figmaIcons } from "../components/icons/figmaIcons";
+import type { CategoryId } from "../theme/categories";
+import {
+  tagCategories,
+  venuePrimaryCategory,
+  planPrimaryCategory,
+} from "../data/categorize";
+import { VENUES, dayLabel, type VenueId } from "../data/venues";
+import { MAP_PEER_PLANS, type PeerPlan } from "../data/peerPlans";
+import { tagItemVibes, type VibeId } from "./vibes";
+import { bucketVenueDay, bucketWhen, hourOf, type DayBucket } from "./days";
+import type { FilterFacts } from "./filters";
 
 // Card leading icon heights, keyed by the Figma SVG the venue pin uses (the
 // playful tilt is baked into the exports). Icons keep their natural widths, so
@@ -43,22 +47,28 @@ export type SearchItem = {
   day: DayBucket | null;
   search: string;
 } & (
-  | { kind: 'event'; icon: string; iconH: number; venueId: VenueId; eventId: string }
-  | { kind: 'peer'; plan: PeerPlan }
+  | {
+      kind: "event";
+      icon: string;
+      iconH: number;
+      venueId: VenueId;
+      eventId: string;
+    }
+  | { kind: "peer"; plan: PeerPlan }
 );
 
 // A morning vibe you can't read from words alone: anything starting before
 // noon IS a morning plan, whatever the blurb says.
 const withMorning = (vibes: Set<VibeId>, timeText: string): Set<VibeId> => {
   const h = hourOf(timeText);
-  if (h != null && h < 12) vibes.add('morning');
+  if (h != null && h < 12) vibes.add("morning");
   return vibes;
 };
 
 // Every hosted venue event, in venue order.
 const EVENT_ITEMS: SearchItem[] = Object.values(VENUES).flatMap((venue) =>
   venue.events.map((ev) => ({
-    kind: 'event' as const,
+    kind: "event" as const,
     id: `${venue.id}:${ev.id}`,
     title: ev.title,
     meta: `${dayLabel(ev.day)} - ${ev.time}`,
@@ -66,11 +76,13 @@ const EVENT_ITEMS: SearchItem[] = Object.values(VENUES).flatMap((venue) =>
     iconH: ICON_H[venue.icon] ?? 32,
     venueId: venue.id,
     eventId: ev.id,
-    cats: tagCategories(`${ev.title} ${venue.category} ${venue.name} ${ev.description}`),
+    cats: tagCategories(
+      `${ev.title} ${venue.category} ${venue.name} ${ev.description}`,
+    ),
     vibes: withMorning(
       tagItemVibes(
         // '$0' is how the data spells "free entry".
-        `${ev.title} ${venue.description} ${ev.description} ${ev.price === '$0' || ev.price === 'Free' ? 'free' : ''}`,
+        `${ev.title} ${venue.description} ${ev.description} ${ev.price === "$0" || ev.price === "Free" ? "free" : ""}`,
       ),
       ev.time,
     ),
@@ -81,13 +93,16 @@ const EVENT_ITEMS: SearchItem[] = Object.values(VENUES).flatMap((venue) =>
 
 // Every standalone peer plan (the peer pins on the map).
 const PEER_ITEMS: SearchItem[] = Object.values(MAP_PEER_PLANS).map((plan) => ({
-  kind: 'peer' as const,
+  kind: "peer" as const,
   id: `peer:${plan.id}`,
   title: plan.title,
   meta: plan.when,
   plan,
   cats: tagCategories(`${plan.title} ${plan.description}`),
-  vibes: withMorning(tagItemVibes(`${plan.title} ${plan.description}`), plan.when),
+  vibes: withMorning(
+    tagItemVibes(`${plan.title} ${plan.description}`),
+    plan.when,
+  ),
   day: bucketWhen(plan.when),
   search: `${plan.title} ${plan.host} ${plan.description}`.toLowerCase(),
 }));
@@ -124,7 +139,7 @@ export const VENUE_FILTER_FACTS = Object.fromEntries(
     for (const ev of venue.events) {
       const evVibes = withMorning(
         tagItemVibes(
-          `${ev.title} ${venue.description} ${ev.description} ${ev.price === '$0' || ev.price === 'Free' ? 'free' : ''}`,
+          `${ev.title} ${venue.description} ${ev.description} ${ev.price === "$0" || ev.price === "Free" ? "free" : ""}`,
         ),
         ev.time,
       );
@@ -146,7 +161,10 @@ export function planFilterFacts(plan: PeerPlan): FilterFacts {
     const day = bucketWhen(plan.when);
     facts = {
       cats: new Set(cat ? [cat] : []),
-      vibes: withMorning(tagItemVibes(`${plan.title} ${plan.description}`), plan.when),
+      vibes: withMorning(
+        tagItemVibes(`${plan.title} ${plan.description}`),
+        plan.when,
+      ),
       days: new Set(day ? [day] : []),
     };
     planFactsCache.set(plan, facts);

@@ -12,15 +12,22 @@
  * tap. The single ConfirmSheet it renders lives at the phone-screen level, so it
  * layers over whatever card is open regardless of who triggered it.
  */
-import { createContext, useCallback, useContext, useRef, useState, type ReactNode } from 'react';
-import { ConfirmSheet, type ConfirmConfig } from './ConfirmSheet';
+import {
+  createContext,
+  useCallback,
+  useContext,
+  useRef,
+  useState,
+  type ReactNode,
+} from "react";
+import { ConfirmSheet, type ConfirmConfig } from "./ConfirmSheet";
 
 /** What a caller passes to confirm() — the prompt, minus the resolution wiring. */
-export type ConfirmOptions = Omit<ConfirmConfig, 'onConfirm'>;
+export type ConfirmOptions = Omit<ConfirmConfig, "onConfirm">;
 
-const ConfirmContext = createContext<(opts: ConfirmOptions) => Promise<boolean>>(() =>
-  Promise.resolve(false),
-);
+const ConfirmContext = createContext<
+  (opts: ConfirmOptions) => Promise<boolean>
+>(() => Promise.resolve(false));
 /** Whether a confirmation sheet is currently open — so overlays anchored to a
  *  card (e.g. tour coach bubbles) can step aside instead of floating over it. */
 const ConfirmOpenContext = createContext(false);

@@ -7,9 +7,13 @@
 export default function CalendarGlyph({
   width = 27,
   height = 33,
-  color = '#FEFEFE',
+  color = "#FEFEFE",
   ...rest
-}: { width?: number; height?: number; color?: string } & React.SVGProps<SVGSVGElement>) {
+}: {
+  width?: number;
+  height?: number;
+  color?: string;
+} & React.SVGProps<SVGSVGElement>) {
   return (
     <svg
       width={width}

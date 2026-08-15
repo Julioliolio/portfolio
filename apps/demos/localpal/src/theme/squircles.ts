@@ -6,58 +6,154 @@
 export type SquircleStyle = { radius: number; smoothing: number };
 
 export type SquircleRole =
-  | 'button'
-  | 'control'
-  | 'sheet'
-  | 'field'
-  | 'chip'
-  | 'card'
-  | 'avatar'
-  | 'pin'
-  | 'lozenge'
-  | 'photo'
-  | 'badge'
-  | 'cta'
-  | 'planCard'
-  | 'slider'
-  | 'sliderKnob'
-  | 'plate'
-  | 'stepDot'
-  | 'profileAvatar'
-  | 'statCard'
-  | 'qrCard'
-  | 'miniButton'
-  | 'tooltip'
-  | 'banner'
-  | 'bubble'
-  | 'onbCard';
+  | "button"
+  | "control"
+  | "sheet"
+  | "field"
+  | "chip"
+  | "card"
+  | "avatar"
+  | "pin"
+  | "lozenge"
+  | "photo"
+  | "badge"
+  | "cta"
+  | "planCard"
+  | "slider"
+  | "sliderKnob"
+  | "plate"
+  | "stepDot"
+  | "profileAvatar"
+  | "statCard"
+  | "qrCard"
+  | "miniButton"
+  | "tooltip"
+  | "banner"
+  | "bubble"
+  | "onbCard";
 
-export const SQUIRCLE_ROLES: Array<{ role: SquircleRole; label: string; hint: string }> = [
-  { role: 'button', label: 'Buttons', hint: 'Search pill + calendar (square nav)' },
-  { role: 'control', label: 'Controls', hint: 'Round map buttons (chat, locate)' },
-  { role: 'sheet', label: 'Sheet', hint: 'The big search sheet / bottom sheets' },
-  { role: 'field', label: 'Search field', hint: 'The search input inside the sheet' },
-  { role: 'card', label: 'Cards', hint: 'List cards, panels' },
-  { role: 'chip', label: 'Chips', hint: 'Filter chips, small tags' },
-  { role: 'avatar', label: 'Avatar', hint: 'Profile / photo tiles (peer pins)' },
-  { role: 'pin', label: 'Venue pin', hint: 'Blue map tiles for venues / organizations' },
-  { role: 'lozenge', label: 'Selected pin', hint: 'Expanded icon+name pin of the selected venue' },
-  { role: 'photo', label: 'Photos', hint: 'Photo collage tiles on the venue sheet' },
-  { role: 'badge', label: 'Time badge', hint: 'White day/time plate on venue event cards' },
-  { role: 'cta', label: 'CTA buttons', hint: 'Big white actions on the venue sheet (Create plan, ×)' },
-  { role: 'planCard', label: 'Plan card', hint: 'The big white focused-plan card on Your plans' },
-  { role: 'slider', label: 'Plan plate', hint: 'Focused-plan bottom plate / RSVP slider track (300×50)' },
-  { role: 'sliderKnob', label: 'Slider knob', hint: 'The white 38px knob riding the RSVP slider' },
-  { role: 'plate', label: 'Create plates', hint: 'Create-plan input plates: time wheels, people stepper, description, results panel' },
-  { role: 'stepDot', label: 'Step dots', hint: 'Create-plan step indicator dots (8px; active stretches to 24px)' },
-  { role: 'profileAvatar', label: 'Profile avatar', hint: 'The big 120px profile-header photo (Figma 1431:2253)' },
-  { role: 'statCard', label: 'Stat cards', hint: 'Profile friends / plans-organized cards (~126px tall, Figma 1431:2271)' },
-  { role: 'qrCard', label: 'QR card', hint: 'The big white QR plate on Add-new-friends (268×272, Figma 1426:1752)' },
-  { role: 'miniButton', label: 'Mini buttons', hint: 'Tiny 24px white close/utility buttons on the profile header (Figma 1431:2371)' },
-  { role: 'tooltip', label: 'Tour tooltip', hint: 'White coach bubbles of the first-plan tour (anchored to pin / Join / calendar)' },
-  { role: 'banner', label: 'Tour banner', hint: 'iOS-notification-style announcement banner of the first-plan tour' },
-  { role: 'bubble', label: 'Message bubble', hint: 'Chat bubbles in the messages thread (incoming + outgoing)' },
-  { role: 'onbCard', label: 'Onboarding card', hint: 'Floating white step cards over the toy-city onboarding stage' },
+export const SQUIRCLE_ROLES: Array<{
+  role: SquircleRole;
+  label: string;
+  hint: string;
+}> = [
+  {
+    role: "button",
+    label: "Buttons",
+    hint: "Search pill + calendar (square nav)",
+  },
+  {
+    role: "control",
+    label: "Controls",
+    hint: "Round map buttons (chat, locate)",
+  },
+  {
+    role: "sheet",
+    label: "Sheet",
+    hint: "The big search sheet / bottom sheets",
+  },
+  {
+    role: "field",
+    label: "Search field",
+    hint: "The search input inside the sheet",
+  },
+  { role: "card", label: "Cards", hint: "List cards, panels" },
+  { role: "chip", label: "Chips", hint: "Filter chips, small tags" },
+  {
+    role: "avatar",
+    label: "Avatar",
+    hint: "Profile / photo tiles (peer pins)",
+  },
+  {
+    role: "pin",
+    label: "Venue pin",
+    hint: "Blue map tiles for venues / organizations",
+  },
+  {
+    role: "lozenge",
+    label: "Selected pin",
+    hint: "Expanded icon+name pin of the selected venue",
+  },
+  {
+    role: "photo",
+    label: "Photos",
+    hint: "Photo collage tiles on the venue sheet",
+  },
+  {
+    role: "badge",
+    label: "Time badge",
+    hint: "White day/time plate on venue event cards",
+  },
+  {
+    role: "cta",
+    label: "CTA buttons",
+    hint: "Big white actions on the venue sheet (Create plan, ×)",
+  },
+  {
+    role: "planCard",
+    label: "Plan card",
+    hint: "The big white focused-plan card on Your plans",
+  },
+  {
+    role: "slider",
+    label: "Plan plate",
+    hint: "Focused-plan bottom plate / RSVP slider track (300×50)",
+  },
+  {
+    role: "sliderKnob",
+    label: "Slider knob",
+    hint: "The white 38px knob riding the RSVP slider",
+  },
+  {
+    role: "plate",
+    label: "Create plates",
+    hint: "Create-plan input plates: time wheels, people stepper, description, results panel",
+  },
+  {
+    role: "stepDot",
+    label: "Step dots",
+    hint: "Create-plan step indicator dots (8px; active stretches to 24px)",
+  },
+  {
+    role: "profileAvatar",
+    label: "Profile avatar",
+    hint: "The big 120px profile-header photo (Figma 1431:2253)",
+  },
+  {
+    role: "statCard",
+    label: "Stat cards",
+    hint: "Profile friends / plans-organized cards (~126px tall, Figma 1431:2271)",
+  },
+  {
+    role: "qrCard",
+    label: "QR card",
+    hint: "The big white QR plate on Add-new-friends (268×272, Figma 1426:1752)",
+  },
+  {
+    role: "miniButton",
+    label: "Mini buttons",
+    hint: "Tiny 24px white close/utility buttons on the profile header (Figma 1431:2371)",
+  },
+  {
+    role: "tooltip",
+    label: "Tour tooltip",
+    hint: "White coach bubbles of the first-plan tour (anchored to pin / Join / calendar)",
+  },
+  {
+    role: "banner",
+    label: "Tour banner",
+    hint: "iOS-notification-style announcement banner of the first-plan tour",
+  },
+  {
+    role: "bubble",
+    label: "Message bubble",
+    hint: "Chat bubbles in the messages thread (incoming + outgoing)",
+  },
+  {
+    role: "onbCard",
+    label: "Onboarding card",
+    hint: "Floating white step cards over the toy-city onboarding stage",
+  },
 ];
 
 export const defaultSquircles: Record<SquircleRole, SquircleStyle> = {

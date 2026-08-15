@@ -1,6 +1,6 @@
-import { Component, Show, createSignal } from 'solid-js';
-import IdleView from './components/views/IdleView';
-import EditorView from './components/views/EditorView';
+import { Component, Show, createSignal } from "solid-js";
+import IdleView from "./components/views/IdleView";
+import EditorView from "./components/views/EditorView";
 
 export interface VideoInfo {
   file?: File;
@@ -13,24 +13,24 @@ export interface VideoInfo {
 }
 
 const App: Component = () => {
-  const [view, setView]   = createSignal<'idle' | 'editor'>('idle');
+  const [view, setView] = createSignal<"idle" | "editor">("idle");
   const [video, setVideo] = createSignal<VideoInfo | null>(null);
 
   const handleVideoSelected = (info: VideoInfo) => {
     setVideo(info);
-    setView('editor');
+    setView("editor");
   };
 
   const handleBack = () => {
     const v = video();
     if (v?.objectUrl) URL.revokeObjectURL(v.objectUrl);
     setVideo(null);
-    setView('idle');
+    setView("idle");
   };
 
   return (
     <Show
-      when={view() === 'editor' && video()}
+      when={view() === "editor" && video()}
       fallback={<IdleView onVideoSelected={handleVideoSelected} />}
     >
       {(v) => <EditorView video={v()} onBack={handleBack} />}

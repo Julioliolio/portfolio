@@ -1,5 +1,5 @@
-import { useMemo } from 'react';
-import { color } from '../theme/tokens';
+import { useMemo } from "react";
+import { color } from "../theme/tokens";
 
 /**
  * A procedural, vector "map" that mimics the LocalPal Figma background:
@@ -80,14 +80,16 @@ export function MockMap({ width = 393, height = 852, angle = -11 }: Props) {
       width={width}
       height={height}
       viewBox={`0 0 ${width} ${height}`}
-      style={{ display: 'block' }}
+      style={{ display: "block" }}
       aria-hidden
     >
       {/* Land */}
       <rect x={0} y={0} width={width} height={height} fill={color.mapLand} />
 
       {/* Rotated street world */}
-      <g transform={`translate(${-pad} ${-pad}) rotate(${angle} ${W / 2} ${H / 2})`}>
+      <g
+        transform={`translate(${-pad} ${-pad}) rotate(${angle} ${W / 2} ${H / 2})`}
+      >
         {/* Building blocks */}
         {blocks.map((b, i) => (
           <rect

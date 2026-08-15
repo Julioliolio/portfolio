@@ -1,5 +1,5 @@
-import { useEffect, useLayoutEffect, useRef, useState } from 'react';
-import { color, font } from '../../theme/tokens';
+import { useEffect, useLayoutEffect, useRef, useState } from "react";
+import { color, font } from "../../theme/tokens";
 
 /**
  * The capture stage — an isolated recording environment for one micro-
@@ -12,13 +12,21 @@ import { color, font } from '../../theme/tokens';
  * mirrored into the URL (replaceState) so a tuned setup is shareable/reloadable.
  */
 
-export type Aspect = '4x5' | '9x16' | '1x1';
-const ASPECTS: Record<Aspect, number> = { '4x5': 4 / 5, '9x16': 9 / 16, '1x1': 1 };
-const ASPECT_LABELS: Record<Aspect, string> = { '4x5': '4:5', '9x16': '9:16', '1x1': '1:1' };
+export type Aspect = "4x5" | "9x16" | "1x1";
+const ASPECTS: Record<Aspect, number> = {
+  "4x5": 4 / 5,
+  "9x16": 9 / 16,
+  "1x1": 1,
+};
+const ASPECT_LABELS: Record<Aspect, string> = {
+  "4x5": "4:5",
+  "9x16": "9:16",
+  "1x1": "1:1",
+};
 
 // Feelslike-ish flat backdrops: warm neutrals first, then a cool, a brand
 // tint, and a near-black for the dark stages (edge-zoom).
-const SWATCHES = ['#EFE9E1', '#F4EFE7', '#ECEEF2', '#E7EBFF', '#101014'];
+const SWATCHES = ["#EFE9E1", "#F4EFE7", "#ECEEF2", "#E7EBFF", "#101014"];
 
 const CONTROLS_H = 64;
 
@@ -45,11 +53,11 @@ export function CaptureShell({
   // Mirror the tuned setup into the URL so reload/share keeps it.
   useEffect(() => {
     const url = new URL(window.location.href);
-    url.searchParams.set('capture', stageId);
-    url.searchParams.set('bg', bg.replace('#', ''));
-    url.searchParams.set('aspect', aspect);
-    url.searchParams.set('auto', auto ? '1' : '0');
-    window.history.replaceState(null, '', url.toString());
+    url.searchParams.set("capture", stageId);
+    url.searchParams.set("bg", bg.replace("#", ""));
+    url.searchParams.set("aspect", aspect);
+    url.searchParams.set("auto", auto ? "1" : "0");
+    window.history.replaceState(null, "", url.toString());
   }, [stageId, bg, aspect, auto]);
 
   // Stage box: largest rect of the chosen aspect that fits the viewport above
@@ -64,22 +72,22 @@ export function CaptureShell({
       setBox({ w, h: w / ratio });
     };
     update();
-    window.addEventListener('resize', update);
-    return () => window.removeEventListener('resize', update);
+    window.addEventListener("resize", update);
+    return () => window.removeEventListener("resize", update);
   }, [aspect]);
 
   return (
     <div
       style={{
-        width: '100vw',
-        height: '100dvh',
-        background: '#0b0b10',
-        display: 'flex',
-        flexDirection: 'column',
-        alignItems: 'center',
-        justifyContent: 'center',
+        width: "100vw",
+        height: "100dvh",
+        background: "#0b0b10",
+        display: "flex",
+        flexDirection: "column",
+        alignItems: "center",
+        justifyContent: "center",
         fontFamily: font.family,
-        overflow: 'hidden',
+        overflow: "hidden",
       }}
     >
       {/* The shot. Overflow hidden — the box edge IS the crop. */}
@@ -88,9 +96,9 @@ export function CaptureShell({
           width: box.w,
           height: box.h,
           background: bg,
-          position: 'relative',
-          overflow: 'hidden',
-          flex: 'none',
+          position: "relative",
+          overflow: "hidden",
+          flex: "none",
         }}
       >
         {children({ auto })}
@@ -100,23 +108,29 @@ export function CaptureShell({
       <div
         style={{
           height: CONTROLS_H,
-          display: 'flex',
-          alignItems: 'center',
+          display: "flex",
+          alignItems: "center",
           gap: 14,
-          color: 'rgba(255,255,255,0.65)',
+          color: "rgba(255,255,255,0.65)",
           fontSize: 12,
-          flex: 'none',
+          flex: "none",
         }}
       >
         <a
-          href={captureHref('')}
-          style={{ color: 'rgba(255,255,255,0.45)', textDecoration: 'none', fontWeight: 600 }}
+          href={captureHref("")}
+          style={{
+            color: "rgba(255,255,255,0.45)",
+            textDecoration: "none",
+            fontWeight: 600,
+          }}
         >
           ← stages
         </a>
-        <span style={{ fontWeight: 600, color: 'rgba(255,255,255,0.85)' }}>{title}</span>
+        <span style={{ fontWeight: 600, color: "rgba(255,255,255,0.85)" }}>
+          {title}
+        </span>
 
-        <span style={{ display: 'inline-flex', gap: 6, alignItems: 'center' }}>
+        <span style={{ display: "inline-flex", gap: 6, alignItems: "center" }}>
           {SWATCHES.map((c) => (
             <button
               key={c}
@@ -127,8 +141,11 @@ export function CaptureShell({
                 height: 18,
                 borderRadius: 9,
                 background: c,
-                border: bg === c ? `2px solid ${color.brand}` : '2px solid rgba(255,255,255,0.2)',
-                cursor: 'pointer',
+                border:
+                  bg === c
+                    ? `2px solid ${color.brand}`
+                    : "2px solid rgba(255,255,255,0.2)",
+                cursor: "pointer",
                 padding: 0,
               }}
             />
@@ -137,21 +154,32 @@ export function CaptureShell({
             type="color"
             value={bg}
             onChange={(e) => setBg(e.target.value)}
-            style={{ width: 24, height: 22, border: 'none', background: 'none', cursor: 'pointer', padding: 0 }}
+            style={{
+              width: 24,
+              height: 22,
+              border: "none",
+              background: "none",
+              cursor: "pointer",
+              padding: 0,
+            }}
             aria-label="custom backdrop color"
           />
         </span>
 
-        <span style={{ display: 'inline-flex', gap: 4 }}>
+        <span style={{ display: "inline-flex", gap: 4 }}>
           {(Object.keys(ASPECTS) as Aspect[]).map((a) => (
-            <ChromeButton key={a} active={aspect === a} onClick={() => setAspect(a)}>
+            <ChromeButton
+              key={a}
+              active={aspect === a}
+              onClick={() => setAspect(a)}
+            >
               {ASPECT_LABELS[a]}
             </ChromeButton>
           ))}
         </span>
 
         <ChromeButton active={auto} onClick={() => setAuto((v) => !v)}>
-          {auto ? '● auto' : '○ manual'}
+          {auto ? "● auto" : "○ manual"}
         </ChromeButton>
       </div>
     </div>
@@ -171,16 +199,16 @@ function ChromeButton({
     <button
       onClick={onClick}
       style={{
-        appearance: 'none',
-        border: 'none',
+        appearance: "none",
+        border: "none",
         borderRadius: 8,
-        padding: '5px 10px',
+        padding: "5px 10px",
         fontSize: 12,
         fontWeight: 600,
-        fontFamily: 'inherit',
-        cursor: 'pointer',
-        color: active ? '#fff' : '#999',
-        background: active ? color.brand : 'rgba(255,255,255,0.08)',
+        fontFamily: "inherit",
+        cursor: "pointer",
+        color: active ? "#fff" : "#999",
+        background: active ? color.brand : "rgba(255,255,255,0.08)",
       }}
     >
       {children}
@@ -191,8 +219,8 @@ function ChromeButton({
 /** Href for a stage link, preserving nothing but the capture id. */
 export function captureHref(id: string) {
   const url = new URL(window.location.href);
-  url.search = '';
-  url.searchParams.set('capture', id);
+  url.search = "";
+  url.searchParams.set("capture", id);
   return url.toString();
 }
 
@@ -225,7 +253,8 @@ export function FitScale({
     if (!el) return;
     const update = () => {
       const r = el.getBoundingClientRect();
-      if (r.width > 0 && r.height > 0) setScale(Math.min((r.width * margin) / w, (r.height * margin) / h));
+      if (r.width > 0 && r.height > 0)
+        setScale(Math.min((r.width * margin) / w, (r.height * margin) / h));
     };
     update();
     const ro = new ResizeObserver(update);
@@ -233,16 +262,16 @@ export function FitScale({
     return () => ro.disconnect();
   }, [w, h, margin]);
   return (
-    <div ref={ref} style={{ position: 'absolute', inset: 0 }}>
+    <div ref={ref} style={{ position: "absolute", inset: 0 }}>
       <div
         style={{
-          position: 'absolute',
-          left: '50%',
-          top: '50%',
+          position: "absolute",
+          left: "50%",
+          top: "50%",
           width: w,
           height: h,
           transform: `translate(-50%, -50%) scale(${scale})`,
-          transformOrigin: 'center',
+          transformOrigin: "center",
         }}
       >
         {children}

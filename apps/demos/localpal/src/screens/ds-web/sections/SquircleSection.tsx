@@ -1,8 +1,8 @@
-import { useState } from 'react';
-import { Squircle } from '../../../components/Squircle';
-import { color } from '../../../theme/tokens';
-import { SQUIRCLE_ROLES, defaultSquircles } from '../../../theme/squircles';
-import { copy } from '../copy';
+import { useState } from "react";
+import { Squircle } from "../../../components/Squircle";
+import { color } from "../../../theme/tokens";
+import { SQUIRCLE_ROLES, defaultSquircles } from "../../../theme/squircles";
+import { copy } from "../copy";
 
 /**
  * Squircles. Una superelipse recortada con figma-squircle, no un rectángulo
@@ -69,7 +69,11 @@ export function SquircleSection() {
           return (
             <div key={role} className="dsw-sq-role">
               <div className="dsw-sq-role-stage">
-                <Squircle role={role} fill={color.onBrand} className="dsw-sq-role-chip" />
+                <Squircle
+                  role={role}
+                  fill={color.onBrand}
+                  className="dsw-sq-role-chip"
+                />
               </div>
               <span className="dsw-sq-role-label">{label}</span>
               <span className="dsw-sq-role-spec">
@@ -106,7 +110,7 @@ function Slider({
         <span className="dsw-slider-label">{label}</span>
         <span className="dsw-slider-value">
           {value}
-          {suffix ?? ''}
+          {suffix ?? ""}
         </span>
       </span>
       <input

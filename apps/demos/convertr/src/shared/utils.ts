@@ -1,4 +1,4 @@
-import { Accessor, createSignal, onCleanup, onMount } from 'solid-js';
+import { Accessor, createSignal, onCleanup, onMount } from "solid-js";
 
 /** Format seconds as a short string, e.g. "12s" */
 export const fmtDuration = (s: number) => `${Math.round(s)}s`;
@@ -53,38 +53,64 @@ export function useSmoothedProgress(
 /** Format byte count as a human-readable MB string */
 export const fmtBytes = (bytes: number) => {
   const mb = bytes / 1_048_576;
-  if (mb < 0.1) return '<0.1 MB';
-  if (mb < 10)  return mb.toFixed(1) + ' MB';
-  return Math.round(mb) + ' MB';
+  if (mb < 0.1) return "<0.1 MB";
+  if (mb < 10) return mb.toFixed(1) + " MB";
+  return Math.round(mb) + " MB";
 };
 
 /** Render `v / of` as a percentage string with 4 decimal places. */
-export const pct = (v: number, of: number) => (v / of * 100).toFixed(4) + '%';
+export const pct = (v: number, of: number) => ((v / of) * 100).toFixed(4) + "%";
 
 /**
  * Extract N evenly-spaced thumbnail frames from a video source URL.
  * Returns an array of base64 data-URLs (JPEG, 0.8 quality).
  * Resolves with [] if the source can't be decoded (e.g. gif given to <video>).
  */
-export const extractFrames = (src: string, duration: number, count: number): Promise<string[]> =>
+export const extractFrames = (
+  src: string,
+  duration: number,
+  count: number,
+): Promise<string[]> =>
   new Promise((resolve) => {
-    const vid = document.createElement('video');
-    const canvas = document.createElement('canvas');
-    const ctx = canvas.getContext('2d')!;
-    vid.src = src; vid.muted = true; vid.preload = 'auto';
+    const vid = document.createElement("video");
+    const canvas = document.createElement("canvas");
+    const ctx = canvas.getContext("2d")!;
+    vid.src = src;
+    vid.muted = true;
+    vid.preload = "auto";
     const results: string[] = [];
-    let idx = 0; let thumbW = 24;
+    let idx = 0;
+    let thumbW = 24;
     let resolved = false;
-    const finish = (out: string[]) => { if (resolved) return; resolved = true; resolve(out); };
-    const seekNext = () => { if (idx >= count) { finish(results); return; } vid.currentTime = (idx / count) * duration + 0.01; };
-    vid.addEventListener('seeked', () => { ctx.drawImage(vid, 0, 0, thumbW, 24); results.push(canvas.toDataURL('image/jpeg', 0.8)); idx++; seekNext(); });
-    vid.addEventListener('loadedmetadata', () => {
-      if (!vid.videoWidth || !vid.videoHeight) { finish([]); return; }
-      thumbW = Math.round(24 * vid.videoWidth / vid.videoHeight);
-      canvas.width = thumbW; canvas.height = 24;
+    const finish = (out: string[]) => {
+      if (resolved) return;
+      resolved = true;
+      resolve(out);
+    };
+    const seekNext = () => {
+      if (idx >= count) {
+        finish(results);
+        return;
+      }
+      vid.currentTime = (idx / count) * duration + 0.01;
+    };
+    vid.addEventListener("seeked", () => {
+      ctx.drawImage(vid, 0, 0, thumbW, 24);
+      results.push(canvas.toDataURL("image/jpeg", 0.8));
+      idx++;
       seekNext();
     });
-    vid.addEventListener('error', () => finish([]));
+    vid.addEventListener("loadedmetadata", () => {
+      if (!vid.videoWidth || !vid.videoHeight) {
+        finish([]);
+        return;
+      }
+      thumbW = Math.round((24 * vid.videoWidth) / vid.videoHeight);
+      canvas.width = thumbW;
+      canvas.height = 24;
+      seekNext();
+    });
+    vid.addEventListener("error", () => finish([]));
   });
 
 /**
@@ -94,27 +120,48 @@ export const extractFrames = (src: string, duration: number, count: number): Pro
  * Resolves with a JPEG dataURL, or null if the source can't be decoded /
  * decoding takes too long.
  */
-export const extractFrame = (src: string, atTime: number, height = 360, timeoutMs = 5000): Promise<string | null> =>
+export const extractFrame = (
+  src: string,
+  atTime: number,
+  height = 360,
+  timeoutMs = 5000,
+): Promise<string | null> =>
   new Promise((resolve) => {
-    const vid = document.createElement('video');
-    const canvas = document.createElement('canvas');
-    const ctx = canvas.getContext('2d');
-    if (!ctx) { resolve(null); return; }
+    const vid = document.createElement("video");
+    const canvas = document.createElement("canvas");
+    const ctx = canvas.getContext("2d");
+    if (!ctx) {
+      resolve(null);
+      return;
+    }
     let resolved = false;
-    const finish = (out: string | null) => { if (resolved) return; resolved = true; resolve(out); };
-    vid.muted = true; vid.preload = 'auto'; vid.src = src;
-    vid.addEventListener('error', () => finish(null));
-    vid.addEventListener('seeked', () => {
+    const finish = (out: string | null) => {
+      if (resolved) return;
+      resolved = true;
+      resolve(out);
+    };
+    vid.muted = true;
+    vid.preload = "auto";
+    vid.src = src;
+    vid.addEventListener("error", () => finish(null));
+    vid.addEventListener("seeked", () => {
       try {
         ctx.drawImage(vid, 0, 0, canvas.width, canvas.height);
-        finish(canvas.toDataURL('image/jpeg', 0.85));
-      } catch { finish(null); }
+        finish(canvas.toDataURL("image/jpeg", 0.85));
+      } catch {
+        finish(null);
+      }
     });
-    vid.addEventListener('loadedmetadata', () => {
-      if (!vid.videoWidth || !vid.videoHeight) { finish(null); return; }
-      const w = Math.round(height * vid.videoWidth / vid.videoHeight);
-      canvas.width = w; canvas.height = height;
-      vid.currentTime = Math.max(0, Math.min(atTime, vid.duration || atTime)) + 0.01;
+    vid.addEventListener("loadedmetadata", () => {
+      if (!vid.videoWidth || !vid.videoHeight) {
+        finish(null);
+        return;
+      }
+      const w = Math.round((height * vid.videoWidth) / vid.videoHeight);
+      canvas.width = w;
+      canvas.height = height;
+      vid.currentTime =
+        Math.max(0, Math.min(atTime, vid.duration || atTime)) + 0.01;
     });
     setTimeout(() => finish(null), timeoutMs);
   });
@@ -128,12 +175,12 @@ export interface ScrambleTarget {
   setter: (v: string) => void;
 }
 export interface ScrambleOptions {
-  frames?: number;       // total animation frames (default 14)
-  frameMs?: number;      // ms between frames  (default 30)
-  chars?: string;        // alphabet to pick random chars from
+  frames?: number; // total animation frames (default 14)
+  frameMs?: number; // ms between frames  (default 30)
+  chars?: string; // alphabet to pick random chars from
 }
 
-const DEFAULT_SCRAMBLE_CHARS = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789';
+const DEFAULT_SCRAMBLE_CHARS = "ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789";
 
 /**
  * Run a scramble animation. Returns the rAF id so callers can cancel.
@@ -145,14 +192,17 @@ export function scrambleText(
   opts: ScrambleOptions = {},
 ): number {
   cancelAnimationFrame(prevRaf);
-  const totalFrames = opts.frames  ?? 14;
-  const frameMs     = opts.frameMs ?? 30;
-  const chars       = opts.chars   ?? DEFAULT_SCRAMBLE_CHARS;
+  const totalFrames = opts.frames ?? 14;
+  const frameMs = opts.frameMs ?? 30;
+  const chars = opts.chars ?? DEFAULT_SCRAMBLE_CHARS;
   let frame = 0;
   let last = performance.now();
   let rafId = 0;
   const tick = (now: number) => {
-    if (now - last < frameMs) { rafId = requestAnimationFrame(tick); return; }
+    if (now - last < frameMs) {
+      rafId = requestAnimationFrame(tick);
+      return;
+    }
     last = now;
     frame++;
     if (frame >= totalFrames) {
@@ -161,9 +211,18 @@ export function scrambleText(
     }
     for (const t of targets) {
       const resolved = Math.floor((frame / totalFrames) * t.target.length);
-      t.setter(t.target.split('').map((ch, i) =>
-        i < resolved ? ch : ch === ' ' ? ' ' : chars[Math.floor(Math.random() * chars.length)]
-      ).join(''));
+      t.setter(
+        t.target
+          .split("")
+          .map((ch, i) =>
+            i < resolved
+              ? ch
+              : ch === " "
+                ? " "
+                : chars[Math.floor(Math.random() * chars.length)],
+          )
+          .join(""),
+      );
     }
     rafId = requestAnimationFrame(tick);
   };
@@ -175,11 +234,21 @@ export function scrambleText(
 // Maps t∈[0,1] through a cubic-bezier(x1,y1,x2,y2) curve. Used by FormatButton
 // for path-morph easing.
 
-export function solveBezier(x1: number, y1: number, x2: number, y2: number, t: number): number {
+export function solveBezier(
+  x1: number,
+  y1: number,
+  x2: number,
+  y2: number,
+  t: number,
+): number {
   if (t <= 0) return 0;
   if (t >= 1) return 1;
-  const cx = 3 * x1, bx = 3 * (x2 - x1) - cx, ax = 1 - cx - bx;
-  const cy = 3 * y1, by = 3 * (y2 - y1) - cy, ay = 1 - cy - by;
+  const cx = 3 * x1,
+    bx = 3 * (x2 - x1) - cx,
+    ax = 1 - cx - bx;
+  const cy = 3 * y1,
+    by = 3 * (y2 - y1) - cy,
+    ay = 1 - cy - by;
   // Newton's method to find u where sampleX(u) = t
   let u = t;
   for (let i = 0; i < 8; i++) {

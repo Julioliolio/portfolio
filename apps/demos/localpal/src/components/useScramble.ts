@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState } from 'react';
+import { useEffect, useRef, useState } from "react";
 
 /**
  * Text scramble: characters resolve left-to-right out of noise, length easing
@@ -15,7 +15,7 @@ export function useScramble(target: string, ms: number) {
     const from = fromRef.current;
     if (from === target) return;
     fromRef.current = target;
-    const CHARS = 'abcdefghijklmnopqrstuvwxyz';
+    const CHARS = "abcdefghijklmnopqrstuvwxyz";
     const start = performance.now();
     const id = setInterval(() => {
       const t = Math.min(1, (performance.now() - start) / ms);
@@ -28,7 +28,10 @@ export function useScramble(target: string, ms: number) {
       const reveal = Math.floor(target.length * t);
       let out = target.slice(0, Math.min(reveal, len));
       for (let i = out.length; i < len; i++)
-        out += target[i] === ' ' ? ' ' : CHARS[Math.floor(Math.random() * CHARS.length)];
+        out +=
+          target[i] === " "
+            ? " "
+            : CHARS[Math.floor(Math.random() * CHARS.length)];
       setText(out);
     }, 34);
     return () => clearInterval(id);

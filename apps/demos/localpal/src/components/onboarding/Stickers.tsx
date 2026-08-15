@@ -17,16 +17,16 @@
  * just gets composited; a bob on a child would re-render every filter pass
  * every frame. Entrances (`pop`/`entrance` roles) are finite framer springs.
  */
-import { AnimatePresence, motion } from 'framer-motion';
-import { useMotion } from '../MotionProvider';
-import { useFloatShadow } from '../FloatShadowProvider';
-import { useScramble } from '../useScramble';
-import { figmaIcons } from '../icons/figmaIcons';
-import { IconPlaceholder } from '../icons/IconPlaceholder';
-import { color } from '../../theme/tokens';
-import { CLUSTER } from '../../theme/onboardingStage';
-import tagCocktail from '../../assets/profile/tag-cocktail.svg';
-import tagRunner from '../../assets/profile/tag-runner.svg';
+import { AnimatePresence, motion } from "framer-motion";
+import { useMotion } from "../MotionProvider";
+import { useFloatShadow } from "../FloatShadowProvider";
+import { useScramble } from "../useScramble";
+import { figmaIcons } from "../icons/figmaIcons";
+import { IconPlaceholder } from "../icons/IconPlaceholder";
+import { color } from "../../theme/tokens";
+import { CLUSTER } from "../../theme/onboardingStage";
+import tagCocktail from "../../assets/profile/tag-cocktail.svg";
+import tagRunner from "../../assets/profile/tag-runner.svg";
 
 /** Sticker art per INTEREST_GLYPH key — peer-profile tag glyphs where they
  *  exist, the matching pin icons for the rest (all blue-bodied SVGs). */
@@ -53,18 +53,24 @@ function useStickerFilter() {
 
 /** The shared compositor bob (keyframes declared once by OnboardingFlow). */
 function useBobAnimation(phase = 0) {
-  const float = useMotion('float');
+  const float = useMotion("float");
   const dur = ((float as { duration?: number }).duration ?? 1) * 2;
   return {
     animation: `lp-onb-bob ${dur}s ease-in-out infinite`,
     animationDelay: `${-phase * dur}s`,
-    willChange: 'transform',
+    willChange: "transform",
   } as const;
 }
 
 /** An interest pick, slapped onto the cluster. */
-export function GlyphSticker({ icon, rot = 0 }: { icon: string; rot?: number }) {
-  const pop = useMotion('pop');
+export function GlyphSticker({
+  icon,
+  rot = 0,
+}: {
+  icon: string;
+  rot?: number;
+}) {
+  const pop = useMotion("pop");
   const filter = useStickerFilter();
   const bob = useBobAnimation(Math.abs(rot) / 12);
   const src = STICKER_ART[icon];
@@ -75,11 +81,19 @@ export function GlyphSticker({ icon, rot = 0 }: { icon: string; rot?: number }) 
       animate={{ scale: 1, rotate: rot, opacity: 1 }}
       exit={{ scale: 0, opacity: 0, transition: { duration: 0.18 } }}
       transition={pop}
-      style={{ willChange: 'transform' }}
+      style={{ willChange: "transform" }}
     >
       <div style={{ filter, ...bob }}>
         {src && (
-          <img src={src} alt="" style={{ height: CLUSTER.stickerSize, width: 'auto', display: 'block' }} />
+          <img
+            src={src}
+            alt=""
+            style={{
+              height: CLUSTER.stickerSize,
+              width: "auto",
+              display: "block",
+            }}
+          />
         )}
       </div>
     </motion.div>
@@ -97,9 +111,9 @@ export function ProfileBadge({
   lastName: string;
   hasAvatar: boolean;
 }) {
-  const entrance = useMotion('entrance');
-  const pop = useMotion('pop');
-  const snap = useMotion('snap');
+  const entrance = useMotion("entrance");
+  const pop = useMotion("pop");
+  const snap = useMotion("snap");
   const bob = useBobAnimation(0.5);
   const snapMs = ((snap as { duration?: number }).duration ?? 0.3) * 1000;
   const label = useScramble(name, snapMs);
@@ -112,9 +126,16 @@ export function ProfileBadge({
       animate={{ scale: 1, opacity: 1 }}
       exit={{ scale: 0, opacity: 0, transition: { duration: 0.18 } }}
       transition={entrance}
-      style={{ willChange: 'transform' }}
+      style={{ willChange: "transform" }}
     >
-      <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', ...bob }}>
+      <div
+        style={{
+          display: "flex",
+          flexDirection: "column",
+          alignItems: "center",
+          ...bob,
+        }}
+      >
         <AnimatePresence>
           {hasAvatar && (
             <motion.div
@@ -135,16 +156,47 @@ export function ProfileBadge({
           initial={false}
           animate={{ y: hasAvatar ? -overlap : 0 }}
           transition={snap}
-          style={{ position: 'relative', zIndex: 1, display: 'flex', flexDirection: 'column', alignItems: 'center' }}
+          style={{
+            position: "relative",
+            zIndex: 1,
+            display: "flex",
+            flexDirection: "column",
+            alignItems: "center",
+          }}
         >
           <div style={{ background: color.offWhite, padding: 4, zIndex: 2 }}>
-            <span style={{ color: color.brand, fontSize: 24, fontWeight: 500, lineHeight: '26px', whiteSpace: 'nowrap' }}>
+            <span
+              style={{
+                color: color.brand,
+                fontSize: 24,
+                fontWeight: 500,
+                lineHeight: "26px",
+                whiteSpace: "nowrap",
+              }}
+            >
               {label}
             </span>
           </div>
-          {lastName !== '' && (
-            <div style={{ marginTop: -8, background: color.offWhite, padding: 4, opacity: 0.9, zIndex: 1 }}>
-              <span style={{ color: color.muted, fontSize: 24, fontWeight: 400, lineHeight: '26px', opacity: 0.6, whiteSpace: 'nowrap' }}>
+          {lastName !== "" && (
+            <div
+              style={{
+                marginTop: -8,
+                background: color.offWhite,
+                padding: 4,
+                opacity: 0.9,
+                zIndex: 1,
+              }}
+            >
+              <span
+                style={{
+                  color: color.muted,
+                  fontSize: 24,
+                  fontWeight: 400,
+                  lineHeight: "26px",
+                  opacity: 0.6,
+                  whiteSpace: "nowrap",
+                }}
+              >
                 {lastLabel}
               </span>
             </div>

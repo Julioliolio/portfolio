@@ -5,12 +5,13 @@
  * chrome"). One flat stroke colour, driven by the caller.
  */
 
-export type GlyphKey = 'cocktail' | 'music' | 'climb' | 'fork' | 'coffee' | 'search';
+export type GlyphKey =
+  "cocktail" | "music" | "climb" | "fork" | "coffee" | "search";
 
 export function Glyph({
   name,
   size = 16,
-  color = '#a59fff',
+  color = "#a59fff",
   strokeWidth = 1.8,
   style,
 }: {
@@ -23,18 +24,18 @@ export function Glyph({
   const common = {
     width: size,
     height: size,
-    viewBox: '0 0 24 24',
-    fill: 'none',
+    viewBox: "0 0 24 24",
+    fill: "none",
     stroke: color,
     strokeWidth,
-    strokeLinecap: 'round' as const,
-    strokeLinejoin: 'round' as const,
+    strokeLinecap: "round" as const,
+    strokeLinejoin: "round" as const,
     style,
-    'aria-hidden': true,
+    "aria-hidden": true,
   };
 
   switch (name) {
-    case 'cocktail':
+    case "cocktail":
       return (
         <svg {...common}>
           <path d="M4 5h16l-8 8-8-8Z" />
@@ -43,7 +44,7 @@ export function Glyph({
           <circle cx="16.5" cy="7" r="0.6" fill={color} stroke="none" />
         </svg>
       );
-    case 'music':
+    case "music":
       return (
         <svg {...common}>
           <path d="M9 18V5l11-2v11" />
@@ -51,7 +52,7 @@ export function Glyph({
           <circle cx="17.5" cy="16" r="2.5" />
         </svg>
       );
-    case 'climb':
+    case "climb":
       // simple active figure (running / bouldering)
       return (
         <svg {...common}>
@@ -61,7 +62,7 @@ export function Glyph({
           <path d="M10 12l-3 1-1 4" />
         </svg>
       );
-    case 'fork':
+    case "fork":
       return (
         <svg {...common}>
           <path d="M7 3v6a2 2 0 0 0 4 0V3" />
@@ -69,7 +70,7 @@ export function Glyph({
           <path d="M16 3c-1.5 0-2.5 1.8-2.5 4.5S14.5 12 16 12v9" />
         </svg>
       );
-    case 'coffee':
+    case "coffee":
       return (
         <svg {...common}>
           <path d="M4 9h13v4a5 5 0 0 1-5 5H9a5 5 0 0 1-5-5V9Z" />
@@ -77,7 +78,7 @@ export function Glyph({
           <path d="M8 3v2M11 3v2" />
         </svg>
       );
-    case 'search':
+    case "search":
       return (
         <svg {...common}>
           <circle cx="10.5" cy="10.5" r="6.5" />

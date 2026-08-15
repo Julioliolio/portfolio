@@ -1,6 +1,7 @@
-import { createStore } from 'solid-js/store';
+import { createStore } from "solid-js/store";
 
-export type OutputFormat = 'gif' | 'avi' | 'mp4' | 'mov' | 'webm' | 'mkv' | 'mp3';
+export type OutputFormat =
+  "gif" | "avi" | "mp4" | "mov" | "webm" | "mkv" | "mp3";
 
 export interface AppState {
   outputFormat: OutputFormat;
@@ -17,28 +18,28 @@ export interface AppState {
   estimatedBytes: number | null;
   estimating: boolean;
   // ── Input info (filled after /upload or /fetch) ─────────────────────────
-  inputFormat: string | null;      // e.g. "gif", "mp4", "avi"
-  previewUrl: string | null;       // server preview proxy URL, null until ready
-  needsProxy: boolean;             // source isn't browser-playable in <video>
+  inputFormat: string | null; // e.g. "gif", "mp4", "avi"
+  previewUrl: string | null; // server preview proxy URL, null until ready
+  needsProxy: boolean; // source isn't browser-playable in <video>
   // ── Conversion parameters ───────────────────────────────────────────────
   fps: number;
-  width: number;       // GIF output width (px, 0 = original)
-  vidWidth: number;    // non-GIF output width (px, 0 = original)
+  width: number; // GIF output width (px, 0 = original)
+  vidWidth: number; // non-GIF output width (px, 0 = original)
   crf: number;
-  audio: boolean;      // keep audio track on non-GIF outputs
-  fastCut: boolean;    // stream-copy when input format === output format
+  audio: boolean; // keep audio track on non-GIF outputs
+  fastCut: boolean; // stream-copy when input format === output format
 }
 
 const [appState, setAppState] = createStore<AppState>({
-  outputFormat: 'gif',
+  outputFormat: "gif",
   selectedFile: null,
   fileUrl: null,
   converting: false,
   currentJobId: null,
   progress: 0,
-  progressMsg: '',
-  dither: 'sierra2_4a',
-  codec: 'h264',
+  progressMsg: "",
+  dither: "sierra2_4a",
+  codec: "h264",
   uploadJobId: null,
   uploadReady: false,
   estimatedBytes: null,
@@ -48,13 +49,13 @@ const [appState, setAppState] = createStore<AppState>({
   needsProxy: false,
   fps: 12,
   width: 640,
-  vidWidth: 0,    // 0 = original
+  vidWidth: 0, // 0 = original
   crf: 23,
   audio: true,
   fastCut: false, // off by default: stream-copy snaps cut points to the nearest
-                  // preceding keyframe, which silently extends the trim range —
-                  // for the "just crop a video" case the user expects an exact
-                  // cut. Toggle on for speed when an inexact cut is acceptable.
+  // preceding keyframe, which silently extends the trim range —
+  // for the "just crop a video" case the user expects an exact
+  // cut. Toggle on for speed when an inexact cut is acceptable.
 });
 
 export { appState, setAppState };

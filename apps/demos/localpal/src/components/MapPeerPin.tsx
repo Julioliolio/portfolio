@@ -5,12 +5,12 @@
  * search-list rows render PeerPin directly (no bob there). Grow + bob feel come
  * from the `morph` and `float` registry roles, never inline springs.
  */
-import { useEffect } from 'react';
-import { animate, motion, useMotionValue, useTransform } from 'framer-motion';
-import { PeerPin } from './PeerPin';
-import { PointShadowDot } from './PointShadowDot';
-import { usePointShadow } from './FloatShadowProvider';
-import { useMotion } from './MotionProvider';
+import { useEffect } from "react";
+import { animate, motion, useMotionValue, useTransform } from "framer-motion";
+import { PeerPin } from "./PeerPin";
+import { PointShadowDot } from "./PointShadowDot";
+import { usePointShadow } from "./FloatShadowProvider";
+import { useMotion } from "./MotionProvider";
 
 const BOB = 3.5; // px bob amplitude (peak-to-peak = 7), matching the venue lozenge
 
@@ -30,8 +30,8 @@ export function MapPeerPin({
   stroke?: string;
   strokeWidth?: number;
 }) {
-  const morph = useMotion('morph');
-  const float = useMotion('float');
+  const morph = useMotion("morph");
+  const float = useMotion("float");
   const ps = usePointShadow();
 
   // Idle float — runs only while selected; a continuous sine wave (the `float`
@@ -43,7 +43,11 @@ export function MapPeerPin({
       return;
     }
     bob.set(-BOB);
-    const c = animate(bob, BOB, { ...float, repeat: Infinity, repeatType: 'reverse' });
+    const c = animate(bob, BOB, {
+      ...float,
+      repeat: Infinity,
+      repeatType: "reverse",
+    });
     return () => {
       c.stop();
       bob.set(0);
@@ -61,22 +65,30 @@ export function MapPeerPin({
         // Positioned + above the shadow wrapper so the ground dot always paints
         // BEHIND the tile — otherwise the absolute shadow (later in DOM) sits in
         // front of the non-positioned pin, most visibly at the top of the bob.
-        style={{ y: bob, position: 'relative', zIndex: 1 }}
+        style={{ y: bob, position: "relative", zIndex: 1 }}
         animate={{ scale: selected ? focusSize / size : 1 }}
         transition={morph}
       >
-        <PeerPin size={size} badge={badge} stroke={stroke} strokeWidth={strokeWidth} />
+        <PeerPin
+          size={size}
+          badge={badge}
+          stroke={stroke}
+          strokeWidth={strokeWidth}
+        />
       </motion.div>
       {/* Ground-point dot under the focused (grown) tile — the tile scales from
           center, so its bottom edge lands at (size + focusSize)/2 in this
           size-tall box. Fades in with the focus, breathes with the bob. */}
       <motion.div
-        style={{ position: 'absolute', inset: 0, pointerEvents: 'none' }}
+        style={{ position: "absolute", inset: 0, pointerEvents: "none" }}
         initial={false}
         animate={{ opacity: selected ? 1 : 0 }}
         transition={morph}
       >
-        <PointShadowDot top={(size + focusSize) / 2 + ps.offset} scaleX={shadowScaleX} />
+        <PointShadowDot
+          top={(size + focusSize) / 2 + ps.offset}
+          scaleX={shadowScaleX}
+        />
       </motion.div>
     </>
   );

@@ -28,7 +28,7 @@ export type FloatShadow = {
 // even ambient shadow all around the tile plus a gentle, diffuse contact pool
 // just below it — a light "floating" whisper, not a hard drop shadow.
 export const defaultFloatShadow: FloatShadow = {
-  color: '0,29,51',
+  color: "0,29,51",
   contactOpacity: 0.14,
   contactBlur: 9,
   contactWidthRatio: 0.9,
@@ -60,7 +60,7 @@ export type PointShadow = {
 };
 
 export const defaultPointShadow: PointShadow = {
-  color: '0,29,51',
+  color: "0,29,51",
   opacity: 0.62,
   blur: 1.75,
   width: 14.5,
@@ -75,7 +75,7 @@ export const defaultPointShadow: PointShadow = {
  * floating-squircle treatment with a contact shadow below it).
  */
 export const avatarPhotoShadow: Partial<FloatShadow> = {
-  color: '0,0,0',
+  color: "0,0,0",
   contactOpacity: 0,
   ambientNear: 0,
   ambientFar: 0.3,

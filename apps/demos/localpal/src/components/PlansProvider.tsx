@@ -8,9 +8,16 @@
  * day-of mode turns on). Toggling day-of off resets the RSVP so the demo can
  * be replayed.
  */
-import { createContext, useContext, useEffect, useMemo, useState, type ReactNode } from 'react';
-import { FOCUSED_META } from '../data/myPlans';
-import type { PeerPlan } from '../data/peerPlans';
+import {
+  createContext,
+  useContext,
+  useEffect,
+  useMemo,
+  useState,
+  type ReactNode,
+} from "react";
+import { FOCUSED_META } from "../data/myPlans";
+import type { PeerPlan } from "../data/peerPlans";
 
 /** A plan minted by the create-plan flow: the peer plan itself plus its map
  *  pin coords and the badge fields the "Your plans" rows render. */
@@ -62,7 +69,8 @@ export function PlansProvider({ children }: { children: ReactNode }) {
       setRsvped,
       target,
       createdPlans,
-      addCreatedPlan: (p: CreatedPlan) => setCreatedPlans((prev) => [p, ...prev]),
+      addCreatedPlan: (p: CreatedPlan) =>
+        setCreatedPlans((prev) => [p, ...prev]),
     }),
     [dayOf, rsvped, target, createdPlans],
   );
@@ -71,7 +79,7 @@ export function PlansProvider({ children }: { children: ReactNode }) {
 
 export function usePlansState(): PlansState {
   const v = useContext(Ctx);
-  if (!v) throw new Error('usePlansState outside PlansProvider');
+  if (!v) throw new Error("usePlansState outside PlansProvider");
   return v;
 }
 
@@ -80,5 +88,5 @@ export function formatCountdown(target: number, now: number): string {
   const mins = Math.max(0, Math.round((target - now) / 60_000));
   const h = Math.floor(mins / 60);
   const m = mins % 60;
-  return `${h}:${String(m).padStart(2, '0')}h left!`;
+  return `${h}:${String(m).padStart(2, "0")}h left!`;
 }

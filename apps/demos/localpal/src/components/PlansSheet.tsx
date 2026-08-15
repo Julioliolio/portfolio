@@ -18,30 +18,30 @@
  * A bottom brand fade + the floating "Propose a plan" CTA sit over the list,
  * exactly like the venue sheet's fade/CTA pattern.
  */
-import type { CSSProperties, PointerEvent as ReactPointerEvent } from 'react';
-import { useEffect, useLayoutEffect, useRef, useState } from 'react';
-import { animate, motion, useMotionValue, useTransform } from 'framer-motion';
-import { Squircle } from './Squircle';
-import { PeerPin } from './PeerPin';
-import { AvatarCluster } from './AvatarCluster';
-import { useMotion, usePressFeedback } from './MotionProvider';
-import { usePlansState, formatCountdown } from './PlansProvider';
-import { useDragScroll } from './useDragScroll';
-import { layerZoom, layerZoomStyle } from '../theme/motion';
-import { figmaIcons } from './icons/figmaIcons';
-import { BackChevron } from './icons/BackChevron';
-import { CheckIcon } from './icons/CheckIcon';
-import { CrossIcon } from './icons/CrossIcon';
-import { color, device } from '../theme/tokens';
-import { VENUES, type VenueId } from '../data/venues';
-import type { PeerPlan } from '../data/peerPlans';
+import type { CSSProperties, PointerEvent as ReactPointerEvent } from "react";
+import { useEffect, useLayoutEffect, useRef, useState } from "react";
+import { animate, motion, useMotionValue, useTransform } from "framer-motion";
+import { Squircle } from "./Squircle";
+import { PeerPin } from "./PeerPin";
+import { AvatarCluster } from "./AvatarCluster";
+import { useMotion, usePressFeedback } from "./MotionProvider";
+import { usePlansState, formatCountdown } from "./PlansProvider";
+import { useDragScroll } from "./useDragScroll";
+import { layerZoom, layerZoomStyle } from "../theme/motion";
+import { figmaIcons } from "./icons/figmaIcons";
+import { BackChevron } from "./icons/BackChevron";
+import { CheckIcon } from "./icons/CheckIcon";
+import { CrossIcon } from "./icons/CrossIcon";
+import { color, device } from "../theme/tokens";
+import { VENUES, type VenueId } from "../data/venues";
+import type { PeerPlan } from "../data/peerPlans";
 import {
   FOCUSED_PLAN,
   FOCUSED_META,
   NEXT_UP,
   ON_THEIR_WAY,
   ON_THEIR_WAY_COUNT,
-} from '../data/myPlans';
+} from "../data/myPlans";
 
 /** Surface geometry the calendar button morphs to (Figma 1384:2489: full-bleed,
  *  top at 129, running ~94px past the screen bottom so no bottom corners). */
@@ -69,16 +69,16 @@ const CTA = { top: 745 - PLANS.y, w: 301.33, h: 64 };
 
 // Cap-trimmed text (Figma measures type cap-to-cap). Chromium 133+.
 const capTrim = {
-  textBoxTrim: 'trim-both',
-  textBoxEdge: 'cap text',
+  textBoxTrim: "trim-both",
+  textBoxEdge: "cap text",
 } as CSSProperties;
 
 const buttonReset: CSSProperties = {
-  background: 'transparent',
-  border: 'none',
+  background: "transparent",
+  border: "none",
   padding: 0,
-  cursor: 'pointer',
-  textAlign: 'left',
+  cursor: "pointer",
+  textAlign: "left",
 };
 
 /* ------------------------------------------------------------------ */
@@ -87,7 +87,7 @@ const buttonReset: CSSProperties = {
 
 function RsvpSlider() {
   const { rsvped, setRsvped, target } = usePlansState();
-  const snap = useMotion('snap');
+  const snap = useMotion("snap");
 
   const x = useMotionValue(rsvped ? KNOB_MAX_X : 0);
   const drag = useRef<{ startX: number } | null>(null);
@@ -136,20 +136,26 @@ function RsvpSlider() {
       // The slider owns its pointer events — a drag must not tap the card.
       onPointerDown={(e: ReactPointerEvent) => e.stopPropagation()}
       onClick={(e: ReactPointerEvent) => e.stopPropagation()}
-      style={{ width: TRACK.w, height: TRACK.h, position: 'relative', flexShrink: 0, cursor: 'default' }}
+      style={{
+        width: TRACK.w,
+        height: TRACK.h,
+        position: "relative",
+        flexShrink: 0,
+        cursor: "default",
+      }}
     >
       {/* centered invite label (pre-RSVP) */}
       <motion.span
         style={{
-          position: 'absolute',
+          position: "absolute",
           inset: 0,
-          display: 'grid',
-          placeItems: 'center',
+          display: "grid",
+          placeItems: "center",
           color: color.lavender,
           fontSize: 12,
           fontWeight: 400,
           opacity: slideLabelOpacity,
-          pointerEvents: 'none',
+          pointerEvents: "none",
         }}
       >
         slide to RSVP
@@ -161,20 +167,20 @@ function RsvpSlider() {
         animate={{ opacity: rsvped ? 1 : 0 }}
         transition={snap}
         style={{
-          position: 'absolute',
+          position: "absolute",
           left: 12,
           top: 0,
-          height: '100%',
-          display: 'flex',
-          alignItems: 'center',
+          height: "100%",
+          display: "flex",
+          alignItems: "center",
           color: color.lavender,
           fontSize: 12,
           fontWeight: 400,
-          pointerEvents: 'none',
+          pointerEvents: "none",
           ...capTrim,
         }}
       >
-        {target ? formatCountdown(target, now) : ''}
+        {target ? formatCountdown(target, now) : ""}
       </motion.span>
 
       {/* the knob — drag right to RSVP; morphs chevron → check on commit */}
@@ -183,38 +189,51 @@ function RsvpSlider() {
         onPointerMove={onKnobMove}
         onPointerUp={onKnobUp}
         style={{
-          position: 'absolute',
+          position: "absolute",
           left: KNOB_INSET,
           top: KNOB_INSET,
           x,
           width: KNOB,
           height: KNOB,
-          touchAction: 'none',
-          cursor: rsvped ? 'default' : 'grab',
+          touchAction: "none",
+          cursor: rsvped ? "default" : "grab",
         }}
       >
         <Squircle
           role="sliderKnob"
           fill={color.offWhite}
-          style={{ width: '100%', height: '100%', display: 'grid', placeItems: 'center' }}
+          style={{
+            width: "100%",
+            height: "100%",
+            display: "grid",
+            placeItems: "center",
+          }}
         >
           {/* chevron and check swap with the snap spring (see the × pattern) */}
           <motion.span
             initial={false}
-            animate={{ scale: rsvped ? 0.4 : 1, opacity: rsvped ? 0 : 1, rotate: rsvped ? 90 : 0 }}
+            animate={{
+              scale: rsvped ? 0.4 : 1,
+              opacity: rsvped ? 0 : 1,
+              rotate: rsvped ? 90 : 0,
+            }}
             transition={snap}
-            style={{ gridArea: '1 / 1', display: 'grid', placeItems: 'center' }}
+            style={{ gridArea: "1 / 1", display: "grid", placeItems: "center" }}
           >
             {/* BackChevron points left; flip it to point along the slide */}
-            <span style={{ display: 'block', transform: 'rotate(180deg)' }}>
+            <span style={{ display: "block", transform: "rotate(180deg)" }}>
               <BackChevron height={14} color={color.brand} />
             </span>
           </motion.span>
           <motion.span
             initial={false}
-            animate={{ scale: rsvped ? 1 : 0.4, opacity: rsvped ? 1 : 0, rotate: rsvped ? 0 : -90 }}
+            animate={{
+              scale: rsvped ? 1 : 0.4,
+              opacity: rsvped ? 1 : 0,
+              rotate: rsvped ? 0 : -90,
+            }}
             transition={snap}
-            style={{ gridArea: '1 / 1', display: 'grid', placeItems: 'center' }}
+            style={{ gridArea: "1 / 1", display: "grid", placeItems: "center" }}
           >
             <CheckIcon size={15} color={color.brand} strokeWidth={2.4} />
           </motion.span>
@@ -228,7 +247,11 @@ function RsvpSlider() {
 /* The focused (next-up) plan card                                      */
 /* ------------------------------------------------------------------ */
 
-export function FocusedPlanCard({ onOpen }: { onOpen: (plan: PeerPlan) => void }) {
+export function FocusedPlanCard({
+  onOpen,
+}: {
+  onOpen: (plan: PeerPlan) => void;
+}) {
   const { dayOf, rsvped } = usePlansState();
   const press = usePressFeedback();
 
@@ -246,41 +269,73 @@ export function FocusedPlanCard({ onOpen }: { onOpen: (plan: PeerPlan) => void }
   });
 
   return (
-    <motion.button {...press} onClick={() => onOpen(FOCUSED_PLAN)} style={{ ...buttonReset, flexShrink: 0 }}>
+    <motion.button
+      {...press}
+      onClick={() => onOpen(FOCUSED_PLAN)}
+      style={{ ...buttonReset, flexShrink: 0 }}
+    >
       <Squircle
         role="planCard"
         fill={color.white}
         style={{
           width: COL_W,
-          boxSizing: 'border-box',
+          boxSizing: "border-box",
           padding: 16,
-          display: 'flex',
-          flexDirection: 'column',
-          alignItems: 'center',
+          display: "flex",
+          flexDirection: "column",
+          alignItems: "center",
           gap: 12,
         }}
       >
-        <div style={{ display: 'flex', flexDirection: 'column', gap: 8, width: '100%' }}>
+        <div
+          style={{
+            display: "flex",
+            flexDirection: "column",
+            gap: 8,
+            width: "100%",
+          }}
+        >
           <span
             style={{
               color: color.brand,
               fontSize: 20,
               fontWeight: 600,
-              lineHeight: '20px',
+              lineHeight: "20px",
               width: 297,
-              wordBreak: 'break-word',
+              wordBreak: "break-word",
             }}
           >
             {FOCUSED_PLAN.title}
           </span>
           {/* who's going */}
-          <div style={{ display: 'flex', alignItems: 'center', gap: 5 }}>
+          <div style={{ display: "flex", alignItems: "center", gap: 5 }}>
             <AvatarCluster />
-            <div style={{ display: 'flex', flexDirection: 'column', gap: 4, alignItems: 'flex-start' }}>
-              <span style={{ color: color.muted, fontSize: 12, fontWeight: 500, ...capTrim }}>
+            <div
+              style={{
+                display: "flex",
+                flexDirection: "column",
+                gap: 4,
+                alignItems: "flex-start",
+              }}
+            >
+              <span
+                style={{
+                  color: color.muted,
+                  fontSize: 12,
+                  fontWeight: 500,
+                  ...capTrim,
+                }}
+              >
                 {FOCUSED_PLAN.goingNames}
               </span>
-              <span style={{ color: color.muted, fontSize: 8, fontWeight: 500, ...capTrim }}>
+              <span
+                style={{
+                  color: color.muted,
+                  fontSize: 8,
+                  fontWeight: 500,
+                  ...capTrim,
+                }}
+              >
                 and +{Math.max(0, FOCUSED_PLAN.goingCount - 2)} others are going
               </span>
             </div>
@@ -298,21 +353,47 @@ export function FocusedPlanCard({ onOpen }: { onOpen: (plan: PeerPlan) => void }
               width: TRACK.w,
               height: TRACK.h,
               flexShrink: 0,
-              display: 'flex',
-              alignItems: 'center',
-              boxSizing: 'border-box',
-              padding: '0 16px 0 12.6px',
+              display: "flex",
+              alignItems: "center",
+              boxSizing: "border-box",
+              padding: "0 16px 0 12.6px",
             }}
           >
-            <div style={{ flex: 1, display: 'flex', flexDirection: 'column', alignItems: 'flex-start', gap: 4 }}>
-              <span style={{ color: color.onBrand, fontSize: 8, fontWeight: 600, ...capTrim }}>
+            <div
+              style={{
+                flex: 1,
+                display: "flex",
+                flexDirection: "column",
+                alignItems: "flex-start",
+                gap: 4,
+              }}
+            >
+              <span
+                style={{
+                  color: color.onBrand,
+                  fontSize: 8,
+                  fontWeight: 600,
+                  ...capTrim,
+                }}
+              >
                 {FOCUSED_META.dayTag}
               </span>
-              <span style={{ color: color.onBrand, fontSize: 24, fontWeight: 600, ...capTrim }}>
+              <span
+                style={{
+                  color: color.onBrand,
+                  fontSize: 24,
+                  fontWeight: 600,
+                  ...capTrim,
+                }}
+              >
                 {FOCUSED_META.time}
               </span>
             </div>
-            <img src={figmaIcons.chevron} alt="" style={{ width: 8, height: 11.33, display: 'block' }} />
+            <img
+              src={figmaIcons.chevron}
+              alt=""
+              style={{ width: 8, height: 11.33, display: "block" }}
+            />
           </Squircle>
         )}
 
@@ -327,60 +408,110 @@ export function FocusedPlanCard({ onOpen }: { onOpen: (plan: PeerPlan) => void }
           initial={false}
           animate={{ height: dayOf && rsvped ? otwH : 0 }}
           transition={{
-            duration: (dayOf && rsvped ? layerZoom.inMs : layerZoom.outMs) / 1000,
+            duration:
+              (dayOf && rsvped ? layerZoom.inMs : layerZoom.outMs) / 1000,
             ease: [0.22, 1, 0.36, 1],
             delay: dayOf && rsvped ? layerZoom.inDelayMs / 1000 : 0,
           }}
-          style={{ width: '100%', overflow: 'hidden' }}
+          style={{ width: "100%", overflow: "hidden" }}
         >
           <div
             ref={otwRef}
             style={{
-              display: 'flex',
-              flexDirection: 'column',
+              display: "flex",
+              flexDirection: "column",
               gap: 12,
               paddingTop: 4,
               paddingBottom: 4,
-              ...layerZoomStyle(dayOf && rsvped, 'child'),
+              ...layerZoomStyle(dayOf && rsvped, "child"),
             }}
           >
-            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
-              <span style={{ color: color.muted, fontSize: 12, fontWeight: 600, ...capTrim }}>
+            <div
+              style={{
+                display: "flex",
+                alignItems: "center",
+                justifyContent: "space-between",
+              }}
+            >
+              <span
+                style={{
+                  color: color.muted,
+                  fontSize: 12,
+                  fontWeight: 600,
+                  ...capTrim,
+                }}
+              >
                 On their way
               </span>
-              <span style={{ color: color.muted, fontSize: 10, fontWeight: 600, opacity: 0.6, ...capTrim }}>
+              <span
+                style={{
+                  color: color.muted,
+                  fontSize: 10,
+                  fontWeight: 600,
+                  opacity: 0.6,
+                  ...capTrim,
+                }}
+              >
                 {ON_THEIR_WAY_COUNT.going} of {ON_THEIR_WAY_COUNT.total}
               </span>
             </div>
-            <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
+            <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
               {ON_THEIR_WAY.map((a) => (
-                <div key={a.name} style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
-                  <div style={{ display: 'flex', alignItems: 'center', gap: 4 }}>
-                    <div style={{ position: 'relative', flexShrink: 0 }}>
+                <div
+                  key={a.name}
+                  style={{
+                    display: "flex",
+                    alignItems: "center",
+                    justifyContent: "space-between",
+                  }}
+                >
+                  <div
+                    style={{ display: "flex", alignItems: "center", gap: 4 }}
+                  >
+                    <div style={{ position: "relative", flexShrink: 0 }}>
                       <PeerPin size={33.7} height={35.4} />
                       {/* blue "on their way" tick over the tile's corner */}
                       <div
                         style={{
-                          position: 'absolute',
+                          position: "absolute",
                           left: 24.6,
                           top: 25.3,
                           width: 13,
                           height: 13,
-                          borderRadius: '50%',
+                          borderRadius: "50%",
                           background: color.brand,
-                          display: 'grid',
-                          placeItems: 'center',
+                          display: "grid",
+                          placeItems: "center",
                           zIndex: 2,
                         }}
                       >
-                        <CheckIcon size={7} color={color.offWhite} strokeWidth={3} />
+                        <CheckIcon
+                          size={7}
+                          color={color.offWhite}
+                          strokeWidth={3}
+                        />
                       </div>
                     </div>
-                    <span style={{ color: color.muted, fontSize: 12, fontWeight: 500, ...capTrim }}>
+                    <span
+                      style={{
+                        color: color.muted,
+                        fontSize: 12,
+                        fontWeight: 500,
+                        ...capTrim,
+                      }}
+                    >
                       {a.name}
                     </span>
                   </div>
-                  <span style={{ color: color.muted, fontSize: 10, fontWeight: 500, opacity: 0.6, ...capTrim }}>
+                  <span
+                    style={{
+                      color: color.muted,
+                      fontSize: 10,
+                      fontWeight: 500,
+                      opacity: 0.6,
+                      ...capTrim,
+                    }}
+                  >
                     {a.time}
                   </span>
                 </div>
@@ -410,7 +541,7 @@ export function PlansSheet({
   onPropose?: () => void;
 }) {
   const press = usePressFeedback();
-  const listDrag = useDragScroll('y');
+  const listDrag = useDragScroll("y");
   const { createdPlans } = usePlansState();
 
   return (
@@ -420,43 +551,89 @@ export function PlansSheet({
         radius={2}
         smoothing={1}
         fill="#fefefe"
-        style={{ position: 'absolute', left: (PLANS.w - 53) / 2, top: 8, width: 53, height: 4, zIndex: 1 }}
+        style={{
+          position: "absolute",
+          left: (PLANS.w - 53) / 2,
+          top: 8,
+          width: 53,
+          height: 4,
+          zIndex: 1,
+        }}
       />
 
       {/* One scroll region: title + focused card + next-up list */}
       <div
         {...listDrag}
         style={{
-          position: 'absolute',
+          position: "absolute",
           left: 0,
           top: CONTENT_TOP,
           width: PLANS.w,
           height: VISIBLE_H - CONTENT_TOP,
-          boxSizing: 'border-box',
-          display: 'flex',
-          flexDirection: 'column',
+          boxSizing: "border-box",
+          display: "flex",
+          flexDirection: "column",
           gap: 16,
           padding: `0 ${PAD_X}px 200px`,
-          overflowY: 'auto',
-          scrollbarWidth: 'none',
-          touchAction: 'pan-y',
-          overscrollBehavior: 'contain',
-          WebkitOverflowScrolling: 'touch',
+          overflowY: "auto",
+          scrollbarWidth: "none",
+          touchAction: "pan-y",
+          overscrollBehavior: "contain",
+          WebkitOverflowScrolling: "touch",
         }}
       >
-        <span style={{ color: color.onBrand, fontSize: 32, fontWeight: 600, lineHeight: '26px', flexShrink: 0 }}>
+        <span
+          style={{
+            color: color.onBrand,
+            fontSize: 32,
+            fontWeight: 600,
+            lineHeight: "26px",
+            flexShrink: 0,
+          }}
+        >
           Your plans
         </span>
 
         <FocusedPlanCard onOpen={onOpenPlan} />
 
         {/* Next up */}
-        <div style={{ display: 'flex', flexDirection: 'column', gap: 12, flexShrink: 0 }}>
-          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
-            <span style={{ color: color.onBrand, fontSize: 16, fontWeight: 500, ...capTrim }}>Next up</span>
-            <span style={{ color: color.lavenderDim, fontSize: 16, fontWeight: 500, ...capTrim }}>see all</span>
+        <div
+          style={{
+            display: "flex",
+            flexDirection: "column",
+            gap: 12,
+            flexShrink: 0,
+          }}
+        >
+          <div
+            style={{
+              display: "flex",
+              alignItems: "center",
+              justifyContent: "space-between",
+            }}
+          >
+            <span
+              style={{
+                color: color.onBrand,
+                fontSize: 16,
+                fontWeight: 500,
+                ...capTrim,
+              }}
+            >
+              Next up
+            </span>
+            <span
+              style={{
+                color: color.lavenderDim,
+                fontSize: 16,
+                fontWeight: 500,
+                ...capTrim,
+              }}
+            >
+              see all
+            </span>
           </div>
-          <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
+          <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
             {/* Plans minted by the create-plan flow land on top of the list */}
             {createdPlans.map((cp) => (
               <motion.button
@@ -471,11 +648,11 @@ export function PlansSheet({
                   style={{
                     width: COL_W,
                     height: ROW_H,
-                    display: 'flex',
-                    alignItems: 'center',
+                    display: "flex",
+                    alignItems: "center",
                     gap: 8,
-                    padding: '0 12px',
-                    boxSizing: 'border-box',
+                    padding: "0 12px",
+                    boxSizing: "border-box",
                   }}
                 >
                   <Squircle
@@ -485,32 +662,73 @@ export function PlansSheet({
                       width: BADGE.w,
                       height: BADGE.h,
                       flexShrink: 0,
-                      display: 'flex',
-                      flexDirection: 'column',
-                      alignItems: 'center',
-                      justifyContent: 'center',
+                      display: "flex",
+                      flexDirection: "column",
+                      alignItems: "center",
+                      justifyContent: "center",
                       gap: 4,
                     }}
                   >
-                    <span style={{ color: color.brandDeep, fontSize: 8, fontWeight: 600, ...capTrim }}>
+                    <span
+                      style={{
+                        color: color.brandDeep,
+                        fontSize: 8,
+                        fontWeight: 600,
+                        ...capTrim,
+                      }}
+                    >
                       {cp.dayTag}
                     </span>
-                    <span style={{ color: color.brandDeep, fontSize: 24, fontWeight: 600, ...capTrim }}>
+                    <span
+                      style={{
+                        color: color.brandDeep,
+                        fontSize: 24,
+                        fontWeight: 600,
+                        ...capTrim,
+                      }}
+                    >
                       {cp.time}
                     </span>
                   </Squircle>
-                  <div style={{ flex: 1, minWidth: 0, display: 'flex', flexDirection: 'column', gap: 8 }}>
-                    <span style={{ color: color.onBrand, fontSize: 16, fontWeight: 500, lineHeight: '16px' }}>
+                  <div
+                    style={{
+                      flex: 1,
+                      minWidth: 0,
+                      display: "flex",
+                      flexDirection: "column",
+                      gap: 8,
+                    }}
+                  >
+                    <span
+                      style={{
+                        color: color.onBrand,
+                        fontSize: 16,
+                        fontWeight: 500,
+                        lineHeight: "16px",
+                      }}
+                    >
                       {cp.plan.title}
                     </span>
-                    <span style={{ color: color.lavender, fontSize: 12, fontWeight: 500, ...capTrim }}>
+                    <span
+                      style={{
+                        color: color.lavender,
+                        fontSize: 12,
+                        fontWeight: 500,
+                        ...capTrim,
+                      }}
+                    >
                       {cp.meta}
                     </span>
                   </div>
                   <img
                     src={figmaIcons.chevron}
                     alt=""
-                    style={{ width: 8, height: 11.33, display: 'block', flexShrink: 0 }}
+                    style={{
+                      width: 8,
+                      height: 11.33,
+                      display: "block",
+                      flexShrink: 0,
+                    }}
                   />
                 </Squircle>
               </motion.button>
@@ -531,11 +749,11 @@ export function PlansSheet({
                     style={{
                       width: COL_W,
                       height: ROW_H,
-                      display: 'flex',
-                      alignItems: 'center',
+                      display: "flex",
+                      alignItems: "center",
                       gap: 8,
-                      padding: '0 12px',
-                      boxSizing: 'border-box',
+                      padding: "0 12px",
+                      boxSizing: "border-box",
                     }}
                   >
                     <Squircle
@@ -545,32 +763,73 @@ export function PlansSheet({
                         width: BADGE.w,
                         height: BADGE.h,
                         flexShrink: 0,
-                        display: 'flex',
-                        flexDirection: 'column',
-                        alignItems: 'center',
-                        justifyContent: 'center',
+                        display: "flex",
+                        flexDirection: "column",
+                        alignItems: "center",
+                        justifyContent: "center",
                         gap: 4,
                       }}
                     >
-                      <span style={{ color: color.brandDeep, fontSize: 8, fontWeight: 600, ...capTrim }}>
+                      <span
+                        style={{
+                          color: color.brandDeep,
+                          fontSize: 8,
+                          fontWeight: 600,
+                          ...capTrim,
+                        }}
+                      >
                         {ev.day}
                       </span>
-                      <span style={{ color: color.brandDeep, fontSize: 24, fontWeight: 600, ...capTrim }}>
+                      <span
+                        style={{
+                          color: color.brandDeep,
+                          fontSize: 24,
+                          fontWeight: 600,
+                          ...capTrim,
+                        }}
+                      >
                         {ev.time}
                       </span>
                     </Squircle>
-                    <div style={{ flex: 1, minWidth: 0, display: 'flex', flexDirection: 'column', gap: 8 }}>
-                      <span style={{ color: color.onBrand, fontSize: 16, fontWeight: 500, lineHeight: '16px' }}>
+                    <div
+                      style={{
+                        flex: 1,
+                        minWidth: 0,
+                        display: "flex",
+                        flexDirection: "column",
+                        gap: 8,
+                      }}
+                    >
+                      <span
+                        style={{
+                          color: color.onBrand,
+                          fontSize: 16,
+                          fontWeight: 500,
+                          lineHeight: "16px",
+                        }}
+                      >
                         {ev.title}
                       </span>
-                      <span style={{ color: color.lavender, fontSize: 12, fontWeight: 500, ...capTrim }}>
+                      <span
+                        style={{
+                          color: color.lavender,
+                          fontSize: 12,
+                          fontWeight: 500,
+                          ...capTrim,
+                        }}
+                      >
                         {ev.meta}
                       </span>
                     </div>
                     <img
                       src={figmaIcons.chevron}
                       alt=""
-                      style={{ width: 8, height: 11.33, display: 'block', flexShrink: 0 }}
+                      style={{
+                        width: 8,
+                        height: 11.33,
+                        display: "block",
+                        flexShrink: 0,
+                      }}
                     />
                   </Squircle>
                 </motion.button>
@@ -583,32 +842,49 @@ export function PlansSheet({
       {/* Bottom brand fade over the scrolling list */}
       <div
         style={{
-          position: 'absolute',
+          position: "absolute",
           left: 0,
           top: FADE.top,
           width: PLANS.w,
           height: FADE.h,
-          background: 'linear-gradient(to bottom, rgba(44,30,223,0) 0%, rgba(49,33,255,0.9) 96%)',
-          pointerEvents: 'none',
+          background:
+            "linear-gradient(to bottom, rgba(44,30,223,0) 0%, rgba(49,33,255,0.9) 96%)",
+          pointerEvents: "none",
         }}
       />
 
       {/* Floating "Propose a plan" CTA — morphs the sheet into the create flow */}
-      <motion.button {...press} onClick={onPropose} style={{ ...buttonReset, position: 'absolute', left: (PLANS.w - CTA.w) / 2, top: CTA.top }}>
+      <motion.button
+        {...press}
+        onClick={onPropose}
+        style={{
+          ...buttonReset,
+          position: "absolute",
+          left: (PLANS.w - CTA.w) / 2,
+          top: CTA.top,
+        }}
+      >
         <Squircle
           role="cta"
           fill={color.offWhite}
           style={{
             width: CTA.w,
             height: CTA.h,
-            display: 'flex',
-            alignItems: 'center',
-            justifyContent: 'center',
+            display: "flex",
+            alignItems: "center",
+            justifyContent: "center",
             gap: 4,
           }}
         >
           <CrossIcon plus size={17} color={color.brand} />
-          <span style={{ color: color.brand, fontSize: 24, fontWeight: 600, lineHeight: '26px' }}>
+          <span
+            style={{
+              color: color.brand,
+              fontSize: 24,
+              fontWeight: 600,
+              lineHeight: "26px",
+            }}
+          >
             Propose a plan
           </span>
         </Squircle>

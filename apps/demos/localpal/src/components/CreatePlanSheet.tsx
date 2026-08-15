@@ -24,24 +24,41 @@
  * the flow discards the draft. Confirming hands a CreatePlanResult up to
  * MapHome, which mints the real plan (pin coords + PlansProvider entry).
  */
-import { useCallback, useEffect, useRef, useState, type CSSProperties, type PointerEvent as ReactPointerEvent, type ReactNode, type Ref, type WheelEvent as ReactWheelEvent } from 'react';
-import { animate, motion, useMotionValue, useTransform, AnimatePresence, type MotionValue } from 'framer-motion';
-import { Squircle } from './Squircle';
-import { useMotion, usePressFeedback } from './MotionProvider';
-import { useConfirm } from './ConfirmProvider';
-import { useScramble } from './useScramble';
-import { useDragScroll } from './useDragScroll';
-import { layerZoomStyle } from '../theme/motion';
-import { Glyph } from './icons/Glyph';
-import { CrossIcon } from './icons/CrossIcon';
-import { BackChevron } from './icons/BackChevron';
-import { PersonIcon } from './icons/PersonIcon';
-import { ShareIcon } from './icons/ShareIcon';
-import { figmaIcons } from './icons/figmaIcons';
-import { color } from '../theme/tokens';
-import { CATEGORIES, type CategoryId } from '../theme/categories';
-import { VENUES, type Venue, type VenueId } from '../data/venues';
-import { ADDRESSES } from '../data/addresses';
+import {
+  useCallback,
+  useEffect,
+  useRef,
+  useState,
+  type CSSProperties,
+  type PointerEvent as ReactPointerEvent,
+  type ReactNode,
+  type Ref,
+  type WheelEvent as ReactWheelEvent,
+} from "react";
+import {
+  animate,
+  motion,
+  useMotionValue,
+  useTransform,
+  AnimatePresence,
+  type MotionValue,
+} from "framer-motion";
+import { Squircle } from "./Squircle";
+import { useMotion, usePressFeedback } from "./MotionProvider";
+import { useConfirm } from "./ConfirmProvider";
+import { useScramble } from "./useScramble";
+import { useDragScroll } from "./useDragScroll";
+import { layerZoomStyle } from "../theme/motion";
+import { Glyph } from "./icons/Glyph";
+import { CrossIcon } from "./icons/CrossIcon";
+import { BackChevron } from "./icons/BackChevron";
+import { PersonIcon } from "./icons/PersonIcon";
+import { ShareIcon } from "./icons/ShareIcon";
+import { figmaIcons } from "./icons/figmaIcons";
+import { color } from "../theme/tokens";
+import { CATEGORIES, type CategoryId } from "../theme/categories";
+import { VENUES, type Venue, type VenueId } from "../data/venues";
+import { ADDRESSES } from "../data/addresses";
 
 /** Surface geometry the BottomBar morphs to (Figma 1431:2788): inset card,
  *  362 wide, glued to the same bottom edge as the activity card. Heights are
@@ -91,17 +108,34 @@ const KNOB_INSET = 24.45;
 const PEOPLE_MIN = 2;
 const PEOPLE_MAX = 20;
 
-const WEEKDAYS = ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday', 'Sunday'];
-const HOURS = Array.from({ length: 24 }, (_, i) => String(i).padStart(2, '0'));
-const MINUTES = Array.from({ length: 12 }, (_, i) => String(i * 5).padStart(2, '0'));
+const WEEKDAYS = [
+  "Monday",
+  "Tuesday",
+  "Wednesday",
+  "Thursday",
+  "Friday",
+  "Saturday",
+  "Sunday",
+];
+const HOURS = Array.from({ length: 24 }, (_, i) => String(i).padStart(2, "0"));
+const MINUTES = Array.from({ length: 12 }, (_, i) =>
+  String(i * 5).padStart(2, "0"),
+);
 const MAX_TAGS = 3;
 
-const STEPS = ['title', 'location', 'time', 'people', 'description', 'check'] as const;
-type StepId = (typeof STEPS)[number] | 'success';
+const STEPS = [
+  "title",
+  "location",
+  "time",
+  "people",
+  "description",
+  "check",
+] as const;
+type StepId = (typeof STEPS)[number] | "success";
 
 export type PlanLocation =
-  | { kind: 'venue'; venueId: VenueId }
-  | { kind: 'address'; address: string; area: string };
+  | { kind: "venue"; venueId: VenueId }
+  | { kind: "address"; address: string; area: string };
 
 /** Everything the flow collected — MapHome mints the real plan from this. */
 export type CreatePlanResult = {
@@ -114,7 +148,11 @@ export type CreatePlanResult = {
   description: string;
 };
 
-type DraftTag = { id: string; label: string; glyph: 'drinks' | 'sports' | CategoryId | 'custom' };
+type DraftTag = {
+  id: string;
+  label: string;
+  glyph: "drinks" | "sports" | CategoryId | "custom";
+};
 
 // Chip icons — the lavender Figma variants where the design provides them
 // (same recipe as the search sheet's filter chips).
@@ -125,25 +163,25 @@ const CHIP_ICON: Partial<Record<string, string>> = {
 
 // Cap-trimmed text (Figma measures type cap-to-cap). Chromium 133+.
 const capTrim = {
-  textBoxTrim: 'trim-both',
-  textBoxEdge: 'cap text',
+  textBoxTrim: "trim-both",
+  textBoxEdge: "cap text",
 } as CSSProperties;
 
 const buttonReset: CSSProperties = {
-  background: 'transparent',
-  border: 'none',
+  background: "transparent",
+  border: "none",
   padding: 0,
-  cursor: 'pointer',
-  textAlign: 'left',
+  cursor: "pointer",
+  textAlign: "left",
 };
 
 const inputReset: CSSProperties = {
-  background: 'transparent',
-  border: 'none',
-  outline: 'none',
+  background: "transparent",
+  border: "none",
+  outline: "none",
   padding: 0,
   margin: 0,
-  fontFamily: 'inherit',
+  fontFamily: "inherit",
 };
 
 /* ------------------------------------------------------------------ */
@@ -155,17 +193,17 @@ const inputReset: CSSProperties = {
 const DOT_DIM = 0.35;
 
 function StepDots({ active }: { active: number }) {
-  const snap = useMotion('snap');
+  const snap = useMotion("snap");
   return (
     <div
       style={{
-        position: 'absolute',
+        position: "absolute",
         left: PAD_X,
         top: PAD_TOP + 8,
-        display: 'flex',
+        display: "flex",
         gap: DOT_GAP,
         zIndex: 3,
-        pointerEvents: 'none',
+        pointerEvents: "none",
       }}
     >
       {STEPS.map((id, i) => (
@@ -174,11 +212,18 @@ function StepDots({ active }: { active: number }) {
           initial={false}
           // width: the active step is a pill, the rest are dots. opacity: done
           // + current are full white, upcoming steps dim (Figma 1431:4021).
-          animate={{ width: i === active ? DOT_PILL : DOT, opacity: i <= active ? 1 : DOT_DIM }}
+          animate={{
+            width: i === active ? DOT_PILL : DOT,
+            opacity: i <= active ? 1 : DOT_DIM,
+          }}
           transition={snap}
           style={{ height: DOT }}
         >
-          <Squircle role="stepDot" fill={color.offWhite} style={{ width: '100%', height: '100%' }} />
+          <Squircle
+            role="stepDot"
+            fill={color.offWhite}
+            style={{ width: "100%", height: "100%" }}
+          />
         </motion.div>
       ))}
     </div>
@@ -188,9 +233,28 @@ function StepDots({ active }: { active: number }) {
 /** Small stacked up/down chevrons riding the wheel-plate labels (Figma 1431:4526). */
 function UpDownChevrons({ color: c = color.lavender }: { color?: string }) {
   return (
-    <svg width={8} height={14} viewBox="0 0 8 14" fill="none" aria-hidden style={{ display: 'block' }}>
-      <path d="M1 5l3-3 3 3" stroke={c} strokeWidth={1.6} strokeLinecap="round" strokeLinejoin="round" />
-      <path d="M1 9l3 3 3-3" stroke={c} strokeWidth={1.6} strokeLinecap="round" strokeLinejoin="round" />
+    <svg
+      width={8}
+      height={14}
+      viewBox="0 0 8 14"
+      fill="none"
+      aria-hidden
+      style={{ display: "block" }}
+    >
+      <path
+        d="M1 5l3-3 3 3"
+        stroke={c}
+        strokeWidth={1.6}
+        strokeLinecap="round"
+        strokeLinejoin="round"
+      />
+      <path
+        d="M1 9l3 3 3-3"
+        stroke={c}
+        strokeWidth={1.6}
+        strokeLinecap="round"
+        strokeLinejoin="round"
+      />
     </svg>
   );
 }
@@ -202,18 +266,24 @@ function UpDownChevrons({ color: c = color.lavender }: { color?: string }) {
 /** Natural-height flow column, measured by the sheet to size the surface.
  *  Top pad clears the persistent dots; a footer spacer keeps the measured
  *  height honest while the real footer is pinned chrome. */
-function StepColumn({ colRef, children }: { colRef?: Ref<HTMLDivElement>; children: ReactNode }) {
+function StepColumn({
+  colRef,
+  children,
+}: {
+  colRef?: Ref<HTMLDivElement>;
+  children: ReactNode;
+}) {
   return (
     <div
       ref={colRef}
       style={{
-        position: 'absolute',
+        position: "absolute",
         top: 0,
         left: 0,
         width: CREATE.w,
-        boxSizing: 'border-box',
-        display: 'flex',
-        flexDirection: 'column',
+        boxSizing: "border-box",
+        display: "flex",
+        flexDirection: "column",
         gap: BLOCK_GAP,
         paddingTop: PAD_TOP + DOTS_BLOCK,
         paddingBottom: PAD_BOTTOM,
@@ -233,12 +303,37 @@ function StepTitle({ title, subtitle }: { title: string; subtitle?: string }) {
     // compact. capTrim trims the top to cap height and the bottom to the text
     // edge, so the box includes descenders ("y"/"p" in "you up to?") instead of
     // clipping them at the baseline; the 12px gap is measured from below them.
-    <div style={{ display: 'flex', flexDirection: 'column', gap: 12, flexShrink: 0 }}>
-      <span style={{ color: color.onBrand, fontSize: 32, fontWeight: 600, lineHeight: '26px', wordBreak: 'break-word', ...capTrim }}>
+    <div
+      style={{
+        display: "flex",
+        flexDirection: "column",
+        gap: 12,
+        flexShrink: 0,
+      }}
+    >
+      <span
+        style={{
+          color: color.onBrand,
+          fontSize: 32,
+          fontWeight: 600,
+          lineHeight: "26px",
+          wordBreak: "break-word",
+          ...capTrim,
+        }}
+      >
         {title}
       </span>
       {subtitle && (
-        <span style={{ color: color.lavender, fontSize: 12, fontWeight: 400, ...capTrim }}>{subtitle}</span>
+        <span
+          style={{
+            color: color.lavender,
+            fontSize: 12,
+            fontWeight: 400,
+            ...capTrim,
+          }}
+        >
+          {subtitle}
+        </span>
       )}
     </div>
   );
@@ -256,20 +351,59 @@ function TagChip({ tag, onRemove }: { tag: DraftTag; onRemove: () => void }) {
       <Squircle
         role="chip"
         fill="rgba(255,255,255,0.12)"
-        style={{ height: 31.6, display: 'flex', alignItems: 'center', gap: 5, padding: '0 10px' }}
+        style={{
+          height: 31.6,
+          display: "flex",
+          alignItems: "center",
+          gap: 5,
+          padding: "0 10px",
+        }}
       >
         {icon ? (
-          <img src={icon} alt="" style={{ height: 14, width: 'auto', display: 'block', transform: 'rotate(-5deg)' }} />
-        ) : tag.glyph === 'custom' ? (
-          <img src={figmaIcons.shootingStar} alt="" style={{ height: 13, width: 'auto', display: 'block' }} />
+          <img
+            src={icon}
+            alt=""
+            style={{
+              height: 14,
+              width: "auto",
+              display: "block",
+              transform: "rotate(-5deg)",
+            }}
+          />
+        ) : tag.glyph === "custom" ? (
+          <img
+            src={figmaIcons.shootingStar}
+            alt=""
+            style={{ height: 13, width: "auto", display: "block" }}
+          />
         ) : (
-          <Glyph name={CATEGORIES[tag.glyph as CategoryId].glyph} size={13} color={color.lavender} />
+          <Glyph
+            name={CATEGORIES[tag.glyph as CategoryId].glyph}
+            size={13}
+            color={color.lavender}
+          />
         )}
-        <span style={{ color: '#a59eff', fontSize: 12, fontWeight: 600, whiteSpace: 'nowrap' }}>{tag.label}</span>
+        <span
+          style={{
+            color: "#a59eff",
+            fontSize: 12,
+            fontWeight: 600,
+            whiteSpace: "nowrap",
+          }}
+        >
+          {tag.label}
+        </span>
         <button
           aria-label={`Remove ${tag.label}`}
           onClick={onRemove}
-          style={{ ...buttonReset, display: 'grid', placeItems: 'center', width: 14, height: 14, marginLeft: 1 }}
+          style={{
+            ...buttonReset,
+            display: "grid",
+            placeItems: "center",
+            width: 14,
+            height: 14,
+            marginLeft: 1,
+          }}
         >
           <CrossIcon size={8} color={color.lavender} />
         </button>
@@ -292,16 +426,16 @@ function TitleStep({
   onTags: (t: DraftTag[]) => void;
 }) {
   const press = usePressFeedback();
-  const entrance = useMotion('entrance');
+  const entrance = useMotion("entrance");
   const [picking, setPicking] = useState(false);
-  const [custom, setCustom] = useState('');
+  const [custom, setCustom] = useState("");
   const taRef = useRef<HTMLTextAreaElement>(null);
 
   // Auto-grow the title area with its content (1–3 lines of 26px).
   const autosize = () => {
     const el = taRef.current;
     if (!el) return;
-    el.style.height = '26px';
+    el.style.height = "26px";
     el.style.height = `${Math.min(78, el.scrollHeight)}px`;
   };
   useEffect(autosize, [title]);
@@ -310,17 +444,30 @@ function TitleStep({
     if (tags.length >= MAX_TAGS || tags.some((x) => x.id === t.id)) return;
     onTags([...tags, t]);
     setPicking(false);
-    setCustom('');
+    setCustom("");
   };
-  const remaining = Object.values(CATEGORIES).filter((c) => !tags.some((t) => t.id === c.id));
+  const remaining = Object.values(CATEGORIES).filter(
+    (c) => !tags.some((t) => t.id === c.id),
+  );
 
   return (
     <StepColumn colRef={colRef}>
-      <StepTitle title="What are you up to?" subtitle="choose a title for your activity" />
+      <StepTitle
+        title="What are you up to?"
+        subtitle="choose a title for your activity"
+      />
 
-      <div style={{ display: 'flex', flexDirection: 'column', gap: 12, width: 270.5, flexShrink: 0 }}>
+      <div
+        style={{
+          display: "flex",
+          flexDirection: "column",
+          gap: 12,
+          width: 270.5,
+          flexShrink: 0,
+        }}
+      >
         {/* Title field — 24px over a 1px lavender rule (Figma 1431:3120). */}
-        <div style={{ display: 'flex', flexDirection: 'column', gap: 4 }}>
+        <div style={{ display: "flex", flexDirection: "column", gap: 4 }}>
           <textarea
             ref={taRef}
             className="lp-create-input"
@@ -331,36 +478,59 @@ function TitleStep({
             maxLength={64}
             style={{
               ...inputReset,
-              width: '100%',
+              width: "100%",
               color: color.onBrand,
               fontSize: 24,
               fontWeight: 500,
-              lineHeight: '26px',
-              resize: 'none',
-              overflow: 'hidden',
+              lineHeight: "26px",
+              resize: "none",
+              overflow: "hidden",
             }}
           />
-          <div style={{ height: 1, width: '100%', background: color.lavender }} />
+          <div
+            style={{ height: 1, width: "100%", background: color.lavender }}
+          />
         </div>
 
         {/* Tag chips + the ⊕ picker */}
-        <div style={{ display: 'flex', alignItems: 'center', gap: 8, flexWrap: 'wrap' }}>
+        <div
+          style={{
+            display: "flex",
+            alignItems: "center",
+            gap: 8,
+            flexWrap: "wrap",
+          }}
+        >
           {tags.map((t) => (
-            <TagChip key={t.id} tag={t} onRemove={() => onTags(tags.filter((x) => x.id !== t.id))} />
+            <TagChip
+              key={t.id}
+              tag={t}
+              onRemove={() => onTags(tags.filter((x) => x.id !== t.id))}
+            />
           ))}
           {tags.length < MAX_TAGS && (
-            <motion.button {...press} onClick={() => setPicking((p) => !p)} aria-label="Add tag" style={{ ...buttonReset, flexShrink: 0 }}>
+            <motion.button
+              {...press}
+              onClick={() => setPicking((p) => !p)}
+              aria-label="Add tag"
+              style={{ ...buttonReset, flexShrink: 0 }}
+            >
               <Squircle
                 role="chip"
                 fill="rgba(255,255,255,0.12)"
-                style={{ width: 31.3, height: 31.3, display: 'grid', placeItems: 'center' }}
+                style={{
+                  width: 31.3,
+                  height: 31.3,
+                  display: "grid",
+                  placeItems: "center",
+                }}
               >
                 {/* rotates into an × while the picker is open — glyphs morph, not swap */}
                 <motion.span
                   initial={false}
                   animate={{ rotate: picking ? 45 : 0 }}
                   transition={entrance}
-                  style={{ display: 'grid', placeItems: 'center' }}
+                  style={{ display: "grid", placeItems: "center" }}
                 >
                   <CrossIcon plus size={8} color={color.lavender} />
                 </motion.span>
@@ -382,22 +552,44 @@ function TitleStep({
               animate={{ opacity: 1 }}
               exit={{ opacity: 0 }}
               transition={entrance}
-              style={{ display: 'flex', alignItems: 'center', gap: 8, flexWrap: 'wrap' }}
+              style={{
+                display: "flex",
+                alignItems: "center",
+                gap: 8,
+                flexWrap: "wrap",
+              }}
             >
               {remaining.map((c) => (
                 <motion.button
                   key={c.id}
                   {...press}
-                  onClick={() => addTag({ id: c.id, label: c.label, glyph: c.id })}
+                  onClick={() =>
+                    addTag({ id: c.id, label: c.label, glyph: c.id })
+                  }
                   style={{ ...buttonReset, flexShrink: 0 }}
                 >
                   <Squircle
                     role="chip"
                     fill={color.brandDeep}
-                    style={{ height: 28, display: 'flex', alignItems: 'center', gap: 5, padding: '0 10px' }}
+                    style={{
+                      height: 28,
+                      display: "flex",
+                      alignItems: "center",
+                      gap: 5,
+                      padding: "0 10px",
+                    }}
                   >
                     <Glyph name={c.glyph} size={12} color={color.lavender} />
-                    <span style={{ color: '#a59eff', fontSize: 12, fontWeight: 600, whiteSpace: 'nowrap' }}>{c.label}</span>
+                    <span
+                      style={{
+                        color: "#a59eff",
+                        fontSize: 12,
+                        fontWeight: 600,
+                        whiteSpace: "nowrap",
+                      }}
+                    >
+                      {c.label}
+                    </span>
                   </Squircle>
                 </motion.button>
               ))}
@@ -405,12 +597,22 @@ function TitleStep({
                 value={custom}
                 onChange={(e) => setCustom(e.target.value)}
                 onKeyDown={(e) => {
-                  if (e.key === 'Enter' && custom.trim())
-                    addTag({ id: `custom-${custom.trim().toLowerCase()}`, label: custom.trim(), glyph: 'custom' });
+                  if (e.key === "Enter" && custom.trim())
+                    addTag({
+                      id: `custom-${custom.trim().toLowerCase()}`,
+                      label: custom.trim(),
+                      glyph: "custom",
+                    });
                 }}
                 placeholder="or type your own…"
                 maxLength={16}
-                style={{ ...inputReset, color: color.onBrand, fontSize: 12, fontWeight: 500, width: 110 }}
+                style={{
+                  ...inputReset,
+                  color: color.onBrand,
+                  fontSize: 12,
+                  fontWeight: 500,
+                  width: 110,
+                }}
               />
             </motion.div>
           )}
@@ -424,7 +626,7 @@ function TitleStep({
 /* Step 2 — location: choose ⇄ venue/address search (Figma 1431:3964)   */
 /* ------------------------------------------------------------------ */
 
-type LocationMode = 'choose' | 'venues' | 'address';
+type LocationMode = "choose" | "venues" | "address";
 
 function LocationStep({
   colRef,
@@ -436,41 +638,52 @@ function LocationStep({
   onLocation: (l: PlanLocation) => void;
 }) {
   const press = usePressFeedback();
-  const [mode, setMode] = useState<LocationMode>('choose');
-  const [query, setQuery] = useState('');
-  const listDrag = useDragScroll('y');
+  const [mode, setMode] = useState<LocationMode>("choose");
+  const [query, setQuery] = useState("");
+  const listDrag = useDragScroll("y");
   const inputRef = useRef<HTMLInputElement>(null);
-  const searching = mode !== 'choose';
+  const searching = mode !== "choose";
 
   const openMode = (m: LocationMode) => {
     setMode(m);
-    setQuery('');
+    setQuery("");
     requestAnimationFrame(() => inputRef.current?.focus());
   };
 
   const q = query.trim().toLowerCase();
   const venueResults = Object.values(VENUES).filter(
-    (v) => !q || v.name.toLowerCase().includes(q) || v.category.toLowerCase().includes(q) || v.address.toLowerCase().includes(q),
+    (v) =>
+      !q ||
+      v.name.toLowerCase().includes(q) ||
+      v.category.toLowerCase().includes(q) ||
+      v.address.toLowerCase().includes(q),
   );
   const addressResults = ADDRESSES.filter(
-    (a) => !q || a.label.toLowerCase().includes(q) || a.area.toLowerCase().includes(q),
+    (a) =>
+      !q ||
+      a.label.toLowerCase().includes(q) ||
+      a.area.toLowerCase().includes(q),
   );
 
-  const selectedVenue = location?.kind === 'venue' ? VENUES[location.venueId] : null;
+  const selectedVenue =
+    location?.kind === "venue" ? VENUES[location.venueId] : null;
 
   const rowStyle: CSSProperties = {
-    display: 'flex',
-    flexDirection: 'column',
-    alignItems: 'flex-start',
+    display: "flex",
+    flexDirection: "column",
+    alignItems: "flex-start",
     gap: 6,
-    padding: '10px 4px',
-    width: '100%',
+    padding: "10px 4px",
+    width: "100%",
     flexShrink: 0,
   };
 
   return (
     <StepColumn colRef={colRef}>
-      <StepTitle title="Where’s it happening?" subtitle="choose or add a place" />
+      <StepTitle
+        title="Where’s it happening?"
+        subtitle="choose or add a place"
+      />
 
       {/* The region grows between the two-button row and the tall search
           state. Its height changes INSTANTLY so the single surface-height
@@ -480,7 +693,7 @@ function LocationStep({
           content layers just crossfade on the shared hierarchical zoom. */}
       <div
         style={{
-          position: 'relative',
+          position: "relative",
           width: COL_W,
           flexShrink: 0,
           height: searching ? FIELD_H + 12 + PANEL_H : FIELD_H,
@@ -489,63 +702,91 @@ function LocationStep({
         {/* choose: search venues… / add location + (parent once you dive in) */}
         <div
           style={{
-            position: 'absolute',
+            position: "absolute",
             inset: 0,
-            display: 'flex',
+            display: "flex",
             gap: 8,
-            alignItems: 'flex-start',
-            pointerEvents: searching ? 'none' : undefined,
-            ...layerZoomStyle(!searching, 'parent'),
+            alignItems: "flex-start",
+            pointerEvents: searching ? "none" : undefined,
+            ...layerZoomStyle(!searching, "parent"),
           }}
         >
-          <motion.button {...press} onClick={() => openMode('venues')} style={{ ...buttonReset, flexShrink: 0 }}>
+          <motion.button
+            {...press}
+            onClick={() => openMode("venues")}
+            style={{ ...buttonReset, flexShrink: 0 }}
+          >
             <Squircle
               role="field"
               fill={color.brandDeep}
-              style={{ width: VENUES_BTN_W, height: FIELD_H, display: 'flex', alignItems: 'center', gap: 4, padding: '0 16px' }}
+              style={{
+                width: VENUES_BTN_W,
+                height: FIELD_H,
+                display: "flex",
+                alignItems: "center",
+                gap: 4,
+                padding: "0 16px",
+              }}
             >
-              <img src={figmaIcons.search} alt="" width={14} height={14} style={{ display: 'block', flexShrink: 0 }} />
+              <img
+                src={figmaIcons.search}
+                alt=""
+                width={14}
+                height={14}
+                style={{ display: "block", flexShrink: 0 }}
+              />
               <span
                 style={{
                   color: selectedVenue ? color.onBrand : color.lavender,
                   fontSize: 16,
                   fontWeight: 400,
-                  whiteSpace: 'nowrap',
-                  overflow: 'hidden',
-                  textOverflow: 'ellipsis',
+                  whiteSpace: "nowrap",
+                  overflow: "hidden",
+                  textOverflow: "ellipsis",
                 }}
               >
-                {selectedVenue ? selectedVenue.name : 'search venues...'}
+                {selectedVenue ? selectedVenue.name : "search venues..."}
               </span>
             </Squircle>
           </motion.button>
-          <motion.button {...press} onClick={() => openMode('address')} style={{ ...buttonReset, flexShrink: 0 }}>
+          <motion.button
+            {...press}
+            onClick={() => openMode("address")}
+            style={{ ...buttonReset, flexShrink: 0 }}
+          >
             <Squircle
               role="field"
               fill={color.brandDeep}
               style={{
                 width: ADDRESS_BTN_W,
                 height: FIELD_H,
-                display: 'flex',
-                alignItems: 'center',
-                justifyContent: 'center',
+                display: "flex",
+                alignItems: "center",
+                justifyContent: "center",
                 gap: 6,
-                padding: '0 12px',
+                padding: "0 12px",
               }}
             >
               <span
                 style={{
-                  color: location?.kind === 'address' ? color.onBrand : color.lavender,
+                  color:
+                    location?.kind === "address"
+                      ? color.onBrand
+                      : color.lavender,
                   fontSize: 16,
                   fontWeight: 400,
-                  whiteSpace: 'nowrap',
-                  overflow: 'hidden',
-                  textOverflow: 'ellipsis',
+                  whiteSpace: "nowrap",
+                  overflow: "hidden",
+                  textOverflow: "ellipsis",
                 }}
               >
-                {location?.kind === 'address' ? location.address : 'add location'}
+                {location?.kind === "address"
+                  ? location.address
+                  : "add location"}
               </span>
-              {location?.kind !== 'address' && <CrossIcon plus size={6} color={color.lavender} />}
+              {location?.kind !== "address" && (
+                <CrossIcon plus size={6} color={color.lavender} />
+              )}
             </Squircle>
           </motion.button>
         </div>
@@ -553,68 +794,118 @@ function LocationStep({
         {/* searching: full-width field + results panel (Figma 1431:4152) */}
         <div
           style={{
-            position: 'absolute',
+            position: "absolute",
             inset: 0,
-            display: 'flex',
-            flexDirection: 'column',
+            display: "flex",
+            flexDirection: "column",
             gap: 12,
-            pointerEvents: searching ? undefined : 'none',
-            ...layerZoomStyle(searching, 'child'),
+            pointerEvents: searching ? undefined : "none",
+            ...layerZoomStyle(searching, "child"),
           }}
         >
           <Squircle
             role="field"
             fill={color.brandDeep}
-            style={{ width: SEARCH_W, height: FIELD_H, display: 'flex', alignItems: 'center', gap: 4, padding: '0 16px', flexShrink: 0 }}
+            style={{
+              width: SEARCH_W,
+              height: FIELD_H,
+              display: "flex",
+              alignItems: "center",
+              gap: 4,
+              padding: "0 16px",
+              flexShrink: 0,
+            }}
           >
-            {mode !== 'address' && (
-              <img src={figmaIcons.search} alt="" width={14} height={14} style={{ display: 'block', flexShrink: 0 }} />
+            {mode !== "address" && (
+              <img
+                src={figmaIcons.search}
+                alt=""
+                width={14}
+                height={14}
+                style={{ display: "block", flexShrink: 0 }}
+              />
             )}
             <input
               ref={inputRef}
               value={query}
               onChange={(e) => setQuery(e.target.value)}
-              placeholder={mode === 'address' ? 'type an address...' : 'search venues...'}
-              style={{ ...inputReset, flex: 1, minWidth: 0, color: color.onBrand, fontSize: 16, fontWeight: 400 }}
+              placeholder={
+                mode === "address" ? "type an address..." : "search venues..."
+              }
+              style={{
+                ...inputReset,
+                flex: 1,
+                minWidth: 0,
+                color: color.onBrand,
+                fontSize: 16,
+                fontWeight: 400,
+              }}
             />
             <button
               aria-label="Close search"
-              onClick={() => setMode('choose')}
-              style={{ ...buttonReset, display: 'grid', placeItems: 'center', width: 20, height: 20, flexShrink: 0 }}
+              onClick={() => setMode("choose")}
+              style={{
+                ...buttonReset,
+                display: "grid",
+                placeItems: "center",
+                width: 20,
+                height: 20,
+                flexShrink: 0,
+              }}
             >
               <CrossIcon size={9} color={color.lavender} />
             </button>
           </Squircle>
 
-          <Squircle role="plate" fill={color.brandDeep} style={{ width: COL_W, height: PANEL_H, flexShrink: 0 }}>
+          <Squircle
+            role="plate"
+            fill={color.brandDeep}
+            style={{ width: COL_W, height: PANEL_H, flexShrink: 0 }}
+          >
             <div
               {...listDrag}
               style={{
-                position: 'absolute',
+                position: "absolute",
                 inset: 0,
-                padding: '10px 14px',
-                overflowY: 'auto',
-                scrollbarWidth: 'none',
-                touchAction: 'pan-y',
-                overscrollBehavior: 'contain',
-                WebkitOverflowScrolling: 'touch',
-                display: 'flex',
-                flexDirection: 'column',
+                padding: "10px 14px",
+                overflowY: "auto",
+                scrollbarWidth: "none",
+                touchAction: "pan-y",
+                overscrollBehavior: "contain",
+                WebkitOverflowScrolling: "touch",
+                display: "flex",
+                flexDirection: "column",
               }}
             >
-              {mode === 'venues'
+              {mode === "venues"
                 ? venueResults.map((v) => (
                     <motion.button
                       key={v.id}
                       {...press}
                       onClick={() => {
-                        onLocation({ kind: 'venue', venueId: v.id });
-                        setMode('choose');
+                        onLocation({ kind: "venue", venueId: v.id });
+                        setMode("choose");
                       }}
                       style={{ ...buttonReset, ...rowStyle }}
                     >
-                      <span style={{ color: color.onBrand, fontSize: 16, fontWeight: 500, lineHeight: '16px' }}>{v.name}</span>
-                      <span style={{ color: color.lavender, fontSize: 12, fontWeight: 400, ...capTrim }}>
+                      <span
+                        style={{
+                          color: color.onBrand,
+                          fontSize: 16,
+                          fontWeight: 500,
+                          lineHeight: "16px",
+                        }}
+                      >
+                        {v.name}
+                      </span>
+                      <span
+                        style={{
+                          color: color.lavender,
+                          fontSize: 12,
+                          fontWeight: 400,
+                          ...capTrim,
+                        }}
+                      >
                         {v.category} - {v.address}
                       </span>
                     </motion.button>
@@ -624,13 +915,35 @@ function LocationStep({
                       key={a.id}
                       {...press}
                       onClick={() => {
-                        onLocation({ kind: 'address', address: a.label, area: a.area });
-                        setMode('choose');
+                        onLocation({
+                          kind: "address",
+                          address: a.label,
+                          area: a.area,
+                        });
+                        setMode("choose");
                       }}
                       style={{ ...buttonReset, ...rowStyle }}
                     >
-                      <span style={{ color: color.onBrand, fontSize: 16, fontWeight: 500, lineHeight: '16px' }}>{a.label}</span>
-                      <span style={{ color: color.lavender, fontSize: 12, fontWeight: 400, ...capTrim }}>{a.area}</span>
+                      <span
+                        style={{
+                          color: color.onBrand,
+                          fontSize: 16,
+                          fontWeight: 500,
+                          lineHeight: "16px",
+                        }}
+                      >
+                        {a.label}
+                      </span>
+                      <span
+                        style={{
+                          color: color.lavender,
+                          fontSize: 12,
+                          fontWeight: 400,
+                          ...capTrim,
+                        }}
+                      >
+                        {a.area}
+                      </span>
                     </motion.button>
                   ))}
             </div>
@@ -656,7 +969,7 @@ function WheelColumn({
   onChange: (i: number) => void;
   width: number;
 }) {
-  const snap = useMotion('snap');
+  const snap = useMotion("snap");
   const y = useMotionValue(-index * WHEEL_ROW_H);
   const drag = useRef<{ startY: number; startVal: number } | null>(null);
   const wheelAcc = useRef(0);
@@ -670,7 +983,9 @@ function WheelColumn({
   }, [index, y, snap]);
 
   const settle = () => {
-    const i = Math.round(-Math.min(maxY, Math.max(minY, y.get())) / WHEEL_ROW_H);
+    const i = Math.round(
+      -Math.min(maxY, Math.max(minY, y.get())) / WHEEL_ROW_H,
+    );
     if (i !== index) onChange(i);
     else animate(y, -i * WHEEL_ROW_H, snap);
   };
@@ -681,7 +996,15 @@ function WheelColumn({
   };
   const onMove = (e: ReactPointerEvent) => {
     if (!drag.current) return;
-    y.set(Math.min(maxY, Math.max(minY, drag.current.startVal + (e.clientY - drag.current.startY))));
+    y.set(
+      Math.min(
+        maxY,
+        Math.max(
+          minY,
+          drag.current.startVal + (e.clientY - drag.current.startY),
+        ),
+      ),
+    );
   };
   const onUp = () => {
     if (!drag.current) return;
@@ -709,10 +1032,10 @@ function WheelColumn({
       style={{
         width,
         height: WHEEL_ROW_H * WHEEL_ROWS,
-        overflow: 'hidden',
-        position: 'relative',
-        touchAction: 'none',
-        cursor: 'grab',
+        overflow: "hidden",
+        position: "relative",
+        touchAction: "none",
+        cursor: "grab",
       }}
     >
       <motion.div style={{ y: shifted }}>
@@ -724,7 +1047,17 @@ function WheelColumn({
   );
 }
 
-function WheelRow({ label, i, y, onPick }: { label: string; i: number; y: MotionValue<number>; onPick: () => void }) {
+function WheelRow({
+  label,
+  i,
+  y,
+  onPick,
+}: {
+  label: string;
+  i: number;
+  y: MotionValue<number>;
+  onPick: () => void;
+}) {
   const opacity = useTransform(y, (v) => {
     const d = Math.abs(v + i * WHEEL_ROW_H) / WHEEL_ROW_H;
     return d < 0.5 ? 1 : d < 1.5 ? 0.45 : d < 2.5 ? 0.18 : 0.08;
@@ -734,14 +1067,14 @@ function WheelRow({ label, i, y, onPick }: { label: string; i: number; y: Motion
       onClick={onPick}
       style={{
         height: WHEEL_ROW_H,
-        display: 'grid',
-        placeItems: 'center',
+        display: "grid",
+        placeItems: "center",
         opacity,
         color: color.onBrand,
         fontSize: 20,
         fontWeight: 600,
-        cursor: 'pointer',
-        whiteSpace: 'nowrap',
+        cursor: "pointer",
+        whiteSpace: "nowrap",
       }}
     >
       {label}
@@ -765,15 +1098,24 @@ function WheelPlate({
   onNudge: (dir: 1 | -1) => void;
   children: ReactNode;
 }) {
-  const morph = useMotion('morph');
+  const morph = useMotion("morph");
   const press = usePressFeedback();
   const acc = useRef(0);
   return (
-    <Squircle role="plate" fill={color.brandDeep} style={{ width, flexShrink: 0, alignSelf: 'flex-start' }}>
+    <Squircle
+      role="plate"
+      fill={color.brandDeep}
+      style={{ width, flexShrink: 0, alignSelf: "flex-start" }}
+    >
       {/* Height changes instantly; the ONE surface-height spring reshapes the
           card (a spring here too would chain onto it and stutter). The wheel
           reveals via the shared hierarchical zoom on the layer below. */}
-      <div style={{ height: open ? PLATE_H + WHEEL_H : PLATE_H, overflow: 'hidden' }}>
+      <div
+        style={{
+          height: open ? PLATE_H + WHEEL_H : PLATE_H,
+          overflow: "hidden",
+        }}
+      >
         <motion.button
           {...press}
           onClick={onToggle}
@@ -786,20 +1128,41 @@ function WheelPlate({
           }}
           style={{
             ...buttonReset,
-            width: '100%',
+            width: "100%",
             height: PLATE_H,
-            display: 'flex',
-            alignItems: 'center',
-            justifyContent: 'center',
+            display: "flex",
+            alignItems: "center",
+            justifyContent: "center",
             gap: 6,
           }}
         >
-          <span style={{ color: color.onBrand, fontSize: 24, fontWeight: 600, whiteSpace: 'nowrap' }}>{label}</span>
-          <motion.span initial={false} animate={{ rotate: open ? 180 : 0 }} transition={morph} style={{ display: 'block' }}>
+          <span
+            style={{
+              color: color.onBrand,
+              fontSize: 24,
+              fontWeight: 600,
+              whiteSpace: "nowrap",
+            }}
+          >
+            {label}
+          </span>
+          <motion.span
+            initial={false}
+            animate={{ rotate: open ? 180 : 0 }}
+            transition={morph}
+            style={{ display: "block" }}
+          >
             <UpDownChevrons />
           </motion.span>
         </motion.button>
-        <div style={{ ...layerZoomStyle(open, 'child'), pointerEvents: open ? undefined : 'none' }}>{children}</div>
+        <div
+          style={{
+            ...layerZoomStyle(open, "child"),
+            pointerEvents: open ? undefined : "none",
+          }}
+        >
+          {children}
+        </div>
       </div>
     </Squircle>
   );
@@ -822,35 +1185,52 @@ function TimeStep({
   onHour: (i: number) => void;
   onMinute: (i: number) => void;
 }) {
-  const [openPlate, setOpenPlate] = useState<null | 'day' | 'time'>(null);
+  const [openPlate, setOpenPlate] = useState<null | "day" | "time">(null);
   const cycle = (v: number, n: number, d: number) => (v + d + n) % n;
   return (
     <StepColumn colRef={colRef}>
       <StepTitle title="When?" subtitle="add a time for your activity" />
-      <div style={{ display: 'flex', gap: 8, alignItems: 'flex-start', flexShrink: 0 }}>
+      <div
+        style={{
+          display: "flex",
+          gap: 8,
+          alignItems: "flex-start",
+          flexShrink: 0,
+        }}
+      >
         <WheelPlate
           width={DAY_W}
           label={WEEKDAYS[day]}
-          open={openPlate === 'day'}
-          onToggle={() => setOpenPlate((p) => (p === 'day' ? null : 'day'))}
+          open={openPlate === "day"}
+          onToggle={() => setOpenPlate((p) => (p === "day" ? null : "day"))}
           onNudge={(d) => onDay(cycle(day, 7, d))}
         >
-          <WheelColumn values={WEEKDAYS} index={day} onChange={onDay} width={DAY_W} />
+          <WheelColumn
+            values={WEEKDAYS}
+            index={day}
+            onChange={onDay}
+            width={DAY_W}
+          />
         </WheelPlate>
         <WheelPlate
           width={TIME_W}
           label={`${HOURS[hour]}:${MINUTES[minute]}`}
-          open={openPlate === 'time'}
-          onToggle={() => setOpenPlate((p) => (p === 'time' ? null : 'time'))}
+          open={openPlate === "time"}
+          onToggle={() => setOpenPlate((p) => (p === "time" ? null : "time"))}
           onNudge={(d) => onMinute(cycle(minute, 12, d))}
         >
-          <div style={{ display: 'flex', justifyContent: 'center', gap: 2 }}>
-            <WheelColumn values={HOURS} index={hour} onChange={onHour} width={44} />
+          <div style={{ display: "flex", justifyContent: "center", gap: 2 }}>
+            <WheelColumn
+              values={HOURS}
+              index={hour}
+              onChange={onHour}
+              width={44}
+            />
             <span
               style={{
                 height: WHEEL_ROW_H * WHEEL_ROWS,
-                display: 'grid',
-                placeItems: 'center',
+                display: "grid",
+                placeItems: "center",
                 color: color.onBrand,
                 fontSize: 20,
                 fontWeight: 600,
@@ -858,7 +1238,12 @@ function TimeStep({
             >
               :
             </span>
-            <WheelColumn values={MINUTES} index={minute} onChange={onMinute} width={44} />
+            <WheelColumn
+              values={MINUTES}
+              index={minute}
+              onChange={onMinute}
+              width={44}
+            />
           </div>
         </WheelPlate>
       </div>
@@ -870,27 +1255,59 @@ function TimeStep({
 /* Step 4 — people (Figma 1431:4609)                                    */
 /* ------------------------------------------------------------------ */
 
-function PeopleStep({ colRef, people, onPeople }: { colRef?: Ref<HTMLDivElement>; people: number; onPeople: (n: number) => void }) {
+function PeopleStep({
+  colRef,
+  people,
+  onPeople,
+}: {
+  colRef?: Ref<HTMLDivElement>;
+  people: number;
+  onPeople: (n: number) => void;
+}) {
   const press = usePressFeedback();
-  const pop = useMotion('pop');
-  const knob = (side: 'minus' | 'plus') => {
-    const disabled = side === 'minus' ? people <= PEOPLE_MIN : people >= PEOPLE_MAX;
+  const pop = useMotion("pop");
+  const knob = (side: "minus" | "plus") => {
+    const disabled =
+      side === "minus" ? people <= PEOPLE_MIN : people >= PEOPLE_MAX;
     return (
       <motion.button
         {...press}
-        aria-label={side === 'minus' ? 'Fewer people' : 'More people'}
-        onClick={() => onPeople(Math.min(PEOPLE_MAX, Math.max(PEOPLE_MIN, people + (side === 'minus' ? -1 : 1))))}
+        aria-label={side === "minus" ? "Fewer people" : "More people"}
+        onClick={() =>
+          onPeople(
+            Math.min(
+              PEOPLE_MAX,
+              Math.max(PEOPLE_MIN, people + (side === "minus" ? -1 : 1)),
+            ),
+          )
+        }
         style={{
           ...buttonReset,
-          position: 'absolute',
+          position: "absolute",
           top: (PEOPLE_PLATE_H - KNOB) / 2,
-          [side === 'minus' ? 'left' : 'right']: KNOB_INSET,
+          [side === "minus" ? "left" : "right"]: KNOB_INSET,
           opacity: disabled ? 0.4 : 1,
         }}
       >
-        <Squircle role="sliderKnob" fill={color.offWhite} style={{ width: KNOB, height: KNOB, display: 'grid', placeItems: 'center' }}>
-          {side === 'minus' ? (
-            <div style={{ width: 13, height: 2.6, borderRadius: 1.3, background: color.brand }} />
+        <Squircle
+          role="sliderKnob"
+          fill={color.offWhite}
+          style={{
+            width: KNOB,
+            height: KNOB,
+            display: "grid",
+            placeItems: "center",
+          }}
+        >
+          {side === "minus" ? (
+            <div
+              style={{
+                width: 13,
+                height: 2.6,
+                borderRadius: 1.3,
+                background: color.brand,
+              }}
+            />
           ) : (
             <CrossIcon plus size={10} color={color.brand} />
           )}
@@ -900,9 +1317,23 @@ function PeopleStep({ colRef, people, onPeople }: { colRef?: Ref<HTMLDivElement>
   };
   return (
     <StepColumn colRef={colRef}>
-      <StepTitle title="How many people can join?" subtitle="can be changed any time" />
-      <Squircle role="plate" fill={color.brandDeep} style={{ width: COL_W, height: PEOPLE_PLATE_H, flexShrink: 0 }}>
-        <div style={{ position: 'absolute', inset: 0, display: 'grid', placeItems: 'center' }}>
+      <StepTitle
+        title="How many people can join?"
+        subtitle="can be changed any time"
+      />
+      <Squircle
+        role="plate"
+        fill={color.brandDeep}
+        style={{ width: COL_W, height: PEOPLE_PLATE_H, flexShrink: 0 }}
+      >
+        <div
+          style={{
+            position: "absolute",
+            inset: 0,
+            display: "grid",
+            placeItems: "center",
+          }}
+        >
           {/* keyed pop when the number changes — animate the interaction */}
           <motion.span
             key={people}
@@ -914,8 +1345,8 @@ function PeopleStep({ colRef, people, onPeople }: { colRef?: Ref<HTMLDivElement>
             {people} people
           </motion.span>
         </div>
-        {knob('minus')}
-        {knob('plus')}
+        {knob("minus")}
+        {knob("plus")}
       </Squircle>
     </StepColumn>
   );
@@ -939,9 +1370,23 @@ function DescriptionStep({
   const press = usePressFeedback();
   return (
     <StepColumn colRef={colRef}>
-      <StepTitle title="Anything they should know?" subtitle="add a description for your activity" />
-      <div style={{ display: 'flex', flexDirection: 'column', gap: 8, flexShrink: 0 }}>
-        <Squircle role="plate" fill={color.brandDeep} style={{ width: COL_W, height: 134.3 }}>
+      <StepTitle
+        title="Anything they should know?"
+        subtitle="add a description for your activity"
+      />
+      <div
+        style={{
+          display: "flex",
+          flexDirection: "column",
+          gap: 8,
+          flexShrink: 0,
+        }}
+      >
+        <Squircle
+          role="plate"
+          fill={color.brandDeep}
+          style={{ width: COL_W, height: 134.3 }}
+        >
           <textarea
             value={description}
             onChange={(e) => onDescription(e.target.value)}
@@ -949,19 +1394,32 @@ function DescriptionStep({
             maxLength={220}
             style={{
               ...inputReset,
-              position: 'absolute',
+              position: "absolute",
               inset: 0,
               padding: 12.5,
               color: color.onBrand,
               fontSize: 12,
               fontWeight: 400,
-              lineHeight: '15px',
-              resize: 'none',
+              lineHeight: "15px",
+              resize: "none",
             }}
           />
         </Squircle>
-        <motion.button {...press} onClick={onSkip} style={{ ...buttonReset, alignSelf: 'center' }}>
-          <span style={{ color: color.lavender, fontSize: 12, fontWeight: 500, ...capTrim }}>Skip for now</span>
+        <motion.button
+          {...press}
+          onClick={onSkip}
+          style={{ ...buttonReset, alignSelf: "center" }}
+        >
+          <span
+            style={{
+              color: color.lavender,
+              fontSize: 12,
+              fontWeight: 500,
+              ...capTrim,
+            }}
+          >
+            Skip for now
+          </span>
         </motion.button>
       </div>
     </StepColumn>
@@ -989,32 +1447,103 @@ function CheckStep({
 }) {
   return (
     <StepColumn colRef={colRef}>
-      <div style={{ display: 'flex', flexDirection: 'column', gap: 12, flexShrink: 0 }}>
+      <div
+        style={{
+          display: "flex",
+          flexDirection: "column",
+          gap: 12,
+          flexShrink: 0,
+        }}
+      >
         <StepTitle title={title} subtitle={address} />
-        <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
-          <img src={figmaIcons.clock} alt="" width={14} height={14} style={{ display: 'block' }} />
-          <span style={{ color: color.onBrand, fontSize: 16, fontWeight: 500, ...capTrim }}>{when}</span>
+        <div style={{ display: "flex", alignItems: "center", gap: 6 }}>
+          <img
+            src={figmaIcons.clock}
+            alt=""
+            width={14}
+            height={14}
+            style={{ display: "block" }}
+          />
+          <span
+            style={{
+              color: color.onBrand,
+              fontSize: 16,
+              fontWeight: 500,
+              ...capTrim,
+            }}
+          >
+            {when}
+          </span>
         </div>
       </div>
 
-      <div style={{ display: 'flex', flexDirection: 'column', gap: 12, flexShrink: 0 }}>
+      <div
+        style={{
+          display: "flex",
+          flexDirection: "column",
+          gap: 12,
+          flexShrink: 0,
+        }}
+      >
         {/* who can come */}
-        <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
-          <Squircle role="badge" fill={color.offWhite} style={{ width: 31.5, height: 32, display: 'grid', placeItems: 'center', flexShrink: 0 }}>
+        <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
+          <Squircle
+            role="badge"
+            fill={color.offWhite}
+            style={{
+              width: 31.5,
+              height: 32,
+              display: "grid",
+              placeItems: "center",
+              flexShrink: 0,
+            }}
+          >
             <PersonIcon size={18} color={color.brand} />
           </Squircle>
-          <div style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
-            <span style={{ color: color.onBrand, fontSize: 16, fontWeight: 500, ...capTrim }}>Up to {people} people</span>
-            <span style={{ color: color.lavender, fontSize: 12, fontWeight: 400, ...capTrim }}>minimum of 3</span>
+          <div style={{ display: "flex", flexDirection: "column", gap: 6 }}>
+            <span
+              style={{
+                color: color.onBrand,
+                fontSize: 16,
+                fontWeight: 500,
+                ...capTrim,
+              }}
+            >
+              Up to {people} people
+            </span>
+            <span
+              style={{
+                color: color.lavender,
+                fontSize: 12,
+                fontWeight: 400,
+                ...capTrim,
+              }}
+            >
+              minimum of 3
+            </span>
           </div>
         </div>
 
         {description && (
-          <Squircle role="plate" fill={color.brandDeep} style={{ width: COL_W, padding: 15, boxSizing: 'border-box' }}>
+          <Squircle
+            role="plate"
+            fill={color.brandDeep}
+            style={{ width: COL_W, padding: 15, boxSizing: "border-box" }}
+          >
             {/* break-word so a long unbroken string wraps (and the plate grows
                 to fit) instead of overflowing the box — same convention as the
                 app's other user-text blocks (plan titles, activity cards). */}
-            <p style={{ color: color.lavender, fontSize: 12, fontWeight: 400, lineHeight: '13px', margin: 0, whiteSpace: 'pre-line', wordBreak: 'break-word' }}>
+            <p
+              style={{
+                color: color.lavender,
+                fontSize: 12,
+                fontWeight: 400,
+                lineHeight: "13px",
+                margin: 0,
+                whiteSpace: "pre-line",
+                wordBreak: "break-word",
+              }}
+            >
               {description}
             </p>
           </Squircle>
@@ -1031,7 +1560,15 @@ function CheckStep({
 function SuccessStep({ colRef }: { colRef?: Ref<HTMLDivElement> }) {
   return (
     <StepColumn colRef={colRef}>
-      <span style={{ color: color.onBrand, fontSize: 32, fontWeight: 600, lineHeight: '32px', wordBreak: 'break-word' }}>
+      <span
+        style={{
+          color: color.onBrand,
+          fontSize: 32,
+          fontWeight: 600,
+          lineHeight: "32px",
+          wordBreak: "break-word",
+        }}
+      >
         Plan created successfully!
       </span>
     </StepColumn>
@@ -1062,41 +1599,45 @@ export function CreatePlanSheet({
 }) {
   const press = usePressFeedback();
   const confirm = useConfirm();
-  const snap = useMotion('snap');
+  const snap = useMotion("snap");
   const snapMs = ((snap as { duration?: number }).duration ?? 0.3) * 1000;
 
-  const [step, setStep] = useState<StepId>('title');
+  const [step, setStep] = useState<StepId>("title");
   // Draft — survives back-and-forth between steps; the component is keyed per
   // flow session, so leaving the flow discards it.
-  const [title, setTitle] = useState('');
+  const [title, setTitle] = useState("");
   const [tags, setTags] = useState<DraftTag[]>([]);
   const [location, setLocation] = useState<PlanLocation | null>(
-    initialVenue ? { kind: 'venue', venueId: initialVenue.id } : null,
+    initialVenue ? { kind: "venue", venueId: initialVenue.id } : null,
   );
   const [day, setDay] = useState(0); // Monday
   const [hour, setHour] = useState(18);
   const [minute, setMinute] = useState(0);
   const [people, setPeople] = useState(6);
-  const [description, setDescription] = useState('');
+  const [description, setDescription] = useState("");
 
-  const activeIdx = step === 'success' ? STEPS.length : STEPS.indexOf(step);
+  const activeIdx = step === "success" ? STEPS.length : STEPS.indexOf(step);
   const dotIdx = Math.min(activeIdx, STEPS.length - 1);
 
   const canNext =
-    step === 'title' ? title.trim().length > 0 : step === 'location' ? location != null : true;
+    step === "title"
+      ? title.trim().length > 0
+      : step === "location"
+        ? location != null
+        : true;
 
   const timeLabel = `${HOURS[hour]}:${MINUTES[minute]}`;
   const whenLabel = `${WEEKDAYS[day]} - ${timeLabel}`;
   const addressLabel =
-    location?.kind === 'venue'
+    location?.kind === "venue"
       ? VENUES[location.venueId].address
       : location
         ? `${location.address}, ${location.area}`
-        : '';
+        : "";
 
   const next = () => {
     if (!canNext) return;
-    if (step === 'check') {
+    if (step === "check") {
       const result: CreatePlanResult = {
         title: title.trim(),
         tags: tags.map((t) => t.label),
@@ -1107,26 +1648,31 @@ export function CreatePlanSheet({
         description: description.trim(),
       };
       // Commit + reveal the success card, gated behind an "are you sure?".
-      confirm({ title: 'Create this plan?', subtitle: result.title, confirmLabel: 'Create plan' }).then(
-        (ok) => {
-          if (!ok) return;
-          onConfirm(result);
-          setStep('success');
-        },
-      );
+      confirm({
+        title: "Create this plan?",
+        subtitle: result.title,
+        confirmLabel: "Create plan",
+      }).then((ok) => {
+        if (!ok) return;
+        onConfirm(result);
+        setStep("success");
+      });
       return;
     }
     const i = STEPS.indexOf(step as (typeof STEPS)[number]);
     setStep(STEPS[i + 1]);
   };
   const back = () => {
-    if (step === 'success') return;
+    if (step === "success") return;
     const i = STEPS.indexOf(step as (typeof STEPS)[number]);
     if (i <= 0) onExit();
     else setStep(STEPS[i - 1]);
   };
 
-  const mainLabel = useScramble(step === 'check' ? 'Create plan' : 'Next', snapMs);
+  const mainLabel = useScramble(
+    step === "check" ? "Create plan" : "Next",
+    snapMs,
+  );
 
   // Observe the VISIBLE step's column and report its height (same recipe as
   // ActivitySheet) — switching steps re-points the observer.
@@ -1143,27 +1689,77 @@ export function CreatePlanSheet({
     report();
   }, []);
 
-  const layers: Array<{ id: StepId; node: (ref?: Ref<HTMLDivElement>) => ReactNode }> = [
-    { id: 'title', node: (ref) => <TitleStep colRef={ref} title={title} onTitle={setTitle} tags={tags} onTags={setTags} /> },
-    { id: 'location', node: (ref) => <LocationStep colRef={ref} location={location} onLocation={setLocation} /> },
+  const layers: Array<{
+    id: StepId;
+    node: (ref?: Ref<HTMLDivElement>) => ReactNode;
+  }> = [
     {
-      id: 'time',
+      id: "title",
       node: (ref) => (
-        <TimeStep colRef={ref} day={day} hour={hour} minute={minute} onDay={setDay} onHour={setHour} onMinute={setMinute} />
+        <TitleStep
+          colRef={ref}
+          title={title}
+          onTitle={setTitle}
+          tags={tags}
+          onTags={setTags}
+        />
       ),
     },
-    { id: 'people', node: (ref) => <PeopleStep colRef={ref} people={people} onPeople={setPeople} /> },
     {
-      id: 'description',
-      node: (ref) => <DescriptionStep colRef={ref} description={description} onDescription={setDescription} onSkip={next} />,
-    },
-    {
-      id: 'check',
+      id: "location",
       node: (ref) => (
-        <CheckStep colRef={ref} title={title.trim() || 'Untitled plan'} address={addressLabel} when={whenLabel} people={people} description={description.trim()} />
+        <LocationStep
+          colRef={ref}
+          location={location}
+          onLocation={setLocation}
+        />
       ),
     },
-    { id: 'success', node: (ref) => <SuccessStep colRef={ref} /> },
+    {
+      id: "time",
+      node: (ref) => (
+        <TimeStep
+          colRef={ref}
+          day={day}
+          hour={hour}
+          minute={minute}
+          onDay={setDay}
+          onHour={setHour}
+          onMinute={setMinute}
+        />
+      ),
+    },
+    {
+      id: "people",
+      node: (ref) => (
+        <PeopleStep colRef={ref} people={people} onPeople={setPeople} />
+      ),
+    },
+    {
+      id: "description",
+      node: (ref) => (
+        <DescriptionStep
+          colRef={ref}
+          description={description}
+          onDescription={setDescription}
+          onSkip={next}
+        />
+      ),
+    },
+    {
+      id: "check",
+      node: (ref) => (
+        <CheckStep
+          colRef={ref}
+          title={title.trim() || "Untitled plan"}
+          address={addressLabel}
+          when={whenLabel}
+          people={people}
+          description={description.trim()}
+        />
+      ),
+    },
+    { id: "success", node: (ref) => <SuccessStep colRef={ref} /> },
   ];
 
   return (
@@ -1172,16 +1768,16 @@ export function CreatePlanSheet({
 
       {layers.map(({ id, node }, i) => {
         const visible = id === step;
-        const hiddenAs = i < activeIdx ? 'parent' : 'child';
+        const hiddenAs = i < activeIdx ? "parent" : "child";
         return (
           <div
             key={id}
             style={{
-              position: 'absolute',
+              position: "absolute",
               inset: 0,
               // undefined (inherit), not 'auto' — see ActivitySheet: an
               // explicit value would poke through a closed ancestor layer.
-              pointerEvents: visible ? undefined : 'none',
+              pointerEvents: visible ? undefined : "none",
               ...layerZoomStyle(visible, hiddenAs),
             }}
           >
@@ -1192,20 +1788,43 @@ export function CreatePlanSheet({
 
       {/* Persistent footer — pinned to the card's bottom edge across every
           step (the wizard row), swapping for the success actions at the end. */}
-      <div style={{ position: 'absolute', left: PAD_X, bottom: PAD_BOTTOM, width: COL_W, height: FOOTER_H, zIndex: 3 }}>
+      <div
+        style={{
+          position: "absolute",
+          left: PAD_X,
+          bottom: PAD_BOTTOM,
+          width: COL_W,
+          height: FOOTER_H,
+          zIndex: 3,
+        }}
+      >
         {/* back ‹ + Next / Create plan */}
         <div
           style={{
-            position: 'absolute',
+            position: "absolute",
             inset: 0,
-            display: 'flex',
+            display: "flex",
             gap: FOOTER_GAP,
-            pointerEvents: step === 'success' ? 'none' : undefined,
-            ...layerZoomStyle(step !== 'success', 'parent'),
+            pointerEvents: step === "success" ? "none" : undefined,
+            ...layerZoomStyle(step !== "success", "parent"),
           }}
         >
-          <motion.button {...press} aria-label="Back" onClick={back} style={{ ...buttonReset, flexShrink: 0 }}>
-            <Squircle role="cta" fill={color.white} style={{ width: BACK_W, height: FOOTER_H, display: 'grid', placeItems: 'center' }}>
+          <motion.button
+            {...press}
+            aria-label="Back"
+            onClick={back}
+            style={{ ...buttonReset, flexShrink: 0 }}
+          >
+            <Squircle
+              role="cta"
+              fill={color.white}
+              style={{
+                width: BACK_W,
+                height: FOOTER_H,
+                display: "grid",
+                placeItems: "center",
+              }}
+            >
               <BackChevron color={color.brand} />
             </Squircle>
           </motion.button>
@@ -1215,10 +1834,32 @@ export function CreatePlanSheet({
             initial={false}
             animate={{ opacity: canNext ? 1 : 0.45 }}
             transition={snap}
-            style={{ ...buttonReset, flexShrink: 0, cursor: canNext ? 'pointer' : 'default' }}
+            style={{
+              ...buttonReset,
+              flexShrink: 0,
+              cursor: canNext ? "pointer" : "default",
+            }}
           >
-            <Squircle role="cta" fill={color.white} style={{ width: MAIN_W, height: FOOTER_H, display: 'grid', placeItems: 'center' }}>
-              <span style={{ color: color.brand, fontSize: 24, fontWeight: 600, whiteSpace: 'nowrap' }}>{mainLabel}</span>
+            <Squircle
+              role="cta"
+              fill={color.white}
+              style={{
+                width: MAIN_W,
+                height: FOOTER_H,
+                display: "grid",
+                placeItems: "center",
+              }}
+            >
+              <span
+                style={{
+                  color: color.brand,
+                  fontSize: 24,
+                  fontWeight: 600,
+                  whiteSpace: "nowrap",
+                }}
+              >
+                {mainLabel}
+              </span>
             </Squircle>
           </motion.button>
         </div>
@@ -1226,22 +1867,57 @@ export function CreatePlanSheet({
         {/* Go to your plan + share (Figma 1431:5258) */}
         <div
           style={{
-            position: 'absolute',
+            position: "absolute",
             inset: 0,
-            display: 'flex',
+            display: "flex",
             gap: FOOTER_GAP,
-            pointerEvents: step === 'success' ? undefined : 'none',
-            ...layerZoomStyle(step === 'success', 'child'),
+            pointerEvents: step === "success" ? undefined : "none",
+            ...layerZoomStyle(step === "success", "child"),
           }}
         >
-          <motion.button {...press} onClick={onGoToPlan} style={{ ...buttonReset, flexShrink: 0 }}>
-            <Squircle role="cta" fill={color.white} style={{ width: MAIN_W, height: FOOTER_H, display: 'grid', placeItems: 'center' }}>
-              <span style={{ color: color.brand, fontSize: 24, fontWeight: 600, whiteSpace: 'nowrap' }}>Go to your plan</span>
+          <motion.button
+            {...press}
+            onClick={onGoToPlan}
+            style={{ ...buttonReset, flexShrink: 0 }}
+          >
+            <Squircle
+              role="cta"
+              fill={color.white}
+              style={{
+                width: MAIN_W,
+                height: FOOTER_H,
+                display: "grid",
+                placeItems: "center",
+              }}
+            >
+              <span
+                style={{
+                  color: color.brand,
+                  fontSize: 24,
+                  fontWeight: 600,
+                  whiteSpace: "nowrap",
+                }}
+              >
+                Go to your plan
+              </span>
             </Squircle>
           </motion.button>
           {/* share — dead for now, just the press feedback */}
-          <motion.button {...press} aria-label="Share plan" style={{ ...buttonReset, flexShrink: 0 }}>
-            <Squircle role="cta" fill={color.white} style={{ width: 63, height: FOOTER_H, display: 'grid', placeItems: 'center' }}>
+          <motion.button
+            {...press}
+            aria-label="Share plan"
+            style={{ ...buttonReset, flexShrink: 0 }}
+          >
+            <Squircle
+              role="cta"
+              fill={color.white}
+              style={{
+                width: 63,
+                height: FOOTER_H,
+                display: "grid",
+                placeItems: "center",
+              }}
+            >
               <ShareIcon size={22} color={color.brand} />
             </Squircle>
           </motion.button>

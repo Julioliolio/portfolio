@@ -5,17 +5,23 @@
  * glyph + "Pere's pub crawl", with a white × square beside it that zooms you
  * back to the profile. Everything else on the map is hidden while it's up.
  */
-import { motion } from 'framer-motion';
-import { Squircle } from '../Squircle';
-import { useMotion, usePressFeedback } from '../MotionProvider';
-import { CrossIcon } from '../icons/CrossIcon';
-import { color, device } from '../../theme/tokens';
-import { PEOPLE, personTag, type PersonId } from '../../data/people';
+import { motion } from "framer-motion";
+import { Squircle } from "../Squircle";
+import { useMotion, usePressFeedback } from "../MotionProvider";
+import { CrossIcon } from "../icons/CrossIcon";
+import { color, device } from "../../theme/tokens";
+import { PEOPLE, personTag, type PersonId } from "../../data/people";
 
 const H = 56;
 
-export function RouteBanner({ personId, onClose }: { personId: PersonId; onClose: () => void }) {
-  const entrance = useMotion('entrance');
+export function RouteBanner({
+  personId,
+  onClose,
+}: {
+  personId: PersonId;
+  onClose: () => void;
+}) {
+  const entrance = useMotion("entrance");
   const press = usePressFeedback();
   const person = PEOPLE[personId];
   const tag = personTag(person);
@@ -30,16 +36,16 @@ export function RouteBanner({ personId, onClose }: { personId: PersonId; onClose
       exit={{ y: -90, opacity: 0 }}
       transition={entrance}
       style={{
-        position: 'absolute',
+        position: "absolute",
         left: 0,
         top: 62,
         width: device.width,
-        display: 'flex',
-        justifyContent: 'center',
-        alignItems: 'center',
+        display: "flex",
+        justifyContent: "center",
+        alignItems: "center",
         gap: 12,
         zIndex: 22,
-        filter: 'drop-shadow(0 4px 10px rgba(0,29,51,0.22))',
+        filter: "drop-shadow(0 4px 10px rgba(0,29,51,0.22))",
       }}
     >
       <Squircle
@@ -47,18 +53,30 @@ export function RouteBanner({ personId, onClose }: { personId: PersonId; onClose
         fill={color.brand}
         style={{
           height: H,
-          display: 'flex',
-          alignItems: 'center',
+          display: "flex",
+          alignItems: "center",
           gap: 12,
-          padding: '0 22px 0 18px',
+          padding: "0 22px 0 18px",
         }}
       >
         <img
           src={tag.pillGlyph}
           alt=""
-          style={{ height: 30, width: 'auto', display: 'block', transform: 'rotate(-4deg)' }}
+          style={{
+            height: 30,
+            width: "auto",
+            display: "block",
+            transform: "rotate(-4deg)",
+          }}
         />
-        <span style={{ color: color.onBrand, fontSize: 16, fontWeight: 500, whiteSpace: 'nowrap' }}>
+        <span
+          style={{
+            color: color.onBrand,
+            fontSize: 16,
+            fontWeight: 500,
+            whiteSpace: "nowrap",
+          }}
+        >
           {label}
         </span>
       </Squircle>
@@ -66,12 +84,17 @@ export function RouteBanner({ personId, onClose }: { personId: PersonId; onClose
         {...press}
         aria-label="Leave route map"
         onClick={onClose}
-        style={{ background: 'transparent', border: 'none', padding: 0, cursor: 'pointer' }}
+        style={{
+          background: "transparent",
+          border: "none",
+          padding: 0,
+          cursor: "pointer",
+        }}
       >
         <Squircle
           role="lozenge"
           fill={color.offWhite}
-          style={{ width: H, height: H, display: 'grid', placeItems: 'center' }}
+          style={{ width: H, height: H, display: "grid", placeItems: "center" }}
         >
           <CrossIcon size={16} color={color.brand} />
         </Squircle>

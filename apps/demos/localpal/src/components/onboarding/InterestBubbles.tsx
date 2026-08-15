@@ -1,7 +1,11 @@
-import { useEffect, useRef } from 'react';
-import { useMotionSim } from '../MotionProvider';
-import { INTERESTS, INTEREST_FIELD, type InterestId } from '../../theme/interests';
-import { color } from '../../theme/tokens';
+import { useEffect, useRef } from "react";
+import { useMotionSim } from "../MotionProvider";
+import {
+  INTERESTS,
+  INTEREST_FIELD,
+  type InterestId,
+} from "../../theme/interests";
+import { color } from "../../theme/tokens";
 
 /**
  * The onboarding interest picker — the bouncy-bubble physics personality over
@@ -12,13 +16,21 @@ import { color } from '../../theme/tokens';
  * (Bump-style picking) — no compact layout here, the cluster is the step.
  */
 
-type Particle = { cx: number; cy: number; vx: number; vy: number; s: number; pop: number; popV: number };
+type Particle = {
+  cx: number;
+  cy: number;
+  vx: number;
+  vy: number;
+  s: number;
+  pop: number;
+  popV: number;
+};
 
 // On the light paper-city stage the bubbles flip: unpicked = white stickers
 // with ink labels, picked = brand-filled. A soft shadow lifts them off the
 // street texture.
 const BUBBLE = color.white;
-const BUBBLE_SHADOW = '0 2px 10px rgba(0,29,51,0.14)';
+const BUBBLE_SHADOW = "0 2px 10px rgba(0,29,51,0.14)";
 const START_PX = 16;
 
 const CENTROID = {
@@ -60,7 +72,7 @@ export function InterestBubbles({
   const parts = useRef<Particle[]>(initParticles());
   const raf = useRef(0);
 
-  const popSim = useMotionSim('pop');
+  const popSim = useMotionSim("pop");
   const popSimRef = useRef(popSim);
   popSimRef.current = popSim;
 
@@ -101,7 +113,11 @@ export function InterestBubbles({
           pt.pop = 0;
           pt.popV = 0;
         }
-        motion += Math.abs(pt.vx) + Math.abs(pt.vy) + Math.abs(pt.pop) + Math.abs(1 - pt.s);
+        motion +=
+          Math.abs(pt.vx) +
+          Math.abs(pt.vy) +
+          Math.abs(pt.pop) +
+          Math.abs(1 - pt.s);
       }
       // soft collisions — same ~12% allowed overlap as the search bubbles
       for (let i = 0; i < INTERESTS.length; i++) {
@@ -118,8 +134,14 @@ export function InterestBubbles({
             const push = ((minDist - dist) / dist) * 0.5;
             const ox = dx * push;
             const oy = dy * push;
-            a.cx -= ox; a.cy -= oy; c.cx += ox; c.cy += oy;
-            a.vx -= ox * 0.3; a.vy -= oy * 0.3; c.vx += ox * 0.3; c.vy += oy * 0.3;
+            a.cx -= ox;
+            a.cy -= oy;
+            c.cx += ox;
+            c.cy += oy;
+            a.vx -= ox * 0.3;
+            a.vy -= oy * 0.3;
+            c.vx += ox * 0.3;
+            c.vy += oy * 0.3;
           }
         }
       }
@@ -165,7 +187,13 @@ export function InterestBubbles({
   };
 
   return (
-    <div style={{ position: 'relative', width: INTEREST_FIELD.w, height: INTEREST_FIELD.h }}>
+    <div
+      style={{
+        position: "relative",
+        width: INTEREST_FIELD.w,
+        height: INTEREST_FIELD.h,
+      }}
+    >
       {INTERESTS.map((b, i) => {
         const isSel = selected.has(b.id);
         const baseR = b.pose.r;
@@ -180,20 +208,20 @@ export function InterestBubbles({
               onToggle(b.id);
             }}
             style={{
-              position: 'absolute',
+              position: "absolute",
               left: 0,
               top: 0,
               width: baseR * 2,
               height: baseR * 2,
-              borderRadius: '50%',
-              transformOrigin: 'center',
+              borderRadius: "50%",
+              transformOrigin: "center",
               background: isSel ? color.brand : BUBBLE,
               boxShadow: BUBBLE_SHADOW,
-              display: 'grid',
-              placeItems: 'center',
-              cursor: 'pointer',
-              transition: 'background 0.2s ease',
-              willChange: 'transform',
+              display: "grid",
+              placeItems: "center",
+              cursor: "pointer",
+              transition: "background 0.2s ease",
+              willChange: "transform",
             }}
           >
             <span
@@ -201,11 +229,11 @@ export function InterestBubbles({
                 color: isSel ? color.onBrand : color.ink,
                 fontSize: Math.max(11, Math.min(15, baseR * 0.3)),
                 fontWeight: 600,
-                textAlign: 'center',
+                textAlign: "center",
                 lineHeight: 1.1,
                 maxWidth: baseR * 1.7,
-                pointerEvents: 'none',
-                transition: 'color 0.2s ease',
+                pointerEvents: "none",
+                transition: "color 0.2s ease",
               }}
             >
               {b.label}

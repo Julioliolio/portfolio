@@ -13,12 +13,18 @@
  * Width is fluid (the step column); height is measured live (ResizeObserver)
  * so the floor shadow always matches the card's real silhouette.
  */
-import { useLayoutEffect, useRef, useState, type CSSProperties, type ReactNode } from 'react';
-import { Squircle } from '../Squircle';
-import { useSquircle } from '../SquircleProvider';
-import { useFloatShadow } from '../FloatShadowProvider';
-import { useMotion } from '../MotionProvider';
-import { color } from '../../theme/tokens';
+import {
+  useLayoutEffect,
+  useRef,
+  useState,
+  type CSSProperties,
+  type ReactNode,
+} from "react";
+import { Squircle } from "../Squircle";
+import { useSquircle } from "../SquircleProvider";
+import { useFloatShadow } from "../FloatShadowProvider";
+import { useMotion } from "../MotionProvider";
+import { color } from "../../theme/tokens";
 
 export function FloatCard({
   children,
@@ -29,9 +35,9 @@ export function FloatCard({
   pad?: number;
   style?: CSSProperties;
 }) {
-  const float = useMotion('float');
+  const float = useMotion("float");
   const s = useFloatShadow();
-  const sq = useSquircle('onbCard');
+  const sq = useSquircle("onbCard");
   const ref = useRef<HTMLDivElement>(null);
   const [dims, setDims] = useState<{ w: number; h: number } | null>(null);
 
@@ -50,21 +56,21 @@ export function FloatCard({
   const shadowW = (dims?.w ?? 0) * s.contactWidthRatio;
 
   return (
-    <div style={{ position: 'relative', width: '100%', ...style }}>
+    <div style={{ position: "relative", width: "100%", ...style }}>
       {/* Contact shadow: the card's silhouette squashed onto the floor. */}
       {dims && (
         <div
           aria-hidden
           style={{
-            position: 'absolute',
-            left: '50%',
+            position: "absolute",
+            left: "50%",
             top: dims.h + s.contactOffset - shadowW / 2,
             width: shadowW,
             height: shadowW,
             marginLeft: -shadowW / 2,
             transform: `scaleY(${s.contactSquash})`,
             filter: `blur(${s.contactBlur}px)`,
-            pointerEvents: 'none',
+            pointerEvents: "none",
             zIndex: 0,
           }}
         >
@@ -72,7 +78,7 @@ export function FloatCard({
             radius={sq.radius * s.contactWidthRatio}
             smoothing={sq.smoothing}
             fill={`rgba(${s.color},${s.contactOpacity})`}
-            style={{ width: '100%', height: '100%' }}
+            style={{ width: "100%", height: "100%" }}
           />
         </div>
       )}
@@ -80,18 +86,18 @@ export function FloatCard({
       {/* The card itself: compositor bob + soft even ambient shadow. */}
       <div
         style={{
-          position: 'relative',
+          position: "relative",
           zIndex: 1,
           filter: `drop-shadow(0 1px 2px rgba(${s.color},${s.ambientNear})) drop-shadow(0 0 2px rgba(${s.color},${s.ambientFar}))`,
           animation: `lp-onb-bob ${bobDur}s ease-in-out infinite`,
-          willChange: 'transform',
+          willChange: "transform",
         }}
       >
         <div ref={ref}>
           <Squircle
             role="onbCard"
             fill={color.white}
-            style={{ width: '100%', padding: pad, boxSizing: 'border-box' }}
+            style={{ width: "100%", padding: pad, boxSizing: "border-box" }}
           >
             {children}
           </Squircle>

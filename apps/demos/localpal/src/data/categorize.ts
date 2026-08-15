@@ -9,10 +9,10 @@
  * Keeping it here means a venue/plan lands in the same categories everywhere —
  * a chip you filter by and a pin you hide always agree.
  */
-import type { CategoryId } from '../theme/categories';
-import { figmaIcons } from '../components/icons/figmaIcons';
-import type { Venue } from './venues';
-import type { PeerPlan } from './peerPlans';
+import type { CategoryId } from "../theme/categories";
+import { figmaIcons } from "../components/icons/figmaIcons";
+import type { Venue } from "./venues";
+import type { PeerPlan } from "./peerPlans";
 
 // The Figma glyph each category's pins wear on the map — the SAME icon the
 // bubble for that category shows, so a "Drinks" blob and the cocktail pins it
@@ -29,22 +29,106 @@ export const CATEGORY_PIN_ICON: Record<CategoryId, string> = {
 // museum glyph is culture — none of the five activity categories — so those
 // pins carry no category (they hide under any filter, which is correct).
 const ICON_CATEGORY: Record<string, CategoryId> = {
-  [figmaIcons.cocktail]: 'drinks',
-  [figmaIcons.music]: 'music',
-  [figmaIcons.bouldering]: 'sports',
-  [figmaIcons.utensils]: 'food',
-  [figmaIcons.coffee]: 'coffee',
+  [figmaIcons.cocktail]: "drinks",
+  [figmaIcons.music]: "music",
+  [figmaIcons.bouldering]: "sports",
+  [figmaIcons.utensils]: "food",
+  [figmaIcons.coffee]: "coffee",
 };
 
 // Keyword tags per category — an item matches a category if any keyword appears
 // in its text blob (see `tagCategories`). A venue/plan can carry several (Rita's
 // is drinks + music).
 export const CATEGORY_KEYWORDS: Record<CategoryId, string[]> = {
-  drinks: ['cocktail', 'wine', 'vermut', 'vermouth', 'bar', 'drinks', 'gin', 'martini', 'spritz', 'beer', 'caña', 'pub', 'pre-drink', 'nightcap', 'terraza', 'terrace', 'rooftop'],
-  music: ['music', 'jazz', 'band', 'vinyl', 'punk', 'folk', 'indie', 'dj', 'acoustic', 'gig', 'showcase', 'flamenco', 'concert', 'open mic', 'soul', 'funk', 'disco', 'session', 'ballroom', 'club'],
-  sports: ['climb', 'boulder', 'run', 'padel', 'basketball', 'football', 'five-a-side', 'yoga', 'skate', 'boat', 'pedal', 'row', 'pool', 'send', 'match', 'gym'],
-  food: ['food', 'tapas', 'tapeo', 'dinner', 'brunch', 'ramen', 'burger', 'eats', 'market', 'churros', 'picnic', 'pastry', 'patisserie', 'cheese', 'merienda', 'crawl', 'restaurant'],
-  coffee: ['coffee', 'café', 'cafe', 'brew', 'latte', 'cupping', 'espresso', 'sketch', 'roastery'],
+  drinks: [
+    "cocktail",
+    "wine",
+    "vermut",
+    "vermouth",
+    "bar",
+    "drinks",
+    "gin",
+    "martini",
+    "spritz",
+    "beer",
+    "caña",
+    "pub",
+    "pre-drink",
+    "nightcap",
+    "terraza",
+    "terrace",
+    "rooftop",
+  ],
+  music: [
+    "music",
+    "jazz",
+    "band",
+    "vinyl",
+    "punk",
+    "folk",
+    "indie",
+    "dj",
+    "acoustic",
+    "gig",
+    "showcase",
+    "flamenco",
+    "concert",
+    "open mic",
+    "soul",
+    "funk",
+    "disco",
+    "session",
+    "ballroom",
+    "club",
+  ],
+  sports: [
+    "climb",
+    "boulder",
+    "run",
+    "padel",
+    "basketball",
+    "football",
+    "five-a-side",
+    "yoga",
+    "skate",
+    "boat",
+    "pedal",
+    "row",
+    "pool",
+    "send",
+    "match",
+    "gym",
+  ],
+  food: [
+    "food",
+    "tapas",
+    "tapeo",
+    "dinner",
+    "brunch",
+    "ramen",
+    "burger",
+    "eats",
+    "market",
+    "churros",
+    "picnic",
+    "pastry",
+    "patisserie",
+    "cheese",
+    "merienda",
+    "crawl",
+    "restaurant",
+  ],
+  coffee: [
+    "coffee",
+    "café",
+    "cafe",
+    "brew",
+    "latte",
+    "cupping",
+    "espresso",
+    "sketch",
+    "roastery",
+  ],
 };
 
 const ALL_CATEGORY_IDS = Object.keys(CATEGORY_KEYWORDS) as CategoryId[];
@@ -56,14 +140,17 @@ const ALL_CATEGORY_IDS = Object.keys(CATEGORY_KEYWORDS) as CategoryId[];
 // like é count as letters) fix it. `g`-flagged variant is for counting hits.
 // Exported so the search vibes (src/search/vibes.ts) match with the same rules.
 export function buildMatcher(words: string[], flags: string): RegExp {
-  const esc = words.map((w) => w.replace(/[.*+?^${}()|[\]\\]/g, '\\$&'));
-  return new RegExp(`(?<!\\p{L})(?:${esc.join('|')})s?(?!\\p{L})`, flags);
+  const esc = words.map((w) => w.replace(/[.*+?^${}()|[\]\\]/g, "\\$&"));
+  return new RegExp(`(?<!\\p{L})(?:${esc.join("|")})s?(?!\\p{L})`, flags);
 }
 const MATCHERS = Object.fromEntries(
-  ALL_CATEGORY_IDS.map((id) => [id, buildMatcher(CATEGORY_KEYWORDS[id], 'iu')]),
+  ALL_CATEGORY_IDS.map((id) => [id, buildMatcher(CATEGORY_KEYWORDS[id], "iu")]),
 ) as Record<CategoryId, RegExp>;
 const MATCHERS_G = Object.fromEntries(
-  ALL_CATEGORY_IDS.map((id) => [id, buildMatcher(CATEGORY_KEYWORDS[id], 'giu')]),
+  ALL_CATEGORY_IDS.map((id) => [
+    id,
+    buildMatcher(CATEGORY_KEYWORDS[id], "giu"),
+  ]),
 ) as Record<CategoryId, RegExp>;
 
 export function tagCategories(text: string): Set<CategoryId> {
@@ -77,7 +164,13 @@ export function tagCategories(text: string): Set<CategoryId> {
 // Tie-break order when a plan's text hits several categories — most specific
 // first, so the broad "drinks" ('bar', 'terrace'…) only wins when it clearly
 // dominates. A pin gets exactly ONE category so filtering prunes cleanly.
-const PRIMARY_ORDER: CategoryId[] = ['sports', 'coffee', 'food', 'music', 'drinks'];
+const PRIMARY_ORDER: CategoryId[] = [
+  "sports",
+  "coffee",
+  "food",
+  "music",
+  "drinks",
+];
 
 /** A venue pin's single category — read straight off the icon it wears. */
 export function venuePrimaryCategory(v: Venue): CategoryId | null {
@@ -98,4 +191,3 @@ export function planPrimaryCategory(p: PeerPlan): CategoryId | null {
   }
   return best;
 }
-

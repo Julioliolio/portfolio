@@ -1,18 +1,18 @@
-import { useEffect, useState } from 'react';
-import { motion } from 'framer-motion';
-import { color } from '../../theme/tokens';
-import { Squircle } from '../../components/Squircle';
-import { SearchGlyph } from '../../components/icons/SearchGlyph';
-import { usePressFeedback } from '../../components/MotionProvider';
-import { dsWebCss } from './dsWebStyles';
-import { copy } from './copy';
-import { PrinciplesSection } from './sections/PrinciplesSection';
-import { ColorSection } from './sections/ColorSection';
-import { TypographySection } from './sections/TypographySection';
-import { SquircleSection } from './sections/SquircleSection';
-import { MotionSection } from './sections/MotionSection';
-import { ComponentsSection } from './sections/ComponentsSection';
-import { SignatureSection } from './sections/SignatureSection';
+import { useEffect, useState } from "react";
+import { motion } from "framer-motion";
+import { color } from "../../theme/tokens";
+import { Squircle } from "../../components/Squircle";
+import { SearchGlyph } from "../../components/icons/SearchGlyph";
+import { usePressFeedback } from "../../components/MotionProvider";
+import { dsWebCss } from "./dsWebStyles";
+import { copy } from "./copy";
+import { PrinciplesSection } from "./sections/PrinciplesSection";
+import { ColorSection } from "./sections/ColorSection";
+import { TypographySection } from "./sections/TypographySection";
+import { SquircleSection } from "./sections/SquircleSection";
+import { MotionSection } from "./sections/MotionSection";
+import { ComponentsSection } from "./sections/ComponentsSection";
+import { SignatureSection } from "./sections/SignatureSection";
 
 /**
  * LocalPal — el sistema de diseño, en la web.
@@ -28,18 +28,43 @@ import { SignatureSection } from './sections/SignatureSection';
 // (el cromo fijo pasa a tinta ahí).
 // Labels come from copy.chrome.rail; here we only own id / number / ground.
 const SECTIONS = [
-  { id: 'overview', label: copy.chrome.rail.overview, num: '00', light: false },
-  { id: 'principios', label: copy.chrome.rail.principios, num: '01', light: false },
-  { id: 'color', label: copy.chrome.rail.color, num: '02', light: true },
-  { id: 'tipografia', label: copy.chrome.rail.tipografia, num: '03', light: true },
-  { id: 'squircles', label: copy.chrome.rail.squircles, num: '04', light: false },
-  { id: 'movimiento', label: copy.chrome.rail.movimiento, num: '05', light: true },
-  { id: 'componentes', label: copy.chrome.rail.componentes, num: '06', light: true },
-  { id: 'sello', label: copy.chrome.rail.sello, num: '07', light: false },
+  { id: "overview", label: copy.chrome.rail.overview, num: "00", light: false },
+  {
+    id: "principios",
+    label: copy.chrome.rail.principios,
+    num: "01",
+    light: false,
+  },
+  { id: "color", label: copy.chrome.rail.color, num: "02", light: true },
+  {
+    id: "tipografia",
+    label: copy.chrome.rail.tipografia,
+    num: "03",
+    light: true,
+  },
+  {
+    id: "squircles",
+    label: copy.chrome.rail.squircles,
+    num: "04",
+    light: false,
+  },
+  {
+    id: "movimiento",
+    label: copy.chrome.rail.movimiento,
+    num: "05",
+    light: true,
+  },
+  {
+    id: "componentes",
+    label: copy.chrome.rail.componentes,
+    num: "06",
+    light: true,
+  },
+  { id: "sello", label: copy.chrome.rail.sello, num: "07", light: false },
 ] as const;
 
 export function DesignSystemWeb({ onExit }: { onExit: () => void }) {
-  const [active, setActive] = useState('overview');
+  const [active, setActive] = useState("overview");
   const isLight = SECTIONS.find((s) => s.id === active)?.light ?? false;
 
   // Detecta qué sección está a la vista para encender el riel.
@@ -48,7 +73,7 @@ export function DesignSystemWeb({ onExit }: { onExit: () => void }) {
       (entries) => {
         for (const e of entries) if (e.isIntersecting) setActive(e.target.id);
       },
-      { rootMargin: '-45% 0px -50% 0px' },
+      { rootMargin: "-45% 0px -50% 0px" },
     );
     for (const s of SECTIONS) {
       const el = document.getElementById(s.id);
@@ -58,11 +83,12 @@ export function DesignSystemWeb({ onExit }: { onExit: () => void }) {
   }, []);
 
   return (
-    <div className={'dsw-root' + (isLight ? ' is-light' : '')}>
+    <div className={"dsw-root" + (isLight ? " is-light" : "")}>
       <style>{dsWebCss}</style>
 
       <a href="#overview" className="dsw-wordmark">
-        {copy.chrome.wordmark}<span>®</span>
+        {copy.chrome.wordmark}
+        <span>®</span>
       </a>
 
       <nav className="dsw-rail" aria-label="Secciones">
@@ -70,7 +96,7 @@ export function DesignSystemWeb({ onExit }: { onExit: () => void }) {
           <a
             key={s.id}
             href={`#${s.id}`}
-            className={'dsw-rail-item' + (active === s.id ? ' is-active' : '')}
+            className={"dsw-rail-item" + (active === s.id ? " is-active" : "")}
           >
             <span className="dsw-rail-num">{s.num}</span>
             <span className="dsw-rail-label">{s.label}</span>
@@ -108,7 +134,10 @@ function Hero() {
       <div className="dsw-hero-grain" aria-hidden />
 
       <div className="dsw-hero-inner">
-        <p className="dsw-eyebrow dsw-reveal" style={{ animationDelay: '0.05s' }}>
+        <p
+          className="dsw-eyebrow dsw-reveal"
+          style={{ animationDelay: "0.05s" }}
+        >
           {copy.hero.eyebrow}
         </p>
 
@@ -119,25 +148,38 @@ function Hero() {
               {/* la lupa se cuela al final de la 3ª línea */}
               {i === 2 && (
                 <span className="dsw-hero-glyph" aria-hidden>
-                  <SearchGlyph size={'0.82em' as unknown as number} color={color.onBrand} />
+                  <SearchGlyph
+                    size={"0.82em" as unknown as number}
+                    color={color.onBrand}
+                  />
                 </span>
               )}
             </Line>
           ))}
         </h1>
 
-        <p className="dsw-hero-lede dsw-reveal" style={{ animationDelay: '0.5s' }}>
+        <p
+          className="dsw-hero-lede dsw-reveal"
+          style={{ animationDelay: "0.5s" }}
+        >
           {copy.hero.tagline}
         </p>
 
-        <div className="dsw-hero-meta dsw-reveal" style={{ animationDelay: '0.66s' }}>
+        <div
+          className="dsw-hero-meta dsw-reveal"
+          style={{ animationDelay: "0.66s" }}
+        >
           {copy.hero.meta.map((m) => (
             <Meta key={m.k} k={m.k} v={m.v} />
           ))}
         </div>
       </div>
 
-      <a href="#principios" className="dsw-scrollcue" aria-label={`Ir a ${copy.hero.scrollCue}`}>
+      <a
+        href="#principios"
+        className="dsw-scrollcue"
+        aria-label={`Ir a ${copy.hero.scrollCue}`}
+      >
         <span>{copy.hero.scrollCue}</span>
         <span className="dsw-scrollcue-line" />
       </a>
@@ -145,10 +187,19 @@ function Hero() {
   );
 }
 
-function Line({ children, delay }: { children: React.ReactNode; delay: number }) {
+function Line({
+  children,
+  delay,
+}: {
+  children: React.ReactNode;
+  delay: number;
+}) {
   return (
     <span className="dsw-hero-line">
-      <span className="dsw-hero-line-inner" style={{ animationDelay: `${delay}s` }}>
+      <span
+        className="dsw-hero-line-inner"
+        style={{ animationDelay: `${delay}s` }}
+      >
         {children}
       </span>
     </span>

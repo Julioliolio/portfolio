@@ -1,4 +1,4 @@
-import { copy } from '../copy';
+import { copy } from "../copy";
 
 /**
  * Principios — las tres reglas que sostienen todo lo demás. El texto vive en

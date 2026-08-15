@@ -12,9 +12,10 @@
  *
  * Badge art is the white-line / blue-fill Figma export set in icons/figmaIcons.
  */
-import { figmaIcons } from '../components/icons/figmaIcons';
+import { figmaIcons } from "../components/icons/figmaIcons";
 
-export type StickerCat = 'coffee' | 'culture' | 'music' | 'sports' | 'food' | 'drinks';
+export type StickerCat =
+  "coffee" | "culture" | "music" | "sports" | "food" | "drinks";
 
 // Badge glyph per sticker category.
 export const STICKER_BADGE: Record<StickerCat, string> = {
@@ -36,21 +37,147 @@ export const NEUTRAL_STICKER = figmaIcons.shootingStar;
 // sticker instead of collapsing to a cup or a cocktail. A plan whose ONLY signal
 // is coffee/drinks (a café hang, a rooftop terraza) still lands there correctly.
 const STICKER_KEYWORDS: [StickerCat, string[]][] = [
-  ['culture', ['museum', 'museo', 'reina sofía', 'guernica', 'gallery', 'galería', 'art walk', 'open-studios', 'studio', 'exhibition', 'design market', 'matadero', 'film', 'screening', 'cinema', 'book', 'books', 'reading', 'sketchbook']],
-  ['music', ['music', 'jazz', 'band', 'bands', 'vinyl', 'punk', 'folk', 'indie', 'dj', 'acoustic', 'gig', 'showcase', 'flamenco', 'concert', 'open mic', 'soul', 'funk', 'jam', 'session', 'trio']],
-  ['sports', ['climb', 'boulder', 'send', 'run', 'running', 'padel', 'basketball', 'football', 'five-a-side', 'yoga', 'skate', 'boat', 'boats', 'pedal', 'row', 'pool', 'match', 'jog']],
-  ['food', ['food', 'tapas', 'tapeo', 'tapa', 'dinner', 'brunch', 'ramen', 'burger', 'burgers', 'eats', 'market', 'churros', 'picnic', 'cheese', 'street food', 'pancakes']],
-  ['coffee', ['coffee', 'café', 'cafe', 'brew', 'latte', 'flat white', 'cupping', 'espresso', 'sketch']],
-  ['drinks', ['cocktail', 'wine', 'vermut', 'vermouth', 'bar', 'drink', 'drinks', 'gin', 'martini', 'spritz', 'beer', 'beers', 'caña', 'cañas', 'pub', 'pre-drink', 'nightcap', 'crawl', 'terraza', 'rooftop']],
+  [
+    "culture",
+    [
+      "museum",
+      "museo",
+      "reina sofía",
+      "guernica",
+      "gallery",
+      "galería",
+      "art walk",
+      "open-studios",
+      "studio",
+      "exhibition",
+      "design market",
+      "matadero",
+      "film",
+      "screening",
+      "cinema",
+      "book",
+      "books",
+      "reading",
+      "sketchbook",
+    ],
+  ],
+  [
+    "music",
+    [
+      "music",
+      "jazz",
+      "band",
+      "bands",
+      "vinyl",
+      "punk",
+      "folk",
+      "indie",
+      "dj",
+      "acoustic",
+      "gig",
+      "showcase",
+      "flamenco",
+      "concert",
+      "open mic",
+      "soul",
+      "funk",
+      "jam",
+      "session",
+      "trio",
+    ],
+  ],
+  [
+    "sports",
+    [
+      "climb",
+      "boulder",
+      "send",
+      "run",
+      "running",
+      "padel",
+      "basketball",
+      "football",
+      "five-a-side",
+      "yoga",
+      "skate",
+      "boat",
+      "boats",
+      "pedal",
+      "row",
+      "pool",
+      "match",
+      "jog",
+    ],
+  ],
+  [
+    "food",
+    [
+      "food",
+      "tapas",
+      "tapeo",
+      "tapa",
+      "dinner",
+      "brunch",
+      "ramen",
+      "burger",
+      "burgers",
+      "eats",
+      "market",
+      "churros",
+      "picnic",
+      "cheese",
+      "street food",
+      "pancakes",
+    ],
+  ],
+  [
+    "coffee",
+    [
+      "coffee",
+      "café",
+      "cafe",
+      "brew",
+      "latte",
+      "flat white",
+      "cupping",
+      "espresso",
+      "sketch",
+    ],
+  ],
+  [
+    "drinks",
+    [
+      "cocktail",
+      "wine",
+      "vermut",
+      "vermouth",
+      "bar",
+      "drink",
+      "drinks",
+      "gin",
+      "martini",
+      "spritz",
+      "beer",
+      "beers",
+      "caña",
+      "cañas",
+      "pub",
+      "pre-drink",
+      "nightcap",
+      "crawl",
+      "terraza",
+      "rooftop",
+    ],
+  ],
 ];
 
 // Whole-word match (Unicode-aware, so "café"/"caña" work): the keyword must be
 // bounded by non-letters or string ends. Substring matching would misfire —
 // "book" inside "booked", "run" inside "brunch", "bar" inside "Barajas" — and
 // silently drag plans into the wrong category.
-const esc = (s: string) => s.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+const esc = (s: string) => s.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
 const hasWord = (blob: string, kw: string) =>
-  new RegExp(`(^|[^\\p{L}])${esc(kw)}([^\\p{L}]|$)`, 'iu').test(blob);
+  new RegExp(`(^|[^\\p{L}])${esc(kw)}([^\\p{L}]|$)`, "iu").test(blob);
 
 /** Best-guess sticker badge for a peer plan, from its title + description. */
 export function peerSticker(text: string): string {

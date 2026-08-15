@@ -1,10 +1,10 @@
-import { createContext, useContext, useState, type ReactNode } from 'react';
+import { createContext, useContext, useState, type ReactNode } from "react";
 import {
   defaultFloatShadow,
   defaultPointShadow,
   type FloatShadow,
   type PointShadow,
-} from '../theme/floatShadow';
+} from "../theme/floatShadow";
 
 type Ctx = {
   shadow: FloatShadow;
@@ -32,14 +32,18 @@ const FloatShadowCtx = createContext<Ctx>({
 export function FloatShadowProvider({ children }: { children: ReactNode }) {
   const [shadow, setShadowState] = useState<FloatShadow>(defaultFloatShadow);
   const [point, setPointState] = useState<PointShadow>(defaultPointShadow);
-  const setShadow = (patch: Partial<FloatShadow>) => setShadowState((s) => ({ ...s, ...patch }));
-  const setPoint = (patch: Partial<PointShadow>) => setPointState((s) => ({ ...s, ...patch }));
+  const setShadow = (patch: Partial<FloatShadow>) =>
+    setShadowState((s) => ({ ...s, ...patch }));
+  const setPoint = (patch: Partial<PointShadow>) =>
+    setPointState((s) => ({ ...s, ...patch }));
   const reset = () => {
     setShadowState(defaultFloatShadow);
     setPointState(defaultPointShadow);
   };
   return (
-    <FloatShadowCtx.Provider value={{ shadow, setShadow, point, setPoint, reset }}>
+    <FloatShadowCtx.Provider
+      value={{ shadow, setShadow, point, setPoint, reset }}
+    >
       {children}
     </FloatShadowCtx.Provider>
   );

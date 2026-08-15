@@ -14,10 +14,15 @@
  * release past `threshold` the hook calls `onDismiss` (close / pop / step-back —
  * whatever the sheet means by "dismiss"); otherwise the sheet springs back.
  */
-import { useRef, type PointerEvent as ReactPointerEvent } from 'react';
-import { animate, useMotionValue, type MotionValue, type Transition } from 'framer-motion';
-import { Squircle } from './Squircle';
-import { device } from '../theme/tokens';
+import { useRef, type PointerEvent as ReactPointerEvent } from "react";
+import {
+  animate,
+  useMotionValue,
+  type MotionValue,
+  type Transition,
+} from "framer-motion";
+import { Squircle } from "./Squircle";
+import { device } from "../theme/tokens";
 
 export type DragHandleProps = {
   onPointerDown: (e: ReactPointerEvent) => void;
@@ -101,14 +106,32 @@ export function SheetGrabber({
     <>
       <div
         {...handleProps}
-        style={{ position: 'absolute', left, top: 0, right: 0, height, cursor: 'grab', touchAction: 'none', zIndex }}
+        style={{
+          position: "absolute",
+          left,
+          top: 0,
+          right: 0,
+          height,
+          cursor: "grab",
+          touchAction: "none",
+          zIndex,
+        }}
       />
       {showPill && (
         <Squircle
           radius={2}
           smoothing={1}
           fill="#fefefe"
-          style={{ position: 'absolute', left: pillLeft ?? (device.width - 44) / 2, top: pillTop, width: 44, height: 4, opacity: 0.9, pointerEvents: 'none', zIndex }}
+          style={{
+            position: "absolute",
+            left: pillLeft ?? (device.width - 44) / 2,
+            top: pillTop,
+            width: 44,
+            height: 4,
+            opacity: 0.9,
+            pointerEvents: "none",
+            zIndex,
+          }}
         />
       )}
     </>
@@ -139,7 +162,13 @@ export function DismissScrim({
         if (onTapThrough && onTapThrough(ev.clientX, ev.clientY)) return;
         onDismiss();
       }}
-      style={{ position: 'absolute', inset: 0, zIndex, background: 'transparent', pointerEvents: active ? 'auto' : 'none' }}
+      style={{
+        position: "absolute",
+        inset: 0,
+        zIndex,
+        background: "transparent",
+        pointerEvents: active ? "auto" : "none",
+      }}
     />
   );
 }

@@ -14,11 +14,11 @@
  * with the card edges behind it. Registry-driven per CLAUDE.md: `sheet`/`cta`
  * squircle roles, `morph` motion, shared press squish — no literal radii/springs.
  */
-import { AnimatePresence, motion } from 'framer-motion';
-import type { CSSProperties } from 'react';
-import { Squircle } from './Squircle';
-import { useMotion, usePressFeedback } from './MotionProvider';
-import { color } from '../theme/tokens';
+import { AnimatePresence, motion } from "framer-motion";
+import type { CSSProperties } from "react";
+import { Squircle } from "./Squircle";
+import { useMotion, usePressFeedback } from "./MotionProvider";
+import { color } from "../theme/tokens";
 
 export type ConfirmConfig = {
   /** Prompt, e.g. "Join this plan?" */
@@ -32,11 +32,11 @@ export type ConfirmConfig = {
 };
 
 const buttonReset: CSSProperties = {
-  background: 'transparent',
-  border: 'none',
+  background: "transparent",
+  border: "none",
   padding: 0,
-  cursor: 'pointer',
-  width: '100%',
+  cursor: "pointer",
+  width: "100%",
 };
 
 export function ConfirmSheet({
@@ -48,7 +48,7 @@ export function ConfirmSheet({
   /** Cancel button / backdrop tap — dismiss without confirming. */
   onClose: () => void;
 }) {
-  const morph = useMotion('morph');
+  const morph = useMotion("morph");
   const press = usePressFeedback();
 
   return (
@@ -57,13 +57,13 @@ export function ConfirmSheet({
         <motion.div
           key="confirm"
           style={{
-            position: 'absolute',
+            position: "absolute",
             inset: 0,
             zIndex: 30, // above the CtaRow (21) and dismiss-scrim (15)
-            display: 'flex',
-            flexDirection: 'column',
-            justifyContent: 'flex-end',
-            alignItems: 'center',
+            display: "flex",
+            flexDirection: "column",
+            justifyContent: "flex-end",
+            alignItems: "center",
           }}
         >
           {/* Dimmed backdrop — tapping it cancels, iOS-style. */}
@@ -73,7 +73,11 @@ export function ConfirmSheet({
             exit={{ opacity: 0 }}
             transition={morph}
             onClick={onClose}
-            style={{ position: 'absolute', inset: 0, background: 'rgba(0,0,0,0.35)' }}
+            style={{
+              position: "absolute",
+              inset: 0,
+              background: "rgba(0,0,0,0.35)",
+            }}
           />
 
           {/* The action sheet — slides up as one group + a detached Cancel.
@@ -83,19 +87,19 @@ export function ConfirmSheet({
             // Travel the sheet's full height PLUS the 64px bottom gap so it
             // clears the screen entirely — a bare 110% leaves its top edge
             // peeking at the bottom until React unmounts it (a visible linger).
-            initial={{ y: 'calc(100% + 64px)' }}
+            initial={{ y: "calc(100% + 64px)" }}
             animate={{ y: 0 }}
-            exit={{ y: 'calc(100% + 64px)' }}
+            exit={{ y: "calc(100% + 64px)" }}
             transition={morph}
             style={{
-              position: 'relative',
+              position: "relative",
               width: 329,
               // Inset from the 361-wide / 48-from-bottom sheets on all sides
               // (~16px) so no edge — sides or bottom — lines up with the card
               // behind it.
               marginBottom: 64,
-              display: 'flex',
-              flexDirection: 'column',
+              display: "flex",
+              flexDirection: "column",
               gap: 8,
             }}
           >
@@ -104,28 +108,42 @@ export function ConfirmSheet({
               role="sheet"
               fill={color.offWhite}
               style={{
-                padding: '20px 16px 16px',
-                display: 'flex',
-                flexDirection: 'column',
-                alignItems: 'center',
+                padding: "20px 16px 16px",
+                display: "flex",
+                flexDirection: "column",
+                alignItems: "center",
                 gap: 16,
               }}
             >
               <div
                 style={{
-                  display: 'flex',
-                  flexDirection: 'column',
-                  alignItems: 'center',
+                  display: "flex",
+                  flexDirection: "column",
+                  alignItems: "center",
                   gap: 6,
-                  textAlign: 'center',
-                  padding: '0 8px',
+                  textAlign: "center",
+                  padding: "0 8px",
                 }}
               >
-                <span style={{ color: color.ink, fontSize: 20, fontWeight: 600, lineHeight: '24px' }}>
+                <span
+                  style={{
+                    color: color.ink,
+                    fontSize: 20,
+                    fontWeight: 600,
+                    lineHeight: "24px",
+                  }}
+                >
                   {config.title}
                 </span>
                 {config.subtitle && (
-                  <span style={{ color: color.muted, fontSize: 14, fontWeight: 400, lineHeight: '18px' }}>
+                  <span
+                    style={{
+                      color: color.muted,
+                      fontSize: 14,
+                      fontWeight: 400,
+                      lineHeight: "18px",
+                    }}
+                  >
                     {config.subtitle}
                   </span>
                 )}
@@ -142,9 +160,20 @@ export function ConfirmSheet({
                 <Squircle
                   role="cta"
                   fill={color.brand}
-                  style={{ width: '100%', height: 56, display: 'grid', placeItems: 'center' }}
+                  style={{
+                    width: "100%",
+                    height: 56,
+                    display: "grid",
+                    placeItems: "center",
+                  }}
                 >
-                  <span style={{ color: color.onBrand, fontSize: 20, fontWeight: 600 }}>
+                  <span
+                    style={{
+                      color: color.onBrand,
+                      fontSize: 20,
+                      fontWeight: 600,
+                    }}
+                  >
                     {config.confirmLabel}
                   </span>
                 </Squircle>
@@ -156,9 +185,18 @@ export function ConfirmSheet({
               <Squircle
                 role="cta"
                 fill={color.offWhite}
-                style={{ width: '100%', height: 56, display: 'grid', placeItems: 'center' }}
+                style={{
+                  width: "100%",
+                  height: 56,
+                  display: "grid",
+                  placeItems: "center",
+                }}
               >
-                <span style={{ color: color.brand, fontSize: 20, fontWeight: 600 }}>Cancel</span>
+                <span
+                  style={{ color: color.brand, fontSize: 20, fontWeight: 600 }}
+                >
+                  Cancel
+                </span>
               </Squircle>
             </motion.button>
           </motion.div>

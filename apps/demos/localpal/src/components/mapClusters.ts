@@ -14,7 +14,7 @@ export type ClusterPoint = {
   id: string;
   lng: number;
   lat: number;
-  kind: 'venue' | 'peer';
+  kind: "venue" | "peer";
   priority: number;
 };
 
@@ -22,7 +22,7 @@ export type PinStack = {
   /** The winner's pin id names the stack. */
   id: string;
   /** What's stacked — peers and venues each bunch with their own kind. */
-  kind: 'venue' | 'peer';
+  kind: "venue" | "peer";
   /** Geo centroid of the stacked pins — the container's anchor. */
   center: { lng: number; lat: number };
   /** Member pin ids, front (winner) → back. */
@@ -32,13 +32,13 @@ export type PinStack = {
 };
 
 export type Placement =
-  | { mode: 'full' }
-  | { mode: 'dot' }
+  | { mode: "full" }
+  | { mode: "dot" }
   /** Far-tier curation: the pin doesn't exist at this zoom (see
    *  theme/mapClusters.ts `defaultMapDensity`) — it fades out entirely and
    *  the aggregate hint pill speaks for it. */
-  | { mode: 'hidden' }
-  | { mode: 'stack'; stack: PinStack; slot: number };
+  | { mode: "hidden" }
+  | { mode: "stack"; stack: PinStack; slot: number };
 
 /** Web-Mercator world position in px at a zoom (512px tiles, like MapLibre). */
 export function mercatorPx(lng: number, lat: number, zoom: number) {
@@ -56,11 +56,13 @@ export function computeClusters(
   collidePx: number,
 ): { placements: Map<string, Placement>; stacks: PinStack[] } {
   const px = points.map((p) => mercatorPx(p.lng, p.lat, zoom));
-  const dist = (a: number, b: number) => Math.hypot(px[a].x - px[b].x, px[a].y - px[b].y);
+  const dist = (a: number, b: number) =>
+    Math.hypot(px[a].x - px[b].x, px[a].y - px[b].y);
 
   // Union-find over colliding pairs.
   const parent = points.map((_, i) => i);
-  const find = (i: number): number => (parent[i] === i ? i : (parent[i] = find(parent[i])));
+  const find = (i: number): number =>
+    parent[i] === i ? i : (parent[i] = find(parent[i]));
   for (let i = 0; i < points.length; i++) {
     for (let j = i + 1; j < points.length; j++) {
       if (dist(i, j) < collidePx) parent[find(i)] = find(j);
@@ -79,10 +81,12 @@ export function computeClusters(
 
   for (const idxs of groups.values()) {
     if (idxs.length === 1) {
-      placements.set(points[idxs[0]].id, { mode: 'full' });
+      placements.set(points[idxs[0]].id, { mode: "full" });
       continue;
     }
-    const byPriority = [...idxs].sort((a, b) => points[b].priority - points[a].priority);
+    const byPriority = [...idxs].sort(
+      (a, b) => points[b].priority - points[a].priority,
+    );
     const winner = byPriority[0];
     const kind = points[winner].kind;
     // The winner's kind bunches into a stack; the other kind demotes to dots.
@@ -107,14 +111,17 @@ export function computeClusters(
         minPairPx,
       };
       stacks.push(stack);
-      kin.forEach((i, slot) => placements.set(points[i].id, { mode: 'stack', stack, slot }));
+      kin.forEach((i, slot) =>
+        placements.set(points[i].id, { mode: "stack", stack, slot }),
+      );
       for (const i of idxs) {
-        if (points[i].kind !== kind) placements.set(points[i].id, { mode: 'dot' });
+        if (points[i].kind !== kind)
+          placements.set(points[i].id, { mode: "dot" });
       }
     } else {
       // A lone winner among the other kind: full tile, everyone else dots.
       for (const i of idxs) {
-        placements.set(points[i].id, { mode: i === winner ? 'full' : 'dot' });
+        placements.set(points[i].id, { mode: i === winner ? "full" : "dot" });
       }
     }
   }

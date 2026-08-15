@@ -1,21 +1,30 @@
-import { Component, createSignal, onMount, onCleanup, Show } from 'solid-js';
-import { drawSymbol, farthestPointSample, type SymbolType, type CellInfo } from '../shared/symbols';
+import { Component, createSignal, onMount, onCleanup, Show } from "solid-js";
+import {
+  drawSymbol,
+  farthestPointSample,
+  type SymbolType,
+  type CellInfo,
+} from "../shared/symbols";
 
 // ── Config ─────────────────────────────────────────────────────────────────
-const CELL_SIZE     = 24;
-const STROKE_W      = 1;
-const SYMBOL: SymbolType = 'square';
-const COLOR         = '#fc006d';
-const LINGER_COUNT  = 2;
-const LINGER_DUR    = 0.5;    // seconds
-const FLICKER_SPEED = 75;     // ms per flicker toggle
+const CELL_SIZE = 24;
+const STROKE_W = 1;
+const SYMBOL: SymbolType = "square";
+const COLOR = "#fc006d";
+const LINGER_COUNT = 2;
+const LINGER_DUR = 0.5; // seconds
+const FLICKER_SPEED = 75; // ms per flicker toggle
 
 // ── Tile dimensions (in cells) — pattern repeats across the canvas ─────────
 const TILE_COLS = 12;
 const TILE_ROWS = 8;
 
 // ── Tile the pattern across the full canvas ────────────────────────────────
-function buildTiledCells(gRows: number, gCols: number, pattern: CellInfo[]): CellInfo[] {
+function buildTiledCells(
+  gRows: number,
+  gCols: number,
+  pattern: CellInfo[],
+): CellInfo[] {
   const cells: CellInfo[] = [];
   for (let tileRow = 0; tileRow * TILE_ROWS < gRows; tileRow++) {
     for (let tileCol = 0; tileCol * TILE_COLS < gCols; tileCol++) {
@@ -66,7 +75,7 @@ const LoadingOverlay: Component<{
       return;
     }
 
-    const ctx = canvasRef?.getContext('2d');
+    const ctx = canvasRef?.getContext("2d");
     if (ctx) drawFrame(ctx, now);
 
     rafId = requestAnimationFrame(loop);
@@ -81,7 +90,7 @@ const LoadingOverlay: Component<{
     const dpr = window.devicePixelRatio || 1;
     canvasRef.width = Math.ceil(vw * dpr);
     canvasRef.height = Math.ceil(vh * dpr);
-    const ctx = canvasRef.getContext('2d')!;
+    const ctx = canvasRef.getContext("2d")!;
     ctx.scale(dpr, dpr);
 
     const gCols = Math.ceil(vw / CELL_SIZE);
@@ -113,11 +122,11 @@ const LoadingOverlay: Component<{
       <canvas
         ref={canvasRef!}
         style={{
-          position: 'absolute',
-          inset: '0',
-          width: '100%',
-          height: '100%',
-          display: 'block',
+          position: "absolute",
+          inset: "0",
+          width: "100%",
+          height: "100%",
+          display: "block",
         }}
       />
     </Show>

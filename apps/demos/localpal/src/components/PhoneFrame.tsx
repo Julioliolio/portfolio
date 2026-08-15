@@ -1,8 +1,8 @@
-import { forwardRef, useEffect, useState, type ReactNode } from 'react';
-import { getSvgPath } from 'figma-squircle';
-import { device, smoothing } from '../theme/tokens';
-import { SystemUI } from './SystemUI';
-import { ConfirmProvider } from './ConfirmProvider';
+import { forwardRef, useEffect, useState, type ReactNode } from "react";
+import { getSvgPath } from "figma-squircle";
+import { device, smoothing } from "../theme/tokens";
+import { SystemUI } from "./SystemUI";
+import { ConfirmProvider } from "./ConfirmProvider";
 
 /**
  * Both shells are a fixed, known size, so the superellipse paths are generated
@@ -40,13 +40,13 @@ export function PhoneScreen({ children }: { children: ReactNode }) {
   return (
     <div
       style={{
-        position: 'relative',
+        position: "relative",
         width: device.width,
         height: device.height,
-        flex: 'none', // never let a flex parent squeeze the screen
+        flex: "none", // never let a flex parent squeeze the screen
         clipPath: `path('${SCREEN_PATH}')`,
-        overflow: 'hidden',
-        background: '#fff',
+        overflow: "hidden",
+        background: "#fff",
       }}
     >
       {/* Confirmations render at the phone-screen level so they layer over
@@ -76,18 +76,18 @@ export const PhoneFrame = forwardRef<HTMLDivElement, { children: ReactNode }>(
           // The frame is a flex item on both stages; without this it shrinks
           // below its width while the fixed-size screen inside doesn't, and the
           // screen spills out of the case.
-          flex: 'none',
+          flex: "none",
           borderRadius: device.bodyRadius,
-          boxShadow: '0 30px 80px rgba(0,0,0,0.5)',
+          boxShadow: "0 30px 80px rgba(0,0,0,0.5)",
         }}
       >
         <div
           style={{
-            position: 'relative',
-            width: '100%',
-            height: '100%',
+            position: "relative",
+            width: "100%",
+            height: "100%",
             padding: device.bezel,
-            background: '#0b0b10',
+            background: "#0b0b10",
             clipPath: `path('${BODY_PATH}')`,
           }}
         >
@@ -98,7 +98,7 @@ export const PhoneFrame = forwardRef<HTMLDivElement, { children: ReactNode }>(
             width={BODY.width}
             height={BODY.height}
             viewBox={`0 0 ${BODY.width} ${BODY.height}`}
-            style={{ position: 'absolute', inset: 0, pointerEvents: 'none' }}
+            style={{ position: "absolute", inset: 0, pointerEvents: "none" }}
             aria-hidden
           >
             <path
@@ -130,23 +130,23 @@ export function FullScreenPhone({ children }: { children: ReactNode }) {
       setScale(Math.min(vw / device.width, vh / device.height));
     };
     update();
-    window.addEventListener('resize', update);
-    return () => window.removeEventListener('resize', update);
+    window.addEventListener("resize", update);
+    return () => window.removeEventListener("resize", update);
   }, []);
 
   return (
     <div
       style={{
-        width: '100vw',
-        height: '100dvh',
-        display: 'flex',
-        alignItems: 'center',
-        justifyContent: 'center',
-        overflow: 'hidden',
-        background: '#0b0b10',
+        width: "100vw",
+        height: "100dvh",
+        display: "flex",
+        alignItems: "center",
+        justifyContent: "center",
+        overflow: "hidden",
+        background: "#0b0b10",
       }}
     >
-      <div style={{ transform: `scale(${scale})`, transformOrigin: 'center' }}>
+      <div style={{ transform: `scale(${scale})`, transformOrigin: "center" }}>
         <PhoneScreen>{children}</PhoneScreen>
       </div>
     </div>

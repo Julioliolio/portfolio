@@ -1,6 +1,6 @@
-import { appState, setAppState } from '../state/app';
-import { jobs } from './mock-jobs';
-import { estimateBytesSync } from './estimate';
+import { appState, setAppState } from "../state/app";
+import { jobs } from "./mock-jobs";
+import { estimateBytesSync } from "./estimate";
 
 /**
  * Demo: "conversion" is a staged simulation. We remember what was requested so
@@ -29,13 +29,19 @@ export async function startConversion(
   const job = jobId ? jobs.get(jobId) : undefined;
   if (!jobId || !job) return null;
 
-  const widthPx = appState.outputFormat === 'gif' ? appState.width : appState.vidWidth;
+  const widthPx =
+    appState.outputFormat === "gif" ? appState.width : appState.vidWidth;
 
   const outputSize = estimateBytesSync({
     jobId,
     outputFormat: appState.outputFormat,
     fps: Math.round(appState.fps),
-    width: appState.outputFormat === 'mp3' ? 'original' : widthPx > 0 ? widthPx : 'original',
+    width:
+      appState.outputFormat === "mp3"
+        ? "original"
+        : widthPx > 0
+          ? widthPx
+          : "original",
     dither: appState.dither,
     crf: appState.crf,
     codec: appState.codec,
@@ -53,6 +59,6 @@ export async function startConversion(
     outputSize,
   };
 
-  setAppState('currentJobId', jobId);
+  setAppState("currentJobId", jobId);
   return jobId;
 }

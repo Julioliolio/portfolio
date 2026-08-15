@@ -18,17 +18,17 @@
  * Tunable-config convention (like floatShadow.ts): tweak in preview, paste
  * values back here to persist.
  */
-import type { InterestId } from './interests';
-import type { StepId } from '../components/onboarding/OnboardingFlow';
+import type { InterestId } from "./interests";
+import type { StepId } from "../components/onboarding/OnboardingFlow";
 
 /** Gentle per-step nudge of the toy city — alive, not game-like. */
 export type StagePose = { scale: number; x: number; y: number };
 
 export const stagePalette = {
   /** Land base behind the artwork — matches its paper-gray ground. */
-  land: '#EFEFEF',
+  land: "#EFEFEF",
   /** Soft gradient behind titles/footer, as "r,g,b" (light!). */
-  vignette: '244,243,239',
+  vignette: "244,243,239",
 };
 
 /**
@@ -48,14 +48,14 @@ export const stageArt = {
 };
 
 export const stagePoses: Record<StepId, StagePose> = {
-  welcome:    { scale: 1,    x: 0,   y: 0 },
-  signin:     { scale: 1.05, x: -14, y: 10 },
-  motivation: { scale: 1.1,  x: 12,  y: -10 },
-  name:       { scale: 1.16, x: 0,   y: -26 },
-  photo:      { scale: 1.19, x: -8,  y: -6 },
-  interests:  { scale: 1.22, x: 8,   y: -30 }, // lifts the collage clear of the interests footer
-  verify:     { scale: 1.26, x: -6,  y: 0 },
-  location:   { scale: 1.3,  x: 0,   y: -46 }, // lifts the collage clear of the location CTAs
+  welcome: { scale: 1, x: 0, y: 0 },
+  signin: { scale: 1.05, x: -14, y: 10 },
+  motivation: { scale: 1.1, x: 12, y: -10 },
+  name: { scale: 1.16, x: 0, y: -26 },
+  photo: { scale: 1.19, x: -8, y: -6 },
+  interests: { scale: 1.22, x: 8, y: -30 }, // lifts the collage clear of the interests footer
+  verify: { scale: 1.26, x: -6, y: 0 },
+  location: { scale: 1.3, x: 0, y: -46 }, // lifts the collage clear of the location CTAs
 };
 
 /** Step-to-step pose glide (CSS transform transition). */
@@ -66,7 +66,7 @@ export const stageExit = {
   scale: 2.3,
   ms: 680,
   /** Ease-in — the world accelerates past you. */
-  ease: 'cubic-bezier(0.5, 0, 0.8, 0.4)',
+  ease: "cubic-bezier(0.5, 0, 0.8, 0.4)",
 };
 
 /**
@@ -87,11 +87,11 @@ export const CLUSTER = {
   max: 6,
   slots: [
     { dx: -74, dy: -42, rot: -12 },
-    { dx: 76,  dy: -36, rot: 10 },
-    { dx: -84, dy: 26,  rot: 8 },
-    { dx: 84,  dy: 30,  rot: -9 },
+    { dx: 76, dy: -36, rot: 10 },
+    { dx: -84, dy: 26, rot: 8 },
+    { dx: 84, dy: 30, rot: -9 },
     { dx: -26, dy: -72, rot: 6 },
-    { dx: 40,  dy: -70, rot: -7 },
+    { dx: 40, dy: -70, rot: -7 },
   ],
 };
 
@@ -101,16 +101,16 @@ export const CLUSTER = {
  * borrow the closest culture glyph, so every pick still leaves a mark.
  */
 export const INTEREST_GLYPH: Record<InterestId, string> = {
-  drinks: 'cocktail',
-  livemusic: 'music',
-  tapas: 'utensils',
-  climbing: 'chipSports',
-  coffee: 'coffee',
-  running: 'chipSports',
-  football: 'chipSports',
-  yoga: 'chipSports',
-  museums: 'museum',
-  photography: 'museum',
-  books: 'museum',
-  thrifting: 'utensils',
+  drinks: "cocktail",
+  livemusic: "music",
+  tapas: "utensils",
+  climbing: "chipSports",
+  coffee: "coffee",
+  running: "chipSports",
+  football: "chipSports",
+  yoga: "chipSports",
+  museums: "museum",
+  photography: "museum",
+  books: "museum",
+  thrifting: "utensils",
 };

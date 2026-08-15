@@ -1,13 +1,21 @@
-import { Component, Show, createEffect, createMemo, createSignal, onCleanup, onMount } from 'solid-js';
-import type { VideoInfo } from '../../App';
-import { calculateBBoxTargets } from '../../engine/bbox-calc';
-import { setAppState } from '../../state/app';
-import { uploadFileWithProgress, waitForPreview } from '../../api/upload';
-import { pct, scrambleText } from '../../shared/utils';
-import CarrierBricks from '../loading/CarrierBricks';
+import {
+  Component,
+  Show,
+  createEffect,
+  createMemo,
+  createSignal,
+  onCleanup,
+  onMount,
+} from "solid-js";
+import type { VideoInfo } from "../../App";
+import { calculateBBoxTargets } from "../../engine/bbox-calc";
+import { setAppState } from "../../state/app";
+import { uploadFileWithProgress, waitForPreview } from "../../api/upload";
+import { pct, scrambleText } from "../../shared/utils";
+import CarrierBricks from "../loading/CarrierBricks";
 
 // ── Guide positions ───────────────────────────────────────────────────────────
-const SPLASH = { GL: '2.8%',  GR: '97.2%', GT: '6.13%', GB: '92.4%'  };
+const SPLASH = { GL: "2.8%", GR: "97.2%", GT: "6.13%", GB: "92.4%" };
 
 // Idle bbox cycles through these aspect ratios — one step forward per cross
 // spin. Order: HD widescreen → vertical mobile → 4:3 → square, then loops.
@@ -17,20 +25,25 @@ const IDLE_RATIOS = [16 / 9, 9 / 16, 4 / 3, 1 / 1];
 // Uses the same logic as bbox-calc.ts so the idle box is always properly centered
 // and aspect-ratio-constrained regardless of window size.
 function computeIdlePos(vw: number, vh: number, aspect: number) {
-  const { x1, y1, x2, y2 } = calculateBBoxTargets(vw, vh, aspect, 'idle');
+  const { x1, y1, x2, y2 } = calculateBBoxTargets(vw, vh, aspect, "idle");
   return {
-    x1, y1, x2, y2,
-    gl: pct(x1, vw), gr: pct(x2, vw),
-    gt: pct(y1, vh), gb: pct(y2, vh),
+    x1,
+    y1,
+    x2,
+    y2,
+    gl: pct(x1, vw),
+    gr: pct(x2, vw),
+    gt: pct(y1, vh),
+    gb: pct(y2, vh),
     // Anchor text 16px above the bottom guide so it always sits inside the bbox.
-    helperBottom: (vh - y2 + 16) + 'px',
+    helperBottom: vh - y2 + 16 + "px",
   };
 }
 
 // Bar-shape positions used when the bbox morphs into a loading bar during
 // upload / URL fetch. Mirrors the playground shortlist: 60vw × 80px centered.
-const LOADING_BAR_W_RATIO = 0.60;
-const LOADING_BAR_H_PX    = 80;
+const LOADING_BAR_W_RATIO = 0.6;
+const LOADING_BAR_H_PX = 80;
 function computeLoadingPos(vw: number, vh: number) {
   const barW = vw * LOADING_BAR_W_RATIO;
   const barH = LOADING_BAR_H_PX;
@@ -39,28 +52,36 @@ function computeLoadingPos(vw: number, vh: number) {
   const x2 = x1 + barW;
   const y2 = y1 + barH;
   return {
-    x1, y1, x2, y2,
-    gl: pct(x1, vw), gr: pct(x2, vw),
-    gt: pct(y1, vh), gb: pct(y2, vh),
-    helperBottom: (vh - y2 + 16) + 'px',
+    x1,
+    y1,
+    x2,
+    y2,
+    gl: pct(x1, vw),
+    gr: pct(x2, vw),
+    gt: pct(y1, vh),
+    gb: pct(y2, vh),
+    helperBottom: vh - y2 + 16 + "px",
   };
 }
 
-import { ACCENT, BG, DOT_BG_IMAGE } from '../../shared/tokens';
-import { Chip, Cross, CornerCrosshair, GuideLine } from '../../shared/ui';
+import { ACCENT, BG, DOT_BG_IMAGE } from "../../shared/tokens";
+import { Chip, Cross, CornerCrosshair, GuideLine } from "../../shared/ui";
 
-type Phase = 'splash' | 'contracting' | 'idle' | 'loading';
+type Phase = "splash" | "contracting" | "idle" | "loading";
 
 // ── Tracks whether the intro has already played this session ──────────────────
 // Stored on `window` so the flag survives both IdleView unmount/remount (e.g.
 // after pressing X) AND Vite HMR module re-evaluation (which would re-declare
 // a module-level `let`). Resets on a full page reload (fresh app launch).
 const _hl = () => !!(window as any).__convertrLaunched;
-const _markLaunched = () => { (window as any).__convertrLaunched = true; };
+const _markLaunched = () => {
+  (window as any).__convertrLaunched = true;
+};
 
 // ── Main view ────────────────────────────────────────────────────────────────
-const IdleView: Component<{ onVideoSelected: (info: VideoInfo) => void }> = (props) => {
-
+const IdleView: Component<{ onVideoSelected: (info: VideoInfo) => void }> = (
+  props,
+) => {
   // ── Static config ────────────────────────────────────────────────────────────
   const p = {
     phases: { splash_ms: 700, contract_ms: 100 },
@@ -68,8 +89,16 @@ const IdleView: Component<{ onVideoSelected: (info: VideoInfo) => void }> = (pro
     // idle → loading morph (and the idle aspect-ratio cycle) feel like the
     // rest of the app instead of a flat ease-in-out.
     guides: { dur: 0.3, x1: 1.0, y1: -0.35, x2: 0.22, y2: 1.15 },
-    logo:   { dur: 0.3 },
-    text:   { line1_dur: 0.2, line2_dur: 0.2, line2_delay: 0.1, x1: 0.0, y1: 1.0, x2: 0.28, y2: 1.0 },
+    logo: { dur: 0.3 },
+    text: {
+      line1_dur: 0.2,
+      line2_dur: 0.2,
+      line2_delay: 0.1,
+      x1: 0.0,
+      y1: 1.0,
+      x2: 0.28,
+      y2: 1.0,
+    },
     helper_fade_dur: 0.1,
   };
 
@@ -83,7 +112,9 @@ const IdleView: Component<{ onVideoSelected: (info: VideoInfo) => void }> = (pro
   // recomputes and the existing guide-transition effect smoothly animates
   // the lines / corner crosses to the new positions.
   const [bboxRatioIndex, setBboxRatioIndex] = createSignal(0);
-  const currentIdleAspect = createMemo(() => IDLE_RATIOS[bboxRatioIndex() % IDLE_RATIOS.length]);
+  const currentIdleAspect = createMemo(
+    () => IDLE_RATIOS[bboxRatioIndex() % IDLE_RATIOS.length],
+  );
   const idlePos = createMemo(() => {
     const { vw, vh } = vp();
     const aspect = currentIdleAspect();
@@ -97,9 +128,9 @@ const IdleView: Component<{ onVideoSelected: (info: VideoInfo) => void }> = (pro
   });
 
   // ── Phase state ────────────────────────────────────────────────────────────
-  const [phase, setPhase] = createSignal<Phase>(_hl() ? 'idle' : 'splash');
-  const isIdle = createMemo(() => phase() === 'idle');
-  const isLoading = createMemo(() => phase() === 'loading');
+  const [phase, setPhase] = createSignal<Phase>(_hl() ? "idle" : "splash");
+  const isIdle = createMemo(() => phase() === "idle");
+  const isLoading = createMemo(() => phase() === "loading");
 
   // ── Loading bar (time-driven, continuous) ────────────────────────────────
   // One seamless ramp from 0 → 100. The pacer starts once the bbox → bar
@@ -110,14 +141,16 @@ const IdleView: Component<{ onVideoSelected: (info: VideoInfo) => void }> = (pro
   // no smoothing jumps — single continuous animation.
   const BAR_FADE_MS = 700; // = (STAGGER_P1 + STAGGER_DELAY + STAGGER_P2) * 1000
   const ANIMATE_MS = 3000;
-  const FINISH_MS  = 350;
-  const HOLD_AT    = 92;
+  const FINISH_MS = 350;
+  const HOLD_AT = 92;
 
   const [loadingProgress, setLoadingProgress] = createSignal(0);
-  const [pendingTransition, setPendingTransition] = createSignal<(() => void) | null>(null);
+  const [pendingTransition, setPendingTransition] = createSignal<
+    (() => void) | null
+  >(null);
 
-  type PacerPhase = 'idle' | 'animating' | 'holding' | 'finishing';
-  let pacerPhase: PacerPhase = 'idle';
+  type PacerPhase = "idle" | "animating" | "holding" | "finishing";
+  let pacerPhase: PacerPhase = "idle";
   let pacerStart = 0;
   let finishStart = 0;
   let pacerRaf = 0;
@@ -125,29 +158,29 @@ const IdleView: Component<{ onVideoSelected: (info: VideoInfo) => void }> = (pro
   const easeOutQuad = (tt: number) => 1 - (1 - tt) * (1 - tt);
 
   const pacerTick = (now: number) => {
-    if (pacerPhase === 'animating') {
+    if (pacerPhase === "animating") {
       const tt = Math.min(1, (now - pacerStart) / ANIMATE_MS);
       setLoadingProgress(easeOutQuad(tt) * HOLD_AT);
       if (tt >= 1) {
         if (pendingTransition()) {
-          pacerPhase = 'finishing';
+          pacerPhase = "finishing";
           finishStart = now;
         } else {
-          pacerPhase = 'holding';
+          pacerPhase = "holding";
         }
       }
-    } else if (pacerPhase === 'holding') {
+    } else if (pacerPhase === "holding") {
       if (pendingTransition()) {
-        pacerPhase = 'finishing';
+        pacerPhase = "finishing";
         finishStart = now;
       }
-    } else if (pacerPhase === 'finishing') {
+    } else if (pacerPhase === "finishing") {
       const tt = Math.min(1, (now - finishStart) / FINISH_MS);
       setLoadingProgress(HOLD_AT + (100 - HOLD_AT) * tt);
       if (tt >= 1) {
         const fire = pendingTransition();
         setPendingTransition(null);
-        pacerPhase = 'idle';
+        pacerPhase = "idle";
         pacerRaf = 0;
         if (fire) fire();
         return;
@@ -160,21 +193,27 @@ const IdleView: Component<{ onVideoSelected: (info: VideoInfo) => void }> = (pro
   // morph so the bar begins at 0%. Cleanup cancels the RAF and resets.
   createEffect(() => {
     if (!isLoading()) {
-      if (pacerRaf) { cancelAnimationFrame(pacerRaf); pacerRaf = 0; }
-      pacerPhase = 'idle';
+      if (pacerRaf) {
+        cancelAnimationFrame(pacerRaf);
+        pacerRaf = 0;
+      }
+      pacerPhase = "idle";
       setLoadingProgress(0);
       return;
     }
     const start = setTimeout(() => {
-      pacerPhase = 'animating';
+      pacerPhase = "animating";
       pacerStart = performance.now();
       setLoadingProgress(0);
       pacerRaf = requestAnimationFrame(pacerTick);
     }, BAR_FADE_MS);
     onCleanup(() => {
       clearTimeout(start);
-      if (pacerRaf) { cancelAnimationFrame(pacerRaf); pacerRaf = 0; }
-      pacerPhase = 'idle';
+      if (pacerRaf) {
+        cancelAnimationFrame(pacerRaf);
+        pacerRaf = 0;
+      }
+      pacerPhase = "idle";
     });
   });
 
@@ -194,17 +233,25 @@ const IdleView: Component<{ onVideoSelected: (info: VideoInfo) => void }> = (pro
   };
 
   // Timeout refs so we can cancel and restart on replay
-  let t1 = 0, t2 = 0;
+  let t1 = 0,
+    t2 = 0;
 
   const startTimers = () => {
-    clearTimeout(t1); clearTimeout(t2);
+    clearTimeout(t1);
+    clearTimeout(t2);
     const { splash_ms, contract_ms } = p.phases;
-    t1 = setTimeout(() => setPhase('contracting'), splash_ms) as unknown as number;
-    t2 = setTimeout(() => setPhase('idle'), splash_ms + contract_ms) as unknown as number;
+    t1 = setTimeout(
+      () => setPhase("contracting"),
+      splash_ms,
+    ) as unknown as number;
+    t2 = setTimeout(
+      () => setPhase("idle"),
+      splash_ms + contract_ms,
+    ) as unknown as number;
   };
 
   const restartAnimation = () => {
-    setPhase('splash');
+    setPhase("splash");
     // Let the DOM reset to splash positions before re-running timers
     requestAnimationFrame(() => startTimers());
   };
@@ -229,7 +276,7 @@ const IdleView: Component<{ onVideoSelected: (info: VideoInfo) => void }> = (pro
   // Peak at 50% — symmetric wind-up and spring-back. The bbox transition
   // (both axes simultaneous, see STAGGER_P1/P2 below) runs for the full
   // spin duration and settles together with the cross at 700ms.
-  const IDLE_SPIN_PEAK_OFFSET = 0.50;
+  const IDLE_SPIN_PEAK_OFFSET = 0.5;
 
   createEffect(() => {
     // Pause the idle spin whenever the user is hovering inside the bbox —
@@ -239,16 +286,24 @@ const IdleView: Component<{ onVideoSelected: (info: VideoInfo) => void }> = (pro
       if (!centerCrossEl) return;
       centerCrossEl.animate(
         [
-          { offset: 0,                    transform: 'rotate(0deg)',   easing: 'cubic-bezier(0.34, 0.0, 0.4, 1.0)' },
-          { offset: IDLE_SPIN_PEAK_OFFSET, transform: 'rotate(450deg)', easing: 'cubic-bezier(0.5, 0.0, 0.4, 1.15)' },
-          { offset: 1,                    transform: 'rotate(360deg)' },
+          {
+            offset: 0,
+            transform: "rotate(0deg)",
+            easing: "cubic-bezier(0.34, 0.0, 0.4, 1.0)",
+          },
+          {
+            offset: IDLE_SPIN_PEAK_OFFSET,
+            transform: "rotate(450deg)",
+            easing: "cubic-bezier(0.5, 0.0, 0.4, 1.15)",
+          },
+          { offset: 1, transform: "rotate(360deg)" },
         ],
         { duration: IDLE_SPIN_DURATION_MS },
       );
       // Bbox cycles to the next aspect ratio in lockstep with the spin —
       // the idlePos memo recomputes and the guide-transition effect carries
       // the lines / corner crosses to the new positions over ~700ms.
-      setBboxRatioIndex(i => (i + 1) % IDLE_RATIOS.length);
+      setBboxRatioIndex((i) => (i + 1) % IDLE_RATIOS.length);
     }, IDLE_SPIN_INTERVAL_MS);
     onCleanup(() => clearInterval(interval));
   });
@@ -258,17 +313,24 @@ const IdleView: Component<{ onVideoSelected: (info: VideoInfo) => void }> = (pro
       _markLaunched();
       startTimers();
     }
-    onCleanup(() => { clearTimeout(t1); clearTimeout(t2); });
+    onCleanup(() => {
+      clearTimeout(t1);
+      clearTimeout(t2);
+    });
 
-    const vw0 = rootEl.offsetWidth  || window.innerWidth;
+    const vw0 = rootEl.offsetWidth || window.innerWidth;
     const vh0 = rootEl.offsetHeight || window.innerHeight;
 
     // Strip any residual transitions so the seed below is always an instant
     // snap — prevents leftover transitions (e.g. from HMR module reload)
     // from animating the seed and causing a wrong-direction expansion.
-    [vLineL, vLineR, hLineT, hLineB].forEach(el => { el.style.transition = 'none'; });
-    [crossTL, crossTR, crossBL, crossBR].forEach(el => { el.style.transition = 'none'; });
-    dotBg.style.transition = 'none';
+    [vLineL, vLineR, hLineT, hLineB].forEach((el) => {
+      el.style.transition = "none";
+    });
+    [crossTL, crossTR, crossBL, crossBR].forEach((el) => {
+      el.style.transition = "none";
+    });
+    dotBg.style.transition = "none";
     void vLineL.offsetHeight;
 
     // Seed guide-line transforms at SPLASH positions BEFORE setVp so the
@@ -287,23 +349,23 @@ const IdleView: Component<{ onVideoSelected: (info: VideoInfo) => void }> = (pro
 
   // Guide positions driven by phase — splash / idle / loading.
   const gl = createMemo(() => {
-    if (phase() === 'splash')  return SPLASH.GL;
-    if (phase() === 'loading') return loadingPos().gl;
+    if (phase() === "splash") return SPLASH.GL;
+    if (phase() === "loading") return loadingPos().gl;
     return idlePos().gl;
   });
   const gr = createMemo(() => {
-    if (phase() === 'splash')  return SPLASH.GR;
-    if (phase() === 'loading') return loadingPos().gr;
+    if (phase() === "splash") return SPLASH.GR;
+    if (phase() === "loading") return loadingPos().gr;
     return idlePos().gr;
   });
   const gt = createMemo(() => {
-    if (phase() === 'splash')  return SPLASH.GT;
-    if (phase() === 'loading') return loadingPos().gt;
+    if (phase() === "splash") return SPLASH.GT;
+    if (phase() === "loading") return loadingPos().gt;
     return idlePos().gt;
   });
   const gb = createMemo(() => {
-    if (phase() === 'splash')  return SPLASH.GB;
-    if (phase() === 'loading') return loadingPos().gb;
+    if (phase() === "splash") return SPLASH.GB;
+    if (phase() === "loading") return loadingPos().gb;
     return idlePos().gb;
   });
 
@@ -317,11 +379,14 @@ const IdleView: Component<{ onVideoSelected: (info: VideoInfo) => void }> = (pro
   // morph feels like the rest of the app. The cross spin continues for 700ms
   // and is allowed to outlast the bbox settle. Skipped on the initial remount
   // after a video cancel so the lines don't flicker from SPLASH → idle.
-  const STAGGER_P1 = 0.35;  // Y-axis duration
-  const STAGGER_P2 = 0.35;  // X-axis duration
-  const STAGGER_DELAY = 0;  // no leading delay — both start together
+  const STAGGER_P1 = 0.35; // Y-axis duration
+  const STAGGER_P2 = 0.35; // X-axis duration
+  const STAGGER_DELAY = 0; // no leading delay — both start together
   createEffect(() => {
-    const l = gl(), r = gr(), t = gt(), b = gb();
+    const l = gl(),
+      r = gr(),
+      t = gt(),
+      b = gb();
     const { vw, vh } = vp();
     const ph = phase();
     if (vw === 0 || vh === 0) return;
@@ -329,26 +394,37 @@ const IdleView: Component<{ onVideoSelected: (info: VideoInfo) => void }> = (pro
     if (skipTransition) skipTransition = false;
     // Horizontal lines (Y-axis = trTop) animate FIRST, no delay.
     // Vertical lines (X-axis = trLeft) animate SECOND with STAGGER_DELAY.
-    const trTop  = skip ? `0s ${guideEase}` : `${STAGGER_P1}s ${guideEase}`;
-    const trLeft = skip ? `0s ${guideEase}` : `${STAGGER_P2}s ${guideEase} ${STAGGER_DELAY}s`;
+    const trTop = skip ? `0s ${guideEase}` : `${STAGGER_P1}s ${guideEase}`;
+    const trLeft = skip
+      ? `0s ${guideEase}`
+      : `${STAGGER_P2}s ${guideEase} ${STAGGER_DELAY}s`;
 
     // Resolve pixel positions for compositor-only line transforms
     let lPx: number, rPx: number, tPx: number, bPx: number;
-    if (ph === 'splash') {
-      lPx = vw * 0.028; rPx = vw * 0.972; tPx = vh * 0.0613; bPx = vh * 0.924;
-    } else if (ph === 'loading') {
+    if (ph === "splash") {
+      lPx = vw * 0.028;
+      rPx = vw * 0.972;
+      tPx = vh * 0.0613;
+      bPx = vh * 0.924;
+    } else if (ph === "loading") {
       const pos = loadingPos();
-      lPx = pos.x1; rPx = pos.x2; tPx = pos.y1; bPx = pos.y2;
+      lPx = pos.x1;
+      rPx = pos.x2;
+      tPx = pos.y1;
+      bPx = pos.y2;
     } else {
       const pos = idlePos();
-      lPx = pos.x1; rPx = pos.x2; tPx = pos.y1; bPx = pos.y2;
+      lPx = pos.x1;
+      rPx = pos.x2;
+      tPx = pos.y1;
+      bPx = pos.y2;
     }
 
     vLineL.style.transition = `transform ${trLeft}`;
     vLineR.style.transition = `transform ${trLeft}`;
     hLineT.style.transition = `transform ${trTop}`;
     hLineB.style.transition = `transform ${trTop}`;
-    [crossTL, crossTR, crossBL, crossBR].forEach(el => {
+    [crossTL, crossTR, crossBL, crossBR].forEach((el) => {
       el.style.transition = `top ${trTop}, left ${trLeft}`;
     });
     dotBg.style.transition = `left ${trLeft}, width ${trLeft}, top ${trTop}, height ${trTop}, opacity ${trLeft}`;
@@ -362,13 +438,17 @@ const IdleView: Component<{ onVideoSelected: (info: VideoInfo) => void }> = (pro
     vLineR.style.transform = `translateX(${rPx}px)`;
     hLineT.style.transform = `translateY(${tPx}px)`;
     hLineB.style.transform = `translateY(${bPx}px)`;
-    crossTL.style.top  = `calc(${t} - 10px)`;  crossTL.style.left = `calc(${l} - 10px)`;
-    crossTR.style.top  = `calc(${t} - 10px)`;  crossTR.style.left = `calc(${r} - 10px)`;
-    crossBL.style.top  = `calc(${b} - 10px)`;  crossBL.style.left = `calc(${l} - 10px)`;
-    crossBR.style.top  = `calc(${b} - 10px)`;  crossBR.style.left = `calc(${r} - 10px)`;
-    dotBg.style.left   = l;
-    dotBg.style.top    = t;
-    dotBg.style.width  = `calc(${r} - ${l})`;
+    crossTL.style.top = `calc(${t} - 10px)`;
+    crossTL.style.left = `calc(${l} - 10px)`;
+    crossTR.style.top = `calc(${t} - 10px)`;
+    crossTR.style.left = `calc(${r} - 10px)`;
+    crossBL.style.top = `calc(${b} - 10px)`;
+    crossBL.style.left = `calc(${l} - 10px)`;
+    crossBR.style.top = `calc(${b} - 10px)`;
+    crossBR.style.left = `calc(${r} - 10px)`;
+    dotBg.style.left = l;
+    dotBg.style.top = t;
+    dotBg.style.width = `calc(${r} - ${l})`;
     dotBg.style.height = `calc(${b} - ${t})`;
   });
 
@@ -381,8 +461,8 @@ const IdleView: Component<{ onVideoSelected: (info: VideoInfo) => void }> = (pro
   // Both lines start at their final value; each hover transition replays the
   // shared scrambleText util (same defaults as EditorView's chips). The
   // monospace font keeps chip width stable while characters resolve.
-  const HINT_LINE_1 = 'DROP A FILE OR';
-  const HINT_LINE_2 = 'PASTE A URL';
+  const HINT_LINE_1 = "DROP A FILE OR";
+  const HINT_LINE_2 = "PASTE A URL";
   const [hintLine1, setHintLine1] = createSignal(HINT_LINE_1);
   const [hintLine2, setHintLine2] = createSignal(HINT_LINE_2);
   let hintScrambleRaf = 0;
@@ -407,25 +487,38 @@ const IdleView: Component<{ onVideoSelected: (info: VideoInfo) => void }> = (pro
   // picks.
   const seedSourceDefaults = (metaFps?: number, metaWidth?: number) => {
     if (metaFps && metaFps > 0) {
-      setAppState('fps', Math.max(1, Math.min(60, Math.round(metaFps))));
+      setAppState("fps", Math.max(1, Math.min(60, Math.round(metaFps))));
     }
     if (metaWidth && metaWidth > 0) {
       const w = Math.max(240, Math.min(1920, Math.round(metaWidth)));
-      setAppState('width', w);
-      setAppState('vidWidth', w);
+      setAppState("width", w);
+      setAppState("vidWidth", w);
     }
   };
 
   const handleFile = (file: File) => {
-    const ext = (file.name.split('.').pop() || '').toLowerCase();
-    const isGif = file.type === 'image/gif' || ext === 'gif';
-    const isVideo = file.type.startsWith('video/');
+    const ext = (file.name.split(".").pop() || "").toLowerCase();
+    const isGif = file.type === "image/gif" || ext === "gif";
+    const isVideo = file.type.startsWith("video/");
     // Allow videos + GIFs only. Container formats without a MIME type (avi,
     // flv, wmv, ts, mkv on some browsers) fall through the MIME check, so
     // also accept known video extensions.
-    const VIDEO_EXTS = new Set(['mp4','mov','mkv','webm','avi','flv','wmv','ts','mts','m4v','3gp','ogv']);
+    const VIDEO_EXTS = new Set([
+      "mp4",
+      "mov",
+      "mkv",
+      "webm",
+      "avi",
+      "flv",
+      "wmv",
+      "ts",
+      "mts",
+      "m4v",
+      "3gp",
+      "ogv",
+    ]);
     if (!isGif && !isVideo && !VIDEO_EXTS.has(ext)) {
-      setFetchStatus('Unsupported file — videos or GIFs only');
+      setFetchStatus("Unsupported file — videos or GIFs only");
       setTimeout(() => setFetchStatus(null), 3000);
       return;
     }
@@ -437,66 +530,82 @@ const IdleView: Component<{ onVideoSelected: (info: VideoInfo) => void }> = (pro
     // the browser can't decode natively (avi/flv/wmv/ts/…).
     const probeDims = (): Promise<{ w: number; h: number }> => {
       if (isGif) {
-        return new Promise(resolve => {
+        return new Promise((resolve) => {
           const img = new Image();
-          img.onload = () => resolve({ w: img.naturalWidth || 1280, h: img.naturalHeight || 720 });
+          img.onload = () =>
+            resolve({
+              w: img.naturalWidth || 1280,
+              h: img.naturalHeight || 720,
+            });
           img.onerror = () => resolve({ w: 1280, h: 720 });
           img.src = objectUrl;
         });
       }
-      return new Promise(resolve => {
-        const vid = document.createElement('video');
-        vid.preload = 'metadata';
+      return new Promise((resolve) => {
+        const vid = document.createElement("video");
+        vid.preload = "metadata";
         vid.src = objectUrl;
         let done = false;
-        const bail = () => { if (done) return; done = true; resolve({ w: 1280, h: 720 }); };
+        const bail = () => {
+          if (done) return;
+          done = true;
+          resolve({ w: 1280, h: 720 });
+        };
         const timer = setTimeout(bail, 1500);
         vid.onloadedmetadata = () => {
-          if (done) return; done = true; clearTimeout(timer);
+          if (done) return;
+          done = true;
+          clearTimeout(timer);
           resolve({ w: vid.videoWidth || 1280, h: vid.videoHeight || 720 });
         };
-        vid.onerror = () => { clearTimeout(timer); bail(); };
+        vid.onerror = () => {
+          clearTimeout(timer);
+          bail();
+        };
       });
     };
 
     // Start the bar — bbox morphs from idle drop-zone into the 60vw × 80px bar.
-    setPhase('loading');
+    setPhase("loading");
     startPacedLoading();
 
-    Promise.all([
-      probeDims(),
-      uploadFileWithProgress(file),
-    ]).then(([dims, result]) => {
-      if (!result) {
-        stopPacedLoading();
-        setFetchStatus('Upload failed');
-        setTimeout(() => setFetchStatus(null), 3000);
-        setPhase('idle');
-        URL.revokeObjectURL(objectUrl);
-        return;
-      }
-      // Real upload finished — queue transition. Pacer fires it after the
-      // bar finishes its close-out animation (smooth HOLD_AT → 100).
-      finishPacedLoading(() => {
-        setAppState('uploadJobId',  result.jobId);
-        setAppState('currentJobId', result.jobId);
-        setAppState('uploadReady',  true);
-        setAppState('inputFormat',  result.inputFormat);
-        setAppState('needsProxy',   !!result.needsProxy);
-        if (result.needsProxy) {
-          waitForPreview(result.jobId).then(url => {
-            if (url) setAppState('previewUrl', url);
-          });
+    Promise.all([probeDims(), uploadFileWithProgress(file)]).then(
+      ([dims, result]) => {
+        if (!result) {
+          stopPacedLoading();
+          setFetchStatus("Upload failed");
+          setTimeout(() => setFetchStatus(null), 3000);
+          setPhase("idle");
+          URL.revokeObjectURL(objectUrl);
+          return;
         }
-        const w = result.meta?.width  || dims.w;
-        const h = result.meta?.height || dims.h;
-        seedSourceDefaults(result.meta?.fps, w);
-        props.onVideoSelected({
-          file, name: file.name, sizeBytes: file.size,
-          width: w, height: h, objectUrl,
+        // Real upload finished — queue transition. Pacer fires it after the
+        // bar finishes its close-out animation (smooth HOLD_AT → 100).
+        finishPacedLoading(() => {
+          setAppState("uploadJobId", result.jobId);
+          setAppState("currentJobId", result.jobId);
+          setAppState("uploadReady", true);
+          setAppState("inputFormat", result.inputFormat);
+          setAppState("needsProxy", !!result.needsProxy);
+          if (result.needsProxy) {
+            waitForPreview(result.jobId).then((url) => {
+              if (url) setAppState("previewUrl", url);
+            });
+          }
+          const w = result.meta?.width || dims.w;
+          const h = result.meta?.height || dims.h;
+          seedSourceDefaults(result.meta?.fps, w);
+          props.onVideoSelected({
+            file,
+            name: file.name,
+            sizeBytes: file.size,
+            width: w,
+            height: h,
+            objectUrl,
+          });
         });
-      });
-    });
+      },
+    );
   };
 
   const handleDrop = (e: DragEvent) => {
@@ -506,9 +615,14 @@ const IdleView: Component<{ onVideoSelected: (info: VideoInfo) => void }> = (pro
     if (file) handleFile(file);
   };
 
-  const handleDragOver = (e: DragEvent) => { e.preventDefault(); if (!isLoading()) setDragOver(true); };
+  const handleDragOver = (e: DragEvent) => {
+    e.preventDefault();
+    if (!isLoading()) setDragOver(true);
+  };
   const handleDragLeave = () => setDragOver(false);
-  const handleClick = () => { if (isIdle()) fileInputRef.click(); };
+  const handleClick = () => {
+    if (isIdle()) fileInputRef.click();
+  };
 
   const handleFileInput = (e: Event) => {
     const input = e.target as HTMLInputElement;
@@ -517,33 +631,34 @@ const IdleView: Component<{ onVideoSelected: (info: VideoInfo) => void }> = (pro
   };
 
   const handlePaste = async (e: ClipboardEvent) => {
-    const text = e.clipboardData?.getData('text');
-    if (!text || (!text.startsWith('http://') && !text.startsWith('https://'))) return;
+    const text = e.clipboardData?.getData("text");
+    if (!text || (!text.startsWith("http://") && !text.startsWith("https://")))
+      return;
     if (isLoading()) return; // another job already in flight
 
     // Demo build: URL fetching needs the desktop app's server (yt-dlp).
     // Everything below is the real flow, kept for the desktop parity diff.
-    setFetchStatus('URL fetch needs the desktop app — drop a file instead');
+    setFetchStatus("URL fetch needs the desktop app — drop a file instead");
     setTimeout(() => setFetchStatus(null), 3000);
     return;
 
     // Start the bar — bbox morphs into the loading bar shape.
-    setPhase('loading');
+    setPhase("loading");
     startPacedLoading();
 
     const resetIdle = () => {
       stopPacedLoading();
-      setPhase('idle');
+      setPhase("idle");
     };
 
     try {
-      const res = await fetch('/fetch', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
+      const res = await fetch("/fetch", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ url: text }),
       });
       if (!res.ok) {
-        setFetchStatus('Failed to fetch URL');
+        setFetchStatus("Failed to fetch URL");
         setTimeout(() => setFetchStatus(null), 3000);
         resetIdle();
         return;
@@ -558,58 +673,62 @@ const IdleView: Component<{ onVideoSelected: (info: VideoInfo) => void }> = (pro
           const data = JSON.parse(ev.data);
           if (data.error) {
             sse.close();
-            setFetchStatus(`Error: ${data.message ?? 'Download failed'}`);
+            setFetchStatus(`Error: ${data.message ?? "Download failed"}`);
             setTimeout(() => setFetchStatus(null), 3000);
             resetIdle();
             return;
           }
-          if (data.status === 'downloaded') {
+          if (data.status === "downloaded") {
             sse.close();
             const meta = data.meta ?? {};
             finishPacedLoading(() => {
-              setAppState('currentJobId', jobId);
-              setAppState('uploadJobId', jobId);
-              setAppState('uploadReady', true);
-              setAppState('inputFormat', data.inputFormat ?? 'mp4');
-              setAppState('needsProxy', !!data.needsProxy);
+              setAppState("currentJobId", jobId);
+              setAppState("uploadJobId", jobId);
+              setAppState("uploadReady", true);
+              setAppState("inputFormat", data.inputFormat ?? "mp4");
+              setAppState("needsProxy", !!data.needsProxy);
               seedSourceDefaults(meta.fps, meta.width);
               props.onVideoSelected({
                 url: text,
-                name: data.fileName ?? text!.split('/').pop() ?? 'video',
+                name: data.fileName ?? text!.split("/").pop() ?? "video",
                 sizeBytes: data.inputSize ?? 0,
-                width:  meta.width  || 1280,
+                width: meta.width || 1280,
                 height: meta.height || 720,
                 objectUrl: `/input/${jobId}`,
               });
             });
           }
-        } catch { /* ignore */ }
+        } catch {
+          /* ignore */
+        }
       };
       sse.onerror = () => {
         sse.close();
-        setFetchStatus('Connection error');
+        setFetchStatus("Connection error");
         setTimeout(() => setFetchStatus(null), 3000);
         resetIdle();
       };
     } catch {
-      setFetchStatus('Failed to fetch URL');
+      setFetchStatus("Failed to fetch URL");
       setTimeout(() => setFetchStatus(null), 3000);
       resetIdle();
     }
   };
 
-  onMount(() => document.addEventListener('paste', handlePaste));
-  onCleanup(() => document.removeEventListener('paste', handlePaste));
+  onMount(() => document.addEventListener("paste", handlePaste));
+  onCleanup(() => document.removeEventListener("paste", handlePaste));
 
   return (
     <div
       ref={rootEl}
       style={{
-        position: 'fixed', inset: '0', background: BG,
-        cursor: isIdle() ? 'pointer' : 'default',
-        overflow: 'hidden',
-        opacity: dragOver() ? '0.8' : '1',
-        transition: 'opacity 0.15s',
+        position: "fixed",
+        inset: "0",
+        background: BG,
+        cursor: isIdle() ? "pointer" : "default",
+        overflow: "hidden",
+        opacity: dragOver() ? "0.8" : "1",
+        transition: "opacity 0.15s",
       }}
       onClick={handleClick}
       onDrop={handleDrop}
@@ -626,15 +745,16 @@ const IdleView: Component<{ onVideoSelected: (info: VideoInfo) => void }> = (pro
         onMouseEnter={() => setHoveringBbox(true)}
         onMouseLeave={() => setHoveringBbox(false)}
         style={{
-          position: 'absolute',
-          left: SPLASH.GL, top: SPLASH.GT,
+          position: "absolute",
+          left: SPLASH.GL,
+          top: SPLASH.GT,
           width: `calc(${SPLASH.GR} - ${SPLASH.GL})`,
           height: `calc(${SPLASH.GB} - ${SPLASH.GT})`,
-          'background-image': DOT_BG_IMAGE,
-          'background-size': '32px 32px',
-          'background-position': '50% 50%',
-          opacity: '1',
-          'pointer-events': isIdle() ? 'auto' : 'none',
+          "background-image": DOT_BG_IMAGE,
+          "background-size": "32px 32px",
+          "background-position": "50% 50%",
+          opacity: "1",
+          "pointer-events": isIdle() ? "auto" : "none",
         }}
       />
 
@@ -643,18 +763,66 @@ const IdleView: Component<{ onVideoSelected: (info: VideoInfo) => void }> = (pro
           starts at its respective edge from the very first paint, not at
           translateX(0)/translateY(0) — otherwise both vertical lines would
           briefly appear at the left edge before onMount seeds them. */}
-      <GuideLine orientation="v" ref={el => { vLineL = el; el.style.transform = 'translateX(2.8vw)'; }} />
-      <GuideLine orientation="v" ref={el => { vLineR = el; el.style.transform = 'translateX(97.2vw)'; }} />
-      <GuideLine orientation="h" ref={el => { hLineT = el; el.style.transform = 'translateY(6.13vh)'; }} />
-      <GuideLine orientation="h" ref={el => { hLineB = el; el.style.transform = 'translateY(92.4vh)'; }} />
+      <GuideLine
+        orientation="v"
+        ref={(el) => {
+          vLineL = el;
+          el.style.transform = "translateX(2.8vw)";
+        }}
+      />
+      <GuideLine
+        orientation="v"
+        ref={(el) => {
+          vLineR = el;
+          el.style.transform = "translateX(97.2vw)";
+        }}
+      />
+      <GuideLine
+        orientation="h"
+        ref={(el) => {
+          hLineT = el;
+          el.style.transform = "translateY(6.13vh)";
+        }}
+      />
+      <GuideLine
+        orientation="h"
+        ref={(el) => {
+          hLineB = el;
+          el.style.transform = "translateY(92.4vh)";
+        }}
+      />
 
       {/* ── Corner crosshairs ─────────────────────────────────────────────── */}
       {/* Same rationale — seed initial top/left so each corner starts at its
           splash position rather than at viewport (0,0). */}
-      <CornerCrosshair ref={el => { crossTL = el; el.style.top = 'calc(6.13vh - 10px)';  el.style.left = 'calc(2.8vw - 10px)';  }} />
-      <CornerCrosshair ref={el => { crossTR = el; el.style.top = 'calc(6.13vh - 10px)';  el.style.left = 'calc(97.2vw - 10px)'; }} />
-      <CornerCrosshair ref={el => { crossBL = el; el.style.top = 'calc(92.4vh - 10px)';  el.style.left = 'calc(2.8vw - 10px)';  }} />
-      <CornerCrosshair ref={el => { crossBR = el; el.style.top = 'calc(92.4vh - 10px)';  el.style.left = 'calc(97.2vw - 10px)'; }} />
+      <CornerCrosshair
+        ref={(el) => {
+          crossTL = el;
+          el.style.top = "calc(6.13vh - 10px)";
+          el.style.left = "calc(2.8vw - 10px)";
+        }}
+      />
+      <CornerCrosshair
+        ref={(el) => {
+          crossTR = el;
+          el.style.top = "calc(6.13vh - 10px)";
+          el.style.left = "calc(97.2vw - 10px)";
+        }}
+      />
+      <CornerCrosshair
+        ref={(el) => {
+          crossBL = el;
+          el.style.top = "calc(92.4vh - 10px)";
+          el.style.left = "calc(2.8vw - 10px)";
+        }}
+      />
+      <CornerCrosshair
+        ref={(el) => {
+          crossBR = el;
+          el.style.top = "calc(92.4vh - 10px)";
+          el.style.left = "calc(97.2vw - 10px)";
+        }}
+      />
 
       {/* ── Center crosshair + hover hint (idle only) ─────────────────────
           Cross stays anchored at viewport center via top/left calc(50% - 10px).
@@ -662,40 +830,56 @@ const IdleView: Component<{ onVideoSelected: (info: VideoInfo) => void }> = (pro
           fading in only while the cursor is inside the bbox. The container is
           pointer-events: 'none' so it never intercepts hover detection on the
           dotted background underneath. */}
-      <div style={{
-        position: 'absolute',
-        top: 'calc(50% - 10px)',
-        left: 'calc(50% - 10px)',
-        display: 'flex',
-        'align-items': 'flex-start',
-        gap: '8px',
-        opacity: isIdle() ? '1' : '0',
-        transition: 'opacity 0.3s ease',
-        'pointer-events': 'none',
-      }}>
-        <Cross ref={el => centerCrossEl = el} />
-        <div style={{
-          display: 'flex',
-          'flex-direction': 'column',
-          'align-items': 'flex-start',
-        }}>
+      <div
+        style={{
+          position: "absolute",
+          top: "calc(50% - 10px)",
+          left: "calc(50% - 10px)",
+          display: "flex",
+          "align-items": "flex-start",
+          gap: "8px",
+          opacity: isIdle() ? "1" : "0",
+          transition: "opacity 0.3s ease",
+          "pointer-events": "none",
+        }}
+      >
+        <Cross ref={(el) => (centerCrossEl = el)} />
+        <div
+          style={{
+            display: "flex",
+            "flex-direction": "column",
+            "align-items": "flex-start",
+          }}
+        >
           {/* Each chip sits inside a clip-path wrapper so the magenta bg
               sweeps in from the left on hover — matches the FormatButton
               dropdown's reveal (FORMAT_SPRING in editor/FormatPicker.tsx):
               200ms with a slight overshoot ease. clip-path: inset(0 100% 0 0)
               hides the chip; inset(0 0 0 0) reveals it left → right. */}
-          <div style={{
-            display: 'inline-block',
-            'clip-path': isIdle() && hoveringBbox() ? 'inset(0 0 0 0)' : 'inset(0 100% 0 0)',
-            transition: 'clip-path 200ms cubic-bezier(0.006, 0.984, 0.000, 1.109)',
-          }}>
+          <div
+            style={{
+              display: "inline-block",
+              "clip-path":
+                isIdle() && hoveringBbox()
+                  ? "inset(0 0 0 0)"
+                  : "inset(0 100% 0 0)",
+              transition:
+                "clip-path 200ms cubic-bezier(0.006, 0.984, 0.000, 1.109)",
+            }}
+          >
             <Chip>{hintLine1()}</Chip>
           </div>
-          <div style={{
-            display: 'inline-block',
-            'clip-path': isIdle() && hoveringBbox() ? 'inset(0 0 0 0)' : 'inset(0 100% 0 0)',
-            transition: 'clip-path 200ms cubic-bezier(0.006, 0.984, 0.000, 1.109)',
-          }}>
+          <div
+            style={{
+              display: "inline-block",
+              "clip-path":
+                isIdle() && hoveringBbox()
+                  ? "inset(0 0 0 0)"
+                  : "inset(0 100% 0 0)",
+              transition:
+                "clip-path 200ms cubic-bezier(0.006, 0.984, 0.000, 1.109)",
+            }}
+          >
             <Chip>{hintLine2()}</Chip>
           </div>
         </div>
@@ -707,37 +891,53 @@ const IdleView: Component<{ onVideoSelected: (info: VideoInfo) => void }> = (pro
           is delayed by the full stagger duration (p1_dur + p2_delay + p2_dur)
           so the bar only appears once the bbox has finished morphing into
           its bar shape. Fade-out is immediate. ──────────────────────────── */}
-      <div style={{
-        position: 'absolute',
-        left: loadingPos().gl,
-        top:  loadingPos().gt,
-        width:  `calc(${loadingPos().gr} - ${loadingPos().gl})`,
-        height: `calc(${loadingPos().gb} - ${loadingPos().gt})`,
-        opacity: isLoading() ? '1' : '0',
-        transition: isLoading()
-          ? `opacity ${p.helper_fade_dur}s ease ${STAGGER_P1 + STAGGER_DELAY + STAGGER_P2}s`
-          : `opacity ${p.helper_fade_dur}s ease`,
-        'pointer-events': isLoading() ? 'auto' : 'none',
-      }}>
+      <div
+        style={{
+          position: "absolute",
+          left: loadingPos().gl,
+          top: loadingPos().gt,
+          width: `calc(${loadingPos().gr} - ${loadingPos().gl})`,
+          height: `calc(${loadingPos().gb} - ${loadingPos().gt})`,
+          opacity: isLoading() ? "1" : "0",
+          transition: isLoading()
+            ? `opacity ${p.helper_fade_dur}s ease ${STAGGER_P1 + STAGGER_DELAY + STAGGER_P2}s`
+            : `opacity ${p.helper_fade_dur}s ease`,
+          "pointer-events": isLoading() ? "auto" : "none",
+        }}
+      >
         <CarrierBricks progress={loadingProgress()} height={LOADING_BAR_H_PX} />
       </div>
 
       {/* ── URL fetch status ──────────────────────────────────────────────── */}
       <Show when={fetchStatus()}>
-        <div style={{
-          position: 'absolute', bottom: '24px', left: '50%', translate: '-50% 0',
-          background: ACCENT, color: BG,
-          'font-family': "'IBM Plex Mono', system-ui, monospace",
-          'font-size': '12px', 'line-height': '16px', 'font-weight': '500',
-          padding: '6px 14px',
-          'pointer-events': 'none',
-          'white-space': 'nowrap',
-        }}>
+        <div
+          style={{
+            position: "absolute",
+            bottom: "24px",
+            left: "50%",
+            translate: "-50% 0",
+            background: ACCENT,
+            color: BG,
+            "font-family": "'IBM Plex Mono', system-ui, monospace",
+            "font-size": "12px",
+            "line-height": "16px",
+            "font-weight": "500",
+            padding: "6px 14px",
+            "pointer-events": "none",
+            "white-space": "nowrap",
+          }}
+        >
           {fetchStatus()}
         </div>
       </Show>
 
-      <input ref={fileInputRef} type="file" accept="video/*,image/gif,.mkv,.avi,.flv,.wmv,.ts,.mts,.m4v,.3gp,.ogv" style={{ display: 'none' }} onChange={handleFileInput} />
+      <input
+        ref={fileInputRef}
+        type="file"
+        accept="video/*,image/gif,.mkv,.avi,.flv,.wmv,.ts,.mts,.m4v,.3gp,.ogv"
+        style={{ display: "none" }}
+        onChange={handleFileInput}
+      />
     </div>
   );
 };

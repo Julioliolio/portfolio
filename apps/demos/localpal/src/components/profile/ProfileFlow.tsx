@@ -28,24 +28,36 @@
  * The view STACK lives in MapHome (route mode + plan taps need it there);
  * this component only renders it.
  */
-import { useCallback, useEffect, useRef, useState, type CSSProperties } from 'react';
-import { animate, motion, useDragControls, useMotionValue, useTransform } from 'framer-motion';
-import { getSvgPath } from 'figma-squircle';
-import { Squircle } from '../Squircle';
-import { useSquircle } from '../SquircleProvider';
-import { useMotion, usePressFeedback } from '../MotionProvider';
-import { useDragDismiss, DismissScrim } from '../sheetDismiss';
-import { useConfirm } from '../ConfirmProvider';
-import { useDragScroll } from '../useDragScroll';
-import { useScramble } from '../useScramble';
-import { QrCodeSvg } from './QrCodeSvg';
-import { PeerPin } from '../PeerPin';
-import { useAvatarCluster } from '../AvatarClusterProvider';
-import { CrossIcon } from '../icons/CrossIcon';
-import { BackChevron } from '../icons/BackChevron';
-import { figmaIcons } from '../icons/figmaIcons';
-import { color, device } from '../../theme/tokens';
-import { layerZoomStyle, layerZoom } from '../../theme/motion';
+import {
+  useCallback,
+  useEffect,
+  useRef,
+  useState,
+  type CSSProperties,
+} from "react";
+import {
+  animate,
+  motion,
+  useDragControls,
+  useMotionValue,
+  useTransform,
+} from "framer-motion";
+import { getSvgPath } from "figma-squircle";
+import { Squircle } from "../Squircle";
+import { useSquircle } from "../SquircleProvider";
+import { useMotion, usePressFeedback } from "../MotionProvider";
+import { useDragDismiss, DismissScrim } from "../sheetDismiss";
+import { useConfirm } from "../ConfirmProvider";
+import { useDragScroll } from "../useDragScroll";
+import { useScramble } from "../useScramble";
+import { QrCodeSvg } from "./QrCodeSvg";
+import { PeerPin } from "../PeerPin";
+import { useAvatarCluster } from "../AvatarClusterProvider";
+import { CrossIcon } from "../icons/CrossIcon";
+import { BackChevron } from "../icons/BackChevron";
+import { figmaIcons } from "../icons/figmaIcons";
+import { color, device } from "../../theme/tokens";
+import { layerZoomStyle, layerZoom } from "../../theme/motion";
 import {
   PEOPLE,
   ME,
@@ -54,21 +66,22 @@ import {
   friendsInCommon,
   type Person,
   type PersonId,
-} from '../../data/people';
-import { VENUES, type VenueId } from '../../data/venues';
-import qrIcon from '../../assets/profile/icon-qr.svg';
-import swapIcon from '../../assets/profile/icon-swap.svg';
-import cameraIcon from '../../assets/profile/icon-camera.svg';
-import shareIcon from '../../assets/profile/icon-share.svg';
+} from "../../data/people";
+import { VENUES, type VenueId } from "../../data/venues";
+import qrIcon from "../../assets/profile/icon-qr.svg";
+import swapIcon from "../../assets/profile/icon-swap.svg";
+import cameraIcon from "../../assets/profile/icon-camera.svg";
+import shareIcon from "../../assets/profile/icon-share.svg";
 
 /** One entry of the profile navigation stack. */
 export type ProfileView =
-  | { kind: 'person'; id: PersonId }
-  | { kind: 'friends'; id: PersonId }
-  | { kind: 'organized'; id: PersonId }
-  | { kind: 'qr' };
+  | { kind: "person"; id: PersonId }
+  | { kind: "friends"; id: PersonId }
+  | { kind: "organized"; id: PersonId }
+  | { kind: "qr" };
 
-const viewKey = (v: ProfileView) => (v.kind === 'qr' ? 'qr' : `${v.kind}:${v.id}`);
+const viewKey = (v: ProfileView) =>
+  v.kind === "qr" ? "qr" : `${v.kind}:${v.id}`;
 
 /* ------------------------------------------------------------------ */
 /* Geometry (screen coords, transcribed from the Figma frames)          */
@@ -97,7 +110,13 @@ const BADGE = { w: 90, h: 50 };
 const CLOSE_BTN = { x: 39.5, y: rel(151), s: 24 };
 const TAG_CARD = { x: PAD_X, y: rel(279), w: 328.66, h: 138.19 };
 const TAG_GLYPH = { x: 264, y: rel(269) };
-const STAT_ROW = { y: rel(429.2), friendsW: 182, countW: 124.84, h: 126.2, gap: 24 };
+const STAT_ROW = {
+  y: rel(429.2),
+  friendsW: 182,
+  countW: 124.84,
+  h: 126.2,
+  gap: 24,
+};
 const LIST_TITLE_Y = rel(579.6);
 const LIST_Y = rel(602.6);
 const FADE = { y: rel(650), h: 202 };
@@ -111,16 +130,16 @@ const SHEET_BOTTOM = device.height - SHEET.y; // 733 — visible band of the she
 
 // Cap-trimmed text (Figma measures type cap-to-cap). Chromium 133+.
 const capTrim = {
-  textBoxTrim: 'trim-both',
-  textBoxEdge: 'cap text',
+  textBoxTrim: "trim-both",
+  textBoxEdge: "cap text",
 } as CSSProperties;
 
 const buttonReset: CSSProperties = {
-  background: 'transparent',
-  border: 'none',
+  background: "transparent",
+  border: "none",
   padding: 0,
-  cursor: 'pointer',
-  textAlign: 'left',
+  cursor: "pointer",
+  textAlign: "left",
 };
 
 const lerp = (a: number, b: number, t: number) => a + (b - a) * t;
@@ -134,7 +153,11 @@ const lerp = (a: number, b: number, t: number) => a + (b - a) * t;
  * draws), in a 0–100 viewBox so it fills any square — used inside the
  * size-morphing header avatar, which can't take a fixed-size IconPlaceholder.
  */
-function PlaceholderGuides({ color: stroke = color.lavender }: { color?: string }) {
+function PlaceholderGuides({
+  color: stroke = color.lavender,
+}: {
+  color?: string;
+}) {
   const c = 50;
   const rLg = 34.5;
   const rMd = 21.6;
@@ -146,9 +169,15 @@ function PlaceholderGuides({ color: stroke = color.lavender }: { color?: string 
       height="100%"
       preserveAspectRatio="none"
       aria-hidden
-      style={{ position: 'absolute', inset: 0, display: 'block' }}
+      style={{ position: "absolute", inset: 0, display: "block" }}
     >
-      <g stroke={stroke} strokeWidth={0.8} opacity={0.6} fill="none" vectorEffect="non-scaling-stroke">
+      <g
+        stroke={stroke}
+        strokeWidth={0.8}
+        opacity={0.6}
+        fill="none"
+        vectorEffect="non-scaling-stroke"
+      >
         <circle cx={c} cy={c} r={rLg} />
         <circle cx={c} cy={c} r={rMd} />
         <circle cx={c} cy={c} r={rSm} />
@@ -172,7 +201,13 @@ function PlaceholderGuides({ color: stroke = color.lavender }: { color?: string 
  * two friends the tiles CENTER on the card instead of hugging a side. All
  * tiles are the shared placeholder (photos come later).
  */
-function ProfileFriendsStack({ count, cardW }: { count: number; cardW: number }) {
+function ProfileFriendsStack({
+  count,
+  cardW,
+}: {
+  count: number;
+  cardW: number;
+}) {
   const cluster = useAvatarCluster();
   const n = Math.min(3, Math.max(0, count));
   const S = 78; // profile-card tile size (cluster config is authored at 40px)
@@ -191,7 +226,7 @@ function ProfileFriendsStack({ count, cardW }: { count: number; cardW: number })
             size={s.w * k}
             height={s.h * k}
             style={{
-              position: 'absolute',
+              position: "absolute",
               left: ox + (s.x - s.w / 2) * k,
               top: TOP + (s.y - s.h / 2) * k,
               transform: `rotate(${s.rot}deg)`,
@@ -221,7 +256,7 @@ function ProfileFriendsStack({ count, cardW }: { count: number; cardW: number })
           size={TILE_W * k}
           height={ARCH_H * k}
           style={{
-            position: 'absolute',
+            position: "absolute",
             left: t.cx - (TILE_W * k) / 2,
             top: cy - (ARCH_H * k) / 2,
             transform: `rotate(${t.rot}deg)`,
@@ -233,21 +268,31 @@ function ProfileFriendsStack({ count, cardW }: { count: number; cardW: number })
 }
 
 /** List row squircle in the venue-sheet recipe (Figma 1300:4562 style). */
-function ListRow({ onClick, children }: { onClick?: () => void; children: React.ReactNode }) {
+function ListRow({
+  onClick,
+  children,
+}: {
+  onClick?: () => void;
+  children: React.ReactNode;
+}) {
   const press = usePressFeedback();
   return (
-    <motion.button {...press} onClick={onClick} style={{ ...buttonReset, width: '100%', flexShrink: 0 }}>
+    <motion.button
+      {...press}
+      onClick={onClick}
+      style={{ ...buttonReset, width: "100%", flexShrink: 0 }}
+    >
       <Squircle
         role="card"
         fill={color.brandDeep}
         style={{
-          width: '100%',
+          width: "100%",
           height: ROW_H,
-          display: 'flex',
-          alignItems: 'center',
+          display: "flex",
+          alignItems: "center",
           gap: 8,
-          padding: '0 12px',
-          boxSizing: 'border-box',
+          padding: "0 12px",
+          boxSizing: "border-box",
         }}
       >
         {children}
@@ -277,21 +322,69 @@ function PlanRow({
           width: BADGE.w,
           height: BADGE.h,
           flexShrink: 0,
-          display: 'flex',
-          flexDirection: 'column',
-          alignItems: 'center',
-          justifyContent: 'center',
+          display: "flex",
+          flexDirection: "column",
+          alignItems: "center",
+          justifyContent: "center",
           gap: 4,
         }}
       >
-        <span style={{ color: color.brandDeep, fontSize: 8, fontWeight: 600, ...capTrim }}>{ev.day}</span>
-        <span style={{ color: color.brandDeep, fontSize: 24, fontWeight: 600, ...capTrim }}>{ev.time}</span>
+        <span
+          style={{
+            color: color.brandDeep,
+            fontSize: 8,
+            fontWeight: 600,
+            ...capTrim,
+          }}
+        >
+          {ev.day}
+        </span>
+        <span
+          style={{
+            color: color.brandDeep,
+            fontSize: 24,
+            fontWeight: 600,
+            ...capTrim,
+          }}
+        >
+          {ev.time}
+        </span>
       </Squircle>
-      <div style={{ flex: 1, minWidth: 0, display: 'flex', flexDirection: 'column', gap: 8 }}>
-        <span style={{ color: color.onBrand, fontSize: 16, fontWeight: 500, lineHeight: '16px' }}>{ev.title}</span>
-        <span style={{ color: color.lavender, fontSize: 12, fontWeight: 500, ...capTrim }}>{ev.meta}</span>
+      <div
+        style={{
+          flex: 1,
+          minWidth: 0,
+          display: "flex",
+          flexDirection: "column",
+          gap: 8,
+        }}
+      >
+        <span
+          style={{
+            color: color.onBrand,
+            fontSize: 16,
+            fontWeight: 500,
+            lineHeight: "16px",
+          }}
+        >
+          {ev.title}
+        </span>
+        <span
+          style={{
+            color: color.lavender,
+            fontSize: 12,
+            fontWeight: 500,
+            ...capTrim,
+          }}
+        >
+          {ev.meta}
+        </span>
       </div>
-      <img src={figmaIcons.chevron} alt="" style={{ width: 8, height: 11.33, display: 'block', flexShrink: 0 }} />
+      <img
+        src={figmaIcons.chevron}
+        alt=""
+        style={{ width: 8, height: 11.33, display: "block", flexShrink: 0 }}
+      />
     </ListRow>
   );
 }
@@ -301,13 +394,14 @@ function BottomFade() {
   return (
     <div
       style={{
-        position: 'absolute',
+        position: "absolute",
         left: 0,
         top: FADE.y,
         width: device.width,
         height: FADE.h,
-        background: 'linear-gradient(to bottom, rgba(44,30,223,0) 0%, rgba(49,33,255,0.9) 96%)',
-        pointerEvents: 'none',
+        background:
+          "linear-gradient(to bottom, rgba(44,30,223,0) 0%, rgba(49,33,255,0.9) 96%)",
+        pointerEvents: "none",
       }}
     />
   );
@@ -340,36 +434,51 @@ function PersonView({
   onAddFriend: () => void;
 }) {
   const press = usePressFeedback();
-  const snap = useMotion('snap');
-  const morph = useMotion('morph');
-  const listDrag = useDragScroll('y');
+  const snap = useMotion("snap");
+  const morph = useMotion("morph");
+  const listDrag = useDragScroll("y");
   const tag = personTag(person);
   const me = person.isMe === true;
-  const commons = me ? person.friends.map((f) => PEOPLE[f]) : friendsInCommon(person);
+  const commons = me
+    ? person.friends.map((f) => PEOPLE[f])
+    : friendsInCommon(person);
   const snapMs = ((snap as { duration?: number }).duration ?? 0.3) * 1000;
-  const ctaLabel = useScramble(isFriend ? 'Message' : `Add ${person.firstName}`, snapMs);
+  const ctaLabel = useScramble(
+    isFriend ? "Message" : `Add ${person.firstName}`,
+    snapMs,
+  );
 
   return (
     <>
       {/* × close (root) / ‹ back (pushed) — top-left mini button */}
       <motion.button
         {...press}
-        aria-label={depth > 0 ? 'Back' : 'Close profile'}
+        aria-label={depth > 0 ? "Back" : "Close profile"}
         onClick={onBack}
-        style={{ ...buttonReset, position: 'absolute', left: CLOSE_BTN.x, top: CLOSE_BTN.y }}
+        style={{
+          ...buttonReset,
+          position: "absolute",
+          left: CLOSE_BTN.x,
+          top: CLOSE_BTN.y,
+        }}
       >
         <Squircle
           role="miniButton"
           fill={color.offWhite}
-          style={{ width: CLOSE_BTN.s, height: CLOSE_BTN.s, display: 'grid', placeItems: 'center' }}
+          style={{
+            width: CLOSE_BTN.s,
+            height: CLOSE_BTN.s,
+            display: "grid",
+            placeItems: "center",
+          }}
         >
           <span
             style={{
-              gridArea: '1 / 1',
-              display: 'grid',
-              placeItems: 'center',
+              gridArea: "1 / 1",
+              display: "grid",
+              placeItems: "center",
               opacity: depth > 0 ? 0 : 1,
-              transform: depth > 0 ? 'rotate(-90deg) scale(0.4)' : 'none',
+              transform: depth > 0 ? "rotate(-90deg) scale(0.4)" : "none",
               transition: `opacity ${snapMs}ms ${layerZoom.ease}, transform ${snapMs}ms ${layerZoom.ease}`,
             }}
           >
@@ -377,11 +486,11 @@ function PersonView({
           </span>
           <span
             style={{
-              gridArea: '1 / 1',
-              display: 'grid',
-              placeItems: 'center',
+              gridArea: "1 / 1",
+              display: "grid",
+              placeItems: "center",
               opacity: depth > 0 ? 1 : 0,
-              transform: depth > 0 ? 'none' : 'rotate(90deg) scale(0.4)',
+              transform: depth > 0 ? "none" : "rotate(90deg) scale(0.4)",
               transition: `opacity ${snapMs}ms ${layerZoom.ease}, transform ${snapMs}ms ${layerZoom.ease}`,
             }}
           >
@@ -393,22 +502,37 @@ function PersonView({
       {/* top-right utility: ⇄ on your own profile, ⋮ on others (inert) */}
       <motion.button
         {...press}
-        aria-label={me ? 'Profile settings' : 'More options'}
+        aria-label={me ? "Profile settings" : "More options"}
         style={{
           ...buttonReset,
-          position: 'absolute',
+          position: "absolute",
           right: PAD_X + 7.5,
           top: CLOSE_BTN.y + (me ? 4 : 4),
-          display: 'grid',
-          placeItems: 'center',
+          display: "grid",
+          placeItems: "center",
         }}
       >
         {me ? (
-          <img src={swapIcon} alt="" style={{ width: 16, height: 19.2, display: 'block', transform: 'rotate(90deg)' }} />
+          <img
+            src={swapIcon}
+            alt=""
+            style={{
+              width: 16,
+              height: 19.2,
+              display: "block",
+              transform: "rotate(90deg)",
+            }}
+          />
         ) : (
-          <div style={{ display: 'flex', flexDirection: 'column', gap: 2 }}>
+          <div style={{ display: "flex", flexDirection: "column", gap: 2 }}>
             {[0, 1, 2].map((i) => (
-              <Squircle key={i} radius={1.5} smoothing={1} fill={color.offWhite} style={{ width: 4, height: 4 }} />
+              <Squircle
+                key={i}
+                radius={1.5}
+                smoothing={1}
+                fill={color.offWhite}
+                style={{ width: 4, height: 4 }}
+              />
             ))}
           </div>
         )}
@@ -416,7 +540,16 @@ function PersonView({
 
       {/* Tag card — the identity computed from their done activities. Tapping
           it leaves the profile for the special route map (MapHome). */}
-      <motion.button {...press} onClick={onRoute} style={{ ...buttonReset, position: 'absolute', left: TAG_CARD.x, top: TAG_CARD.y }}>
+      <motion.button
+        {...press}
+        onClick={onRoute}
+        style={{
+          ...buttonReset,
+          position: "absolute",
+          left: TAG_CARD.x,
+          top: TAG_CARD.y,
+        }}
+      >
         <Squircle
           role="card"
           fill={color.offWhite}
@@ -427,41 +560,64 @@ function PersonView({
           <img
             src={person.tagMap}
             alt=""
-            style={{ position: 'absolute', inset: 0, width: '100%', height: '100%', objectFit: 'cover' }}
-          />
-          <div
             style={{
-              position: 'absolute',
+              position: "absolute",
               inset: 0,
-              background:
-                'linear-gradient(112deg, #ffffff 30%, rgba(255,255,255,0.55) 58%, rgba(255,255,255,0) 80%)',
+              width: "100%",
+              height: "100%",
+              objectFit: "cover",
             }}
           />
           <div
             style={{
-              position: 'absolute',
+              position: "absolute",
+              inset: 0,
+              background:
+                "linear-gradient(112deg, #ffffff 30%, rgba(255,255,255,0.55) 58%, rgba(255,255,255,0) 80%)",
+            }}
+          />
+          <div
+            style={{
+              position: "absolute",
               left: 25,
               top: 25,
               height: 90,
-              display: 'flex',
-              flexDirection: 'column',
-              justifyContent: 'space-between',
-              alignItems: 'flex-start',
+              display: "flex",
+              flexDirection: "column",
+              justifyContent: "space-between",
+              alignItems: "flex-start",
               color: color.brand,
               letterSpacing: -0.4,
             }}
           >
-            <div style={{ display: 'flex', flexDirection: 'column', gap: 8, alignItems: 'flex-start' }}>
+            <div
+              style={{
+                display: "flex",
+                flexDirection: "column",
+                gap: 8,
+                alignItems: "flex-start",
+              }}
+            >
               <span style={{ fontSize: 12, fontWeight: 400, ...capTrim }}>
-                {me ? 'You’re a ' : `${person.firstName} is a`}
+                {me ? "You’re a " : `${person.firstName} is a`}
               </span>
-              <span style={{ fontSize: 32, fontWeight: 600, lineHeight: '30px', whiteSpace: 'nowrap', textAlign: 'left' }}>
+              <span
+                style={{
+                  fontSize: 32,
+                  fontWeight: 600,
+                  lineHeight: "30px",
+                  whiteSpace: "nowrap",
+                  textAlign: "left",
+                }}
+              >
                 {tag.lines[0]}
                 <br />
                 {tag.lines[1]}
               </span>
             </div>
-            <span style={{ fontSize: 12, fontWeight: 400, ...capTrim }}>{tagCountLine(person)}</span>
+            <span style={{ fontSize: 12, fontWeight: 400, ...capTrim }}>
+              {tagCountLine(person)}
+            </span>
           </div>
         </Squircle>
       </motion.button>
@@ -471,30 +627,34 @@ function PersonView({
         src={tag.glyph}
         alt=""
         style={{
-          position: 'absolute',
+          position: "absolute",
           left: TAG_GLYPH.x,
           top: TAG_GLYPH.y,
           width: tag.glyphSize.w,
           height: tag.glyphSize.h,
           transform: `rotate(${tag.glyphRotate}deg)`,
-          pointerEvents: 'none',
+          pointerEvents: "none",
         }}
       />
 
       {/* Stat cards: friends (photo fan) + plans organized (count) */}
       <div
         style={{
-          position: 'absolute',
+          position: "absolute",
           left: PAD_X,
           top: STAT_ROW.y,
           width: COL_W,
-          display: 'flex',
+          display: "flex",
           gap: STAT_ROW.gap,
-          justifyContent: 'flex-end',
+          justifyContent: "flex-end",
         }}
       >
         {/* friends card — morphs into the friends list */}
-        <motion.button {...press} onClick={onFriends} style={{ ...buttonReset, position: 'relative', flexShrink: 0 }}>
+        <motion.button
+          {...press}
+          onClick={onFriends}
+          style={{ ...buttonReset, position: "relative", flexShrink: 0 }}
+        >
           <Squircle
             role="statCard"
             fill={color.brandDeep}
@@ -502,11 +662,11 @@ function PersonView({
           >
             <span
               style={{
-                position: 'absolute',
+                position: "absolute",
                 left: 0,
                 right: 0,
                 top: 100.6,
-                textAlign: 'center',
+                textAlign: "center",
                 color: color.lavender,
                 fontSize: 12,
                 fontWeight: 500,
@@ -514,42 +674,53 @@ function PersonView({
                 ...capTrim,
               }}
             >
-              {me ? 'your friends' : `${commons.length} friends in common`}
+              {me ? "your friends" : `${commons.length} friends in common`}
             </span>
           </Squircle>
           {/* Placeholder tiles in the tuned cluster overlap, peeking over top */}
-          <ProfileFriendsStack count={commons.length} cardW={STAT_ROW.friendsW} />
+          <ProfileFriendsStack
+            count={commons.length}
+            cardW={STAT_ROW.friendsW}
+          />
         </motion.button>
 
         {/* plans-organized card — morphs into the organized list */}
-        <motion.button {...press} onClick={onOrganized} style={{ ...buttonReset, flexShrink: 0 }}>
+        <motion.button
+          {...press}
+          onClick={onOrganized}
+          style={{ ...buttonReset, flexShrink: 0 }}
+        >
           <Squircle
             role="statCard"
             fill={color.brandDeep}
-            style={{ width: STAT_ROW.countW, height: STAT_ROW.h, position: 'relative' }}
+            style={{
+              width: STAT_ROW.countW,
+              height: STAT_ROW.h,
+              position: "relative",
+            }}
           >
             <span
               style={{
-                position: 'absolute',
+                position: "absolute",
                 left: 0,
                 right: 0,
                 top: 42.9,
-                textAlign: 'center',
+                textAlign: "center",
                 color: color.onBrand,
                 fontSize: 40,
                 fontWeight: 600,
                 ...capTrim,
               }}
             >
-              {String(person.organized.length).padStart(2, '0')}
+              {String(person.organized.length).padStart(2, "0")}
             </span>
             <span
               style={{
-                position: 'absolute',
+                position: "absolute",
                 left: 0,
                 right: 0,
                 top: 100.8,
-                textAlign: 'center',
+                textAlign: "center",
                 color: color.lavender,
                 fontSize: 12,
                 fontWeight: 500,
@@ -558,7 +729,7 @@ function PersonView({
               }}
             >
               {/* faithful to the Figma frame, stray "1" and all */}
-              {me ? 'plans organized1' : 'plans organized'}
+              {me ? "plans organized1" : "plans organized"}
             </span>
           </Squircle>
         </motion.button>
@@ -567,7 +738,7 @@ function PersonView({
       {/* Upcoming plans — "Your plans" / "What Eva's up to" */}
       <span
         style={{
-          position: 'absolute',
+          position: "absolute",
           left: PAD_X + 1,
           top: LIST_TITLE_Y,
           color: color.onBrand,
@@ -576,30 +747,35 @@ function PersonView({
           ...capTrim,
         }}
       >
-        {me ? 'Your plans' : `What ${person.firstName}’s up to`}
+        {me ? "Your plans" : `What ${person.firstName}’s up to`}
       </span>
       <div
         {...listDrag}
         style={{
-          position: 'absolute',
+          position: "absolute",
           left: 0,
           top: LIST_Y,
           width: device.width,
           height: SHEET_BOTTOM - LIST_Y,
-          boxSizing: 'border-box',
-          display: 'flex',
-          flexDirection: 'column',
+          boxSizing: "border-box",
+          display: "flex",
+          flexDirection: "column",
           gap: 8,
           padding: `0 ${PAD_X}px 150px`,
-          overflowY: 'auto',
-          scrollbarWidth: 'none',
-          touchAction: 'pan-y',
-          overscrollBehavior: 'contain',
-          WebkitOverflowScrolling: 'touch',
+          overflowY: "auto",
+          scrollbarWidth: "none",
+          touchAction: "pan-y",
+          overscrollBehavior: "contain",
+          WebkitOverflowScrolling: "touch",
         }}
       >
         {person.upcoming.map(({ venueId, eventId }) => (
-          <PlanRow key={`${venueId}:${eventId}`} venueId={venueId} eventId={eventId} onOpen={onOpenPlan} />
+          <PlanRow
+            key={`${venueId}:${eventId}`}
+            venueId={venueId}
+            eventId={eventId}
+            onOpen={onOpenPlan}
+          />
         ))}
       </div>
 
@@ -614,7 +790,7 @@ function PersonView({
           onClick={isFriend ? undefined : onAddFriend}
           style={{
             ...buttonReset,
-            position: 'absolute',
+            position: "absolute",
             left: (device.width - ADD_BTN.w) / 2,
             top: ADD_BTN.y,
           }}
@@ -625,20 +801,36 @@ function PersonView({
             style={{
               width: ADD_BTN.w,
               height: ADD_BTN.h,
-              display: 'flex',
-              alignItems: 'center',
-              justifyContent: 'center',
+              display: "flex",
+              alignItems: "center",
+              justifyContent: "center",
             }}
           >
             <motion.div
               initial={false}
-              animate={{ width: isFriend ? 0 : 17, marginRight: isFriend ? 0 : 4, opacity: isFriend ? 0 : 1 }}
+              animate={{
+                width: isFriend ? 0 : 17,
+                marginRight: isFriend ? 0 : 4,
+                opacity: isFriend ? 0 : 1,
+              }}
               transition={morph}
-              style={{ display: 'grid', placeItems: 'center', overflow: 'hidden', flexShrink: 0 }}
+              style={{
+                display: "grid",
+                placeItems: "center",
+                overflow: "hidden",
+                flexShrink: 0,
+              }}
             >
               <CrossIcon plus size={12} color={color.brand} />
             </motion.div>
-            <span style={{ color: color.brand, fontSize: 24, fontWeight: 600, whiteSpace: 'nowrap' }}>
+            <span
+              style={{
+                color: color.brand,
+                fontSize: 24,
+                fontWeight: 600,
+                whiteSpace: "nowrap",
+              }}
+            >
               {ctaLabel}
             </span>
           </Squircle>
@@ -666,7 +858,9 @@ const LIST_PAD = 20; // inner horizontal padding (card is narrower than the shee
 // row is ALWAYS present (it holds the close ✕, plus the optional primary action).
 function listContentHeight(rowCount: number, isEmpty: boolean): number {
   const HEAD = 34 + 20 + 16; // grabber pad + title + gap
-  const rows = isEmpty ? 64 : rowCount * LIST_ROW_H + Math.max(0, rowCount - 1) * LIST_ROW_GAP;
+  const rows = isEmpty
+    ? 64
+    : rowCount * LIST_ROW_H + Math.max(0, rowCount - 1) * LIST_ROW_GAP;
   const cta = 16 + 64; // gap + CTA row
   return HEAD + rows + cta + 20; // + bottom pad
 }
@@ -698,10 +892,10 @@ function ProfileListSheet({
   primaryCta?: { label: string; onClick: () => void };
   onDismiss: () => void;
 }) {
-  const morph = useMotion('morph');
-  const snap = useMotion('snap');
+  const morph = useMotion("morph");
+  const snap = useMotion("snap");
   const controls = useDragControls();
-  const listDrag = useDragScroll('y');
+  const listDrag = useDragScroll("y");
   const isEmpty = emptyText != null;
 
   const CARD_W = device.width - LIST_INSET_X * 2;
@@ -730,19 +924,23 @@ function ProfileListSheet({
         else animate(y, 0, snap);
       }}
       style={{
-        position: 'absolute',
+        position: "absolute",
         left: LIST_INSET_X,
         top: panelTop,
         width: CARD_W,
         height: H,
         y,
         zIndex: 8,
-        pointerEvents: isTop ? 'auto' : 'none',
-        filter: 'drop-shadow(0 8px 28px rgba(0,0,29,0.28))',
+        pointerEvents: isTop ? "auto" : "none",
+        filter: "drop-shadow(0 8px 28px rgba(0,0,29,0.28))",
       }}
     >
-      <Squircle role="sheet" fill={color.brand} style={{ width: '100%', height: '100%' }}>
-        <div style={{ height: H, display: 'flex', flexDirection: 'column' }}>
+      <Squircle
+        role="sheet"
+        fill={color.brand}
+        style={{ width: "100%", height: "100%" }}
+      >
+        <div style={{ height: H, display: "flex", flexDirection: "column" }}>
           {/* Drag handle — the grabber pill AND the (non-interactive) title
               both start the dismiss drag, so the target is the whole header
               band, not just the thin pill. paddingTop keeps the title where the
@@ -750,22 +948,58 @@ function ProfileListSheet({
               rows below stay tappable. */}
           <div
             onPointerDown={(e) => controls.start(e)}
-            style={{ position: 'relative', paddingTop: 34, flexShrink: 0, cursor: 'grab', touchAction: 'none' }}
+            style={{
+              position: "relative",
+              paddingTop: 34,
+              flexShrink: 0,
+              cursor: "grab",
+              touchAction: "none",
+            }}
           >
             <Squircle
               radius={2}
               smoothing={1}
               fill="#fefefe"
-              style={{ position: 'absolute', left: (CARD_W - 53) / 2, top: 9, width: 53, height: 4 }}
+              style={{
+                position: "absolute",
+                left: (CARD_W - 53) / 2,
+                top: 9,
+                width: 53,
+                height: 4,
+              }}
             />
-            <span style={{ display: 'block', color: color.onBrand, fontSize: 16, fontWeight: 500, padding: `0 ${LIST_PAD + 1}px`, ...capTrim }}>
+            <span
+              style={{
+                display: "block",
+                color: color.onBrand,
+                fontSize: 16,
+                fontWeight: 500,
+                padding: `0 ${LIST_PAD + 1}px`,
+                ...capTrim,
+              }}
+            >
               {title}
             </span>
           </div>
 
           {isEmpty ? (
-            <div style={{ flex: 1, display: 'grid', placeItems: 'center', padding: `0 ${LIST_PAD}px` }}>
-              <span style={{ color: color.lavender, fontSize: 16, fontWeight: 500, textAlign: 'center', lineHeight: '22px' }}>
+            <div
+              style={{
+                flex: 1,
+                display: "grid",
+                placeItems: "center",
+                padding: `0 ${LIST_PAD}px`,
+              }}
+            >
+              <span
+                style={{
+                  color: color.lavender,
+                  fontSize: 16,
+                  fontWeight: 500,
+                  textAlign: "center",
+                  lineHeight: "22px",
+                }}
+              >
                 {emptyText}
               </span>
             </div>
@@ -775,15 +1009,15 @@ function ProfileListSheet({
               style={{
                 flex: 1,
                 minHeight: 0,
-                display: 'flex',
-                flexDirection: 'column',
+                display: "flex",
+                flexDirection: "column",
                 gap: LIST_ROW_GAP,
                 padding: `16px ${LIST_PAD}px 0`,
-                overflowY: 'auto',
-                scrollbarWidth: 'none',
-                touchAction: 'pan-y',
-                overscrollBehavior: 'contain',
-                WebkitOverflowScrolling: 'touch',
+                overflowY: "auto",
+                scrollbarWidth: "none",
+                touchAction: "pan-y",
+                overscrollBehavior: "contain",
+                WebkitOverflowScrolling: "touch",
               }}
             >
               {rows}
@@ -814,21 +1048,62 @@ function CardCtaRow({
 }) {
   const press = usePressFeedback();
   return (
-    <div style={{ display: 'flex', gap: 8, alignItems: 'stretch', justifyContent: primary ? 'stretch' : 'center' }}>
+    <div
+      style={{
+        display: "flex",
+        gap: 8,
+        alignItems: "stretch",
+        justifyContent: primary ? "stretch" : "center",
+      }}
+    >
       {primary && (
-        <motion.button {...press} onClick={primary.onClick} style={{ ...buttonReset, flex: 1, width: undefined }}>
+        <motion.button
+          {...press}
+          onClick={primary.onClick}
+          style={{ ...buttonReset, flex: 1, width: undefined }}
+        >
           <Squircle
             role="cta"
             fill={color.offWhite}
-            style={{ width: '100%', height: 64, display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 4 }}
+            style={{
+              width: "100%",
+              height: 64,
+              display: "flex",
+              alignItems: "center",
+              justifyContent: "center",
+              gap: 4,
+            }}
           >
             <CrossIcon plus size={12} color={color.brand} />
-            <span style={{ color: color.brand, fontSize: 22, fontWeight: 600, whiteSpace: 'nowrap' }}>{primary.label}</span>
+            <span
+              style={{
+                color: color.brand,
+                fontSize: 22,
+                fontWeight: 600,
+                whiteSpace: "nowrap",
+              }}
+            >
+              {primary.label}
+            </span>
           </Squircle>
         </motion.button>
       )}
-      <motion.button {...press} aria-label="Close" onClick={onClose} style={{ ...buttonReset, width: 64, flexShrink: 0 }}>
-        <Squircle role="cta" fill={color.offWhite} style={{ width: 64, height: 64, display: 'grid', placeItems: 'center' }}>
+      <motion.button
+        {...press}
+        aria-label="Close"
+        onClick={onClose}
+        style={{ ...buttonReset, width: 64, flexShrink: 0 }}
+      >
+        <Squircle
+          role="cta"
+          fill={color.offWhite}
+          style={{
+            width: 64,
+            height: 64,
+            display: "grid",
+            placeItems: "center",
+          }}
+        >
           <CrossIcon size={14} color={color.brand} />
         </Squircle>
       </motion.button>
@@ -841,15 +1116,44 @@ function FriendRow({ person, onOpen }: { person: Person; onOpen: () => void }) {
   return (
     <ListRow onClick={onOpen}>
       <PeerPin size={45} height={47.27} />
-      <div style={{ flex: 1, minWidth: 0, display: 'flex', flexDirection: 'column', alignItems: 'flex-start', gap: 8, marginLeft: 4 }}>
-        <span style={{ color: color.onBrand, fontSize: 16, fontWeight: 500, lineHeight: '16px', ...capTrim }}>
+      <div
+        style={{
+          flex: 1,
+          minWidth: 0,
+          display: "flex",
+          flexDirection: "column",
+          alignItems: "flex-start",
+          gap: 8,
+          marginLeft: 4,
+        }}
+      >
+        <span
+          style={{
+            color: color.onBrand,
+            fontSize: 16,
+            fontWeight: 500,
+            lineHeight: "16px",
+            ...capTrim,
+          }}
+        >
           {person.firstName} {person.lastName}
         </span>
-        <span style={{ color: color.lavender, fontSize: 12, fontWeight: 500, ...capTrim }}>
+        <span
+          style={{
+            color: color.lavender,
+            fontSize: 12,
+            fontWeight: 500,
+            ...capTrim,
+          }}
+        >
           {tag.lines[0]} {tag.lines[1]}
         </span>
       </div>
-      <img src={figmaIcons.chevron} alt="" style={{ width: 8, height: 11.33, display: 'block', flexShrink: 0 }} />
+      <img
+        src={figmaIcons.chevron}
+        alt=""
+        style={{ width: 8, height: 11.33, display: "block", flexShrink: 0 }}
+      />
     </ListRow>
   );
 }
@@ -867,7 +1171,7 @@ function QrView({ person }: { person: Person }) {
     setTimeout(() => setCopied(false), 1400);
   };
   const [domain, path] = (() => {
-    const i = person.link.indexOf('/');
+    const i = person.link.indexOf("/");
     return [person.link.slice(0, i), person.link.slice(i)];
   })();
 
@@ -875,17 +1179,17 @@ function QrView({ person }: { person: Person }) {
     <>
       <div
         style={{
-          position: 'absolute',
+          position: "absolute",
           left: 0,
           // Sits below the peeking avatar (was rel(189)) so the avatar reads as
           // a header over the QR rather than colliding with this heading.
           top: rel(226),
           width: device.width,
-          textAlign: 'center',
+          textAlign: "center",
           color: color.onBrand,
           fontSize: 32,
           fontWeight: 600,
-          lineHeight: '38px',
+          lineHeight: "38px",
         }}
       >
         Add new friends
@@ -895,11 +1199,11 @@ function QrView({ person }: { person: Person }) {
 
       <div
         style={{
-          position: 'absolute',
+          position: "absolute",
           left: 0,
           top: rel(613),
           width: device.width,
-          textAlign: 'center',
+          textAlign: "center",
           color: color.onBrand,
           fontSize: 20,
           fontWeight: 500,
@@ -915,39 +1219,39 @@ function QrView({ person }: { person: Person }) {
         fill={color.brandDeep}
         onClick={copy}
         style={{
-          position: 'absolute',
+          position: "absolute",
           left: 36,
           top: rel(662),
           width: device.width - 72,
           height: 44,
-          display: 'flex',
-          alignItems: 'center',
-          padding: '0 28px',
-          boxSizing: 'border-box',
-          cursor: 'pointer',
+          display: "flex",
+          alignItems: "center",
+          padding: "0 28px",
+          boxSizing: "border-box",
+          cursor: "pointer",
         }}
       >
-        <span style={{ position: 'relative', display: 'grid' }}>
+        <span style={{ position: "relative", display: "grid" }}>
           <span
             style={{
-              gridArea: '1 / 1',
+              gridArea: "1 / 1",
               fontSize: 16,
               fontWeight: 400,
-              whiteSpace: 'nowrap',
+              whiteSpace: "nowrap",
               opacity: copied ? 0 : 1,
               transition: `opacity 180ms ${layerZoom.ease}`,
             }}
           >
             <span style={{ color: color.lavender }}>{domain}</span>
-            <span style={{ color: '#6055FF' }}>{path}</span>
+            <span style={{ color: "#6055FF" }}>{path}</span>
           </span>
           <span
             style={{
-              gridArea: '1 / 1',
+              gridArea: "1 / 1",
               fontSize: 16,
               fontWeight: 400,
               color: color.lavender,
-              whiteSpace: 'nowrap',
+              whiteSpace: "nowrap",
               opacity: copied ? 1 : 0,
               transition: `opacity 180ms ${layerZoom.ease}`,
             }}
@@ -960,26 +1264,55 @@ function QrView({ person }: { person: Person }) {
       {/* scan + share (visual only for now) */}
       <div
         style={{
-          position: 'absolute',
+          position: "absolute",
           left: 0,
           top: rel(733),
           width: device.width,
-          display: 'flex',
-          justifyContent: 'center',
+          display: "flex",
+          justifyContent: "center",
           gap: 16,
         }}
       >
         {[
-          { label: 'scan', icon: cameraIcon, w: 34.8, h: 31 },
-          { label: 'share link', icon: shareIcon, w: 26.5, h: 31.5 },
+          { label: "scan", icon: cameraIcon, w: 34.8, h: 31 },
+          { label: "share link", icon: shareIcon, w: 26.5, h: 31.5 },
         ].map((b) => (
-          <div key={b.label} style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 4 }}>
-            <motion.button {...press} aria-label={b.label} style={{ ...buttonReset, flexShrink: 0 }}>
-              <Squircle role="cta" fill="#FCFBF9" style={{ width: 63, height: 64, display: 'grid', placeItems: 'center' }}>
-                <img src={b.icon} alt="" style={{ width: b.w, height: b.h, display: 'block' }} />
+          <div
+            key={b.label}
+            style={{
+              display: "flex",
+              flexDirection: "column",
+              alignItems: "center",
+              gap: 4,
+            }}
+          >
+            <motion.button
+              {...press}
+              aria-label={b.label}
+              style={{ ...buttonReset, flexShrink: 0 }}
+            >
+              <Squircle
+                role="cta"
+                fill="#FCFBF9"
+                style={{
+                  width: 63,
+                  height: 64,
+                  display: "grid",
+                  placeItems: "center",
+                }}
+              >
+                <img
+                  src={b.icon}
+                  alt=""
+                  style={{ width: b.w, height: b.h, display: "block" }}
+                />
               </Squircle>
             </motion.button>
-            <span style={{ color: color.lavender, fontSize: 12, fontWeight: 400 }}>{b.label}</span>
+            <span
+              style={{ color: color.lavender, fontSize: 12, fontWeight: 400 }}
+            >
+              {b.label}
+            </span>
           </div>
         ))}
       </div>
@@ -1022,14 +1355,14 @@ export function ProfileFlow({
   friended: ReadonlySet<PersonId>;
   onAddFriend: (id: PersonId) => void;
 }) {
-  const avatarSq = useSquircle('avatar');
-  const headSq = useSquircle('profileAvatar');
-  const sheetSq = useSquircle('sheet');
-  const ctaSq = useSquircle('cta');
-  const qrSq = useSquircle('qrCard');
-  const morph = useMotion('morph');
-  const entrance = useMotion('entrance');
-  const snap = useMotion('snap');
+  const avatarSq = useSquircle("avatar");
+  const headSq = useSquircle("profileAvatar");
+  const sheetSq = useSquircle("sheet");
+  const ctaSq = useSquircle("cta");
+  const qrSq = useSquircle("qrCard");
+  const morph = useMotion("morph");
+  const entrance = useMotion("entrance");
+  const snap = useMotion("snap");
   const press = usePressFeedback();
   const confirm = useConfirm();
 
@@ -1039,27 +1372,27 @@ export function ProfileFlow({
   // and keep popped layers mounted so their fade-out completes.
   const layersRef = useRef<ProfileView[]>([]);
   const prev = layersRef.current;
-  const isPrefix = stack.length < prev.length && stack.every((v, i) => viewKey(v) === viewKey(prev[i]));
+  const isPrefix =
+    stack.length < prev.length &&
+    stack.every((v, i) => viewKey(v) === viewKey(prev[i]));
   const layers = open ? (isPrefix ? prev : stack) : prev;
   layersRef.current = layers;
   // Keys are index-scoped: circular hops (Theo → mutuals → Martin → mutuals →
   // Theo) legitimately put the same view on the stack twice.
   const layerKey = (v: ProfileView, i: number) => `${i}:${viewKey(v)}`;
-  const topKey = open ? layerKey(stack[stack.length - 1], stack.length - 1) : null;
+  const topKey = open
+    ? layerKey(stack[stack.length - 1], stack.length - 1)
+    : null;
   const top = open ? stack[stack.length - 1] : null;
 
   // Whose profile flow is this? The root drives the open/close geometry —
   // with nothing open it defaults to ME (the resting corner avatar).
   const root = (open ? stack : layers)[0];
-  const rootIsMe = root == null || (root.kind === 'person' && root.id === ME);
+  const rootIsMe = root == null || (root.kind === "person" && root.id === ME);
   // Whose face floats over the sheet right now.
   const headerPerson: Person =
-    top == null
-      ? PEOPLE[ME]
-      : top.kind === 'qr'
-        ? PEOPLE[ME]
-        : PEOPLE[top.id];
-  const topIsPerson = top?.kind === 'person';
+    top == null ? PEOPLE[ME] : top.kind === "qr" ? PEOPLE[ME] : PEOPLE[top.id];
+  const topIsPerson = top?.kind === "person";
 
   /* ---- surface progress values ---- */
   const pr = useMotionValue(0); // closed ⇄ profile sheet
@@ -1068,7 +1401,7 @@ export function ProfileFlow({
     const c = animate(pr, open ? 1 : 0, morph);
     return () => c.stop();
   }, [open, pr, morph]);
-  const qrOpen = top?.kind === 'qr';
+  const qrOpen = top?.kind === "qr";
   useEffect(() => {
     const c = animate(qv, qrOpen ? 1 : 0, morph);
     return () => c.stop();
@@ -1085,9 +1418,13 @@ export function ProfileFlow({
   const shW = useTransform(pr, (t) => lerp(closed.w, SHEET.w, t));
   const shH = useTransform(pr, (t) => lerp(closed.h, SHEET.h, t));
   const shR = useTransform(pr, (t) => lerp(avatarSq.radius, sheetSq.radius, t));
-  const shS = useTransform(pr, (t) => lerp(avatarSq.smoothing, sheetSq.smoothing, t));
-  const shClip = useTransform([shW, shH, shR, shS], ([w, h, r, s]) =>
-    `path('${getSvgPath({ width: w as number, height: h as number, cornerRadius: r as number, cornerSmoothing: s as number })}')`,
+  const shS = useTransform(pr, (t) =>
+    lerp(avatarSq.smoothing, sheetSq.smoothing, t),
+  );
+  const shClip = useTransform(
+    [shW, shH, shR, shS],
+    ([w, h, r, s]) =>
+      `path('${getSvgPath({ width: w as number, height: h as number, cornerRadius: r as number, cornerSmoothing: s as number })}')`,
   );
   // The sheet fades in fast at the start of the grow (it starts exactly under
   // the avatar, so there's no pop) and the content arrives once there's room.
@@ -1101,11 +1438,19 @@ export function ProfileFlow({
   const avY = useTransform(pr, (t) => lerp(avFrom.y, HEAD.y, t));
   const avS = useTransform(pr, (t) => lerp(avFrom.s, HEAD.s, t));
   const avR = useTransform(pr, (t) => lerp(avatarSq.radius, headSq.radius, t));
-  const avSm = useTransform(pr, (t) => lerp(avatarSq.smoothing, headSq.smoothing, t));
-  const avClip = useTransform([avS, avR, avSm], ([s, r, sm]) =>
-    `path('${getSvgPath({ width: s as number, height: s as number, cornerRadius: r as number, cornerSmoothing: sm as number })}')`,
+  const avSm = useTransform(pr, (t) =>
+    lerp(avatarSq.smoothing, headSq.smoothing, t),
   );
-  const avOpacity = useTransform(pr, rootIsMe ? [0, 1] : [0.2, 0.7], rootIsMe ? [1, 1] : [0, 1]);
+  const avClip = useTransform(
+    [avS, avR, avSm],
+    ([s, r, sm]) =>
+      `path('${getSvgPath({ width: s as number, height: s as number, cornerRadius: r as number, cornerSmoothing: sm as number })}')`,
+  );
+  const avOpacity = useTransform(
+    pr,
+    rootIsMe ? [0, 1] : [0.2, 0.7],
+    rootIsMe ? [1, 1] : [0, 1],
+  );
 
   // Rest-state hide (a venue/activity card owns the screen) — only when closed.
   const restScale = !open && restHidden ? 0 : 1;
@@ -1117,8 +1462,10 @@ export function ProfileFlow({
   const qpH = useTransform(qv, (t) => lerp(QR_BTN.h, QR_CARD.h, t));
   const qpR = useTransform(qv, (t) => lerp(ctaSq.radius, qrSq.radius, t));
   const qpS = useTransform(qv, (t) => lerp(ctaSq.smoothing, qrSq.smoothing, t));
-  const qpClip = useTransform([qpW, qpH, qpR, qpS], ([w, h, r, s]) =>
-    `path('${getSvgPath({ width: w as number, height: h as number, cornerRadius: r as number, cornerSmoothing: s as number })}')`,
+  const qpClip = useTransform(
+    [qpW, qpH, qpR, qpS],
+    ([w, h, r, s]) =>
+      `path('${getSvgPath({ width: w as number, height: h as number, cornerRadius: r as number, cornerSmoothing: s as number })}')`,
   );
   const qrGlyphOpacity = useTransform(qv, [0, 0.35], [1, 0]);
   const qrCodeOpacity = useTransform(qv, [0.35, 0.85], [0, 1]);
@@ -1140,7 +1487,7 @@ export function ProfileFlow({
   // The plate is YOUR person view's CTA *and* the QR view's hero — it hides
   // on lists and on other people's profiles (wall-clock CSS, layerZoom feel).
   const plateVisible =
-    open && rootIsMe && ((top?.kind === 'person' && top.id === ME) || qrOpen);
+    open && rootIsMe && ((top?.kind === "person" && top.id === ME) || qrOpen);
 
   /* ---- QR-view drag-to-dismiss (handle zone at the sheet top) ---- */
   // Dismiss pops, then rides dragY smoothly back to 0 as the plate morphs
@@ -1161,27 +1508,28 @@ export function ProfileFlow({
 
   // Where each list view grows from: the card that was tapped.
   const originFor = (v: ProfileView): string | undefined => {
-    if (v.kind === 'friends') return '31% 46%';
-    if (v.kind === 'organized') return '76% 46%';
+    if (v.kind === "friends") return "31% 46%";
+    if (v.kind === "organized") return "76% 46%";
     return undefined;
   };
 
   // A "card" view (qr / friends / organized) sits IN FRONT of the profile
   // beneath it, which stays rendered so dragging the card down reveals it.
   const topKind = top?.kind;
-  const topIsCard = topKind === 'qr' || topKind === 'friends' || topKind === 'organized';
+  const topIsCard =
+    topKind === "qr" || topKind === "friends" || topKind === "organized";
   // A bottom-sheet card popup (friends / organized) sits over the profile and
   // reveals it behind — so the profile (avatar + name + content) dims in place.
   // The QR is a full takeover: the avatar stays peeking (as a header) but the
   // profile isn't dimmed, and the name is hidden (it would collide with the QR
   // heading).
-  const dimProfile = topKind === 'friends' || topKind === 'organized';
+  const dimProfile = topKind === "friends" || topKind === "organized";
   // The profile a top card reveals = the nearest PERSON below it (cards can
   // stack, e.g. friends list → "Add friends" → QR, so it isn't always -2).
   let revealPersonIdx = -1;
   if (topIsCard) {
     for (let j = stack.length - 2; j >= 0; j--) {
-      if (stack[j].kind === 'person') {
+      if (stack[j].kind === "person") {
         revealPersonIdx = j;
         break;
       }
@@ -1190,25 +1538,25 @@ export function ProfileFlow({
 
   const renderLayer = (view: ProfileView, i: number) => {
     // The QR is its own dedicated panel below (skip here).
-    if (view.kind === 'qr') return null;
+    if (view.kind === "qr") return null;
     const key = layerKey(view, i);
     const isTop = key === topKey;
 
     /* ---- person view: a full-page layer (the profile itself) ---- */
-    if (view.kind === 'person') {
+    if (view.kind === "person") {
       // Keep the profile beneath a card VISIBLE (not zoomed away) so the card
       // drags down to reveal it; it just can't be tapped through.
       const revealedByCard = topIsCard && i === revealPersonIdx;
       const visible = isTop || revealedByCard;
-      const hiddenAs = i < stack.length - 1 ? 'parent' : 'child';
+      const hiddenAs = i < stack.length - 1 ? "parent" : "child";
       const person = PEOPLE[view.id];
       return (
         <div
           key={key}
           style={{
-            position: 'absolute',
+            position: "absolute",
             inset: 0,
-            pointerEvents: isTop ? undefined : 'none',
+            pointerEvents: isTop ? undefined : "none",
             transformOrigin: originFor(view),
             ...layerZoomStyle(visible, hiddenAs),
           }}
@@ -1218,8 +1566,8 @@ export function ProfileFlow({
             depth={i}
             onBack={popOrClose}
             onRoute={() => onOpenRoute(view.id)}
-            onFriends={() => onPush({ kind: 'friends', id: view.id })}
-            onOrganized={() => onPush({ kind: 'organized', id: view.id })}
+            onFriends={() => onPush({ kind: "friends", id: view.id })}
+            onOrganized={() => onPush({ kind: "organized", id: view.id })}
             onOpenPlan={onOpenPlan}
             isFriend={friended.has(view.id)}
             onAddFriend={() => {
@@ -1251,22 +1599,36 @@ export function ProfileFlow({
    * slide down), so back/drag-dismiss and row taps behave as before.
    */
   const renderCardPopup = (view: ProfileView, i: number) => {
-    if (view.kind !== 'friends' && view.kind !== 'organized') return null;
+    if (view.kind !== "friends" && view.kind !== "organized") return null;
     const key = layerKey(view, i);
     const isTop = key === topKey;
     const person = PEOPLE[view.id];
-    if (view.kind === 'friends') {
-      const list = person.isMe ? person.friends.map((f) => PEOPLE[f]) : friendsInCommon(person);
+    if (view.kind === "friends") {
+      const list = person.isMe
+        ? person.friends.map((f) => PEOPLE[f])
+        : friendsInCommon(person);
       return (
         <ProfileListSheet
           key={key}
           isTop={isTop}
-          title={person.isMe ? 'Your friends' : `Friends in common with ${person.firstName}`}
+          title={
+            person.isMe
+              ? "Your friends"
+              : `Friends in common with ${person.firstName}`
+          }
           rowCount={list.length}
           rows={list.map((p) => (
-            <FriendRow key={p.id} person={p} onOpen={() => onPush({ kind: 'person', id: p.id })} />
+            <FriendRow
+              key={p.id}
+              person={p}
+              onOpen={() => onPush({ kind: "person", id: p.id })}
+            />
           ))}
-          primaryCta={person.isMe ? { label: 'Add friends', onClick: () => onPush({ kind: 'qr' }) } : undefined}
+          primaryCta={
+            person.isMe
+              ? { label: "Add friends", onClick: () => onPush({ kind: "qr" }) }
+              : undefined
+          }
           onDismiss={onPop}
         />
       );
@@ -1276,19 +1638,32 @@ export function ProfileFlow({
       <ProfileListSheet
         key={key}
         isTop={isTop}
-        title={person.isMe ? 'Plans you organized' : `Plans ${person.firstName} organized`}
+        title={
+          person.isMe
+            ? "Plans you organized"
+            : `Plans ${person.firstName} organized`
+        }
         rowCount={person.organized.length}
         rows={person.organized.map(({ venueId, eventId }) => (
-          <PlanRow key={`${venueId}:${eventId}`} venueId={venueId} eventId={eventId} onOpen={onOpenPlan} />
+          <PlanRow
+            key={`${venueId}:${eventId}`}
+            venueId={venueId}
+            eventId={eventId}
+            onOpen={onOpenPlan}
+          />
         ))}
         emptyText={
           person.organized.length === 0
             ? person.isMe
-              ? 'You haven’t organized any plans yet'
+              ? "You haven’t organized any plans yet"
               : `${person.firstName} hasn’t organized any plans yet`
             : undefined
         }
-        primaryCta={person.isMe ? { label: 'Create a plan', onClick: onCreatePlan } : undefined}
+        primaryCta={
+          person.isMe
+            ? { label: "Create a plan", onClick: onCreatePlan }
+            : undefined
+        }
         onDismiss={onPop}
       />
     );
@@ -1298,8 +1673,16 @@ export function ProfileFlow({
   // the layer zoom, opacity only).
   const fadeWith = (visible: boolean): CSSProperties =>
     visible
-      ? { opacity: 1, visibility: 'inherit', transition: `opacity ${layerZoom.inMs}ms ${layerZoom.ease} ${layerZoom.inDelayMs}ms, visibility 0s` }
-      : { opacity: 0, visibility: 'hidden', transition: `opacity ${layerZoom.outMs}ms ${layerZoom.ease}, visibility 0s linear ${layerZoom.outMs}ms` };
+      ? {
+          opacity: 1,
+          visibility: "inherit",
+          transition: `opacity ${layerZoom.inMs}ms ${layerZoom.ease} ${layerZoom.inDelayMs}ms, visibility 0s`,
+        }
+      : {
+          opacity: 0,
+          visibility: "hidden",
+          transition: `opacity ${layerZoom.outMs}ms ${layerZoom.ease}, visibility 0s linear ${layerZoom.outMs}ms`,
+        };
 
   return (
     <motion.div
@@ -1307,17 +1690,21 @@ export function ProfileFlow({
       animate={{ opacity: routeActive ? 0 : 1, scale: routeActive ? 1.05 : 1 }}
       transition={morph}
       style={{
-        position: 'absolute',
+        position: "absolute",
         inset: 0,
         zIndex: 25,
-        pointerEvents: 'none',
+        pointerEvents: "none",
       }}
     >
       {/* Tap-catcher over the visible map strip (and anything outside the
           sheet/cards): clicking the map resets the WHOLE profile flow straight
           back to the map, from any depth. Sits below the sheet + avatar, so it
           only ever catches the exposed map. */}
-      <DismissScrim active={open && !routeActive} onDismiss={onClose} zIndex={1} />
+      <DismissScrim
+        active={open && !routeActive}
+        onDismiss={onClose}
+        zIndex={1}
+      />
 
       {/* The morphing corner⇄header avatar — handles the map-corner → header
           morph and the plain profile view. A card (friends / organized / QR)
@@ -1326,14 +1713,14 @@ export function ProfileFlow({
           it never moves or hands off to a second avatar. */}
       <motion.div
         onClick={() => {
-          if (!open && !restHidden) onPush({ kind: 'person', id: ME });
+          if (!open && !restHidden) onPush({ kind: "person", id: ME });
         }}
         whileTap={!open ? press.whileTap : undefined}
         initial={false}
         animate={{ scale: restScale, opacity: restScale }}
         transition={restHidden ? morph : { ...entrance, delay: 0.1 }}
         style={{
-          position: 'absolute',
+          position: "absolute",
           left: avX,
           top: avY,
           width: avS,
@@ -1344,17 +1731,17 @@ export function ProfileFlow({
           // avatar simply sits behind that scrim, dimmed in place, rather than
           // peeking in front of / colliding with the card.
           zIndex: 27,
-          pointerEvents: routeActive || open ? 'none' : 'auto',
-          cursor: open ? 'default' : 'pointer',
+          pointerEvents: routeActive || open ? "none" : "auto",
+          cursor: open ? "default" : "pointer",
           // Soft even ambient shadow, no stroke (Figma 1442:5703 avatar).
-          filter: 'drop-shadow(0 3px 8px rgba(0, 29, 51, 0.2))',
+          filter: "drop-shadow(0 3px 8px rgba(0, 29, 51, 0.2))",
         }}
       >
         <motion.div
           style={{
-            position: 'relative',
-            width: '100%',
-            height: '100%',
+            position: "relative",
+            width: "100%",
+            height: "100%",
             clipPath: avClip,
             opacity: avOpacity,
             background: color.offWhite,
@@ -1368,7 +1755,7 @@ export function ProfileFlow({
           (so the QR reveals the profile behind, never the bare map). */}
       <motion.div
         style={{
-          position: 'absolute',
+          position: "absolute",
           left: shX,
           top: shY,
           width: shW,
@@ -1377,10 +1764,12 @@ export function ProfileFlow({
           background: color.brand,
           opacity: sheetOpacity,
           zIndex: 25,
-          pointerEvents: open && !routeActive ? 'auto' : 'none',
+          pointerEvents: open && !routeActive ? "auto" : "none",
         }}
       >
-        <motion.div style={{ position: 'absolute', inset: 0, opacity: contentOpacity }}>
+        <motion.div
+          style={{ position: "absolute", inset: 0, opacity: contentOpacity }}
+        >
           {layers.map(renderLayer)}
 
           {/* Scrim dimming the profile behind the QR takeover while its opaque
@@ -1390,11 +1779,11 @@ export function ProfileFlow({
               and name instead (see the card popup layer below). */}
           <div
             style={{
-              position: 'absolute',
+              position: "absolute",
               inset: 0,
-              background: 'rgba(0,0,24,0.4)',
+              background: "rgba(0,0,24,0.4)",
               zIndex: 2,
-              pointerEvents: 'none',
+              pointerEvents: "none",
               opacity: qrOpen ? 1 : 0,
               transition: `opacity ${layerZoom.inMs}ms ${layerZoom.ease}`,
             }}
@@ -1406,14 +1795,14 @@ export function ProfileFlow({
           {rootIsMe && (
             <motion.div
               style={{
-                position: 'absolute',
+                position: "absolute",
                 inset: 0,
                 y: dragY,
                 background: color.brand,
                 clipPath: qrPanelClip,
                 opacity: qrPanelOpacity,
                 zIndex: 4,
-                pointerEvents: qrOpen ? 'auto' : 'none',
+                pointerEvents: qrOpen ? "auto" : "none",
               }}
             >
               <QrView person={PEOPLE[ME]} />
@@ -1421,15 +1810,39 @@ export function ProfileFlow({
               {/* Drag zone reaching almost down to the QR card + grabber pill —
                   drag it down to dismiss. The × top-right (below) is the tap
                   equivalent, matching the profile's close button. */}
-              <div style={{ position: 'absolute', left: 0, top: 0, width: '100%', height: rel(295), zIndex: 2 }}>
+              <div
+                style={{
+                  position: "absolute",
+                  left: 0,
+                  top: 0,
+                  width: "100%",
+                  height: rel(295),
+                  zIndex: 2,
+                }}
+              >
                 {qrOpen && (
-                  <div {...qrHandle} style={{ position: 'absolute', inset: 0, cursor: 'grab', touchAction: 'none' }} />
+                  <div
+                    {...qrHandle}
+                    style={{
+                      position: "absolute",
+                      inset: 0,
+                      cursor: "grab",
+                      touchAction: "none",
+                    }}
+                  />
                 )}
                 <Squircle
                   radius={2}
                   smoothing={1}
                   fill="#fefefe"
-                  style={{ position: 'absolute', left: (device.width - 53) / 2, top: 9, width: 53, height: 4, pointerEvents: 'none' }}
+                  style={{
+                    position: "absolute",
+                    left: (device.width - 53) / 2,
+                    top: 9,
+                    width: 53,
+                    height: 4,
+                    pointerEvents: "none",
+                  }}
                 />
               </div>
 
@@ -1441,12 +1854,23 @@ export function ProfileFlow({
                   {...press}
                   aria-label="Close"
                   onClick={onPop}
-                  style={{ ...buttonReset, position: 'absolute', left: CLOSE_BTN.x, top: CLOSE_BTN.y, zIndex: 3 }}
+                  style={{
+                    ...buttonReset,
+                    position: "absolute",
+                    left: CLOSE_BTN.x,
+                    top: CLOSE_BTN.y,
+                    zIndex: 3,
+                  }}
                 >
                   <Squircle
                     role="miniButton"
                     fill={color.offWhite}
-                    style={{ width: CLOSE_BTN.s, height: CLOSE_BTN.s, display: 'grid', placeItems: 'center' }}
+                    style={{
+                      width: CLOSE_BTN.s,
+                      height: CLOSE_BTN.s,
+                      display: "grid",
+                      placeItems: "center",
+                    }}
                   >
                     <CrossIcon size={10} color={color.brand} />
                   </Squircle>
@@ -1460,11 +1884,11 @@ export function ProfileFlow({
           {rootIsMe && (
             <motion.div
               onClick={() => {
-                if (!qrOpen && topIsPerson) onPush({ kind: 'qr' });
+                if (!qrOpen && topIsPerson) onPush({ kind: "qr" });
               }}
               whileTap={!qrOpen && topIsPerson ? press.whileTap : undefined}
               style={{
-                position: 'absolute',
+                position: "absolute",
                 left: qpX,
                 top: qpY,
                 // Always ride dragY (0 unless the QR is being dragged): on
@@ -1474,35 +1898,44 @@ export function ProfileFlow({
                 width: qpW,
                 height: qpH,
                 clipPath: qpClip,
-                background: '#FCFBF9',
+                background: "#FCFBF9",
                 zIndex: 5,
-                cursor: qrOpen ? 'default' : 'pointer',
+                cursor: qrOpen ? "default" : "pointer",
                 ...fadeWith(plateVisible),
-                pointerEvents: plateVisible ? 'auto' : 'none',
+                pointerEvents: plateVisible ? "auto" : "none",
               }}
             >
               {/* resting glyph — crossfades into the code as the plate grows */}
               <motion.div
                 style={{
-                  position: 'absolute',
+                  position: "absolute",
                   inset: 0,
-                  display: 'grid',
-                  placeItems: 'center',
+                  display: "grid",
+                  placeItems: "center",
                   opacity: qrGlyphOpacity,
-                  pointerEvents: 'none',
+                  pointerEvents: "none",
                 }}
               >
-                <img src={qrIcon} alt="" style={{ width: '51.5%', height: '51.5%', objectFit: 'contain', display: 'block' }} />
+                <img
+                  src={qrIcon}
+                  alt=""
+                  style={{
+                    width: "51.5%",
+                    height: "51.5%",
+                    objectFit: "contain",
+                    display: "block",
+                  }}
+                />
               </motion.div>
               <motion.div
                 style={{
-                  position: 'absolute',
-                  left: '15.3%',
-                  top: '14%',
-                  width: '69.5%',
-                  height: '72%',
+                  position: "absolute",
+                  left: "15.3%",
+                  top: "14%",
+                  width: "69.5%",
+                  height: "72%",
                   opacity: qrCodeOpacity,
-                  pointerEvents: 'none',
+                  pointerEvents: "none",
                 }}
               >
                 <QrCodeSvg text={`https://${PEOPLE[ME].link}`} />
@@ -1517,27 +1950,67 @@ export function ProfileFlow({
           open — a card popup just dims them, it never removes them. */}
       <div
         style={{
-          position: 'absolute',
+          position: "absolute",
           left: 0,
           top: HEAD.y + 108,
           width: device.width,
-          display: 'flex',
-          justifyContent: 'center',
+          display: "flex",
+          justifyContent: "center",
           zIndex: 28,
-          pointerEvents: 'none',
+          pointerEvents: "none",
           // Stays put for the profile + bottom-sheet cards; hidden only in the
           // full-screen QR takeover (its own title would collide).
-          ...fadeWith(open && topKind !== 'qr'),
+          ...fadeWith(open && topKind !== "qr"),
         }}
       >
-        <motion.div style={{ opacity: contentOpacity, position: 'relative', display: 'flex', flexDirection: 'column', alignItems: 'flex-start' }}>
-          <div style={{ marginLeft: 11, background: color.offWhite, padding: 4, zIndex: 2 }}>
-            <span style={{ color: color.brand, fontSize: 24, fontWeight: 500, lineHeight: '26px', whiteSpace: 'nowrap' }}>
+        <motion.div
+          style={{
+            opacity: contentOpacity,
+            position: "relative",
+            display: "flex",
+            flexDirection: "column",
+            alignItems: "flex-start",
+          }}
+        >
+          <div
+            style={{
+              marginLeft: 11,
+              background: color.offWhite,
+              padding: 4,
+              zIndex: 2,
+            }}
+          >
+            <span
+              style={{
+                color: color.brand,
+                fontSize: 24,
+                fontWeight: 500,
+                lineHeight: "26px",
+                whiteSpace: "nowrap",
+              }}
+            >
               {headerPerson.firstName}
             </span>
           </div>
-          <div style={{ marginTop: -8, background: color.offWhite, padding: 4, opacity: 0.9, zIndex: 1 }}>
-            <span style={{ color: color.muted, fontSize: 24, fontWeight: 400, lineHeight: '26px', opacity: 0.6, whiteSpace: 'nowrap' }}>
+          <div
+            style={{
+              marginTop: -8,
+              background: color.offWhite,
+              padding: 4,
+              opacity: 0.9,
+              zIndex: 1,
+            }}
+          >
+            <span
+              style={{
+                color: color.muted,
+                fontSize: 24,
+                fontWeight: 400,
+                lineHeight: "26px",
+                opacity: 0.6,
+                whiteSpace: "nowrap",
+              }}
+            >
               {headerPerson.lastName}
             </span>
           </div>
@@ -1553,16 +2026,23 @@ export function ProfileFlow({
       <div
         onClick={onPop}
         style={{
-          position: 'absolute',
+          position: "absolute",
           inset: 0,
           zIndex: 29, // above the header avatar (27) + name (28), below the card (30)
-          background: 'rgba(0,0,24,0.4)',
+          background: "rgba(0,0,24,0.4)",
           opacity: dimProfile ? 1 : 0,
-          pointerEvents: dimProfile ? 'auto' : 'none',
+          pointerEvents: dimProfile ? "auto" : "none",
           transition: `opacity ${layerZoom.inMs}ms ${layerZoom.ease}`,
         }}
       />
-      <div style={{ position: 'absolute', inset: 0, zIndex: 30, pointerEvents: 'none' }}>
+      <div
+        style={{
+          position: "absolute",
+          inset: 0,
+          zIndex: 30,
+          pointerEvents: "none",
+        }}
+      >
         {layers.map(renderCardPopup)}
       </div>
     </motion.div>

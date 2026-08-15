@@ -1,7 +1,11 @@
-import { useRef, type PointerEvent as ReactPointerEvent, type CSSProperties } from 'react';
-import { motion, useMotionValue, useTransform, animate } from 'framer-motion';
-import { useMotion } from './MotionProvider';
-import { defaultEdgeZoom } from '../theme/edgeZoom';
+import {
+  useRef,
+  type PointerEvent as ReactPointerEvent,
+  type CSSProperties,
+} from "react";
+import { motion, useMotionValue, useTransform, animate } from "framer-motion";
+import { useMotion } from "./MotionProvider";
+import { defaultEdgeZoom } from "../theme/edgeZoom";
 
 /**
  * Snap-Map edge zoom. Finger down within `edgeMargin` of the LEFT or RIGHT
@@ -48,17 +52,22 @@ function blobPath(w: number, h: number) {
     `M ${w} 0`,
     `C ${w} ${h * 0.2}, 0 ${h * 0.28}, 0 ${h * 0.5}`,
     `C 0 ${h * 0.72}, ${w} ${h * 0.8}, ${w} ${h}`,
-    'Z',
-  ].join(' ');
+    "Z",
+  ].join(" ");
 }
 
-export function EdgeZoom({ getZoom, setZoom, onZoomStart, enabled = true }: Props) {
+export function EdgeZoom({
+  getZoom,
+  setZoom,
+  onZoomStart,
+  enabled = true,
+}: Props) {
   const cfg = defaultEdgeZoom;
-  const snap = useMotion('snap');
+  const snap = useMotion("snap");
 
   // Which edge owns the current gesture drives which blob shows.
   const drag = useRef<Drag | null>(null);
-  const activeEdge = useRef<'left' | 'right' | null>(null);
+  const activeEdge = useRef<"left" | "right" | null>(null);
 
   // Blob state, all direct manipulation while the finger is down: y sticks to
   // the thumb; stretch (0..1) = how far the goo has been pulled out of the
@@ -71,8 +80,12 @@ export function EdgeZoom({ getZoom, setZoom, onZoomStart, enabled = true }: Prop
   const leftScale = useTransform(stretch.left, (v) => Math.max(0, v));
   const rightScale = useTransform(stretch.right, (v) => Math.max(0, v));
   // Hide fully-retracted blobs so they never sit over the map edge.
-  const leftVisible = useTransform(stretch.left, (p) => (p > 0.001 ? 'visible' : 'hidden'));
-  const rightVisible = useTransform(stretch.right, (p) => (p > 0.001 ? 'visible' : 'hidden'));
+  const leftVisible = useTransform(stretch.left, (p) =>
+    p > 0.001 ? "visible" : "hidden",
+  );
+  const rightVisible = useTransform(stretch.right, (p) =>
+    p > 0.001 ? "visible" : "hidden",
+  );
 
   // Finger Y in screen-local coords: measure from the strip itself (it spans
   // the full screen height, so its top == the screen's top).
@@ -81,9 +94,9 @@ export function EdgeZoom({ getZoom, setZoom, onZoomStart, enabled = true }: Prop
 
   // Finger's horizontal distance from the owning screen edge → stretch 0..1.
   // The strip hugs its edge, so its outer side IS the screen edge.
-  const stretchFor = (e: ReactPointerEvent, edge: 'left' | 'right') => {
+  const stretchFor = (e: ReactPointerEvent, edge: "left" | "right") => {
     const r = (e.currentTarget as Element).getBoundingClientRect();
-    const dist = edge === 'left' ? e.clientX - r.left : r.right - e.clientX;
+    const dist = edge === "left" ? e.clientX - r.left : r.right - e.clientX;
     return Math.max(0, Math.min(1, dist / cfg.growDistance));
   };
 
@@ -98,7 +111,7 @@ export function EdgeZoom({ getZoom, setZoom, onZoomStart, enabled = true }: Prop
     activeEdge.current = null;
   };
 
-  const onDown = (edge: 'left' | 'right') => (e: ReactPointerEvent) => {
+  const onDown = (edge: "left" | "right") => (e: ReactPointerEvent) => {
     if (!enabled) return;
     // No native drag/text-selection: a long mouse drag would otherwise start a
     // selection sweep that eats the eventual pointerup (stuck gesture).
@@ -120,11 +133,11 @@ export function EdgeZoom({ getZoom, setZoom, onZoomStart, enabled = true }: Prop
     // the window still does.
     const winEnd = () => {
       endGesture();
-      window.removeEventListener('pointerup', winEnd);
-      window.removeEventListener('pointercancel', winEnd);
+      window.removeEventListener("pointerup", winEnd);
+      window.removeEventListener("pointercancel", winEnd);
     };
-    window.addEventListener('pointerup', winEnd);
-    window.addEventListener('pointercancel', winEnd);
+    window.addEventListener("pointerup", winEnd);
+    window.addEventListener("pointercancel", winEnd);
   };
 
   const onMove = (e: ReactPointerEvent) => {
@@ -133,7 +146,7 @@ export function EdgeZoom({ getZoom, setZoom, onZoomStart, enabled = true }: Prop
     if (!d || !edge) return;
     // A move with no button held means the release happened where we couldn't
     // hear it — end the gesture instead of gluing the blob to a hover.
-    if (e.pointerType === 'mouse' && e.buttons === 0) return endGesture();
+    if (e.pointerType === "mouse" && e.buttons === 0) return endGesture();
     blobY.set(localY(e));
     stretch[edge].set(stretchFor(e, edge)); // goo pulled out with the finger
     // First real move of the gesture: let the host latch + glide the focused pin.
@@ -158,26 +171,26 @@ export function EdgeZoom({ getZoom, setZoom, onZoomStart, enabled = true }: Prop
   };
 
   const strip: CSSProperties = {
-    position: 'absolute',
+    position: "absolute",
     top: 0,
     bottom: 0,
     width: cfg.edgeMargin,
     zIndex: 6, // above the map, below the UI chrome (avatar 10, bottom bar 15+)
-    touchAction: 'none',
-    userSelect: 'none',
-    WebkitUserSelect: 'none',
-    cursor: enabled ? 'ns-resize' : undefined,
+    touchAction: "none",
+    userSelect: "none",
+    WebkitUserSelect: "none",
+    cursor: enabled ? "ns-resize" : undefined,
   };
 
-  const blobStyle = (edge: 'left' | 'right'): CSSProperties => ({
-    position: 'absolute',
+  const blobStyle = (edge: "left" | "right"): CSSProperties => ({
+    position: "absolute",
     [edge]: 0,
     top: -cfg.blobHeight / 2, // y motion value centres it on the finger
     width: cfg.blobWidth,
     height: cfg.blobHeight,
     zIndex: 6,
-    pointerEvents: 'none',
-    transformOrigin: edge === 'left' ? 'left center' : 'right center',
+    pointerEvents: "none",
+    transformOrigin: edge === "left" ? "left center" : "right center",
   });
 
   if (!enabled) return null;
@@ -186,34 +199,54 @@ export function EdgeZoom({ getZoom, setZoom, onZoomStart, enabled = true }: Prop
     <>
       {/* Goo blobs — one per edge, grown out of the edge by the finger's pull
           (uniform scale, origin at the edge, so they inflate from a sliver). */}
-      <motion.div style={{ ...blobStyle('left'), y: blobY, scale: leftScale, visibility: leftVisible }}>
+      <motion.div
+        style={{
+          ...blobStyle("left"),
+          y: blobY,
+          scale: leftScale,
+          visibility: leftVisible,
+        }}
+      >
         <svg
           width={cfg.blobWidth}
           height={cfg.blobHeight}
           viewBox={`0 0 ${cfg.blobWidth} ${cfg.blobHeight}`}
           // Mirror the right-edge path for the left edge.
-          style={{ display: 'block', transform: 'scaleX(-1)' }}
+          style={{ display: "block", transform: "scaleX(-1)" }}
           aria-hidden
         >
-          <path d={blobPath(cfg.blobWidth, cfg.blobHeight)} fill={cfg.blobColor} />
+          <path
+            d={blobPath(cfg.blobWidth, cfg.blobHeight)}
+            fill={cfg.blobColor}
+          />
         </svg>
       </motion.div>
-      <motion.div style={{ ...blobStyle('right'), y: blobY, scale: rightScale, visibility: rightVisible }}>
+      <motion.div
+        style={{
+          ...blobStyle("right"),
+          y: blobY,
+          scale: rightScale,
+          visibility: rightVisible,
+        }}
+      >
         <svg
           width={cfg.blobWidth}
           height={cfg.blobHeight}
           viewBox={`0 0 ${cfg.blobWidth} ${cfg.blobHeight}`}
-          style={{ display: 'block' }}
+          style={{ display: "block" }}
           aria-hidden
         >
-          <path d={blobPath(cfg.blobWidth, cfg.blobHeight)} fill={cfg.blobColor} />
+          <path
+            d={blobPath(cfg.blobWidth, cfg.blobHeight)}
+            fill={cfg.blobColor}
+          />
         </svg>
       </motion.div>
 
       {/* Invisible catch strips. */}
       <div
         style={{ ...strip, left: 0 }}
-        onPointerDown={onDown('left')}
+        onPointerDown={onDown("left")}
         onPointerMove={onMove}
         onPointerUp={onUp}
         onPointerCancel={onUp}
@@ -221,7 +254,7 @@ export function EdgeZoom({ getZoom, setZoom, onZoomStart, enabled = true }: Prop
       />
       <div
         style={{ ...strip, right: 0 }}
-        onPointerDown={onDown('right')}
+        onPointerDown={onDown("right")}
         onPointerMove={onMove}
         onPointerUp={onUp}
         onPointerCancel={onUp}

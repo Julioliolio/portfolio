@@ -8,10 +8,10 @@ A desktop app that converts video files between formats — GIF, MP4, WebM, MOV,
 
 Grab the latest installer from the **[Releases](https://github.com/Julioliolio/convertr/releases)** page.
 
-| Platform | File |
-|---|---|
+| Platform              | File                       |
+| --------------------- | -------------------------- |
 | macOS (Apple Silicon) | `Convertr-x.x.x-arm64.dmg` |
-| Windows | `Convertr-Setup-x.x.x.exe` |
+| Windows               | `Convertr-Setup-x.x.x.exe` |
 
 ---
 
@@ -70,16 +70,16 @@ The app will show a clear error message if a URL fetch is attempted without yt-d
 
 ## Tech Stack
 
-| Layer | Technology |
-|---|---|
-| Frontend | Solid.js + TypeScript |
-| Bundler | Vite |
-| Backend | Node.js + Express |
-| Desktop wrapper | Electron |
+| Layer            | Technology                 |
+| ---------------- | -------------------------- |
+| Frontend         | Solid.js + TypeScript      |
+| Bundler          | Vite                       |
+| Backend          | Node.js + Express          |
+| Desktop wrapper  | Electron                   |
 | Media processing | FFmpeg + FFprobe (bundled) |
-| URL downloads | yt-dlp |
-| Auto-updates | electron-updater |
-| Build | Electron Builder |
+| URL downloads    | yt-dlp                     |
+| Auto-updates     | electron-updater           |
+| Build            | Electron Builder           |
 
 ---
 

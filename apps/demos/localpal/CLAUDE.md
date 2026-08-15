@@ -18,6 +18,7 @@ Current roles: `button` (search pill + calendar), `control` (round map buttons:
 chat, locate), `sheet`, `field` (search input), `card`, `chip`, `avatar`.
 
 ### Squircle geometry note
+
 A squircle needs a straight edge for corner-smoothing to show. If `radius >=` half
 the element's shorter side it collapses to a full pill/circle and smoothing has no
 effect. Keep radius below half the min dimension when a squircle look is wanted.
@@ -51,11 +52,13 @@ All animation feel comes from the central motion registry, never from inline
   `'child'` = a deeper view shrinking back into its origin.
 
 ## No baked Figma raster for UI chrome
+
 Prefer real, resolution-independent elements (vector icons, styled `<Squircle>`,
 real text/inputs) over exported PNGs, so nothing pixelates when zoomed. Extract
 glyphs from Figma exports and rebuild the container as a `<Squircle>`.
 
 ## Other
+
 - Tunable effect configs live in `src/theme/` and are editable live in the Lab
   (e.g. `floatShadow.ts`). Paste tuned values back into the theme file to persist.
 - Font: PP Neue Montreal (`public/fonts`, `@font-face` in `index.css`).

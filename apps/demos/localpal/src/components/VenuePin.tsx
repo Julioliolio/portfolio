@@ -7,9 +7,9 @@
  * centered inside — so adding a new venue type is just switching the icon.
  * Flat by design: no shadow (unlike the peer pin's photo shadow).
  */
-import type { CSSProperties } from 'react';
-import { Squircle } from './Squircle';
-import { color } from '../theme/tokens';
+import type { CSSProperties } from "react";
+import { Squircle } from "./Squircle";
+import { color } from "../theme/tokens";
 
 // Glyph height as a fraction of the tile (measured from the Figma pin:
 // ~20px glyph on a 32px tile).
@@ -35,15 +35,15 @@ export function VenuePin({
       style={{
         width: size,
         height: size,
-        display: 'grid',
-        placeItems: 'center',
+        display: "grid",
+        placeItems: "center",
         ...style,
       }}
     >
       <img
         src={icon}
         alt=""
-        style={{ height: size * iconRatio, width: 'auto', display: 'block' }}
+        style={{ height: size * iconRatio, width: "auto", display: "block" }}
       />
     </Squircle>
   );

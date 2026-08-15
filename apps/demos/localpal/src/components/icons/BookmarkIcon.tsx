@@ -9,7 +9,7 @@
  */
 export function BookmarkIcon({
   size = 18,
-  color = '#FEFEFE',
+  color = "#FEFEFE",
   filled = false,
 }: {
   size?: number;
@@ -23,7 +23,7 @@ export function BookmarkIcon({
       viewBox="0 0 18 22"
       fill="none"
       aria-hidden
-      style={{ display: 'block' }}
+      style={{ display: "block" }}
     >
       {/* Outline ring — the bookmark border with the hollow interior. */}
       <path
@@ -32,7 +32,10 @@ export function BookmarkIcon({
       />
       {/* Interior — fills the hollow when saved. */}
       {filled && (
-        <path d="M2.25056 2.2033H15.7506V18.5933L9 12.1L2.25056 18.5933V2.2033Z" fill={color} />
+        <path
+          d="M2.25056 2.2033H15.7506V18.5933L9 12.1L2.25056 18.5933V2.2033Z"
+          fill={color}
+        />
       )}
     </svg>
   );

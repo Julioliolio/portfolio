@@ -14,16 +14,16 @@
  * zoom-through — the toy world accelerates past the camera and fades,
  * revealing the real map already flying its landing dolly.
  */
-import { layerZoom } from '../../theme/motion';
+import { layerZoom } from "../../theme/motion";
 import {
   stagePalette,
   stageArt,
   stagePoses,
   stagePoseMs,
   stageExit,
-} from '../../theme/onboardingStage';
-import type { StepId } from './OnboardingFlow';
-import toyCityMap from '../../assets/onboarding/toy-city-map.svg';
+} from "../../theme/onboardingStage";
+import type { StepId } from "./OnboardingFlow";
+import toyCityMap from "../../assets/onboarding/toy-city-map.svg";
 
 const P = stagePalette;
 
@@ -37,25 +37,27 @@ export function ToyMap({ step, exiting }: { step: StepId; exiting: boolean }) {
     <div
       aria-hidden
       style={{
-        position: 'absolute',
+        position: "absolute",
         inset: 0,
-        overflow: 'hidden',
+        overflow: "hidden",
         background: P.land,
         opacity: exiting ? 0 : 1,
-        transition: exiting ? `opacity ${stageExit.ms}ms ${stageExit.ease}` : undefined,
-        pointerEvents: 'none',
+        transition: exiting
+          ? `opacity ${stageExit.ms}ms ${stageExit.ease}`
+          : undefined,
+        pointerEvents: "none",
       }}
     >
       {/* pose layer — zooms/nudges about the screen center */}
       <div
         style={{
-          position: 'absolute',
+          position: "absolute",
           inset: 0,
           transform: stageTransform,
           transition: exiting
             ? `transform ${stageExit.ms}ms ${stageExit.ease}`
             : `transform ${stagePoseMs}ms ${layerZoom.ease}`,
-          willChange: 'transform',
+          willChange: "transform",
         }}
       >
         {/* the artwork, at native size, in its exact mock placement */}
@@ -65,12 +67,12 @@ export function ToyMap({ step, exiting }: { step: StepId; exiting: boolean }) {
           width={stageArt.width}
           height={stageArt.height}
           style={{
-            position: 'absolute',
+            position: "absolute",
             left: 0,
             top: 0,
-            maxWidth: 'none',
+            maxWidth: "none",
             transform: `translate(${stageArt.x}px, ${stageArt.y}px) rotate(${stageArt.rotate}deg)`,
-            transformOrigin: '0 0',
+            transformOrigin: "0 0",
           }}
         />
       </div>
@@ -79,7 +81,7 @@ export function ToyMap({ step, exiting }: { step: StepId; exiting: boolean }) {
           behind the title and footer zones so ink text always reads. */}
       <div
         style={{
-          position: 'absolute',
+          position: "absolute",
           inset: 0,
           background:
             `linear-gradient(180deg, rgba(${P.vignette},0.85) 0%, rgba(${P.vignette},0) 32%, ` +

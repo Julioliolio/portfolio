@@ -1,40 +1,67 @@
-import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
-import { AnimatePresence, animate, motion } from 'framer-motion';
-import Map, { Layer, Marker, Source, type MapLayerMouseEvent, type MapRef } from 'react-map-gl/maplibre';
-import 'maplibre-gl/dist/maplibre-gl.css';
-import { color, font, device } from '../theme/tokens';
-import { MapPin } from '../components/MapPin';
-import { BottomBar, CAL } from '../components/BottomBar';
-import { useCameraEase, useMotion, usePressFeedback } from '../components/MotionProvider';
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import { AnimatePresence, animate, motion } from "framer-motion";
+import Map, {
+  Layer,
+  Marker,
+  Source,
+  type MapLayerMouseEvent,
+  type MapRef,
+} from "react-map-gl/maplibre";
+import "maplibre-gl/dist/maplibre-gl.css";
+import { color, font, device } from "../theme/tokens";
+import { MapPin } from "../components/MapPin";
+import { BottomBar, CAL } from "../components/BottomBar";
+import {
+  useCameraEase,
+  useMotion,
+  usePressFeedback,
+} from "../components/MotionProvider";
 import {
   usePinSize,
   useFocusRadius,
   useCenterFocusZone,
-} from '../components/PinSizeProvider';
-import { computeClusters, type Placement, type PinStack } from '../components/mapClusters';
-import { EdgeZoom } from '../components/EdgeZoom';
-import { defaultMapCluster } from '../theme/mapClusters';
-import { useMapDensity } from '../components/MapDensityProvider';
-import { PlaceHint } from '../components/PlaceHint';
-import { LocationDot } from '../components/LocationDot';
-import { VenuePin } from '../components/VenuePin';
-import { ProfileFlow, type ProfileView } from '../components/profile/ProfileFlow';
-import { MessagesFlow, type MessagesView } from '../components/messages/MessagesFlow';
-import { RouteBanner } from '../components/profile/RouteBanner';
-import { PEOPLE, ME, type PersonId } from '../data/people';
-import type { InitialFlow } from '../demo/flows';
-import { VENUES, type VenueId } from '../data/venues';
-import { MAP_PEER_PLANS, type PeerPlan } from '../data/peerPlans';
-import { matchesFilters, type FilterChip } from '../search/filters';
-import { VENUE_FILTER_FACTS, planFilterFacts } from '../search/corpus';
-import { ACTIVITY_CTA, type ActivityView } from '../components/ActivitySheet';
-import type { CreatePlanResult } from '../components/CreatePlanSheet';
-import { usePlansState, type CreatedPlan } from '../components/PlansProvider';
-import { OnboardingFlow, type OnboardingResult } from '../components/onboarding/OnboardingFlow';
-import { TourBanner, TourBubble, FirstPlanCard } from '../components/onboarding/TourPopups';
-import { useConfirmOpen } from '../components/ConfirmProvider';
-import { pickSpotlight } from '../theme/interests';
-import { stageExit } from '../theme/onboardingStage';
+} from "../components/PinSizeProvider";
+import {
+  computeClusters,
+  type Placement,
+  type PinStack,
+} from "../components/mapClusters";
+import { EdgeZoom } from "../components/EdgeZoom";
+import { defaultMapCluster } from "../theme/mapClusters";
+import { useMapDensity } from "../components/MapDensityProvider";
+import { PlaceHint } from "../components/PlaceHint";
+import { LocationDot } from "../components/LocationDot";
+import { VenuePin } from "../components/VenuePin";
+import {
+  ProfileFlow,
+  type ProfileView,
+} from "../components/profile/ProfileFlow";
+import {
+  MessagesFlow,
+  type MessagesView,
+} from "../components/messages/MessagesFlow";
+import { RouteBanner } from "../components/profile/RouteBanner";
+import { PEOPLE, ME, type PersonId } from "../data/people";
+import type { InitialFlow } from "../demo/flows";
+import { VENUES, type VenueId } from "../data/venues";
+import { MAP_PEER_PLANS, type PeerPlan } from "../data/peerPlans";
+import { matchesFilters, type FilterChip } from "../search/filters";
+import { VENUE_FILTER_FACTS, planFilterFacts } from "../search/corpus";
+import { ACTIVITY_CTA, type ActivityView } from "../components/ActivitySheet";
+import type { CreatePlanResult } from "../components/CreatePlanSheet";
+import { usePlansState, type CreatedPlan } from "../components/PlansProvider";
+import {
+  OnboardingFlow,
+  type OnboardingResult,
+} from "../components/onboarding/OnboardingFlow";
+import {
+  TourBanner,
+  TourBubble,
+  FirstPlanCard,
+} from "../components/onboarding/TourPopups";
+import { useConfirmOpen } from "../components/ConfirmProvider";
+import { pickSpotlight } from "../theme/interests";
+import { stageExit } from "../theme/onboardingStage";
 
 /**
  * LocalPal — Map home over a real MapLibre map (OpenFreeMap "Liberty" style,
@@ -73,19 +100,17 @@ const quantizeZoom = (z: number) => Math.round(z / ZOOM_QUANTUM) * ZOOM_QUANTUM;
 
 // Custom MapLibre style tuned to Google Maps colors (see public/map-style.json).
 // Free OpenFreeMap vector tiles, no API key.
-const MAP_STYLE = import.meta.env.BASE_URL + 'map-style.json';
+const MAP_STYLE = import.meta.env.BASE_URL + "map-style.json";
 
 // Both pin types are the shared native components (same ones the rest of the
 // app uses): VenuePin (blue tile + centralized SVG glyph, venues/organizations)
 // and PeerPin (photo tile + badge, peer-proposed plans). One size for all pins
 // — tunable live from the Lab (see theme/mapPins.ts + PinSizeProvider).
 
-export type Pin = { lng: number; lat: number; priority: number } & (
+export type Pin = { lng: number; lat: number; priority: number } &
   // Venue pins draw their glyph from VENUES[venueId].icon (single source of
   // truth) — no per-pin icon here, so the map can never drift from the sheet.
-  | { kind: 'venue'; venueId: VenueId }
-  | { kind: 'peer'; planId: string }
-);
+  ({ kind: "venue"; venueId: VenueId } | { kind: "peer"; planId: string });
 
 // Scattered around central Madrid so they read like the original layout. Peer
 // pins carry the standalone plan they open (see data/peerPlans MAP_PEER_PLANS).
@@ -93,74 +118,314 @@ export type Pin = { lng: number; lat: number; priority: number } & (
 // group's top pin keeps its full tile (Bump-style; see theme/mapClusters.ts).
 // Peers outrank venues so people never demote to dots — they stack instead.
 const pins: Pin[] = [
-  { kind: 'venue', venueId: 'ritas', lng: -3.7078, lat: 40.4188, priority: 70 },
-  { kind: 'peer', planId: 'mp-lluc', lng: -3.6998, lat: 40.4182, priority: 95 },
-  { kind: 'peer', planId: 'mp-picnic', lng: -3.7092, lat: 40.4150, priority: 90 },
-  { kind: 'venue', venueId: 'molienda', lng: -3.7035, lat: 40.4142, priority: 55 },
-  { kind: 'venue', venueId: 'deldiego', lng: -3.6985, lat: 40.4122, priority: 45 },
-  { kind: 'peer', planId: 'mp-crawl', lng: -3.7098, lat: 40.4100, priority: 85 },
-  { kind: 'venue', venueId: 'toma', lng: -3.7057, lat: 40.4271, priority: 60 },
-  { kind: 'venue', venueId: 'uadibloc', lng: -3.6580, lat: 40.3905, priority: 40 }, // Vallecas (SE)
-  { kind: 'venue', venueId: 'costello', lng: -3.7160, lat: 40.4300, priority: 65 }, // Argüelles (W)
-  { kind: 'venue', venueId: 'wurlitzer', lng: -3.6120, lat: 40.4330, priority: 35 }, // San Blas (E)
+  { kind: "venue", venueId: "ritas", lng: -3.7078, lat: 40.4188, priority: 70 },
+  { kind: "peer", planId: "mp-lluc", lng: -3.6998, lat: 40.4182, priority: 95 },
+  {
+    kind: "peer",
+    planId: "mp-picnic",
+    lng: -3.7092,
+    lat: 40.415,
+    priority: 90,
+  },
+  {
+    kind: "venue",
+    venueId: "molienda",
+    lng: -3.7035,
+    lat: 40.4142,
+    priority: 55,
+  },
+  {
+    kind: "venue",
+    venueId: "deldiego",
+    lng: -3.6985,
+    lat: 40.4122,
+    priority: 45,
+  },
+  { kind: "peer", planId: "mp-crawl", lng: -3.7098, lat: 40.41, priority: 85 },
+  { kind: "venue", venueId: "toma", lng: -3.7057, lat: 40.4271, priority: 60 },
+  {
+    kind: "venue",
+    venueId: "uadibloc",
+    lng: -3.658,
+    lat: 40.3905,
+    priority: 40,
+  }, // Vallecas (SE)
+  { kind: "venue", venueId: "costello", lng: -3.716, lat: 40.43, priority: 65 }, // Argüelles (W)
+  {
+    kind: "venue",
+    venueId: "wurlitzer",
+    lng: -3.612,
+    lat: 40.433,
+    priority: 35,
+  }, // San Blas (E)
 
   // — Cushion venues, scattered across Madrid's neighbourhoods —
-  { kind: 'venue', venueId: 'salmonguru', lng: -3.6985, lat: 40.4145, priority: 68 },  // Huertas
-  { kind: 'venue', venueId: 'angelita', lng: -3.6800, lat: 40.4240, priority: 58 },    // Salamanca
-  { kind: 'venue', venueId: 'ojala', lng: -3.6960, lat: 40.4650, priority: 42 },       // Tetuán (N)
-  { kind: 'venue', venueId: 'federal', lng: -3.6830, lat: 40.4630, priority: 50 },     // Chamartín (N)
-  { kind: 'venue', venueId: 'lacomba', lng: -3.7095, lat: 40.4112, priority: 52 },     // La Latina
-  { kind: 'venue', venueId: 'caracol', lng: -3.7010, lat: 40.3850, priority: 60 },     // Usera (S)
-  { kind: 'venue', venueId: 'riviera', lng: -3.7198, lat: 40.4092, priority: 63 },     // Madrid Río
-  { kind: 'venue', venueId: 'fabrica', lng: -3.7200, lat: 40.3870, priority: 38 },   // Carabanchel (SW)
-  { kind: 'venue', venueId: 'comercial', lng: -3.7003, lat: 40.4295, priority: 55 },   // Bilbao
-  { kind: 'venue', venueId: 'bendito', lng: -3.6430, lat: 40.4620, priority: 44 },     // Hortaleza (NE)
-  { kind: 'venue', venueId: 'junco', lng: -3.7010, lat: 40.4405, priority: 62 },       // Chamberí (Ríos Rosas)
-  { kind: 'venue', venueId: 'sanfernando', lng: -3.7008, lat: 40.4075, priority: 46 }, // Lavapiés
-  { kind: 'venue', venueId: 'macera', lng: -3.7030, lat: 40.4360, priority: 48 },      // Chamberí
-  { kind: 'venue', venueId: 'salaequis', lng: -3.7780, lat: 40.4560, priority: 54 },   // Aravaca (W)
-  { kind: 'venue', venueId: 'florida', lng: -3.6835, lat: 40.4155, priority: 57 },     // Retiro
-  { kind: 'venue', venueId: 'framboise', lng: -3.6420, lat: 40.4460, priority: 40 },   // Ciudad Lineal (E)
-  { kind: 'venue', venueId: 'reinasofia', lng: -3.6938, lat: 40.4083, priority: 66 },  // Atocha — museum (culture)
-  { kind: 'venue', venueId: 'matadero', lng: -3.6992, lat: 40.3924, priority: 58 },    // Legazpi — arts centre (culture)
+  {
+    kind: "venue",
+    venueId: "salmonguru",
+    lng: -3.6985,
+    lat: 40.4145,
+    priority: 68,
+  }, // Huertas
+  { kind: "venue", venueId: "angelita", lng: -3.68, lat: 40.424, priority: 58 }, // Salamanca
+  { kind: "venue", venueId: "ojala", lng: -3.696, lat: 40.465, priority: 42 }, // Tetuán (N)
+  { kind: "venue", venueId: "federal", lng: -3.683, lat: 40.463, priority: 50 }, // Chamartín (N)
+  {
+    kind: "venue",
+    venueId: "lacomba",
+    lng: -3.7095,
+    lat: 40.4112,
+    priority: 52,
+  }, // La Latina
+  { kind: "venue", venueId: "caracol", lng: -3.701, lat: 40.385, priority: 60 }, // Usera (S)
+  {
+    kind: "venue",
+    venueId: "riviera",
+    lng: -3.7198,
+    lat: 40.4092,
+    priority: 63,
+  }, // Madrid Río
+  { kind: "venue", venueId: "fabrica", lng: -3.72, lat: 40.387, priority: 38 }, // Carabanchel (SW)
+  {
+    kind: "venue",
+    venueId: "comercial",
+    lng: -3.7003,
+    lat: 40.4295,
+    priority: 55,
+  }, // Bilbao
+  { kind: "venue", venueId: "bendito", lng: -3.643, lat: 40.462, priority: 44 }, // Hortaleza (NE)
+  { kind: "venue", venueId: "junco", lng: -3.701, lat: 40.4405, priority: 62 }, // Chamberí (Ríos Rosas)
+  {
+    kind: "venue",
+    venueId: "sanfernando",
+    lng: -3.7008,
+    lat: 40.4075,
+    priority: 46,
+  }, // Lavapiés
+  { kind: "venue", venueId: "macera", lng: -3.703, lat: 40.436, priority: 48 }, // Chamberí
+  {
+    kind: "venue",
+    venueId: "salaequis",
+    lng: -3.778,
+    lat: 40.456,
+    priority: 54,
+  }, // Aravaca (W)
+  {
+    kind: "venue",
+    venueId: "florida",
+    lng: -3.6835,
+    lat: 40.4155,
+    priority: 57,
+  }, // Retiro
+  {
+    kind: "venue",
+    venueId: "framboise",
+    lng: -3.642,
+    lat: 40.446,
+    priority: 40,
+  }, // Ciudad Lineal (E)
+  {
+    kind: "venue",
+    venueId: "reinasofia",
+    lng: -3.6938,
+    lat: 40.4083,
+    priority: 66,
+  }, // Atocha — museum (culture)
+  {
+    kind: "venue",
+    venueId: "matadero",
+    lng: -3.6992,
+    lat: 40.3924,
+    priority: 58,
+  }, // Legazpi — arts centre (culture)
 
   // — Cushion peer pins (standalone plans), across the city —
-  { kind: 'peer', planId: 'mp-flamenco', lng: -3.7028, lat: 40.4088, priority: 88 },          // Lavapiés
-  { kind: 'peer', planId: 'mp-retiro-row', lng: -3.6825, lat: 40.4178, priority: 86 },         // Retiro
-  { kind: 'peer', planId: 'mp-thrift', lng: -3.7038, lat: 40.4262, priority: 82 },             // Malasaña
-  { kind: 'peer', planId: 'mp-language', lng: -3.6975, lat: 40.4212, priority: 91 },           // Chueca
-  { kind: 'peer', planId: 'mp-rooftop-salamanca', lng: -3.6835, lat: 40.4238, priority: 89 },  // Salamanca
-  { kind: 'peer', planId: 'mp-runriver', lng: -3.7135, lat: 40.3985, priority: 80 },           // Madrid Río
-  { kind: 'peer', planId: 'mp-museum', lng: -3.6945, lat: 40.4088, priority: 84 },             // Atocha
-  { kind: 'peer', planId: 'mp-churros', lng: -3.7075, lat: 40.4168, priority: 87 },            // Sol
-  { kind: 'peer', planId: 'mp-bookclub', lng: -3.7000, lat: 40.4365, priority: 83 },           // Chamberí
-  { kind: 'peer', planId: 'mp-football', lng: -3.7055, lat: 40.4378, priority: 81 },           // Chamberí
-  { kind: 'peer', planId: 'mp-tapas-latina', lng: -3.7098, lat: 40.4108, priority: 90 },       // La Latina
-  { kind: 'peer', planId: 'mp-yoga', lng: -3.7175, lat: 40.4238, priority: 85 },               // Debod
-  { kind: 'peer', planId: 'mp-boardgames', lng: -3.6790, lat: 40.4265, priority: 82 },         // Salamanca
-  { kind: 'peer', planId: 'mp-rastro', lng: -3.7075, lat: 40.4072, priority: 84 },             // La Latina/Rastro
-  { kind: 'peer', planId: 'mp-jazzbar', lng: -3.6730, lat: 40.4160, priority: 86 },            // Retiro
-  { kind: 'peer', planId: 'mp-terraza', lng: -3.6968, lat: 40.4198, priority: 92 },            // Chueca
+  {
+    kind: "peer",
+    planId: "mp-flamenco",
+    lng: -3.7028,
+    lat: 40.4088,
+    priority: 88,
+  }, // Lavapiés
+  {
+    kind: "peer",
+    planId: "mp-retiro-row",
+    lng: -3.6825,
+    lat: 40.4178,
+    priority: 86,
+  }, // Retiro
+  {
+    kind: "peer",
+    planId: "mp-thrift",
+    lng: -3.7038,
+    lat: 40.4262,
+    priority: 82,
+  }, // Malasaña
+  {
+    kind: "peer",
+    planId: "mp-language",
+    lng: -3.6975,
+    lat: 40.4212,
+    priority: 91,
+  }, // Chueca
+  {
+    kind: "peer",
+    planId: "mp-rooftop-salamanca",
+    lng: -3.6835,
+    lat: 40.4238,
+    priority: 89,
+  }, // Salamanca
+  {
+    kind: "peer",
+    planId: "mp-runriver",
+    lng: -3.7135,
+    lat: 40.3985,
+    priority: 80,
+  }, // Madrid Río
+  {
+    kind: "peer",
+    planId: "mp-museum",
+    lng: -3.6945,
+    lat: 40.4088,
+    priority: 84,
+  }, // Atocha
+  {
+    kind: "peer",
+    planId: "mp-churros",
+    lng: -3.7075,
+    lat: 40.4168,
+    priority: 87,
+  }, // Sol
+  {
+    kind: "peer",
+    planId: "mp-bookclub",
+    lng: -3.7,
+    lat: 40.4365,
+    priority: 83,
+  }, // Chamberí
+  {
+    kind: "peer",
+    planId: "mp-football",
+    lng: -3.7055,
+    lat: 40.4378,
+    priority: 81,
+  }, // Chamberí
+  {
+    kind: "peer",
+    planId: "mp-tapas-latina",
+    lng: -3.7098,
+    lat: 40.4108,
+    priority: 90,
+  }, // La Latina
+  { kind: "peer", planId: "mp-yoga", lng: -3.7175, lat: 40.4238, priority: 85 }, // Debod
+  {
+    kind: "peer",
+    planId: "mp-boardgames",
+    lng: -3.679,
+    lat: 40.4265,
+    priority: 82,
+  }, // Salamanca
+  {
+    kind: "peer",
+    planId: "mp-rastro",
+    lng: -3.7075,
+    lat: 40.4072,
+    priority: 84,
+  }, // La Latina/Rastro
+  {
+    kind: "peer",
+    planId: "mp-jazzbar",
+    lng: -3.673,
+    lat: 40.416,
+    priority: 86,
+  }, // Retiro
+  {
+    kind: "peer",
+    planId: "mp-terraza",
+    lng: -3.6968,
+    lat: 40.4198,
+    priority: 92,
+  }, // Chueca
 
   // — Outer districts: the rest of Madrid, well beyond the centre. Sparser than
   //   the core (which keeps the higher concentration), but reaching every edge. —
-  { kind: 'peer', planId: 'mp-casadecampo', lng: -3.7480, lat: 40.4190, priority: 84 },        // Casa de Campo (W)
-  { kind: 'peer', planId: 'mp-jc1run', lng: -3.6120, lat: 40.4650, priority: 80 },             // Juan Carlos I (NE)
-  { kind: 'peer', planId: 'mp-vallecas', lng: -3.6650, lat: 40.3915, priority: 85 },           // Vallecas (SE)
-  { kind: 'peer', planId: 'mp-chamartin', lng: -3.6770, lat: 40.4600, priority: 81 },          // Chamartín (N)
-  { kind: 'peer', planId: 'mp-tetuan', lng: -3.6985, lat: 40.4600, priority: 83 },             // Tetuán (N)
-  { kind: 'peer', planId: 'mp-hortaleza', lng: -3.6420, lat: 40.4560, priority: 79 },          // Hortaleza (NE)
-  { kind: 'peer', planId: 'mp-usera', lng: -3.7060, lat: 40.3820, priority: 84 },              // Usera (S)
-  { kind: 'peer', planId: 'mp-carabanchel', lng: -3.7280, lat: 40.3835, priority: 82 },        // Carabanchel (SW)
-  { kind: 'peer', planId: 'mp-aluche', lng: -3.7560, lat: 40.3880, priority: 79 },             // Aluche (W)
-  { kind: 'peer', planId: 'mp-metropolitano', lng: -3.5990, lat: 40.4360, priority: 86 },      // San Blas (E)
-  { kind: 'peer', planId: 'mp-barajas', lng: -3.5820, lat: 40.4720, priority: 78 },            // Barajas (NE edge)
-  { kind: 'peer', planId: 'mp-matadero', lng: -3.6975, lat: 40.3910, priority: 85 },           // Legazpi/Arganzuela (S)
-  { kind: 'peer', planId: 'mp-sanchinarro', lng: -3.6600, lat: 40.4880, priority: 78 },        // Sanchinarro (far N)
-  { kind: 'peer', planId: 'mp-villaverde', lng: -3.6960, lat: 40.3450, priority: 80 },         // Villaverde (far S)
+  {
+    kind: "peer",
+    planId: "mp-casadecampo",
+    lng: -3.748,
+    lat: 40.419,
+    priority: 84,
+  }, // Casa de Campo (W)
+  { kind: "peer", planId: "mp-jc1run", lng: -3.612, lat: 40.465, priority: 80 }, // Juan Carlos I (NE)
+  {
+    kind: "peer",
+    planId: "mp-vallecas",
+    lng: -3.665,
+    lat: 40.3915,
+    priority: 85,
+  }, // Vallecas (SE)
+  {
+    kind: "peer",
+    planId: "mp-chamartin",
+    lng: -3.677,
+    lat: 40.46,
+    priority: 81,
+  }, // Chamartín (N)
+  { kind: "peer", planId: "mp-tetuan", lng: -3.6985, lat: 40.46, priority: 83 }, // Tetuán (N)
+  {
+    kind: "peer",
+    planId: "mp-hortaleza",
+    lng: -3.642,
+    lat: 40.456,
+    priority: 79,
+  }, // Hortaleza (NE)
+  { kind: "peer", planId: "mp-usera", lng: -3.706, lat: 40.382, priority: 84 }, // Usera (S)
+  {
+    kind: "peer",
+    planId: "mp-carabanchel",
+    lng: -3.728,
+    lat: 40.3835,
+    priority: 82,
+  }, // Carabanchel (SW)
+  { kind: "peer", planId: "mp-aluche", lng: -3.756, lat: 40.388, priority: 79 }, // Aluche (W)
+  {
+    kind: "peer",
+    planId: "mp-metropolitano",
+    lng: -3.599,
+    lat: 40.436,
+    priority: 86,
+  }, // San Blas (E)
+  {
+    kind: "peer",
+    planId: "mp-barajas",
+    lng: -3.582,
+    lat: 40.472,
+    priority: 78,
+  }, // Barajas (NE edge)
+  {
+    kind: "peer",
+    planId: "mp-matadero",
+    lng: -3.6975,
+    lat: 40.391,
+    priority: 85,
+  }, // Legazpi/Arganzuela (S)
+  {
+    kind: "peer",
+    planId: "mp-sanchinarro",
+    lng: -3.66,
+    lat: 40.488,
+    priority: 78,
+  }, // Sanchinarro (far N)
+  {
+    kind: "peer",
+    planId: "mp-villaverde",
+    lng: -3.696,
+    lat: 40.345,
+    priority: 80,
+  }, // Villaverde (far S)
 ];
 
-const pinId = (p: Pin) => (p.kind === 'venue' ? p.venueId : p.planId);
+const pinId = (p: Pin) => (p.kind === "venue" ? p.venueId : p.planId);
 
 // Where the selected pin should land on screen when the venue sheet opens:
 // the lozenge centers at y≈146 in the visible map strip above the sheet
@@ -202,7 +467,7 @@ export function MapHome({
    *  'plans' is opened by BottomBar (autoOpenPlans); the rest run here. */
   initialFlow?: InitialFlow;
 }) {
-  const [cursor, setCursor] = useState<'grab' | 'grabbing'>('grab');
+  const [cursor, setCursor] = useState<"grab" | "grabbing">("grab");
   // ---- Onboarding ----
   // The flow is a full brand surface over the mounted map; completing it zooms
   // the surface away as a 'parent' layer while the camera flies down into the
@@ -215,7 +480,9 @@ export function MapHome({
   // plan: banner → coach bubble on the spotlighted pin → bubble on Join →
   // milestone card → bubble on the calendar button. Each beat waits for the
   // real action (nothing blocks the UI); the ✕ on any popup kills the tour.
-  const [tour, setTour] = useState<'welcome' | 'pin' | 'join' | 'celebrate' | 'plans' | null>(null);
+  const [tour, setTour] = useState<
+    "welcome" | "pin" | "join" | "celebrate" | "plans" | null
+  >(null);
   const [firstPlan, setFirstPlan] = useState<PeerPlan | null>(null);
   const endTour = useCallback(() => {
     setTour(null);
@@ -227,7 +494,9 @@ export function MapHome({
   const [activityStack, setActivityStack] = useState<ActivityView[]>([]);
   // Create-plan flow: which surface it grew from (venue CTA / plans sheet).
   // Lives here because confirming mints a real map pin + camera move.
-  const [createFrom, setCreateFrom] = useState<'venue' | 'plans' | 'profile' | null>(null);
+  const [createFrom, setCreateFrom] = useState<
+    "venue" | "plans" | "profile" | null
+  >(null);
   // Active filter chips (manual + AI-minted — categories, days, vibes). Held
   // here — not in BottomBar — so the selection PERSISTS after the search sheet
   // closes and can filter which pins the map shows.
@@ -237,7 +506,9 @@ export function MapHome({
   const lastCreatedRef = useRef<CreatedPlan | null>(null);
   // Live zoom drives the screen-space clustering (pins demote/merge as they
   // start colliding — see theme/mapClusters.ts for the behavior spec).
-  const [zoom, setZoom] = useState(quantizeZoom(onboarding ? ONBOARDING_ZOOM : START_ZOOM));
+  const [zoom, setZoom] = useState(
+    quantizeZoom(onboarding ? ONBOARDING_ZOOM : START_ZOOM),
+  );
   const mapRef = useRef<MapRef>(null);
   const pinSize = usePinSize();
   const focusRadius = useFocusRadius();
@@ -250,8 +521,8 @@ export function MapHome({
   // True when the camera already sits on the user's blue dot — drives the
   // locate button's visibility (it hides when there's nothing to recenter).
   const [cameraCentered, setCameraCentered] = useState(false);
-  const entrance = useMotion('entrance');
-  const morph = useMotion('morph');
+  const entrance = useMotion("entrance");
+  const morph = useMotion("morph");
   const press = usePressFeedback();
   // The location halo rests calm and pulses a couple of slow breaths only when
   // the locate button recenters on it. Bumping this tick remounts the halo (via
@@ -281,14 +552,16 @@ export function MapHome({
   // Route-map mode: whose done-activity route owns the map right now.
   const [routePersonId, setRoutePersonId] = useState<PersonId | null>(null);
   // Camera to restore when leaving route mode.
-  const preRouteCam = useRef<{ center: [number, number]; zoom: number } | null>(null);
+  const preRouteCam = useRef<{ center: [number, number]; zoom: number } | null>(
+    null,
+  );
 
   // Static mock pins + one peer pin per plan created through the flow.
   const allPins = useMemo<Pin[]>(
     () => [
       ...pins,
       ...createdPlans.map((cp) => ({
-        kind: 'peer' as const,
+        kind: "peer" as const,
         planId: cp.plan.id,
         lng: cp.lng,
         lat: cp.lat,
@@ -310,9 +583,9 @@ export function MapHome({
   const activityRoot = activityStack[0];
   const selectedId =
     venueId ??
-    (activityRoot?.kind === 'peer'
+    (activityRoot?.kind === "peer"
       ? activityRoot.plan.id
-      : activityRoot?.kind === 'event'
+      : activityRoot?.kind === "event"
         ? activityRoot.venueId
         : null);
 
@@ -325,7 +598,8 @@ export function MapHome({
     if (filters.length === 0) return allPins;
     return allPins.filter((p) => {
       if (pinId(p) === selectedId) return true;
-      if (p.kind === 'venue') return matchesFilters(VENUE_FILTER_FACTS[p.venueId], filters);
+      if (p.kind === "venue")
+        return matchesFilters(VENUE_FILTER_FACTS[p.venueId], filters);
       const plan = planById(p.planId);
       return plan != null && matchesFilters(planFilterFacts(plan), filters);
     });
@@ -334,7 +608,8 @@ export function MapHome({
 
   // Any open card (venue / my-plans / peer / create flow) hides the top-right
   // avatar so the card owns the screen — it springs back on the bare map.
-  const cardOpen = venueId !== null || activityStack.length > 0 || createFrom !== null;
+  const cardOpen =
+    venueId !== null || activityStack.length > 0 || createFrom !== null;
   // Read from the per-frame move handler without making it a dependency.
   const cardOpenRef = useRef(cardOpen);
   cardOpenRef.current = cardOpen;
@@ -352,13 +627,13 @@ export function MapHome({
   // ±hysteresis band so a camera ease sitting on a boundary can't flicker
   // pins between modes.
   const density = useMapDensity();
-  const tierRef = useRef<'far' | 'mid' | 'near'>('near');
+  const tierRef = useRef<"far" | "mid" | "near">("near");
   const tier = useMemo(() => {
     const prev = tierRef.current;
     const h = density.tierHysteresis;
-    const farEdge = density.farZoom + (prev === 'far' ? h : -h);
-    const nearEdge = density.nearZoom + (prev === 'near' ? -h : h);
-    const next = zoom < farEdge ? 'far' : zoom >= nearEdge ? 'near' : 'mid';
+    const farEdge = density.farZoom + (prev === "far" ? h : -h);
+    const nearEdge = density.nearZoom + (prev === "near" ? -h : h);
+    const next = zoom < farEdge ? "far" : zoom >= nearEdge ? "near" : "mid";
     tierRef.current = next;
     return next;
   }, [zoom, density.farZoom, density.nearZoom, density.tierHysteresis]);
@@ -369,28 +644,45 @@ export function MapHome({
   const { placements, stacks } = useMemo(() => {
     const pts = visiblePins
       .filter((p) => pinId(p) !== selectedId)
-      .map((p) => ({ id: pinId(p), lng: p.lng, lat: p.lat, kind: p.kind, priority: p.priority }));
+      .map((p) => ({
+        id: pinId(p),
+        lng: p.lng,
+        lat: p.lat,
+        kind: p.kind,
+        priority: p.priority,
+      }));
     // The onboarding spotlight pin always keeps its tile — the tour points at it.
-    if (tier === 'far') {
+    if (tier === "far") {
       // Staged exit: tiles are gone, but the quiet dots linger below farZoom
       // and only fade once the camera pulls past dotsZoom.
-      const farMode: Placement = { mode: zoom >= density.dotsZoom ? 'dot' : 'hidden' };
+      const farMode: Placement = {
+        mode: zoom >= density.dotsZoom ? "dot" : "hidden",
+      };
       // (globalThis.Map — the bare name is shadowed by the react-map-gl component.)
       const hiddenAll = new globalThis.Map<string, Placement>(
-        pts.map((p) => [p.id, p.id === spotlightId ? ({ mode: 'full' } as Placement) : farMode]),
+        pts.map((p) => [
+          p.id,
+          p.id === spotlightId ? ({ mode: "full" } as Placement) : farMode,
+        ]),
       );
       return { placements: hiddenAll, stacks: [] as PinStack[] };
     }
-    if (tier === 'mid') {
+    if (tier === "mid") {
       // Graduated budget: virtually every pin keeps its tile at the near edge
       // of the band (a district zoom still maps what's around you), thinning
       // linearly by priority to the `tileBudget` floor at the far edge — pins
       // shed one rank at a time as you zoom out, never in one drop.
       const t = Math.max(
         0,
-        Math.min(1, (zoom - density.farZoom) / Math.max(density.nearZoom - density.farZoom, 0.1)),
+        Math.min(
+          1,
+          (zoom - density.farZoom) /
+            Math.max(density.nearZoom - density.farZoom, 0.1),
+        ),
       );
-      const budget = Math.round(density.tileBudget + (pts.length - density.tileBudget) * t);
+      const budget = Math.round(
+        density.tileBudget + (pts.length - density.tileBudget) * t,
+      );
       const keep = new Set(
         [...pts]
           .sort((a, b) => b.priority - a.priority)
@@ -398,14 +690,29 @@ export function MapHome({
           .map((p) => p.id),
       );
       if (spotlightId) keep.add(spotlightId);
-      const curated = computeClusters(pts.filter((p) => keep.has(p.id)), zoom, collidePx);
+      const curated = computeClusters(
+        pts.filter((p) => keep.has(p.id)),
+        zoom,
+        collidePx,
+      );
       for (const p of pts) {
-        if (!keep.has(p.id)) curated.placements.set(p.id, { mode: 'dot' });
+        if (!keep.has(p.id)) curated.placements.set(p.id, { mode: "dot" });
       }
       return curated;
     }
     return computeClusters(pts, zoom, collidePx);
-  }, [visiblePins, zoom, collidePx, selectedId, tier, density.tileBudget, density.dotsZoom, density.farZoom, density.nearZoom, spotlightId]);
+  }, [
+    visiblePins,
+    zoom,
+    collidePx,
+    selectedId,
+    tier,
+    density.tileBudget,
+    density.dotsZoom,
+    density.farZoom,
+    density.nearZoom,
+    spotlightId,
+  ]);
 
   // Far-tier aggregate hint: one small count pill at the centroid of what the
   // map is hiding — the only content marker at that height (Bump keeps far
@@ -463,7 +770,7 @@ export function MapHome({
     let prevD: number | null = null;
     for (const p of allPinsRef.current) {
       const id = pinId(p);
-      if (placementsRef.current.get(id)?.mode !== 'full') continue;
+      if (placementsRef.current.get(id)?.mode !== "full") continue;
       const pt = map.project([p.lng, p.lat]);
       const d = Math.hypot(pt.x - cx, pt.y - cy);
       if (id === prev) prevD = d;
@@ -475,7 +782,12 @@ export function MapHome({
     let next = bestId !== null && bestD <= zonePx ? bestId : null;
     // Sticky holder: only hand off when the challenger clearly wins. A holder
     // that got demoted (no longer 'full') has prevD === null and releases.
-    if (prev && next !== prev && prevD !== null && prevD <= zonePx * FOCUS_EXIT) {
+    if (
+      prev &&
+      next !== prev &&
+      prevD !== null &&
+      prevD <= zonePx * FOCUS_EXIT
+    ) {
       if (next === null || bestD > prevD - FOCUS_STICKY_PX) next = prev;
     }
     setCenteredId((p) => (p === next ? p : next));
@@ -489,7 +801,10 @@ export function MapHome({
     if (!map) return;
     const el = map.getContainer();
     const pt = map.project([USER_LOCATION.longitude, USER_LOCATION.latitude]);
-    const off = Math.hypot(pt.x - el.clientWidth / 2, pt.y - el.clientHeight / 2);
+    const off = Math.hypot(
+      pt.x - el.clientWidth / 2,
+      pt.y - el.clientHeight / 2,
+    );
     const next = off <= 6; // px tolerance for easing/sub-pixel jitter
     setCameraCentered((prev) => (prev === next ? prev : next));
   }, []);
@@ -548,7 +863,10 @@ export function MapHome({
         onUpdate: (e) => {
           const gg = edge.current;
           if (!gg || !gg.focus) return;
-          map.jumpTo({ center: [lerp(sc.lng, flng, e), lerp(sc.lat, flat, e)], zoom: gg.zoom });
+          map.jumpTo({
+            center: [lerp(sc.lng, flng, e), lerp(sc.lat, flat, e)],
+            zoom: gg.zoom,
+          });
         },
         onComplete: () => {
           if (edge.current) edge.current.recentering = false;
@@ -575,7 +893,9 @@ export function MapHome({
     // multi-level dive toward tiles that never separate.
     const dz = Math.min(
       Math.max(
-        Math.log2((collidePx * cluster.splitMargin) / Math.max(st.minPairPx, 1)),
+        Math.log2(
+          (collidePx * cluster.splitMargin) / Math.max(st.minPairPx, 1),
+        ),
         cluster.minSplitZoom,
       ),
       cluster.maxSplitZoom,
@@ -619,12 +939,15 @@ export function MapHome({
   const diveIntoCity = () => {
     const map = mapRef.current?.getMap();
     if (!map || visiblePins.length === 0) return;
-    const mLng = visiblePins.reduce((s, p) => s + p.lng, 0) / visiblePins.length;
-    const mLat = visiblePins.reduce((s, p) => s + p.lat, 0) / visiblePins.length;
+    const mLng =
+      visiblePins.reduce((s, p) => s + p.lng, 0) / visiblePins.length;
+    const mLat =
+      visiblePins.reduce((s, p) => s + p.lat, 0) / visiblePins.length;
     const core = [...visiblePins]
       .sort(
         (a, b) =>
-          Math.hypot(a.lng - mLng, a.lat - mLat) - Math.hypot(b.lng - mLng, b.lat - mLat),
+          Math.hypot(a.lng - mLng, a.lat - mLat) -
+          Math.hypot(b.lng - mLng, b.lat - mLat),
       )
       .slice(0, Math.max(1, Math.ceil(visiblePins.length * 0.8)));
     const coreLng = core.reduce((s, p) => s + p.lng, 0) / core.length;
@@ -637,7 +960,8 @@ export function MapHome({
     const cLng = coreLng + (USER_LOCATION.longitude - coreLng) * USER_BIAS;
     const cLat = coreLat + (USER_LOCATION.latitude - coreLat) * USER_BIAS;
     // Land ~40% into the mid band: plenty of tiles/variety, still curated calm.
-    const zoomTarget = density.farZoom + (density.nearZoom - density.farZoom) * 0.42;
+    const zoomTarget =
+      density.farZoom + (density.nearZoom - density.farZoom) * 0.42;
     map.easeTo({
       center: [cLng, cLat],
       zoom: zoomTarget,
@@ -650,7 +974,7 @@ export function MapHome({
 
   // Open the venue sheet and glide the tapped pin into the map strip above it,
   // on the same clock as the surface morph.
-  const selectVenue = (pin: Pin & { kind: 'venue' }) => {
+  const selectVenue = (pin: Pin & { kind: "venue" }) => {
     setVenueId(pin.venueId);
     setActivityStack([]); // a venue tap always lands on the venue sheet
     // Fly all the way in (≈focusRadius around the pin) so it stands alone —
@@ -665,11 +989,11 @@ export function MapHome({
   };
 
   // Peer pins open their standalone plan's activity card directly.
-  const selectPeer = (pin: Pin & { kind: 'peer' }) => {
+  const selectPeer = (pin: Pin & { kind: "peer" }) => {
     const plan = planById(pin.planId);
     if (!plan) return;
     setVenueId(null); // standalone plans don't sit on a venue sheet
-    setActivityStack([{ kind: 'peer', plan }]);
+    setActivityStack([{ kind: "peer", plan }]);
     // Same deep fly-in as venues, so the focused peer tile is isolated.
     mapRef.current?.easeTo({
       center: [pin.lng, pin.lat],
@@ -697,28 +1021,38 @@ export function MapHome({
   // onClick prop must keep the same identity across the ~per-frame re-renders
   // of a camera move (an inline arrow would defeat the memo and re-render all
   // pins every frame). The routing reads the latest handlers via a ref.
-  const tapHandlers = useRef({ zoomToward, splitStack, selectVenue, selectPeer });
+  const tapHandlers = useRef({
+    zoomToward,
+    splitStack,
+    selectVenue,
+    selectPeer,
+  });
   tapHandlers.current = { zoomToward, splitStack, selectVenue, selectPeer };
-  const onPinTap = useCallback((pin: Pin, mode: Placement['mode'], stack?: PinStack) => {
-    const h = tapHandlers.current;
-    if (mode === 'dot') return h.zoomToward(pin);
-    if (mode === 'stack' && stack) return h.splitStack(stack);
-    return pin.kind === 'venue' ? h.selectVenue(pin) : h.selectPeer(pin);
-  }, []);
+  const onPinTap = useCallback(
+    (pin: Pin, mode: Placement["mode"], stack?: PinStack) => {
+      const h = tapHandlers.current;
+      if (mode === "dot") return h.zoomToward(pin);
+      if (mode === "stack" && stack) return h.splitStack(stack);
+      return pin.kind === "venue" ? h.selectVenue(pin) : h.selectPeer(pin);
+    },
+    [],
+  );
 
   // Search-list taps open the item's activity card AND fly to its pin, so it
   // gets the same focus/bob as a pin tap. Events focus their host venue's pin;
   // standalone plans focus their peer pin.
   const openEventFromSearch = (searchVenueId: VenueId, eventId: string) => {
     setVenueId(null);
-    setActivityStack([{ kind: 'event', venueId: searchVenueId, eventId }]);
-    const pin = allPins.find((p) => p.kind === 'venue' && p.venueId === searchVenueId);
+    setActivityStack([{ kind: "event", venueId: searchVenueId, eventId }]);
+    const pin = allPins.find(
+      (p) => p.kind === "venue" && p.venueId === searchVenueId,
+    );
     if (pin) flyToPin(pin);
   };
   const openPeerFromSearch = (plan: PeerPlan) => {
     setVenueId(null);
-    setActivityStack([{ kind: 'peer', plan }]);
-    const pin = allPins.find((p) => p.kind === 'peer' && p.planId === plan.id);
+    setActivityStack([{ kind: "peer", plan }]);
+    const pin = allPins.find((p) => p.kind === "peer" && p.planId === plan.id);
     if (pin) flyToPin(pin);
   };
 
@@ -731,8 +1065,10 @@ export function MapHome({
     const loc = r.location;
     let lng: number;
     let lat: number;
-    if (loc.kind === 'venue') {
-      const pin = allPins.find((p) => p.kind === 'venue' && p.venueId === loc.venueId);
+    if (loc.kind === "venue") {
+      const pin = allPins.find(
+        (p) => p.kind === "venue" && p.venueId === loc.venueId,
+      );
       // Nudged ~60m off the venue: two pins at IDENTICAL coords can never be
       // split apart by zoom, so the stack tap would dive without separating.
       lng = (pin?.lng ?? MADRID.longitude) + 0.0006;
@@ -743,16 +1079,18 @@ export function MapHome({
       lat = (center?.lat ?? MADRID.latitude) + 0.0009;
     }
     const address =
-      loc.kind === 'venue' ? VENUES[loc.venueId].address : `${loc.address}, ${loc.area}`;
+      loc.kind === "venue"
+        ? VENUES[loc.venueId].address
+        : `${loc.address}, ${loc.area}`;
     const plan: PeerPlan = {
       id: `created-${Date.now()}`,
       title: r.title,
-      host: 'You',
-      hostLine: r.tags.length > 0 ? r.tags.join(' - ') : 'Your plan',
+      host: "You",
+      hostLine: r.tags.length > 0 ? r.tags.join(" - ") : "Your plan",
       address,
       when: `${r.day} - ${r.time}`,
       description: r.description,
-      goingNames: 'Just you so far',
+      goingNames: "Just you so far",
       goingCount: 1,
     };
     const created: CreatedPlan = {
@@ -773,18 +1111,23 @@ export function MapHome({
   const routeVenuePins = useMemo(() => {
     if (!routePersonId) return [];
     return PEOPLE[routePersonId].doneVenueIds
-      .map((vid) => allPins.find((p): p is Pin & { kind: 'venue' } => p.kind === 'venue' && p.venueId === vid))
-      .filter((p): p is Pin & { kind: 'venue' } => p != null);
+      .map((vid) =>
+        allPins.find(
+          (p): p is Pin & { kind: "venue" } =>
+            p.kind === "venue" && p.venueId === vid,
+        ),
+      )
+      .filter((p): p is Pin & { kind: "venue" } => p != null);
   }, [routePersonId, allPins]);
 
   const routeLine = useMemo(
     () =>
       routeVenuePins.length > 1
         ? {
-            type: 'Feature' as const,
+            type: "Feature" as const,
             properties: {},
             geometry: {
-              type: 'LineString' as const,
+              type: "LineString" as const,
               coordinates: routeVenuePins.map((p) => [p.lng, p.lat]),
             },
           }
@@ -804,10 +1147,15 @@ export function MapHome({
     setCreateFrom(null);
     setRoutePersonId(personId);
     const coords = PEOPLE[personId].doneVenueIds
-      .map((vid) => allPins.find((p) => p.kind === 'venue' && p.venueId === vid))
+      .map((vid) =>
+        allPins.find((p) => p.kind === "venue" && p.venueId === vid),
+      )
       .filter((p): p is Pin => p != null);
     if (coords.length > 0 && map) {
-      let minLng = Infinity, maxLng = -Infinity, minLat = Infinity, maxLat = -Infinity;
+      let minLng = Infinity,
+        maxLng = -Infinity,
+        minLat = Infinity,
+        maxLat = -Infinity;
       for (const p of coords) {
         minLng = Math.min(minLng, p.lng);
         maxLng = Math.max(maxLng, p.lng);
@@ -850,7 +1198,7 @@ export function MapHome({
 
   // Host/attendee avatars on activity cards open that person's profile.
   const openProfilePerson = (personId: PersonId) => {
-    setProfileStack([{ kind: 'person', id: personId }]);
+    setProfileStack([{ kind: "person", id: personId }]);
   };
 
   // Demo launcher: on a cold mount, drop straight into the requested flow via
@@ -858,9 +1206,9 @@ export function MapHome({
   // when onboarding is armed — the flow surfaces after the first-run finishes.
   useEffect(() => {
     if (onboarding || !initialFlow) return;
-    if (initialFlow === 'create') setCreateFrom('plans');
-    else if (initialFlow === 'profile') openProfilePerson(ME);
-    else if (initialFlow === 'messages') setMessagesStack([{ kind: 'inbox' }]);
+    if (initialFlow === "create") setCreateFrom("plans");
+    else if (initialFlow === "profile") openProfilePerson(ME);
+    else if (initialFlow === "messages") setMessagesStack([{ kind: "inbox" }]);
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
@@ -871,7 +1219,7 @@ export function MapHome({
     setCreateFrom(null);
     setVenueId(null);
     if (!cp) return;
-    setActivityStack([{ kind: 'peer', plan: cp.plan }]);
+    setActivityStack([{ kind: "peer", plan: cp.plan }]);
     mapRef.current?.easeTo({
       center: [cp.lng, cp.lat],
       zoom: zoomForRadius(cp.lat, focusRadius, device.width / 2),
@@ -902,9 +1250,9 @@ export function MapHome({
     const spotInterest = pickSpotlight(r.interests);
     const spotPin = spotInterest
       ? allPins.find((p) =>
-          spotInterest.spot!.kind === 'venue'
-            ? p.kind === 'venue' && p.venueId === spotInterest.spot!.id
-            : p.kind === 'peer' && p.planId === spotInterest.spot!.id,
+          spotInterest.spot!.kind === "venue"
+            ? p.kind === "venue" && p.venueId === spotInterest.spot!.id
+            : p.kind === "peer" && p.planId === spotInterest.spot!.id,
         )
       : null;
     const targetZoom = spotPin ? 15.1 : START_ZOOM;
@@ -913,9 +1261,12 @@ export function MapHome({
     // 1.4× when the descent already landed nearby → 2.6× for a skip from the
     // welcome overview (~3.5 zoom levels out) — one continuous feel either way.
     const zoomDist = map ? Math.abs(targetZoom - map.getZoom()) : 0;
-    const revealMs = cameraEase.durationMs * Math.min(2.6, 1.4 + (zoomDist / 3.5) * 1.2);
+    const revealMs =
+      cameraEase.durationMs * Math.min(2.6, 1.4 + (zoomDist / 3.5) * 1.2);
     mapRef.current?.easeTo({
-      center: spotPin ? [spotPin.lng, spotPin.lat] : [USER_LOCATION.longitude, USER_LOCATION.latitude],
+      center: spotPin
+        ? [spotPin.lng, spotPin.lat]
+        : [USER_LOCATION.longitude, USER_LOCATION.latitude],
       zoom: targetZoom,
       duration: revealMs,
       easing: cameraEase.easing,
@@ -927,12 +1278,14 @@ export function MapHome({
       spotlightTimers.current.push(
         setTimeout(() => {
           setSpotlightId(id);
-          setTour('welcome');
+          setTour("welcome");
         }, revealMs + 150),
       );
     }
   };
-  const spotlightPin = spotlightId ? allPins.find((p) => pinId(p) === spotlightId) : null;
+  const spotlightPin = spotlightId
+    ? allPins.find((p) => pinId(p) === spotlightId)
+    : null;
 
   // ---- Tour beat machine ----
   // The stack tells the story: a peer card opening advances pin → join; the
@@ -941,15 +1294,20 @@ export function MapHome({
   const stackTop = activityStack[activityStack.length - 1];
   useEffect(() => {
     if (!tour) return;
-    const joinedView = activityStack.find((v) => v.kind === 'joined');
-    const hasPeer = activityStack.some((v) => v.kind === 'peer' || v.kind === 'joined');
-    if ((tour === 'welcome' || tour === 'pin' || tour === 'join') && joinedView) {
-      setFirstPlan(joinedView.kind === 'joined' ? joinedView.plan : null);
-      setTour('celebrate');
-    } else if ((tour === 'welcome' || tour === 'pin') && hasPeer) {
-      setTour('join');
-    } else if (tour === 'join' && !hasPeer) {
-      setTour('pin');
+    const joinedView = activityStack.find((v) => v.kind === "joined");
+    const hasPeer = activityStack.some(
+      (v) => v.kind === "peer" || v.kind === "joined",
+    );
+    if (
+      (tour === "welcome" || tour === "pin" || tour === "join") &&
+      joinedView
+    ) {
+      setFirstPlan(joinedView.kind === "joined" ? joinedView.plan : null);
+      setTour("celebrate");
+    } else if ((tour === "welcome" || tour === "pin") && hasPeer) {
+      setTour("join");
+    } else if (tour === "join" && !hasPeer) {
+      setTour("pin");
     }
   }, [activityStack, tour]);
 
@@ -958,26 +1316,36 @@ export function MapHome({
   // bubble (the goodbye) retires by itself if never acted on — but only while
   // it's actually visible (no card covering the resting chrome).
   useEffect(() => {
-    if (tour !== 'welcome') return;
-    const t = setTimeout(() => setTour('pin'), 4600);
+    if (tour !== "welcome") return;
+    const t = setTimeout(() => setTour("pin"), 4600);
     return () => clearTimeout(t);
   }, [tour]);
   useEffect(() => {
-    if (tour !== 'celebrate') return;
-    const t = setTimeout(() => setTour('plans'), 3200);
+    if (tour !== "celebrate") return;
+    const t = setTimeout(() => setTour("plans"), 3200);
     return () => clearTimeout(t);
   }, [tour]);
   useEffect(() => {
-    if (tour !== 'plans' || cardOpen) return;
+    if (tour !== "plans" || cardOpen) return;
     const t = setTimeout(endTour, 14000);
     return () => clearTimeout(t);
   }, [tour, cardOpen, endTour]);
 
   return (
-    <div style={{ position: 'relative', width: '100%', height: '100%', overflow: 'hidden' }}>
+    <div
+      style={{
+        position: "relative",
+        width: "100%",
+        height: "100%",
+        overflow: "hidden",
+      }}
+    >
       <Map
         ref={mapRef}
-        initialViewState={{ ...MADRID, zoom: onboarding ? ONBOARDING_ZOOM : START_ZOOM }}
+        initialViewState={{
+          ...MADRID,
+          zoom: onboarding ? ONBOARDING_ZOOM : START_ZOOM,
+        }}
         minZoom={MIN_ZOOM}
         maxZoom={MAX_ZOOM}
         mapStyle={MAP_STYLE}
@@ -985,9 +1353,9 @@ export function MapHome({
         // Keep the GL drawing buffer so screenshot capture (modern-screenshot)
         // can read the map canvas instead of grabbing a blank rectangle.
         canvasContextAttributes={{ preserveDrawingBuffer: true }}
-        cursor={interactive ? cursor : 'default'}
-        onDragStart={() => setCursor('grabbing')}
-        onDragEnd={() => setCursor('grab')}
+        cursor={interactive ? cursor : "default"}
+        onDragStart={() => setCursor("grabbing")}
+        onDragEnd={() => setCursor("grab")}
         onZoom={(e) => {
           // Snap to the clustering grain; equal values bail React's re-render.
           const q = quantizeZoom(e.viewState.zoom);
@@ -1004,7 +1372,8 @@ export function MapHome({
           updateCameraCentered();
           // Dev/test hook: lets scripted sessions drive the camera directly
           // (preview tabs throttle rAF, so synthetic wheel easing stalls).
-          (window as unknown as Record<string, unknown>).__lpMap = mapRef.current?.getMap();
+          (window as unknown as Record<string, unknown>).__lpMap =
+            mapRef.current?.getMap();
         }}
         onClick={onClick}
         dragPan={interactive}
@@ -1013,7 +1382,12 @@ export function MapHome({
         touchZoomRotate={interactive}
         dragRotate={false}
         keyboard={interactive}
-        style={{ position: 'absolute', inset: 0, width: '100%', height: '100%' }}
+        style={{
+          position: "absolute",
+          inset: 0,
+          width: "100%",
+          height: "100%",
+        }}
       >
         {/* Route-map mode: ONLY that person's done venues, joined by a brand
             route line in visit order (everything else hides). The line lives
@@ -1023,14 +1397,23 @@ export function MapHome({
             <Layer
               id="profile-route-line"
               type="line"
-              layout={{ 'line-cap': 'round', 'line-join': 'round' }}
-              paint={{ 'line-color': color.brand, 'line-width': 4, 'line-opacity': 0.9 }}
+              layout={{ "line-cap": "round", "line-join": "round" }}
+              paint={{
+                "line-color": color.brand,
+                "line-width": 4,
+                "line-opacity": 0.9,
+              }}
             />
           </Source>
         )}
         {routePersonId &&
           routeVenuePins.map((p, i) => (
-            <Marker key={`route-${p.venueId}`} longitude={p.lng} latitude={p.lat} anchor="center">
+            <Marker
+              key={`route-${p.venueId}`}
+              longitude={p.lng}
+              latitude={p.lat}
+              anchor="center"
+            >
               <motion.div
                 initial={{ scale: 0, opacity: 0 }}
                 animate={{ scale: 1, opacity: 1 }}
@@ -1043,33 +1426,35 @@ export function MapHome({
 
         {/* Activity pins — each is a React.memo'd MapPin, so a camera move only
             re-renders the pins whose placement actually changed (see MapPin). */}
-        {!routePersonId && visiblePins.map((p, i) => {
-          const id = pinId(p);
-          const isSelected = id === selectedId;
-          const pl: Placement = placements.get(id) ?? { mode: 'full' };
-          // Passive center-focus: a lone full tile sitting nearest the viewport
-          // center gets the subtle magnify (never a stacked/demoted/selected pin).
-          const centered = pl.mode === 'full' && !isSelected && id === centeredId;
-          return (
-            <MapPin
-              key={id}
-              pin={p}
-              mode={pl.mode}
-              slot={pl.mode === 'stack' ? pl.slot : 0}
-              stack={pl.mode === 'stack' ? pl.stack : undefined}
-              // Only stacked tiles need zoom (their fan-out is screen-px); full/
-              // dot tiles get 0 so their props stay stable across zoom frames.
-              zoomForStack={pl.mode === 'stack' ? zoom : 0}
-              isSelected={isSelected}
-              centered={centered}
-              // Identity hierarchy (Bump-style): YOUR plans render bigger than
-              // ordinary content pins — created ones carry priority 99.
-              big={p.kind === 'peer' && p.priority >= 99}
-              index={i}
-              onTap={onPinTap}
-            />
-          );
-        })}
+        {!routePersonId &&
+          visiblePins.map((p, i) => {
+            const id = pinId(p);
+            const isSelected = id === selectedId;
+            const pl: Placement = placements.get(id) ?? { mode: "full" };
+            // Passive center-focus: a lone full tile sitting nearest the viewport
+            // center gets the subtle magnify (never a stacked/demoted/selected pin).
+            const centered =
+              pl.mode === "full" && !isSelected && id === centeredId;
+            return (
+              <MapPin
+                key={id}
+                pin={p}
+                mode={pl.mode}
+                slot={pl.mode === "stack" ? pl.slot : 0}
+                stack={pl.mode === "stack" ? pl.stack : undefined}
+                // Only stacked tiles need zoom (their fan-out is screen-px); full/
+                // dot tiles get 0 so their props stay stable across zoom frames.
+                zoomForStack={pl.mode === "stack" ? zoom : 0}
+                isSelected={isSelected}
+                centered={centered}
+                // Identity hierarchy (Bump-style): YOUR plans render bigger than
+                // ordinary content pins — created ones carry priority 99.
+                big={p.kind === "peer" && p.priority >= 99}
+                index={i}
+                onTap={onPinTap}
+              />
+            );
+          })}
 
         {/* Far-tier place marker — the one content marker when the tier
             curation hides everything: the place's crest + count + name at the
@@ -1078,7 +1463,7 @@ export function MapHome({
         <AnimatePresence>
           {/* Hidden during onboarding: the crest is an invitation to tap, and
               the descent owns the camera until the flow hands over. */}
-          {!routePersonId && !onbActive && tier === 'far' && hint && (
+          {!routePersonId && !onbActive && tier === "far" && hint && (
             <Marker
               longitude={MADRID_LABEL.lng}
               latitude={MADRID_LABEL.lat}
@@ -1096,7 +1481,7 @@ export function MapHome({
                 whileTap={press.whileTap}
                 data-map-pin=""
                 onClick={diveIntoCity}
-                style={{ cursor: 'pointer' }}
+                style={{ cursor: "pointer" }}
               >
                 <PlaceHint count={hint.count} />
               </motion.div>
@@ -1106,54 +1491,59 @@ export function MapHome({
 
         {/* Stack count badges — geo-anchored at each stack's centroid,
             hugging the bottom seam of the fanned tiles (Bump-style "2"). */}
-        {!routePersonId && stacks.map((st) => {
-          const badgePx = Math.max(18, pinSize * cluster.badgeRatio);
-          return (
-            <Marker
-              key={`stack-${st.id}`}
-              longitude={st.center.lng}
-              latitude={st.center.lat}
-              anchor="center"
-              offset={[0, pinSize * 0.52]}
-              // Sit in front of the stack: its front tile paints at z = 2 + n
-              // (see stackZ), so the badge needs to beat that.
-              style={{ zIndex: 3 + st.members.length }}
-            >
-              <motion.div
-                initial={{ scale: 0 }}
-                animate={{ scale: 1 }}
-                transition={morph}
-                whileTap={press.whileTap}
-                onClick={() => splitStack(st)}
-                data-map-pin=""
-                style={{
-                  width: badgePx,
-                  height: badgePx,
-                  boxSizing: 'border-box',
-                  borderRadius: '50%',
-                  background: color.brand,
-                  color: color.onBrand,
-                  display: 'grid',
-                  placeItems: 'center',
-                  fontFamily: font.family,
-                  fontSize: badgePx * 0.5,
-                  // Center the digits optically: kill the extra line box and nudge
-                  // for the empty descender space so the glyph sits dead-center.
-                  lineHeight: 1,
-                  paddingTop: badgePx * 0.04,
-                  fontWeight: 500,
-                  cursor: 'pointer',
-                }}
+        {!routePersonId &&
+          stacks.map((st) => {
+            const badgePx = Math.max(18, pinSize * cluster.badgeRatio);
+            return (
+              <Marker
+                key={`stack-${st.id}`}
+                longitude={st.center.lng}
+                latitude={st.center.lat}
+                anchor="center"
+                offset={[0, pinSize * 0.52]}
+                // Sit in front of the stack: its front tile paints at z = 2 + n
+                // (see stackZ), so the badge needs to beat that.
+                style={{ zIndex: 3 + st.members.length }}
               >
-                {st.members.length}
-              </motion.div>
-            </Marker>
-          );
-        })}
+                <motion.div
+                  initial={{ scale: 0 }}
+                  animate={{ scale: 1 }}
+                  transition={morph}
+                  whileTap={press.whileTap}
+                  onClick={() => splitStack(st)}
+                  data-map-pin=""
+                  style={{
+                    width: badgePx,
+                    height: badgePx,
+                    boxSizing: "border-box",
+                    borderRadius: "50%",
+                    background: color.brand,
+                    color: color.onBrand,
+                    display: "grid",
+                    placeItems: "center",
+                    fontFamily: font.family,
+                    fontSize: badgePx * 0.5,
+                    // Center the digits optically: kill the extra line box and nudge
+                    // for the empty descender space so the glyph sits dead-center.
+                    lineHeight: 1,
+                    paddingTop: badgePx * 0.04,
+                    fontWeight: 500,
+                    cursor: "pointer",
+                  }}
+                >
+                  {st.members.length}
+                </motion.div>
+              </Marker>
+            );
+          })}
 
         {/* User location — pulses once when the locate button recenters on it
             (each tap bumps pulseTick; see LocationDot). */}
-        <Marker longitude={USER_LOCATION.longitude} latitude={USER_LOCATION.latitude} anchor="center">
+        <Marker
+          longitude={USER_LOCATION.longitude}
+          latitude={USER_LOCATION.latitude}
+          anchor="center"
+        >
           <LocationDot pulseTick={pulseTick} />
         </Marker>
 
@@ -1161,18 +1551,23 @@ export function MapHome({
             Hides while any card covers the map; the beat machine brings it
             back if the user wanders off without joining. */}
         <AnimatePresence>
-          {(tour === 'pin' || tour === 'welcome') && spotlightPin && !cardOpen && (
-            <Marker
-              key="tour-pin"
-              longitude={spotlightPin.lng}
-              latitude={spotlightPin.lat}
-              anchor="bottom"
-              offset={[0, -(pinSize * 0.85)]}
-              style={{ zIndex: 20 }}
-            >
-              <TourBubble text="This one matches what you're into — take a look" onSkip={endTour} />
-            </Marker>
-          )}
+          {(tour === "pin" || tour === "welcome") &&
+            spotlightPin &&
+            !cardOpen && (
+              <Marker
+                key="tour-pin"
+                longitude={spotlightPin.lng}
+                latitude={spotlightPin.lat}
+                anchor="bottom"
+                offset={[0, -(pinSize * 0.85)]}
+                style={{ zIndex: 20 }}
+              >
+                <TourBubble
+                  text="This one matches what you're into — take a look"
+                  onSkip={endTour}
+                />
+              </Marker>
+            )}
         </AnimatePresence>
       </Map>
 
@@ -1205,11 +1600,11 @@ export function MapHome({
         onConfirmCreate={confirmCreate}
         onGoToCreatedPlan={goToCreatedPlan}
         onOpenProfile={openProfilePerson}
-        autoOpenPlans={initialFlow === 'plans'}
+        autoOpenPlans={initialFlow === "plans"}
         onPlansOpened={() => {
-          if (tour === 'plans') endTour();
+          if (tour === "plans") endTour();
         }}
-        onOpenMessages={() => setMessagesStack([{ kind: 'inbox' }])}
+        onOpenMessages={() => setMessagesStack([{ kind: "inbox" }])}
         filters={filters}
         onFiltersChange={setFilters}
         onEnterGroupChat={(plan) => {
@@ -1217,14 +1612,16 @@ export function MapHome({
           // inbox underneath so "back" returns to it (flat navigation).
           setActivityStack([]);
           setVenueId(null);
-          setMessagesStack([{ kind: 'inbox' }, { kind: 'thread', plan }]);
+          setMessagesStack([{ kind: "inbox" }, { kind: "thread", plan }]);
         }}
         suppressed={routePersonId !== null || onbActive || messagesOpen}
       />
 
       {/* Route-map banner: "you're on Pere's pub crawl, not the normal map" */}
       <AnimatePresence>
-        {routePersonId && <RouteBanner personId={routePersonId} onClose={closeRoute} />}
+        {routePersonId && (
+          <RouteBanner personId={routePersonId} onClose={closeRoute} />
+        )}
       </AnimatePresence>
 
       {/* The profile flow: the top-right avatar at rest, morphing into the
@@ -1239,7 +1636,9 @@ export function MapHome({
             const same =
               t != null &&
               t.kind === view.kind &&
-              (t.kind === 'qr' || (view.kind !== 'qr' && (t as { id: string }).id === (view as { id: string }).id));
+              (t.kind === "qr" ||
+                (view.kind !== "qr" &&
+                  (t as { id: string }).id === (view as { id: string }).id));
             return same ? s : [...s, view];
           })
         }
@@ -1253,7 +1652,7 @@ export function MapHome({
           // "Create a plan" from the profile: close the profile entirely, then
           // grow the from-scratch composer out of the resting pill.
           setProfileStack([]);
-          setCreateFrom('profile');
+          setCreateFrom("profile");
         }}
         friended={friended}
         onAddFriend={(id) => setFriended((prev) => new Set(prev).add(id))}
@@ -1272,7 +1671,7 @@ export function MapHome({
       {/* ---------- First-plan tour popups (screen-anchored beats) ---------- */}
       {/* Beat 1 — the welcome banner sliding from the top */}
       <AnimatePresence>
-        {tour === 'welcome' && (
+        {tour === "welcome" && (
           <TourBanner
             title="Welcome to your map"
             body="Everything nearby lives here — we spotted something you’ll like."
@@ -1283,32 +1682,38 @@ export function MapHome({
 
       {/* Beat 3 — bubble over the Join plate while a peer card is on top */}
       <AnimatePresence>
-        {tour === 'join' && stackTop?.kind === 'peer' && !confirmOpen && (
+        {tour === "join" && stackTop?.kind === "peer" && !confirmOpen && (
           <div
             style={{
-              position: 'absolute',
+              position: "absolute",
               // centred over the main (Join) plate: it spans x 48..270
               left: ACTIVITY_CTA.x + ACTIVITY_CTA.mainW / 2 - 115,
               bottom: device.height - ACTIVITY_CTA.y + 12,
               zIndex: 70,
             }}
           >
-            <TourBubble width={230} text="Peer plans are free — one tap and you’re in" onSkip={endTour} />
+            <TourBubble
+              width={230}
+              text="Peer plans are free — one tap and you’re in"
+              onSkip={endTour}
+            />
           </div>
         )}
       </AnimatePresence>
 
       {/* Beat 4 — the first-plan milestone card */}
       <AnimatePresence>
-        {tour === 'celebrate' && firstPlan && <FirstPlanCard planTitle={firstPlan.title} />}
+        {tour === "celebrate" && firstPlan && (
+          <FirstPlanCard planTitle={firstPlan.title} />
+        )}
       </AnimatePresence>
 
       {/* Beat 5 (the goodbye) — bubble pointing at the calendar button */}
       <AnimatePresence>
-        {tour === 'plans' && !cardOpen && (
+        {tour === "plans" && !cardOpen && (
           <div
             style={{
-              position: 'absolute',
+              position: "absolute",
               left: device.width - 64.2 - 232,
               bottom: device.height - CAL.y + 12,
               zIndex: 70,
@@ -1331,10 +1736,10 @@ export function MapHome({
       {onbActive && (
         <div
           style={{
-            position: 'absolute',
+            position: "absolute",
             inset: 0,
             zIndex: 80,
-            pointerEvents: onbExiting ? 'none' : undefined,
+            pointerEvents: onbExiting ? "none" : undefined,
           }}
         >
           <OnboardingFlow onComplete={finishOnboarding} exiting={onbExiting} />

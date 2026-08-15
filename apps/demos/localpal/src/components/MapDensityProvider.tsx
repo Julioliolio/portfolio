@@ -1,5 +1,5 @@
-import { createContext, useContext, useState, type ReactNode } from 'react';
-import { defaultMapDensity, type MapDensityConfig } from '../theme/mapClusters';
+import { createContext, useContext, useState, type ReactNode } from "react";
+import { defaultMapDensity, type MapDensityConfig } from "../theme/mapClusters";
 
 type Ctx = {
   density: MapDensityConfig;
@@ -21,10 +21,13 @@ const MapDensityCtx = createContext<Ctx>({
  */
 export function MapDensityProvider({ children }: { children: ReactNode }) {
   const [density, setDensity] = useState<MapDensityConfig>(defaultMapDensity);
-  const set = (patch: Partial<MapDensityConfig>) => setDensity((d) => ({ ...d, ...patch }));
+  const set = (patch: Partial<MapDensityConfig>) =>
+    setDensity((d) => ({ ...d, ...patch }));
   const reset = () => setDensity(defaultMapDensity);
   return (
-    <MapDensityCtx.Provider value={{ density, set, reset }}>{children}</MapDensityCtx.Provider>
+    <MapDensityCtx.Provider value={{ density, set, reset }}>
+      {children}
+    </MapDensityCtx.Provider>
   );
 }
 

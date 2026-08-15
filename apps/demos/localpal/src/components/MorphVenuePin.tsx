@@ -13,15 +13,15 @@
  * while the floor shadow counter-scales: higher float, smaller shadow. Shadow
  * shape/blur comes from the shared floatShadow theme config.
  */
-import { useEffect, useLayoutEffect, useRef, useState } from 'react';
-import { animate, motion, useMotionValue, useTransform } from 'framer-motion';
-import { getSvgPath } from 'figma-squircle';
-import { Squircle } from './Squircle';
-import { useSquircle } from './SquircleProvider';
-import { useMotion } from './MotionProvider';
-import { useFloatShadow, usePointShadow } from './FloatShadowProvider';
-import { PointShadowDot } from './PointShadowDot';
-import { color, font } from '../theme/tokens';
+import { useEffect, useLayoutEffect, useRef, useState } from "react";
+import { animate, motion, useMotionValue, useTransform } from "framer-motion";
+import { getSvgPath } from "figma-squircle";
+import { Squircle } from "./Squircle";
+import { useSquircle } from "./SquircleProvider";
+import { useMotion } from "./MotionProvider";
+import { useFloatShadow, usePointShadow } from "./FloatShadowProvider";
+import { PointShadowDot } from "./PointShadowDot";
+import { color, font } from "../theme/tokens";
 
 // Expanded lozenge metrics, transcribed from Figma (126×64 for "Rita's";
 // width hugs the measured label so longer names fit).
@@ -56,10 +56,10 @@ export function MorphVenuePin({
   /** Show the top-right ring marking a venue that hosts activities. */
   hasActivity?: boolean;
 }) {
-  const pin = useSquircle('pin');
-  const loz = useSquircle('lozenge');
-  const morph = useMotion('morph');
-  const float = useMotion('float');
+  const pin = useSquircle("pin");
+  const loz = useSquircle("lozenge");
+  const morph = useMotion("morph");
+  const float = useMotion("float");
 
   // The label is always in the DOM (opacity-hidden when collapsed), so we can
   // measure it directly and size the lozenge to hug any venue name. Observed
@@ -89,8 +89,10 @@ export function MorphVenuePin({
   const h = useTransform(e, (t) => lerp(size, EXP.h, t));
   const radius = useTransform(e, (t) => lerp(pin.radius, loz.radius, t));
   const smooth = useTransform(e, (t) => lerp(pin.smoothing, loz.smoothing, t));
-  const clipPath = useTransform([w, h, radius, smooth], ([ww, hh, r, s]) =>
-    `path('${getSvgPath({ width: ww as number, height: hh as number, cornerRadius: r as number, cornerSmoothing: s as number })}')`,
+  const clipPath = useTransform(
+    [w, h, radius, smooth],
+    ([ww, hh, r, s]) =>
+      `path('${getSvgPath({ width: ww as number, height: hh as number, cornerRadius: r as number, cornerSmoothing: s as number })}')`,
   );
 
   // Glyph: centered in the tile → parked left in the lozenge, with the Figma
@@ -114,7 +116,11 @@ export function MorphVenuePin({
       return;
     }
     bob.set(-BOB);
-    const c = animate(bob, BOB, { ...float, repeat: Infinity, repeatType: 'reverse' });
+    const c = animate(bob, BOB, {
+      ...float,
+      repeat: Infinity,
+      repeatType: "reverse",
+    });
     return () => {
       c.stop();
       bob.set(0);
@@ -124,30 +130,33 @@ export function MorphVenuePin({
   const fs = useFloatShadow();
   const ps = usePointShadow();
   const shadowW = useTransform(w, (ww) => ww * fs.contactWidthRatio);
-  const shadowTop = useTransform([h, shadowW], ([hh, sw]) => (hh as number) + fs.contactOffset - (sw as number) / 2);
+  const shadowTop = useTransform(
+    [h, shadowW],
+    ([hh, sw]) => (hh as number) + fs.contactOffset - (sw as number) / 2,
+  );
   const shadowScaleX = useTransform(bob, [-BOB, BOB], [0.94, 1.04]);
   const shadowOpacity = useTransform(e, [0.4, 1], [0, 1]);
   const pointTop = useTransform(h, (hh) => hh + ps.offset);
 
   return (
-    <motion.div style={{ position: 'relative', width: w, height: h }}>
+    <motion.div style={{ position: "relative", width: w, height: h }}>
       {/* Contact shadow: the lozenge silhouette squashed onto the floor (same
           construction as FloatingSquircle, but motion-driven so it can fade in
           with the morph and counter-scale with the bob). */}
       <motion.div
         aria-hidden
         style={{
-          position: 'absolute',
-          left: '50%',
+          position: "absolute",
+          left: "50%",
           top: shadowTop,
           width: shadowW,
           height: shadowW,
-          x: '-50%',
+          x: "-50%",
           scaleY: fs.contactSquash,
           scaleX: shadowScaleX,
           filter: `blur(${fs.contactBlur}px)`,
           opacity: shadowOpacity,
-          pointerEvents: 'none',
+          pointerEvents: "none",
           zIndex: 0,
         }}
       >
@@ -155,18 +164,22 @@ export function MorphVenuePin({
           radius={loz.radius * fs.contactWidthRatio}
           smoothing={loz.smoothing}
           fill={`rgba(${fs.color},${fs.contactOpacity})`}
-          style={{ width: '100%', height: '100%' }}
+          style={{ width: "100%", height: "100%" }}
         />
       </motion.div>
 
       {/* Ground-point dot: pins the exact spot inside the diffuse pool while
           the lozenge floats — fades in with the pool, breathes with the bob. */}
-      <PointShadowDot top={pointTop} opacity={shadowOpacity} scaleX={shadowScaleX} />
+      <PointShadowDot
+        top={pointTop}
+        opacity={shadowOpacity}
+        scaleX={shadowScaleX}
+      />
 
       {/* The morphing tile itself — bobs as a whole while selected. */}
       <motion.div
         style={{
-          position: 'absolute',
+          position: "absolute",
           left: 0,
           top: 0,
           width: w,
@@ -178,17 +191,28 @@ export function MorphVenuePin({
         }}
       >
         <motion.div
-          style={{ position: 'absolute', left: iconLeft, top: iconTop, x: '-50%', y: '-50%', rotate: iconRotate }}
+          style={{
+            position: "absolute",
+            left: iconLeft,
+            top: iconTop,
+            x: "-50%",
+            y: "-50%",
+            rotate: iconRotate,
+          }}
         >
-          <motion.img src={icon} alt="" style={{ height: iconH, width: 'auto', display: 'block' }} />
+          <motion.img
+            src={icon}
+            alt=""
+            style={{ height: iconH, width: "auto", display: "block" }}
+          />
         </motion.div>
         <motion.span
           ref={labelRef}
           style={{
-            position: 'absolute',
+            position: "absolute",
             left: EXP.padL + EXP.icon + EXP.gap,
-            top: '50%',
-            y: '-50%',
+            top: "50%",
+            y: "-50%",
             opacity: labelOpacity,
             color: color.onBrand,
             // Markers portal into the maplibre container, outside the app's
@@ -196,7 +220,7 @@ export function MorphVenuePin({
             fontFamily: font.family,
             fontSize: 16,
             fontWeight: 500,
-            whiteSpace: 'nowrap',
+            whiteSpace: "nowrap",
           }}
         >
           {name}
@@ -210,19 +234,19 @@ export function MorphVenuePin({
         <motion.div
           aria-hidden
           style={{
-            position: 'absolute',
+            position: "absolute",
             left: size * ACTIVITY.cx,
             top: size * ACTIVITY.cy,
-            x: '-50%',
-            y: '-50%',
+            x: "-50%",
+            y: "-50%",
             width: size * ACTIVITY.diameter,
             height: size * ACTIVITY.diameter,
-            boxSizing: 'border-box',
-            borderRadius: '50%',
+            boxSizing: "border-box",
+            borderRadius: "50%",
             background: color.onBrand,
             border: `${size * ACTIVITY.stroke}px solid ${color.brand}`,
             opacity: badgeOpacity,
-            pointerEvents: 'none',
+            pointerEvents: "none",
             zIndex: 2,
           }}
         />

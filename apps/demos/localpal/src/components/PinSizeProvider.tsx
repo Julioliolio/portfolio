@@ -1,10 +1,10 @@
-import { createContext, useContext, useState, type ReactNode } from 'react';
+import { createContext, useContext, useState, type ReactNode } from "react";
 import {
   defaultPinSize,
   defaultFocusRadiusM,
   defaultCenterFocusScale,
   defaultCenterFocusZone,
-} from '../theme/mapPins';
+} from "../theme/mapPins";
 
 type Ctx = {
   size: number;
@@ -40,11 +40,16 @@ const PinSizeCtx = createContext<Ctx>({
 export function PinSizeProvider({ children }: { children: ReactNode }) {
   const [size, setSize] = useState(defaultPinSize);
   const [focusRadius, setFocusRadius] = useState(defaultFocusRadiusM);
-  const [centerFocusScale, setCenterFocusScale] = useState(defaultCenterFocusScale);
-  const [centerFocusZone, setCenterFocusZone] = useState(defaultCenterFocusZone);
+  const [centerFocusScale, setCenterFocusScale] = useState(
+    defaultCenterFocusScale,
+  );
+  const [centerFocusZone, setCenterFocusZone] = useState(
+    defaultCenterFocusZone,
+  );
   const reset = () => setSize(defaultPinSize);
   const resetFocusRadius = () => setFocusRadius(defaultFocusRadiusM);
-  const resetCenterFocusScale = () => setCenterFocusScale(defaultCenterFocusScale);
+  const resetCenterFocusScale = () =>
+    setCenterFocusScale(defaultCenterFocusScale);
   const resetCenterFocusZone = () => setCenterFocusZone(defaultCenterFocusZone);
   return (
     <PinSizeCtx.Provider

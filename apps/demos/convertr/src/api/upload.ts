@@ -1,4 +1,4 @@
-import { jobs, newJobId } from './mock-jobs';
+import { jobs, newJobId } from "./mock-jobs";
 
 export interface ServerMeta {
   duration: number;
@@ -20,30 +20,43 @@ function probeMedia(
   file: File,
   objectUrl: string,
 ): Promise<{ duration: number; width: number; height: number }> {
-  const isGif = file.type === 'image/gif' || file.name.toLowerCase().endsWith('.gif');
+  const isGif =
+    file.type === "image/gif" || file.name.toLowerCase().endsWith(".gif");
   if (isGif) {
     return new Promise((resolve) => {
       const img = new Image();
       img.onload = () =>
-        resolve({ duration: 3, width: img.naturalWidth || 1280, height: img.naturalHeight || 720 });
+        resolve({
+          duration: 3,
+          width: img.naturalWidth || 1280,
+          height: img.naturalHeight || 720,
+        });
       img.onerror = () => resolve({ duration: 3, width: 1280, height: 720 });
       img.src = objectUrl;
     });
   }
   return new Promise((resolve) => {
-    const vid = document.createElement('video');
-    vid.preload = 'metadata';
+    const vid = document.createElement("video");
+    vid.preload = "metadata";
     let done = false;
-    const finish = (meta: { duration: number; width: number; height: number }) => {
+    const finish = (meta: {
+      duration: number;
+      width: number;
+      height: number;
+    }) => {
       if (done) return;
       done = true;
       resolve(meta);
     };
-    const timer = setTimeout(() => finish({ duration: 5, width: 1280, height: 720 }), 2000);
+    const timer = setTimeout(
+      () => finish({ duration: 5, width: 1280, height: 720 }),
+      2000,
+    );
     vid.onloadedmetadata = () => {
       clearTimeout(timer);
       finish({
-        duration: Number.isFinite(vid.duration) && vid.duration > 0 ? vid.duration : 5,
+        duration:
+          Number.isFinite(vid.duration) && vid.duration > 0 ? vid.duration : 5,
         width: vid.videoWidth || 1280,
         height: vid.videoHeight || 720,
       });
@@ -68,7 +81,10 @@ export function uploadFileWithProgress(
     const RAMP_MS = 600;
 
     const tick = () => {
-      const pct = Math.min(100, ((performance.now() - started) / RAMP_MS) * 100);
+      const pct = Math.min(
+        100,
+        ((performance.now() - started) / RAMP_MS) * 100,
+      );
       onProgress?.(pct);
       if (pct < 100) {
         requestAnimationFrame(tick);
@@ -85,13 +101,16 @@ export function uploadFileWithProgress(
           width: meta.width,
           height: meta.height,
         });
-        const ext = (file.name.split('.').pop() || 'mp4').toLowerCase();
+        const ext = (file.name.split(".").pop() || "mp4").toLowerCase();
         resolve({
           jobId,
           meta: {
             ...meta,
             fps: 30,
-            bitrate: meta.duration > 0 ? Math.round((file.size * 8) / meta.duration) : 0,
+            bitrate:
+              meta.duration > 0
+                ? Math.round((file.size * 8) / meta.duration)
+                : 0,
           },
           inputFormat: ext,
           needsProxy: false,

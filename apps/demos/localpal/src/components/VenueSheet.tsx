@@ -15,15 +15,15 @@
  * screen edge, exactly like the design — the scroll region is full-bleed with
  * padded content so that overhang clips at the screen edge, not at the column.
  */
-import { useState, type CSSProperties } from 'react';
-import { motion } from 'framer-motion';
-import { Squircle } from './Squircle';
-import { usePressFeedback, useMotion } from './MotionProvider';
-import { useDragScroll } from './useDragScroll';
-import { figmaIcons } from './icons/figmaIcons';
-import { BookmarkIcon } from './icons/BookmarkIcon';
-import { color, device } from '../theme/tokens';
-import type { Venue, VenueEvent } from '../data/venues';
+import { useState, type CSSProperties } from "react";
+import { motion } from "framer-motion";
+import { Squircle } from "./Squircle";
+import { usePressFeedback, useMotion } from "./MotionProvider";
+import { useDragScroll } from "./useDragScroll";
+import { figmaIcons } from "./icons/figmaIcons";
+import { BookmarkIcon } from "./icons/BookmarkIcon";
+import { color, device } from "../theme/tokens";
+import type { Venue, VenueEvent } from "../data/venues";
 
 const SHEET_W = 393;
 const SHEET_TOP = 243.89; // surface top in screen space (see BottomBar VENUE)
@@ -35,13 +35,13 @@ const COL_W = SHEET_W - PAD_X * 2;
 const PHOTO = { tallW: 122, tallH: 177.7, smallH: 84.85, gap: 8 };
 // Tint set for the placeholder tiles — each reads as a distinct "photo".
 const PHOTO_TINTS = [
-  'rgba(255,255,255,0.16)',
-  'rgba(255,255,255,0.10)',
-  'rgba(255,255,255,0.20)',
-  'rgba(255,255,255,0.13)',
-  'rgba(255,255,255,0.18)',
-  'rgba(255,255,255,0.11)',
-  'rgba(255,255,255,0.15)',
+  "rgba(255,255,255,0.16)",
+  "rgba(255,255,255,0.10)",
+  "rgba(255,255,255,0.20)",
+  "rgba(255,255,255,0.13)",
+  "rgba(255,255,255,0.18)",
+  "rgba(255,255,255,0.11)",
+  "rgba(255,255,255,0.15)",
 ];
 
 const CARD_H = 72;
@@ -53,12 +53,16 @@ const BADGE = { w: 90, h: 50 };
 // venue mode (screen coords: the sheet is full-bleed at SHEET_TOP).
 const FADE_H = 151.5;
 const ACTIONS = { left: 37.4, top: 501.1, mainW: 240 };
-export const VENUE_CTA = { x: ACTIONS.left, y: SHEET_TOP + ACTIONS.top, mainW: ACTIONS.mainW };
+export const VENUE_CTA = {
+  x: ACTIONS.left,
+  y: SHEET_TOP + ACTIONS.top,
+  mainW: ACTIONS.mainW,
+};
 
 // Cap-trimmed text (Figma measures type cap-to-cap). Chromium 133+.
 const capTrim = {
-  textBoxTrim: 'trim-both',
-  textBoxEdge: 'cap text',
+  textBoxTrim: "trim-both",
+  textBoxEdge: "cap text",
 } as CSSProperties;
 
 export function VenueSheet({
@@ -70,10 +74,10 @@ export function VenueSheet({
   onEventTap?: (ev: VenueEvent) => void;
 }) {
   const press = usePressFeedback();
-  const pop = useMotion('pop');
+  const pop = useMotion("pop");
   const [saved, setSaved] = useState(false);
-  const listDrag = useDragScroll('y');
-  const collageDrag = useDragScroll('x');
+  const listDrag = useDragScroll("y");
+  const collageDrag = useDragScroll("x");
 
   return (
     <>
@@ -82,18 +86,24 @@ export function VenueSheet({
         radius={2}
         smoothing={1}
         fill="#fefefe"
-        style={{ position: 'absolute', left: (SHEET_W - 53) / 2, top: 8, width: 53, height: 4 }}
+        style={{
+          position: "absolute",
+          left: (SHEET_W - 53) / 2,
+          top: 8,
+          width: 53,
+          height: 4,
+        }}
       />
 
       <div
         style={{
-          position: 'absolute',
+          position: "absolute",
           left: 0,
           top: 37.2,
           width: SHEET_W,
           height: VISIBLE_H - 37.2,
-          display: 'flex',
-          flexDirection: 'column',
+          display: "flex",
+          flexDirection: "column",
           gap: 16,
         }}
       >
@@ -101,18 +111,39 @@ export function VenueSheet({
             top-right, aligned with the name (Figma 1277:3310 → 1394:4126). */}
         <div
           style={{
-            display: 'flex',
-            alignItems: 'flex-start',
-            justifyContent: 'space-between',
+            display: "flex",
+            alignItems: "flex-start",
+            justifyContent: "space-between",
             gap: 12,
             padding: `0 ${PAD_X}px`,
           }}
         >
-          <div style={{ display: 'flex', flexDirection: 'column', gap: 4, minWidth: 0 }}>
-            <span style={{ color: color.onBrand, fontSize: 24, fontWeight: 600, lineHeight: '26px' }}>
+          <div
+            style={{
+              display: "flex",
+              flexDirection: "column",
+              gap: 4,
+              minWidth: 0,
+            }}
+          >
+            <span
+              style={{
+                color: color.onBrand,
+                fontSize: 24,
+                fontWeight: 600,
+                lineHeight: "26px",
+              }}
+            >
               {venue.name}
             </span>
-            <span style={{ color: color.lavender, fontSize: 12, fontWeight: 400, ...capTrim }}>
+            <span
+              style={{
+                color: color.lavender,
+                fontSize: 12,
+                fontWeight: 400,
+                ...capTrim,
+              }}
+            >
               {venue.address}
             </span>
           </div>
@@ -120,26 +151,26 @@ export function VenueSheet({
           <motion.button
             {...press}
             onClick={() => setSaved((s) => !s)}
-            aria-label={saved ? 'Remove from saved' : 'Save venue'}
+            aria-label={saved ? "Remove from saved" : "Save venue"}
             aria-pressed={saved}
             style={{
-              background: 'transparent',
-              border: 'none',
+              background: "transparent",
+              border: "none",
               padding: 4,
               margin: -4,
               marginTop: -1,
-              cursor: 'pointer',
+              cursor: "pointer",
               flexShrink: 0,
               lineHeight: 0,
             }}
           >
             {/* Keyed so the glyph pops when it fills — animate the interaction. */}
             <motion.span
-              key={saved ? 'on' : 'off'}
+              key={saved ? "on" : "off"}
               initial={saved ? { scale: 0.6 } : false}
               animate={{ scale: 1 }}
               transition={pop}
-              style={{ display: 'block' }}
+              style={{ display: "block" }}
             >
               <BookmarkIcon size={18} color={color.onBrand} filled={saved} />
             </motion.span>
@@ -153,32 +184,58 @@ export function VenueSheet({
           style={{
             flex: 1,
             minHeight: 0,
-            overflowY: 'auto',
-            overflowX: 'hidden',
-            display: 'flex',
-            flexDirection: 'column',
+            overflowY: "auto",
+            overflowX: "hidden",
+            display: "flex",
+            flexDirection: "column",
             gap: 16,
             padding: `0 ${PAD_X}px ${FADE_H - 30}px`,
-            scrollbarWidth: 'none',
+            scrollbarWidth: "none",
             // Own vertical touch gestures so a swipe pans the list (not the
             // map/surface beneath), and don't chain the overscroll outward.
-            touchAction: 'pan-y',
-            overscrollBehavior: 'contain',
-            WebkitOverflowScrolling: 'touch',
+            touchAction: "pan-y",
+            overscrollBehavior: "contain",
+            WebkitOverflowScrolling: "touch",
           }}
         >
           {/* Category row: tilted glyph + type / hours */}
-          <div style={{ display: 'flex', alignItems: 'center', gap: 12, flexShrink: 0 }}>
+          <div
+            style={{
+              display: "flex",
+              alignItems: "center",
+              gap: 12,
+              flexShrink: 0,
+            }}
+          >
             <img
               src={venue.icon}
               alt=""
-              style={{ height: 32, width: 'auto', display: 'block', transform: 'rotate(-4deg)' }}
+              style={{
+                height: 32,
+                width: "auto",
+                display: "block",
+                transform: "rotate(-4deg)",
+              }}
             />
-            <div style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
-              <span style={{ color: color.onBrand, fontSize: 16, fontWeight: 500, ...capTrim }}>
+            <div style={{ display: "flex", flexDirection: "column", gap: 6 }}>
+              <span
+                style={{
+                  color: color.onBrand,
+                  fontSize: 16,
+                  fontWeight: 500,
+                  ...capTrim,
+                }}
+              >
                 {venue.category}
               </span>
-              <span style={{ color: color.lavender, fontSize: 12, fontWeight: 400, ...capTrim }}>
+              <span
+                style={{
+                  color: color.lavender,
+                  fontSize: 12,
+                  fontWeight: 400,
+                  ...capTrim,
+                }}
+              >
                 {venue.hours}
               </span>
             </div>
@@ -191,32 +248,83 @@ export function VenueSheet({
           <div
             {...collageDrag}
             style={{
-              display: 'flex',
+              display: "flex",
               gap: PHOTO.gap,
               flexShrink: 0,
-              overflowX: 'auto',
-              overflowY: 'hidden',
+              overflowX: "auto",
+              overflowY: "hidden",
               marginLeft: -PAD_X,
               marginRight: -PAD_X,
               paddingLeft: PAD_X,
               paddingRight: PAD_X,
-              scrollbarWidth: 'none',
+              scrollbarWidth: "none",
             }}
           >
-            <Squircle role="photo" fill={PHOTO_TINTS[0]} style={{ flexShrink: 0, width: PHOTO.tallW, height: PHOTO.tallH }} />
-            <div style={{ display: 'flex', flexDirection: 'column', gap: PHOTO.gap, flexShrink: 0 }}>
-              <Squircle role="photo" fill={PHOTO_TINTS[1]} style={{ width: PHOTO.tallW, height: PHOTO.smallH }} />
-              <Squircle role="photo" fill={PHOTO_TINTS[2]} style={{ width: PHOTO.tallW, height: PHOTO.smallH }} />
+            <Squircle
+              role="photo"
+              fill={PHOTO_TINTS[0]}
+              style={{ flexShrink: 0, width: PHOTO.tallW, height: PHOTO.tallH }}
+            />
+            <div
+              style={{
+                display: "flex",
+                flexDirection: "column",
+                gap: PHOTO.gap,
+                flexShrink: 0,
+              }}
+            >
+              <Squircle
+                role="photo"
+                fill={PHOTO_TINTS[1]}
+                style={{ width: PHOTO.tallW, height: PHOTO.smallH }}
+              />
+              <Squircle
+                role="photo"
+                fill={PHOTO_TINTS[2]}
+                style={{ width: PHOTO.tallW, height: PHOTO.smallH }}
+              />
             </div>
-            <Squircle role="photo" fill={PHOTO_TINTS[3]} style={{ flexShrink: 0, width: PHOTO.tallW, height: PHOTO.tallH }} />
-            <div style={{ display: 'flex', flexDirection: 'column', gap: PHOTO.gap, flexShrink: 0 }}>
-              <Squircle role="photo" fill={PHOTO_TINTS[4]} style={{ width: PHOTO.tallW, height: PHOTO.smallH }} />
-              <Squircle role="photo" fill={PHOTO_TINTS[5]} style={{ width: PHOTO.tallW, height: PHOTO.smallH }} />
+            <Squircle
+              role="photo"
+              fill={PHOTO_TINTS[3]}
+              style={{ flexShrink: 0, width: PHOTO.tallW, height: PHOTO.tallH }}
+            />
+            <div
+              style={{
+                display: "flex",
+                flexDirection: "column",
+                gap: PHOTO.gap,
+                flexShrink: 0,
+              }}
+            >
+              <Squircle
+                role="photo"
+                fill={PHOTO_TINTS[4]}
+                style={{ width: PHOTO.tallW, height: PHOTO.smallH }}
+              />
+              <Squircle
+                role="photo"
+                fill={PHOTO_TINTS[5]}
+                style={{ width: PHOTO.tallW, height: PHOTO.smallH }}
+              />
             </div>
-            <Squircle role="photo" fill={PHOTO_TINTS[6]} style={{ flexShrink: 0, width: PHOTO.tallW, height: PHOTO.tallH }} />
+            <Squircle
+              role="photo"
+              fill={PHOTO_TINTS[6]}
+              style={{ flexShrink: 0, width: PHOTO.tallW, height: PHOTO.tallH }}
+            />
           </div>
 
-          <p style={{ color: color.lavender, fontSize: 12, fontWeight: 400, margin: 0, width: COL_W, flexShrink: 0 }}>
+          <p
+            style={{
+              color: color.lavender,
+              fontSize: 12,
+              fontWeight: 400,
+              margin: 0,
+              width: COL_W,
+              flexShrink: 0,
+            }}
+          >
             {venue.description}
           </p>
 
@@ -225,80 +333,133 @@ export function VenueSheet({
               cards slide beneath its brand-colored box. Venues that host no
               activities skip this whole section (and get no map ring). */}
           {venue.events.length > 0 && (
-          <>
-          <span
-            style={{
-              position: 'sticky',
-              top: 0,
-              zIndex: 1,
-              background: color.brand,
-              padding: '0 0 10px',
-              marginBottom: -10,
-              color: color.onBrand,
-              fontSize: 16,
-              fontWeight: 500,
-              flexShrink: 0,
-              ...capTrim,
-            }}
-          >
-            What’s on at {venue.name}
-          </span>
-
-          {/* Event cards: 8px apart (tighter than the 16px section rhythm) */}
-          <div style={{ display: 'flex', flexDirection: 'column', gap: 8, flexShrink: 0 }}>
-          {venue.events.map((ev) => (
-            <motion.div key={ev.id} {...press} onClick={() => onEventTap?.(ev)} style={{ flexShrink: 0 }}>
-              <Squircle
-                role="card"
-                fill={color.brandDeep}
+            <>
+              <span
                 style={{
-                  height: CARD_H,
-                  display: 'flex',
-                  alignItems: 'center',
-                  gap: 8,
-                  padding: '0 12px',
-                  cursor: 'pointer',
+                  position: "sticky",
+                  top: 0,
+                  zIndex: 1,
+                  background: color.brand,
+                  padding: "0 0 10px",
+                  marginBottom: -10,
+                  color: color.onBrand,
+                  fontSize: 16,
+                  fontWeight: 500,
+                  flexShrink: 0,
+                  ...capTrim,
                 }}
               >
-                <Squircle
-                  role="badge"
-                  fill={color.offWhite}
-                  style={{
-                    width: BADGE.w,
-                    height: BADGE.h,
-                    flexShrink: 0,
-                    display: 'flex',
-                    flexDirection: 'column',
-                    alignItems: 'center',
-                    justifyContent: 'center',
-                    gap: 4,
-                  }}
-                >
-                  <span style={{ color: color.brandDeep, fontSize: 8, fontWeight: 600, ...capTrim }}>
-                    {ev.day}
-                  </span>
-                  <span style={{ color: color.brandDeep, fontSize: 24, fontWeight: 600, ...capTrim }}>
-                    {ev.time}
-                  </span>
-                </Squircle>
-                <div style={{ flex: 1, minWidth: 0, display: 'flex', flexDirection: 'column', gap: 8 }}>
-                  <span style={{ color: color.onBrand, fontSize: 16, fontWeight: 500, lineHeight: '16px' }}>
-                    {ev.title}
-                  </span>
-                  <span style={{ color: color.lavender, fontSize: 12, fontWeight: 400, ...capTrim }}>
-                    {ev.meta}
-                  </span>
-                </div>
-                <img
-                  src={figmaIcons.chevron}
-                  alt=""
-                  style={{ width: 8, height: 11.33, display: 'block', flexShrink: 0 }}
-                />
-              </Squircle>
-            </motion.div>
-          ))}
-          </div>
-          </>
+                What’s on at {venue.name}
+              </span>
+
+              {/* Event cards: 8px apart (tighter than the 16px section rhythm) */}
+              <div
+                style={{
+                  display: "flex",
+                  flexDirection: "column",
+                  gap: 8,
+                  flexShrink: 0,
+                }}
+              >
+                {venue.events.map((ev) => (
+                  <motion.div
+                    key={ev.id}
+                    {...press}
+                    onClick={() => onEventTap?.(ev)}
+                    style={{ flexShrink: 0 }}
+                  >
+                    <Squircle
+                      role="card"
+                      fill={color.brandDeep}
+                      style={{
+                        height: CARD_H,
+                        display: "flex",
+                        alignItems: "center",
+                        gap: 8,
+                        padding: "0 12px",
+                        cursor: "pointer",
+                      }}
+                    >
+                      <Squircle
+                        role="badge"
+                        fill={color.offWhite}
+                        style={{
+                          width: BADGE.w,
+                          height: BADGE.h,
+                          flexShrink: 0,
+                          display: "flex",
+                          flexDirection: "column",
+                          alignItems: "center",
+                          justifyContent: "center",
+                          gap: 4,
+                        }}
+                      >
+                        <span
+                          style={{
+                            color: color.brandDeep,
+                            fontSize: 8,
+                            fontWeight: 600,
+                            ...capTrim,
+                          }}
+                        >
+                          {ev.day}
+                        </span>
+                        <span
+                          style={{
+                            color: color.brandDeep,
+                            fontSize: 24,
+                            fontWeight: 600,
+                            ...capTrim,
+                          }}
+                        >
+                          {ev.time}
+                        </span>
+                      </Squircle>
+                      <div
+                        style={{
+                          flex: 1,
+                          minWidth: 0,
+                          display: "flex",
+                          flexDirection: "column",
+                          gap: 8,
+                        }}
+                      >
+                        <span
+                          style={{
+                            color: color.onBrand,
+                            fontSize: 16,
+                            fontWeight: 500,
+                            lineHeight: "16px",
+                          }}
+                        >
+                          {ev.title}
+                        </span>
+                        <span
+                          style={{
+                            color: color.lavender,
+                            fontSize: 12,
+                            fontWeight: 400,
+                            ...capTrim,
+                          }}
+                        >
+                          {ev.meta}
+                        </span>
+                      </div>
+                      <img
+                        src={figmaIcons.chevron}
+                        alt=""
+                        style={{
+                          width: 8,
+                          height: 11.33,
+                          display: "block",
+                          flexShrink: 0,
+                        }}
+                      />
+                    </Squircle>
+                  </motion.div>
+                ))}
+              </div>
+            </>
           )}
         </div>
       </div>
@@ -306,13 +467,14 @@ export function VenueSheet({
       {/* Bottom brand fade over the scrolling list */}
       <div
         style={{
-          position: 'absolute',
+          position: "absolute",
           left: 0,
           top: VISIBLE_H - FADE_H,
           width: SHEET_W,
           height: FADE_H,
-          background: 'linear-gradient(to bottom, rgba(44,30,223,0) 0%, rgba(49,33,255,0.9) 96%)',
-          pointerEvents: 'none',
+          background:
+            "linear-gradient(to bottom, rgba(44,30,223,0) 0%, rgba(49,33,255,0.9) 96%)",
+          pointerEvents: "none",
         }}
       />
 

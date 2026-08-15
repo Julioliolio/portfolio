@@ -1,7 +1,9 @@
 {
   "version": 8,
   "name": "LocalPal Google-like",
-  "metadata": { "note": "Custom MapLibre style tuned to Google Maps colors. Free OpenFreeMap (OpenMapTiles) vector tiles, no API key. OSM data © OpenStreetMap contributors." },
+  "metadata": {
+    "note": "Custom MapLibre style tuned to Google Maps colors. Free OpenFreeMap (OpenMapTiles) vector tiles, no API key. OSM data © OpenStreetMap contributors."
+  },
   "glyphs": "https://tiles.openfreemap.org/fonts/{fontstack}/{range}.pbf",
   "sources": {
     "openmaptiles": {
@@ -102,7 +104,17 @@
       "layout": { "line-cap": "round", "line-join": "round" },
       "paint": {
         "line-color": "#dfe2e6",
-        "line-width": ["interpolate", ["linear"], ["zoom"], 13, 2, 16, 6, 19, 18]
+        "line-width": [
+          "interpolate",
+          ["linear"],
+          ["zoom"],
+          13,
+          2,
+          16,
+          6,
+          19,
+          18
+        ]
       }
     },
     {
@@ -114,7 +126,19 @@
       "layout": { "line-cap": "round", "line-join": "round" },
       "paint": {
         "line-color": "#d5d9de",
-        "line-width": ["interpolate", ["linear"], ["zoom"], 9, 1, 13, 4, 16, 9, 19, 22]
+        "line-width": [
+          "interpolate",
+          ["linear"],
+          ["zoom"],
+          9,
+          1,
+          13,
+          4,
+          16,
+          9,
+          19,
+          22
+        ]
       }
     },
     {
@@ -126,7 +150,19 @@
       "layout": { "line-cap": "round", "line-join": "round" },
       "paint": {
         "line-color": "#cfd4da",
-        "line-width": ["interpolate", ["linear"], ["zoom"], 7, 1, 12, 5, 16, 12, 19, 28]
+        "line-width": [
+          "interpolate",
+          ["linear"],
+          ["zoom"],
+          7,
+          1,
+          12,
+          5,
+          16,
+          12,
+          19,
+          28
+        ]
       }
     },
     {
@@ -138,7 +174,19 @@
       "layout": { "line-cap": "round", "line-join": "round" },
       "paint": {
         "line-color": "#8fb7de",
-        "line-width": ["interpolate", ["linear"], ["zoom"], 5, 1, 10, 5, 14, 13, 18, 26]
+        "line-width": [
+          "interpolate",
+          ["linear"],
+          ["zoom"],
+          5,
+          1,
+          10,
+          5,
+          14,
+          13,
+          18,
+          26
+        ]
       }
     },
 
@@ -152,7 +200,17 @@
       "layout": { "line-cap": "round", "line-join": "round" },
       "paint": {
         "line-color": "#ffffff",
-        "line-width": ["interpolate", ["linear"], ["zoom"], 13, 1, 16, 4, 19, 14]
+        "line-width": [
+          "interpolate",
+          ["linear"],
+          ["zoom"],
+          13,
+          1,
+          16,
+          4,
+          19,
+          14
+        ]
       }
     },
     {
@@ -164,7 +222,19 @@
       "layout": { "line-cap": "round", "line-join": "round" },
       "paint": {
         "line-color": "#ffffff",
-        "line-width": ["interpolate", ["linear"], ["zoom"], 9, 0.6, 13, 3, 16, 7, 19, 18]
+        "line-width": [
+          "interpolate",
+          ["linear"],
+          ["zoom"],
+          9,
+          0.6,
+          13,
+          3,
+          16,
+          7,
+          19,
+          18
+        ]
       }
     },
     {
@@ -176,7 +246,19 @@
       "layout": { "line-cap": "round", "line-join": "round" },
       "paint": {
         "line-color": "#ffffff",
-        "line-width": ["interpolate", ["linear"], ["zoom"], 7, 0.6, 12, 4, 16, 10, 19, 24]
+        "line-width": [
+          "interpolate",
+          ["linear"],
+          ["zoom"],
+          7,
+          0.6,
+          12,
+          4,
+          16,
+          10,
+          19,
+          24
+        ]
       }
     },
     {
@@ -188,7 +270,19 @@
       "layout": { "line-cap": "round", "line-join": "round" },
       "paint": {
         "line-color": "#aecff0",
-        "line-width": ["interpolate", ["linear"], ["zoom"], 5, 0.5, 10, 3.5, 14, 10, 18, 22]
+        "line-width": [
+          "interpolate",
+          ["linear"],
+          ["zoom"],
+          5,
+          0.5,
+          10,
+          3.5,
+          14,
+          10,
+          18,
+          22
+        ]
       }
     },
 
@@ -198,7 +292,11 @@
       "source": "openmaptiles",
       "source-layer": "boundary",
       "filter": ["<=", "admin_level", 2],
-      "paint": { "line-color": "#c4c8cd", "line-width": 1, "line-dasharray": [3, 2] }
+      "paint": {
+        "line-color": "#c4c8cd",
+        "line-width": 1,
+        "line-dasharray": [3, 2]
+      }
     },
 
     {

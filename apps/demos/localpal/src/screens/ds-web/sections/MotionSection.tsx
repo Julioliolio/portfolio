@@ -1,11 +1,15 @@
-import { useState } from 'react';
-import { motion } from 'framer-motion';
-import { Squircle } from '../../../components/Squircle';
-import { SearchGlyph } from '../../../components/icons/SearchGlyph';
-import { color } from '../../../theme/tokens';
-import { useMotion, useMotionExtras, usePressFeedback } from '../../../components/MotionProvider';
-import { defaultMotionRoles, defaultSignature } from '../../../theme/motion';
-import { copy } from '../copy';
+import { useState } from "react";
+import { motion } from "framer-motion";
+import { Squircle } from "../../../components/Squircle";
+import { SearchGlyph } from "../../../components/icons/SearchGlyph";
+import { color } from "../../../theme/tokens";
+import {
+  useMotion,
+  useMotionExtras,
+  usePressFeedback,
+} from "../../../components/MotionProvider";
+import { defaultMotionRoles, defaultSignature } from "../../../theme/motion";
+import { copy } from "../copy";
 
 const T = copy.movimiento.tiles;
 
@@ -88,7 +92,11 @@ function Tile({
 
 function Block({ style }: { style?: React.CSSProperties }) {
   return (
-    <Squircle role="button" fill={color.brand} style={{ width: 56, height: 56, ...style }} />
+    <Squircle
+      role="button"
+      fill={color.brand}
+      style={{ width: 56, height: 56, ...style }}
+    />
   );
 }
 
@@ -96,7 +104,7 @@ function PressDemo() {
   const press = usePressFeedback();
   return (
     <Tile role="press" title={T.press.title} hint={T.press.hint}>
-      <motion.div {...press} style={{ cursor: 'pointer' }}>
+      <motion.div {...press} style={{ cursor: "pointer" }}>
         <Block />
       </motion.div>
     </Tile>
@@ -104,10 +112,15 @@ function PressDemo() {
 }
 
 function SnapDemo() {
-  const snap = useMotion('snap');
+  const snap = useMotion("snap");
   const [on, setOn] = useState(false);
   return (
-    <Tile role="snap" title={T.snap.title} hint={T.snap.hint} onClick={() => setOn((v) => !v)}>
+    <Tile
+      role="snap"
+      title={T.snap.title}
+      hint={T.snap.hint}
+      onClick={() => setOn((v) => !v)}
+    >
       <div className="dsw-motion-track">
         <motion.div animate={{ x: on ? 92 : 0 }} transition={snap}>
           <Block />
@@ -118,22 +131,39 @@ function SnapDemo() {
 }
 
 function MorphDemo() {
-  const morph = useMotion('morph');
+  const morph = useMotion("morph");
   const [big, setBig] = useState(false);
   return (
-    <Tile role="morph" title={T.morph.title} hint={T.morph.hint} onClick={() => setBig((v) => !v)}>
-      <motion.div animate={{ width: big ? 128 : 56, height: 56 }} transition={morph}>
-        <Squircle role="button" fill={color.brand} style={{ width: '100%', height: '100%' }} />
+    <Tile
+      role="morph"
+      title={T.morph.title}
+      hint={T.morph.hint}
+      onClick={() => setBig((v) => !v)}
+    >
+      <motion.div
+        animate={{ width: big ? 128 : 56, height: 56 }}
+        transition={morph}
+      >
+        <Squircle
+          role="button"
+          fill={color.brand}
+          style={{ width: "100%", height: "100%" }}
+        />
       </motion.div>
     </Tile>
   );
 }
 
 function EntranceDemo() {
-  const entrance = useMotion('entrance');
+  const entrance = useMotion("entrance");
   const [k, setK] = useState(0);
   return (
-    <Tile role="entrance" title={T.entrance.title} hint={T.entrance.hint} onClick={() => setK((v) => v + 1)}>
+    <Tile
+      role="entrance"
+      title={T.entrance.title}
+      hint={T.entrance.hint}
+      onClick={() => setK((v) => v + 1)}
+    >
       <motion.div
         key={k}
         initial={{ opacity: 0, scale: 0.4, y: 12 }}
@@ -147,12 +177,26 @@ function EntranceDemo() {
 }
 
 function PopDemo() {
-  const pop = useMotion('pop');
+  const pop = useMotion("pop");
   const [k, setK] = useState(0);
   return (
-    <Tile role="pop" title={T.pop.title} hint={T.pop.hint} onClick={() => setK((v) => v + 1)}>
-      <motion.div key={k} initial={{ scale: 1.35 }} animate={{ scale: 1 }} transition={pop}>
-        <Squircle role="control" fill={color.brand} style={{ width: 56, height: 56, borderRadius: 999 }} />
+    <Tile
+      role="pop"
+      title={T.pop.title}
+      hint={T.pop.hint}
+      onClick={() => setK((v) => v + 1)}
+    >
+      <motion.div
+        key={k}
+        initial={{ scale: 1.35 }}
+        animate={{ scale: 1 }}
+        transition={pop}
+      >
+        <Squircle
+          role="control"
+          fill={color.brand}
+          style={{ width: 56, height: 56, borderRadius: 999 }}
+        />
       </motion.div>
     </Tile>
   );
@@ -161,19 +205,23 @@ function PopDemo() {
 function AmbientDemo() {
   const { ambientEvery } = useMotionExtras();
   return (
-    <Tile role="ambient" title={T.ambient.title} hint={T.ambient.hint.replace('{n}', String(ambientEvery))}>
+    <Tile
+      role="ambient"
+      title={T.ambient.title}
+      hint={T.ambient.hint.replace("{n}", String(ambientEvery))}
+    >
       <SearchGlyph size={52} color={color.brand} />
     </Tile>
   );
 }
 
 function FloatDemo() {
-  const float = useMotion('float');
+  const float = useMotion("float");
   return (
     <Tile role="float" title={T.float.title} hint={T.float.hint}>
       <motion.div
         animate={{ y: [-9, 9] }}
-        transition={{ ...float, repeat: Infinity, repeatType: 'reverse' }}
+        transition={{ ...float, repeat: Infinity, repeatType: "reverse" }}
       >
         <Block />
       </motion.div>
@@ -182,16 +230,21 @@ function FloatDemo() {
 }
 
 function InformDemo() {
-  const inform = useMotion('inform');
+  const inform = useMotion("inform");
   const [k, setK] = useState(0);
   return (
-    <Tile role="inform" title={T.inform.title} hint={T.inform.hint} onClick={() => setK((v) => v + 1)}>
+    <Tile
+      role="inform"
+      title={T.inform.title}
+      hint={T.inform.hint}
+      onClick={() => setK((v) => v + 1)}
+    >
       <div className="dsw-motion-progress">
         <motion.div
           key={k}
           className="dsw-motion-progress-fill"
-          initial={{ width: '4%' }}
-          animate={{ width: '100%' }}
+          initial={{ width: "4%" }}
+          animate={{ width: "100%" }}
           transition={inform}
         />
       </div>

@@ -29,23 +29,23 @@
  * y 127.22, 362 × 697). Text uses CSS cap trimming (text-box) so the Figma
  * gaps — measured cap-to-cap — apply directly.
  */
-import type { CSSProperties, ReactNode } from 'react';
-import { useEffect, useMemo, useRef, useState } from 'react';
-import { AnimatePresence, motion } from 'framer-motion';
-import { Squircle } from './Squircle';
-import { usePressFeedback, useMotion, useMotionExtras } from './MotionProvider';
-import { useDragScroll } from './useDragScroll';
-import { Glyph } from './icons/Glyph';
-import { CrossIcon } from './icons/CrossIcon';
-import { PeerPin } from './PeerPin';
-import { ThinkingTheater } from './ThinkingTheater';
-import { figmaIcons } from './icons/figmaIcons';
-import { peerSticker } from '../theme/peerStickers';
-import { color } from '../theme/tokens';
-import { CATEGORIES, type CategoryId } from '../theme/categories';
-import type { VenueId } from '../data/venues';
-import type { PeerPlan } from '../data/peerPlans';
-import { ALL_ITEMS, itemFacts, type SearchItem } from '../search/corpus';
+import type { CSSProperties, ReactNode } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
+import { AnimatePresence, motion } from "framer-motion";
+import { Squircle } from "./Squircle";
+import { usePressFeedback, useMotion, useMotionExtras } from "./MotionProvider";
+import { useDragScroll } from "./useDragScroll";
+import { Glyph } from "./icons/Glyph";
+import { CrossIcon } from "./icons/CrossIcon";
+import { PeerPin } from "./PeerPin";
+import { ThinkingTheater } from "./ThinkingTheater";
+import { figmaIcons } from "./icons/figmaIcons";
+import { peerSticker } from "../theme/peerStickers";
+import { color } from "../theme/tokens";
+import { CATEGORIES, type CategoryId } from "../theme/categories";
+import type { VenueId } from "../data/venues";
+import type { PeerPlan } from "../data/peerPlans";
+import { ALL_ITEMS, itemFacts, type SearchItem } from "../search/corpus";
 import {
   MANUAL_CHIPS,
   chipEmoji,
@@ -53,14 +53,14 @@ import {
   chipLabel,
   matchesFilters,
   type FilterChip,
-} from '../search/filters';
+} from "../search/filters";
 import {
   SUGGESTED_PROMPTS,
   classifyQuery,
   interpretQuery,
   theaterLines,
   type Interpretation,
-} from '../search/smartSearch';
+} from "../search/smartSearch";
 
 // Chip icons — lavender Figma variants where the design provides them.
 const CHIP_ICON: Partial<Record<CategoryId, string>> = {
@@ -92,14 +92,14 @@ const PAUSE_MS = 900;
 
 // Cap-trimmed text (Figma measures type cap-to-cap). Chromium 133+.
 const capTrim = {
-  textBoxTrim: 'trim-both',
-  textBoxEdge: 'cap text',
+  textBoxTrim: "trim-both",
+  textBoxEdge: "cap text",
 } as CSSProperties;
 
 export function SearchSheet({
   filters,
   onFiltersChange,
-  query = '',
+  query = "",
   submitTick = 0,
   onAskPrompt,
   active = false,
@@ -126,42 +126,46 @@ export function SearchSheet({
   onOpenPlan?: (plan: PeerPlan) => void;
 }) {
   const press = usePressFeedback();
-  const entrance = useMotion('entrance');
-  const morph = useMotion('morph');
-  const snap = useMotion('snap');
+  const entrance = useMotion("entrance");
+  const morph = useMotion("morph");
+  const snap = useMotion("snap");
   const { entranceStagger } = useMotionExtras();
-  const listDrag = useDragScroll('y');
-  const chipDrag = useDragScroll('x');
+  const listDrag = useDragScroll("y");
+  const chipDrag = useDragScroll("x");
 
-  const [phase, setPhase] = useState<'browse' | 'thinking' | 'results'>('browse');
+  const [phase, setPhase] = useState<"browse" | "thinking" | "results">(
+    "browse",
+  );
   const [interp, setInterp] = useState<Interpretation | null>(null);
   // The inline filter expander (the manual When/What palette).
   const [panelOpen, setPanelOpen] = useState(false);
 
   const trimmed = query.trim();
-  const natural = trimmed !== '' && classifyQuery(trimmed) === 'natural';
+  const natural = trimmed !== "" && classifyQuery(trimmed) === "natural";
 
   // Browse list: chips AND typed text. A natural-language sentence is NOT a
   // substring filter (it would empty the list mid-thought) — it leaves the
   // list chips-only until the AI reads it.
   const browseItems = useMemo(() => {
-    const q = natural ? '' : trimmed.toLowerCase();
+    const q = natural ? "" : trimmed.toLowerCase();
     return ALL_ITEMS.filter(
-      (it) => matchesFilters(itemFacts(it), filters) && (q === '' || it.search.includes(q)),
+      (it) =>
+        matchesFilters(itemFacts(it), filters) &&
+        (q === "" || it.search.includes(q)),
     );
   }, [trimmed, natural, filters]);
 
   const runAI = useRef(() => {});
   runAI.current = () => {
     setInterp(interpretQuery(trimmed));
-    setPhase('thinking');
+    setPhase("thinking");
     setPanelOpen(false); // the AI is about to restate the chips anyway
   };
 
   // Typing again cancels results/thinking; a resting natural query self-fires.
   useEffect(() => {
-    setPhase('browse');
-    if (trimmed === '' || classifyQuery(trimmed) !== 'natural') return;
+    setPhase("browse");
+    if (trimmed === "" || classifyQuery(trimmed) !== "natural") return;
     const t = setTimeout(() => runAI.current(), PAUSE_MS);
     return () => clearTimeout(t);
   }, [trimmed]);
@@ -169,15 +173,16 @@ export function SearchSheet({
   // Enter: natural queries run the AI; a keyword with zero hits promotes to
   // natural (never a dead end); a keyword with hits just keeps its list.
   useEffect(() => {
-    if (submitTick === 0 || trimmed === '') return;
-    if (classifyQuery(trimmed) === 'natural' || browseItems.length === 0) runAI.current();
+    if (submitTick === 0 || trimmed === "") return;
+    if (classifyQuery(trimmed) === "natural" || browseItems.length === 0)
+      runAI.current();
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [submitTick]);
 
   // Closing the sheet drops any AI phase so the next open starts fresh.
   useEffect(() => {
     if (!active) {
-      setPhase('browse');
+      setPhase("browse");
       setInterp(null);
       setPanelOpen(false);
     }
@@ -185,7 +190,7 @@ export function SearchSheet({
 
   // ONE suggestion while the field is focused and empty; a different prompt
   // each time it reappears, so repeated opens teach different asks.
-  const showSuggestion = phase === 'browse' && trimmed === '' && fieldFocused;
+  const showSuggestion = phase === "browse" && trimmed === "" && fieldFocused;
   const [promptIdx, setPromptIdx] = useState(0);
   const prevShowSuggestion = useRef(false);
   useEffect(() => {
@@ -197,49 +202,61 @@ export function SearchSheet({
   // Results narrow/widen live as chips are removed — same predicate as the map.
   const resultRows = useMemo(
     () =>
-      phase === 'results' && interp
-        ? interp.results.filter((r) => matchesFilters(itemFacts(r.item), filters))
+      phase === "results" && interp
+        ? interp.results.filter((r) =>
+            matchesFilters(itemFacts(r.item), filters),
+          )
         : [],
     [phase, interp, filters],
   );
-  const resultIds = useMemo(() => new Set(resultRows.map((r) => r.item.id)), [resultRows]);
+  const resultIds = useMemo(
+    () => new Set(resultRows.map((r) => r.item.id)),
+    [resultRows],
+  );
   const moreRows = useMemo(
     () =>
-      phase === 'results'
-        ? ALL_ITEMS.filter((it) => !resultIds.has(it.id) && matchesFilters(itemFacts(it), filters))
+      phase === "results"
+        ? ALL_ITEMS.filter(
+            (it) =>
+              !resultIds.has(it.id) && matchesFilters(itemFacts(it), filters),
+          )
         : [],
     [phase, resultIds, filters],
   );
 
   const activeKeys = useMemo(() => new Set(filters.map(chipKey)), [filters]);
-  const dayPalette = MANUAL_CHIPS.filter((c) => c.kind === 'day');
-  const catPalette = MANUAL_CHIPS.filter((c) => c.kind === 'cat');
+  const dayPalette = MANUAL_CHIPS.filter((c) => c.kind === "day");
+  const catPalette = MANUAL_CHIPS.filter((c) => c.kind === "cat");
 
   const removeChip = (c: FilterChip) =>
     onFiltersChange(filters.filter((f) => chipKey(f) !== chipKey(c)));
   const toggleChip = (c: FilterChip) =>
-    activeKeys.has(chipKey(c)) ? removeChip(c) : onFiltersChange([...filters, c]);
+    activeKeys.has(chipKey(c))
+      ? removeChip(c)
+      : onFiltersChange([...filters, c]);
 
   const heading =
-    phase === 'results'
+    phase === "results"
       ? interp?.fallback
-        ? 'Closest picks around you'
-        : 'Best matches'
-      : 'Happening around you';
+        ? "Closest picks around you"
+        : "Best matches"
+      : "Happening around you";
 
   const openItem = (it: SearchItem) =>
-    it.kind === 'peer' ? onOpenPlan?.(it.plan) : onOpenEvent?.(it.venueId, it.eventId);
+    it.kind === "peer"
+      ? onOpenPlan?.(it.plan)
+      : onOpenEvent?.(it.venueId, it.eventId);
 
   return (
     <div
       style={{
-        position: 'absolute',
+        position: "absolute",
         left: CHIP_ROW.left,
         top: CHIP_ROW.top,
         width: CHIP_ROW.w,
         height: SHEET_H - CHIP_ROW.top - 25,
-        display: 'flex',
-        flexDirection: 'column',
+        display: "flex",
+        flexDirection: "column",
       }}
     >
       {/* Chips row — the Filters button + the ACTIVE chips (solid, ×). */}
@@ -248,30 +265,38 @@ export function SearchSheet({
         style={{
           height: CHIP_ROW.h,
           flexShrink: 0,
-          display: 'flex',
+          display: "flex",
           gap: 10,
-          alignItems: 'center',
-          overflowX: 'auto',
-          overflowY: 'hidden',
-          scrollbarWidth: 'none',
+          alignItems: "center",
+          overflowX: "auto",
+          overflowY: "hidden",
+          scrollbarWidth: "none",
         }}
       >
         <motion.button
           {...press}
           onClick={() => setPanelOpen((o) => !o)}
-          aria-label={panelOpen ? 'Close filters' : 'Open filters'}
+          aria-label={panelOpen ? "Close filters" : "Open filters"}
           aria-expanded={panelOpen}
-          style={{ flexShrink: 0, background: 'transparent', border: 'none', padding: 0, cursor: 'pointer' }}
+          style={{
+            flexShrink: 0,
+            background: "transparent",
+            border: "none",
+            padding: 0,
+            cursor: "pointer",
+          }}
         >
           <Squircle
             role="chip"
-            fill={panelOpen ? 'rgba(255,255,255,0.22)' : 'rgba(255,255,255,0.12)'}
+            fill={
+              panelOpen ? "rgba(255,255,255,0.22)" : "rgba(255,255,255,0.12)"
+            }
             style={{
               height: CHIP_ROW.h,
-              display: 'flex',
-              alignItems: 'center',
+              display: "flex",
+              alignItems: "center",
               gap: 6,
-              padding: '0 10px',
+              padding: "0 10px",
             }}
           >
             {/* The cross glyph doubles as +: rotated 45° it reads "add", and
@@ -280,11 +305,18 @@ export function SearchSheet({
             <motion.span
               animate={{ rotate: panelOpen ? 0 : 45 }}
               transition={snap}
-              style={{ display: 'grid', placeItems: 'center' }}
+              style={{ display: "grid", placeItems: "center" }}
             >
               <CrossIcon size={10} color={color.lavender} />
             </motion.span>
-            <span style={{ color: color.lavender, fontSize: 12, fontWeight: 600, whiteSpace: 'nowrap' }}>
+            <span
+              style={{
+                color: color.lavender,
+                fontSize: 12,
+                fontWeight: 600,
+                whiteSpace: "nowrap",
+              }}
+            >
               Filters
             </span>
           </Squircle>
@@ -296,10 +328,10 @@ export function SearchSheet({
               fill="rgba(255,255,255,0.12)"
               style={{
                 height: CHIP_ROW.h,
-                display: 'flex',
-                alignItems: 'center',
+                display: "flex",
+                alignItems: "center",
                 gap: 6,
-                padding: '0 10px',
+                padding: "0 10px",
               }}
             >
               <ChipFace chip={c} dim={false} />
@@ -307,14 +339,14 @@ export function SearchSheet({
                 aria-label={`Remove ${chipLabel(c)}`}
                 onClick={() => removeChip(c)}
                 style={{
-                  display: 'grid',
-                  placeItems: 'center',
+                  display: "grid",
+                  placeItems: "center",
                   width: 16,
                   height: 16,
                   marginLeft: 2,
-                  background: 'transparent',
-                  border: 'none',
-                  cursor: 'pointer',
+                  background: "transparent",
+                  border: "none",
+                  cursor: "pointer",
                   padding: 0,
                 }}
               >
@@ -332,30 +364,40 @@ export function SearchSheet({
           <motion.div
             key="filter-panel"
             initial={{ height: 0, opacity: 0 }}
-            animate={{ height: 'auto', opacity: 1 }}
+            animate={{ height: "auto", opacity: 1 }}
             exit={{ height: 0, opacity: 0 }}
             transition={morph}
-            style={{ overflow: 'hidden', flexShrink: 0 }}
+            style={{ overflow: "hidden", flexShrink: 0 }}
           >
             <Squircle
               role="card"
               fill="rgba(255,255,255,0.07)"
               style={{
                 marginTop: 10,
-                padding: '14px 14px 16px',
-                display: 'flex',
-                flexDirection: 'column',
+                padding: "14px 14px 16px",
+                display: "flex",
+                flexDirection: "column",
                 gap: 12,
               }}
             >
               <PanelGroup label="When">
                 {dayPalette.map((c) => (
-                  <PanelChip key={chipKey(c)} chip={c} selected={activeKeys.has(chipKey(c))} onToggle={toggleChip} />
+                  <PanelChip
+                    key={chipKey(c)}
+                    chip={c}
+                    selected={activeKeys.has(chipKey(c))}
+                    onToggle={toggleChip}
+                  />
                 ))}
               </PanelGroup>
               <PanelGroup label="What">
                 {catPalette.map((c) => (
-                  <PanelChip key={chipKey(c)} chip={c} selected={activeKeys.has(chipKey(c))} onToggle={toggleChip} />
+                  <PanelChip
+                    key={chipKey(c)}
+                    chip={c}
+                    selected={activeKeys.has(chipKey(c))}
+                    onToggle={toggleChip}
+                  />
                 ))}
               </PanelGroup>
             </Squircle>
@@ -371,12 +413,12 @@ export function SearchSheet({
           width: CARD_W,
           flex: 1,
           minHeight: 0,
-          display: 'flex',
-          flexDirection: 'column',
+          display: "flex",
+          flexDirection: "column",
           gap: HEADING_TO_LIST,
         }}
       >
-        {phase === 'thinking' ? (
+        {phase === "thinking" ? (
           <ThinkingTheater
             lines={theaterLines(trimmed)}
             onDone={() => {
@@ -384,11 +426,18 @@ export function SearchSheet({
               // set outright. Stacking day/cat chips across queries quietly
               // filtered new answers down to nothing.
               if (interp && !interp.fallback) onFiltersChange(interp.chips);
-              setPhase('results');
+              setPhase("results");
             }}
           />
         ) : (
-          <div style={{ color: color.onBrand, fontSize: 16, fontWeight: 500, ...capTrim }}>
+          <div
+            style={{
+              color: color.onBrand,
+              fontSize: 16,
+              fontWeight: 500,
+              ...capTrim,
+            }}
+          >
             {heading}
           </div>
         )}
@@ -398,18 +447,18 @@ export function SearchSheet({
           style={{
             flex: 1,
             minHeight: 0,
-            overflowY: 'auto',
-            display: 'flex',
-            flexDirection: 'column',
+            overflowY: "auto",
+            display: "flex",
+            flexDirection: "column",
             gap: CARD_GAP,
             paddingBottom: LIST_PAD_BOTTOM,
-            scrollbarWidth: 'none',
+            scrollbarWidth: "none",
             WebkitMaskImage: `linear-gradient(to bottom, #000 calc(100% - ${LIST_FADE}px), transparent)`,
             maskImage: `linear-gradient(to bottom, #000 calc(100% - ${LIST_FADE}px), transparent)`,
             // Thinking dims the list rather than unmounting it (wall-clock CSS).
-            opacity: phase === 'thinking' ? 0.3 : 1,
-            transition: 'opacity 0.25s ease-out',
-            pointerEvents: phase === 'thinking' ? 'none' : undefined,
+            opacity: phase === "thinking" ? 0.3 : 1,
+            transition: "opacity 0.25s ease-out",
+            pointerEvents: phase === "thinking" ? "none" : undefined,
           }}
         >
           {/* One suggestion while the field is focused — teaches that the bar
@@ -424,15 +473,17 @@ export function SearchSheet({
                 exit={{ opacity: 0, y: -4 }}
                 transition={entrance}
                 {...press}
-                onPointerDown={() => onAskPrompt?.(SUGGESTED_PROMPTS[promptIdx])}
+                onPointerDown={() =>
+                  onAskPrompt?.(SUGGESTED_PROMPTS[promptIdx])
+                }
                 style={{
-                  alignSelf: 'flex-start',
+                  alignSelf: "flex-start",
                   flexShrink: 0,
-                  background: 'transparent',
-                  border: 'none',
+                  background: "transparent",
+                  border: "none",
                   padding: 0,
                   marginBottom: 10,
-                  cursor: 'pointer',
+                  cursor: "pointer",
                 }}
               >
                 <Squircle
@@ -440,14 +491,25 @@ export function SearchSheet({
                   fill="rgba(255,255,255,0.08)"
                   style={{
                     height: 32,
-                    display: 'flex',
-                    alignItems: 'center',
+                    display: "flex",
+                    alignItems: "center",
                     gap: 7,
-                    padding: '0 12px',
+                    padding: "0 12px",
                   }}
                 >
-                  <img src={figmaIcons.shootingStar} alt="" style={{ width: 13, height: 13, display: 'block' }} />
-                  <span style={{ color: color.lavender, fontSize: 13, fontWeight: 500, whiteSpace: 'nowrap' }}>
+                  <img
+                    src={figmaIcons.shootingStar}
+                    alt=""
+                    style={{ width: 13, height: 13, display: "block" }}
+                  />
+                  <span
+                    style={{
+                      color: color.lavender,
+                      fontSize: 13,
+                      fontWeight: 500,
+                      whiteSpace: "nowrap",
+                    }}
+                  >
                     try “{SUGGESTED_PROMPTS[promptIdx]}”
                   </span>
                 </Squircle>
@@ -455,10 +517,18 @@ export function SearchSheet({
             )}
           </AnimatePresence>
 
-          {phase === 'results' ? (
+          {phase === "results" ? (
             <>
               {resultRows.length === 0 && (
-                <div style={{ color: color.lavender, fontSize: 14, fontWeight: 400, paddingTop: 4, ...capTrim }}>
+                <div
+                  style={{
+                    color: color.lavender,
+                    fontSize: 14,
+                    fontWeight: 400,
+                    paddingTop: 4,
+                    ...capTrim,
+                  }}
+                >
                   Nothing left — remove a filter to widen the net.
                 </div>
               )}
@@ -497,7 +567,15 @@ export function SearchSheet({
           ) : (
             <>
               {browseItems.length === 0 && (
-                <div style={{ color: color.lavender, fontSize: 14, fontWeight: 400, paddingTop: 4, ...capTrim }}>
+                <div
+                  style={{
+                    color: color.lavender,
+                    fontSize: 14,
+                    fontWeight: 400,
+                    paddingTop: 4,
+                    ...capTrim,
+                  }}
+                >
                   Nothing matches your search.
                 </div>
               )}
@@ -513,13 +591,29 @@ export function SearchSheet({
 }
 
 /** A labelled group inside the filter expander ("When" / "What"). */
-function PanelGroup({ label, children }: { label: string; children: ReactNode }) {
+function PanelGroup({
+  label,
+  children,
+}: {
+  label: string;
+  children: ReactNode;
+}) {
   return (
-    <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
-      <span style={{ color: color.lavender, fontSize: 11, fontWeight: 600, opacity: 0.8, ...capTrim }}>
+    <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
+      <span
+        style={{
+          color: color.lavender,
+          fontSize: 11,
+          fontWeight: 600,
+          opacity: 0.8,
+          ...capTrim,
+        }}
+      >
         {label}
       </span>
-      <div style={{ display: 'flex', flexWrap: 'wrap', gap: 8 }}>{children}</div>
+      <div style={{ display: "flex", flexWrap: "wrap", gap: 8 }}>
+        {children}
+      </div>
     </div>
   );
 }
@@ -541,21 +635,35 @@ function PanelChip({
       {...press}
       onClick={() => onToggle(chip)}
       aria-pressed={selected}
-      style={{ background: 'transparent', border: 'none', padding: 0, cursor: 'pointer' }}
+      style={{
+        background: "transparent",
+        border: "none",
+        padding: 0,
+        cursor: "pointer",
+      }}
     >
       <Squircle
         role="chip"
-        fill={selected ? '#fff' : 'rgba(255,255,255,0.1)'}
+        fill={selected ? "#fff" : "rgba(255,255,255,0.1)"}
         style={{
           height: 32,
-          display: 'flex',
-          alignItems: 'center',
+          display: "flex",
+          alignItems: "center",
           gap: 6,
-          padding: '0 11px',
+          padding: "0 11px",
         }}
       >
-        {chip.kind === 'cat' && <Glyph name={CATEGORIES[chip.id].glyph} size={14} color={fg} />}
-        <span style={{ color: fg, fontSize: 12, fontWeight: 600, whiteSpace: 'nowrap' }}>
+        {chip.kind === "cat" && (
+          <Glyph name={CATEGORIES[chip.id].glyph} size={14} color={fg} />
+        )}
+        <span
+          style={{
+            color: fg,
+            fontSize: 12,
+            fontWeight: 600,
+            whiteSpace: "nowrap",
+          }}
+        >
           {chipLabel(chip)}
         </span>
       </Squircle>
@@ -571,9 +679,13 @@ function ChipFace({ chip, dim }: { chip: FilterChip; dim: boolean }) {
     <>
       {emoji ? (
         <span style={{ fontSize: 13, lineHeight: 1 }}>{emoji}</span>
-      ) : chip.kind === 'cat' ? (
+      ) : chip.kind === "cat" ? (
         CHIP_ICON[chip.id] ? (
-          <img src={CHIP_ICON[chip.id]} alt="" style={{ height: 17, width: 'auto', display: 'block' }} />
+          <img
+            src={CHIP_ICON[chip.id]}
+            alt=""
+            style={{ height: 17, width: "auto", display: "block" }}
+          />
         ) : (
           <Glyph name={CATEGORIES[chip.id].glyph} size={15} color={textColor} />
         )
@@ -583,7 +695,7 @@ function ChipFace({ chip, dim }: { chip: FilterChip; dim: boolean }) {
           color: textColor,
           fontSize: 12,
           fontWeight: 600,
-          whiteSpace: 'nowrap',
+          whiteSpace: "nowrap",
           opacity: dim ? 0.9 : 1,
         }}
       >
@@ -611,13 +723,13 @@ function ItemCard({
       onClick={() => onTap(item)}
       style={{
         flexShrink: 0,
-        background: 'transparent',
-        border: 'none',
+        background: "transparent",
+        border: "none",
         padding: 0,
-        textAlign: 'left',
-        cursor: 'pointer',
-        display: 'block',
-        width: '100%',
+        textAlign: "left",
+        cursor: "pointer",
+        display: "block",
+        width: "100%",
       }}
     >
       <Squircle
@@ -625,24 +737,40 @@ function ItemCard({
         fill={color.brandDeep}
         style={{
           height: why ? RESULT_CARD_H : CARD_H,
-          display: 'flex',
-          alignItems: 'center',
+          display: "flex",
+          alignItems: "center",
           gap: 12,
           // Avatar rows hug tighter (Figma px-12 vs px-16) — the 45px
           // tile is visually heavier than the line glyphs.
-          padding: `0 ${item.kind === 'peer' ? 12 : 16}px`,
+          padding: `0 ${item.kind === "peer" ? 12 : 16}px`,
         }}
       >
-        {item.kind === 'peer' ? (
-          <PeerPin size={45} badge={peerSticker(`${item.plan.title} ${item.plan.description}`)} />
+        {item.kind === "peer" ? (
+          <PeerPin
+            size={45}
+            badge={peerSticker(`${item.plan.title} ${item.plan.description}`)}
+          />
         ) : (
           <img
             src={item.icon}
             alt=""
-            style={{ height: item.iconH, width: 'auto', display: 'block', flexShrink: 0 }}
+            style={{
+              height: item.iconH,
+              width: "auto",
+              display: "block",
+              flexShrink: 0,
+            }}
           />
         )}
-        <div style={{ flex: 1, minWidth: 0, display: 'flex', flexDirection: 'column', gap: 8 }}>
+        <div
+          style={{
+            flex: 1,
+            minWidth: 0,
+            display: "flex",
+            flexDirection: "column",
+            gap: 8,
+          }}
+        >
           {/* overflow:hidden clips descenders below the cap-trimmed box,
               so instead let long real-data titles ellipsize on one line. */}
           <span
@@ -650,33 +778,49 @@ function ItemCard({
               color: color.onBrand,
               fontSize: 16,
               fontWeight: 500,
-              whiteSpace: 'nowrap',
-              overflow: 'hidden',
-              textOverflow: 'ellipsis',
+              whiteSpace: "nowrap",
+              overflow: "hidden",
+              textOverflow: "ellipsis",
               ...capTrim,
             }}
           >
             {item.title}
           </span>
-          <span style={{ color: color.lavender, fontSize: 12, fontWeight: 500, ...capTrim }}>
+          <span
+            style={{
+              color: color.lavender,
+              fontSize: 12,
+              fontWeight: 500,
+              ...capTrim,
+            }}
+          >
             {item.meta}
           </span>
           {why && (
             <span
               style={{
-                display: 'flex',
-                alignItems: 'center',
+                display: "flex",
+                alignItems: "center",
                 gap: 5,
                 color: color.lavender,
                 fontSize: 12,
                 fontWeight: 400,
-                whiteSpace: 'nowrap',
-                overflow: 'hidden',
-                textOverflow: 'ellipsis',
+                whiteSpace: "nowrap",
+                overflow: "hidden",
+                textOverflow: "ellipsis",
                 ...capTrim,
               }}
             >
-              <img src={figmaIcons.shootingStar} alt="" style={{ width: 11, height: 11, display: 'block', flexShrink: 0 }} />
+              <img
+                src={figmaIcons.shootingStar}
+                alt=""
+                style={{
+                  width: 11,
+                  height: 11,
+                  display: "block",
+                  flexShrink: 0,
+                }}
+              />
               {why}
             </span>
           )}
@@ -684,7 +828,7 @@ function ItemCard({
         <img
           src={figmaIcons.chevron}
           alt=""
-          style={{ width: 8, height: 11.33, display: 'block', flexShrink: 0 }}
+          style={{ width: 8, height: 11.33, display: "block", flexShrink: 0 }}
         />
       </Squircle>
     </motion.button>

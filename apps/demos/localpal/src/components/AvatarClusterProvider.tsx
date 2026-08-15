@@ -1,13 +1,13 @@
-import { createContext, useContext, useState, type ReactNode } from 'react';
+import { createContext, useContext, useState, type ReactNode } from "react";
 import {
   defaultAvatarCluster,
   type AvatarClusterConfig,
   type ClusterSlot,
-} from '../theme/avatarCluster';
+} from "../theme/avatarCluster";
 
 type Ctx = {
   cluster: AvatarClusterConfig;
-  setBox: (patch: Partial<Pick<AvatarClusterConfig, 'boxW' | 'boxH'>>) => void;
+  setBox: (patch: Partial<Pick<AvatarClusterConfig, "boxW" | "boxH">>) => void;
   setSlot: (index: number, patch: Partial<ClusterSlot>) => void;
   reset: () => void;
 };
@@ -25,13 +25,16 @@ const AvatarClusterCtx = createContext<Ctx>({
  * cards re-lays-out as you drag tiles around.
  */
 export function AvatarClusterProvider({ children }: { children: ReactNode }) {
-  const [cluster, setCluster] = useState<AvatarClusterConfig>(defaultAvatarCluster);
-  const setBox = (patch: Partial<Pick<AvatarClusterConfig, 'boxW' | 'boxH'>>) =>
+  const [cluster, setCluster] =
+    useState<AvatarClusterConfig>(defaultAvatarCluster);
+  const setBox = (patch: Partial<Pick<AvatarClusterConfig, "boxW" | "boxH">>) =>
     setCluster((c) => ({ ...c, ...patch }));
   const setSlot = (index: number, patch: Partial<ClusterSlot>) =>
     setCluster((c) => ({
       ...c,
-      slots: c.slots.map((s, i) => (i === index ? { ...s, ...patch } : s)) as AvatarClusterConfig['slots'],
+      slots: c.slots.map((s, i) =>
+        i === index ? { ...s, ...patch } : s,
+      ) as AvatarClusterConfig["slots"],
     }));
   const reset = () => setCluster(defaultAvatarCluster);
   return (

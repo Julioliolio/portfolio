@@ -1,5 +1,5 @@
-import { useState, type RefObject } from 'react';
-import { domToPng } from 'modern-screenshot';
+import { useState, type RefObject } from "react";
+import { domToPng } from "modern-screenshot";
 
 /**
  * Pixel multiplier for the exported PNG. 2× of the 417-wide frame ≈ 834px —
@@ -23,7 +23,11 @@ const MEDIA_TIMEOUT = 1500;
  * download. Kept dev-only chrome — lives beside the screen nav, not inside
  * the phone. WebGL map capture relies on `preserveDrawingBuffer` on the Map.
  */
-export function CaptureButton({ target }: { target: RefObject<HTMLElement | null> }) {
+export function CaptureButton({
+  target,
+}: {
+  target: RefObject<HTMLElement | null>;
+}) {
   const [busy, setBusy] = useState(false);
 
   async function capture() {
@@ -36,21 +40,21 @@ export function CaptureButton({ target }: { target: RefObject<HTMLElement | null
     // on the clipped body), so it can go entirely. Restored after, so the
     // on-screen frame keeps its float.
     const prevShadow = node.style.boxShadow;
-    node.style.boxShadow = 'none';
+    node.style.boxShadow = "none";
     try {
       const dataUrl = await domToPng(node, {
         scale: SCALE,
         // Transparent outside the frame's rounded corners.
-        backgroundColor: 'transparent',
+        backgroundColor: "transparent",
         // Don't wait out the full 30s default on a never-resolving media load.
         timeout: MEDIA_TIMEOUT,
       });
-      const a = document.createElement('a');
+      const a = document.createElement("a");
       a.download = `localpal-${Date.now()}.png`;
       a.href = dataUrl;
       a.click();
     } catch (err) {
-      console.error('Screenshot failed', err);
+      console.error("Screenshot failed", err);
     } finally {
       node.style.boxShadow = prevShadow;
       setBusy(false);
@@ -63,17 +67,17 @@ export function CaptureButton({ target }: { target: RefObject<HTMLElement | null
       disabled={busy}
       title="Download a high-res PNG of the phone frame"
       style={{
-        padding: '10px 16px',
+        padding: "10px 16px",
         borderRadius: 12,
         fontWeight: 600,
         fontSize: 14,
-        color: '#bbb',
-        background: 'rgba(255,255,255,0.08)',
-        cursor: busy ? 'default' : 'pointer',
+        color: "#bbb",
+        background: "rgba(255,255,255,0.08)",
+        cursor: busy ? "default" : "pointer",
         opacity: busy ? 0.6 : 1,
       }}
     >
-      {busy ? 'Capturing…' : '📷 Screenshot'}
+      {busy ? "Capturing…" : "📷 Screenshot"}
     </button>
   );
 }

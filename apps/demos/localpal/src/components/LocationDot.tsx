@@ -1,6 +1,6 @@
-import { motion } from 'framer-motion';
-import { useMotion } from './MotionProvider';
-import { color } from '../theme/tokens';
+import { motion } from "framer-motion";
+import { useMotion } from "./MotionProvider";
+import { color } from "../theme/tokens";
 
 /**
  * The user's "blue dot" location marker — a calm halo that pulses once each
@@ -10,21 +10,21 @@ import { color } from '../theme/tokens';
  * (MapHome) and the capture stage (?capture=locate) share one construction.
  */
 export function LocationDot({ pulseTick }: { pulseTick: number }) {
-  const float = useMotion('float');
+  const float = useMotion("float");
   return (
-    <div style={{ position: 'relative', width: 68, height: 68 }}>
+    <div style={{ position: "relative", width: 68, height: 68 }}>
       <motion.div
         key={pulseTick}
         style={{
-          position: 'absolute',
+          position: "absolute",
           // A smaller halo (40px) centered on the dot, not the full 68px box.
-          left: '50%',
-          top: '50%',
+          left: "50%",
+          top: "50%",
           width: 40,
           height: 40,
           marginLeft: -20,
           marginTop: -20,
-          borderRadius: '50%',
+          borderRadius: "50%",
           background: color.locationHalo,
         }}
         initial={{ scale: 1, opacity: 0.4 }}
@@ -33,19 +33,23 @@ export function LocationDot({ pulseTick }: { pulseTick: number }) {
             ? { scale: 1, opacity: 0.4 }
             : { scale: [1, 1.4, 1], opacity: [0.4, 0.12, 0.4] }
         }
-        transition={pulseTick === 0 ? undefined : { duration: float.duration! * 2.5, ease: float.ease }}
+        transition={
+          pulseTick === 0
+            ? undefined
+            : { duration: float.duration! * 2.5, ease: float.ease }
+        }
       />
       <div
         style={{
-          position: 'absolute',
+          position: "absolute",
           left: 34 - 9,
           top: 34 - 9,
           width: 18,
           height: 18,
-          borderRadius: '50%',
+          borderRadius: "50%",
           background: color.locationDot,
-          border: '3px solid #fff',
-          boxShadow: '0 2px 6px rgba(0,0,0,0.25)',
+          border: "3px solid #fff",
+          boxShadow: "0 2px 6px rgba(0,0,0,0.25)",
         }}
       />
     </div>

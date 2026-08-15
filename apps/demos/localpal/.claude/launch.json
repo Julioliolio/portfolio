@@ -4,30 +4,21 @@
     {
       "name": "localpal-dev",
       "runtimeExecutable": "npm",
-      "runtimeArgs": [
-        "run",
-        "dev"
-      ],
+      "runtimeArgs": ["run", "dev"],
       "port": 5173,
       "autoPort": true
     },
     {
       "name": "localpal-dev-5175",
       "runtimeExecutable": "npm",
-      "runtimeArgs": [
-        "run",
-        "dev"
-      ],
+      "runtimeArgs": ["run", "dev"],
       "port": 5175,
       "autoPort": true
     },
     {
       "name": "localpal-dev-5176",
       "runtimeExecutable": "npm",
-      "runtimeArgs": [
-        "run",
-        "dev"
-      ],
+      "runtimeArgs": ["run", "dev"],
       "port": 5176,
       "autoPort": true
     }

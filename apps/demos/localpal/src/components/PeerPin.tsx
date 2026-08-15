@@ -9,8 +9,8 @@
  * overlapping the top-right corner. Pass `photo` to drop a real image into the
  * same squircle — the guides are a placeholder for that.
  */
-import type { CSSProperties } from 'react';
-import { IconPlaceholder } from './icons/IconPlaceholder';
+import type { CSSProperties } from "react";
+import { IconPlaceholder } from "./icons/IconPlaceholder";
 
 // Badge geometry, measured from the Figma list row at a 45px tile and kept as
 // ratios so it scales with any `size` (badge ≈ 20px at left 30.9 / top -6.5).
@@ -41,8 +41,22 @@ export function PeerPin({
   style?: CSSProperties;
 }) {
   return (
-    <div style={{ position: 'relative', width: size, height: height ?? size, flexShrink: 0, ...style }}>
-      <IconPlaceholder size={size} height={height} photo={photo} stroke={stroke} strokeWidth={strokeWidth} />
+    <div
+      style={{
+        position: "relative",
+        width: size,
+        height: height ?? size,
+        flexShrink: 0,
+        ...style,
+      }}
+    >
+      <IconPlaceholder
+        size={size}
+        height={height}
+        photo={photo}
+        stroke={stroke}
+        strokeWidth={strokeWidth}
+      />
       {badge && (
         <img
           src={badge}
@@ -50,11 +64,11 @@ export function PeerPin({
           width={size * BADGE_SIZE}
           height={size * BADGE_SIZE}
           style={{
-            position: 'absolute',
+            position: "absolute",
             left: size * BADGE_LEFT,
             top: size * BADGE_TOP,
             transform: `rotate(${BADGE_ROTATE}deg)`,
-            display: 'block',
+            display: "block",
             // FloatingSquircle's content layer sits at z-index 1 (above its own
             // floor shadow) — the badge must beat that explicitly.
             zIndex: 2,

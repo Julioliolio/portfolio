@@ -6,11 +6,11 @@ import {
   type ElementType,
   type ReactNode,
   type Ref,
-} from 'react';
-import { getSvgPath } from 'figma-squircle';
-import { smoothing as defaultSmoothing } from '../theme/tokens';
-import { useSquircleContext } from './SquircleProvider';
-import type { SquircleRole } from '../theme/squircles';
+} from "react";
+import { getSvgPath } from "figma-squircle";
+import { smoothing as defaultSmoothing } from "../theme/tokens";
+import { useSquircleContext } from "./SquircleProvider";
+import type { SquircleRole } from "../theme/squircles";
 
 // Extends an index signature (rather than intersecting one) so the named
 // members keep their declared types when destructured — the intersection
@@ -49,7 +49,7 @@ export function Squircle({
   fill,
   stroke,
   strokeWidth = 1.5,
-  as: Tag = 'div',
+  as: Tag = "div",
   className,
   style,
   children,
@@ -59,7 +59,8 @@ export function Squircle({
   const { styles } = useSquircleContext();
   const roleStyle = role ? styles[role] : undefined;
   const resolvedRadius = radius ?? roleStyle?.radius ?? 18;
-  const resolvedSmoothing = smoothing ?? roleStyle?.smoothing ?? defaultSmoothing;
+  const resolvedSmoothing =
+    smoothing ?? roleStyle?.smoothing ?? defaultSmoothing;
 
   const innerRef = useRef<HTMLElement | null>(null);
   const [size, setSize] = useState({ w: 0, h: 0 });
@@ -67,8 +68,7 @@ export function Squircle({
   useLayoutEffect(() => {
     const el = innerRef.current;
     if (!el) return;
-    const update = () =>
-      setSize({ w: el.offsetWidth, h: el.offsetHeight });
+    const update = () => setSize({ w: el.offsetWidth, h: el.offsetHeight });
     update();
     const ro = new ResizeObserver(update);
     ro.observe(el);
@@ -83,18 +83,18 @@ export function Squircle({
           cornerRadius: resolvedRadius,
           cornerSmoothing: resolvedSmoothing,
         })
-      : '';
+      : "";
 
   return (
     <Tag
       ref={(node: HTMLElement | null) => {
         innerRef.current = node;
-        if (typeof _ref === 'function') _ref(node);
+        if (typeof _ref === "function") _ref(node);
         else if (_ref) (_ref as { current: HTMLElement | null }).current = node;
       }}
       className={className}
       style={{
-        position: 'relative',
+        position: "relative",
         backgroundColor: fill,
         clipPath: path ? `path('${path}')` : undefined,
         ...style,
@@ -108,10 +108,10 @@ export function Squircle({
           height={size.h}
           viewBox={`0 0 ${size.w} ${size.h}`}
           style={{
-            position: 'absolute',
+            position: "absolute",
             inset: 0,
-            pointerEvents: 'none',
-            overflow: 'visible',
+            pointerEvents: "none",
+            overflow: "visible",
           }}
           aria-hidden
         >

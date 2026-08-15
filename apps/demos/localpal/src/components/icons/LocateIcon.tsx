@@ -6,7 +6,10 @@
  * ticks. One flat colour driven by the caller. Replaces the old 22px
  * locate-glyph.png, which pixelated on retina.
  */
-export function LocateIcon({ size = 22, color = '#3121FF' }: {
+export function LocateIcon({
+  size = 22,
+  color = "#3121FF",
+}: {
   size?: number;
   color?: string;
 }) {
@@ -17,7 +20,7 @@ export function LocateIcon({ size = 22, color = '#3121FF' }: {
       viewBox="0 0 22 21"
       fill="none"
       aria-hidden
-      style={{ display: 'block' }}
+      style={{ display: "block" }}
     >
       {/* centre — rounded square */}
       <path
@@ -27,7 +30,11 @@ export function LocateIcon({ size = 22, color = '#3121FF' }: {
       {/* N/E/S/W ticks */}
       <path d="M5.88047 10.5698H0" stroke={color} strokeWidth="2.5" />
       <path d="M21.0133 10.5698H15.1328" stroke={color} strokeWidth="2.5" />
-      <path d="M10.4937 20.7511L10.4937 14.8706" stroke={color} strokeWidth="2.5" />
+      <path
+        d="M10.4937 20.7511L10.4937 14.8706"
+        stroke={color}
+        strokeWidth="2.5"
+      />
       <path d="M10.4937 5.88047L10.4937 0" stroke={color} strokeWidth="2.5" />
       {/* ring */}
       <path

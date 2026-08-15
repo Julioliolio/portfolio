@@ -29,21 +29,21 @@ import {
   useState,
   type CSSProperties,
   type ReactNode,
-} from 'react';
-import { animate, motion, useMotionValue, useTransform } from 'framer-motion';
-import { getSvgPath } from 'figma-squircle';
-import { Squircle } from '../Squircle';
-import { useSquircle } from '../SquircleProvider';
-import { useMotion, usePressFeedback } from '../MotionProvider';
-import { useDragScroll } from '../useDragScroll';
-import { useDragDismiss, SheetGrabber, DismissScrim } from '../sheetDismiss';
-import { PeerPin } from '../PeerPin';
-import { BackChevron } from '../icons/BackChevron';
-import { figmaIcons } from '../icons/figmaIcons';
-import { color, device } from '../../theme/tokens';
-import { layerZoomStyle } from '../../theme/motion';
-import { PEOPLE, personTag } from '../../data/people';
-import type { PeerPlan } from '../../data/peerPlans';
+} from "react";
+import { animate, motion, useMotionValue, useTransform } from "framer-motion";
+import { getSvgPath } from "figma-squircle";
+import { Squircle } from "../Squircle";
+import { useSquircle } from "../SquircleProvider";
+import { useMotion, usePressFeedback } from "../MotionProvider";
+import { useDragScroll } from "../useDragScroll";
+import { useDragDismiss, SheetGrabber, DismissScrim } from "../sheetDismiss";
+import { PeerPin } from "../PeerPin";
+import { BackChevron } from "../icons/BackChevron";
+import { figmaIcons } from "../icons/figmaIcons";
+import { color, device } from "../../theme/tokens";
+import { layerZoomStyle } from "../../theme/motion";
+import { PEOPLE, personTag } from "../../data/people";
+import type { PeerPlan } from "../../data/peerPlans";
 import {
   CONVERSATIONS,
   conversationName,
@@ -52,20 +52,20 @@ import {
   synthConversationForPlan,
   type ChatMessage,
   type Conversation,
-} from '../../data/conversations';
+} from "../../data/conversations";
 
 /* ------------------------------------------------------------------ */
 /* Nav stack                                                            */
 /* ------------------------------------------------------------------ */
 
 export type MessagesView =
-  | { kind: 'inbox' }
-  | { kind: 'thread'; conversationId?: string; plan?: PeerPlan };
+  | { kind: "inbox" }
+  | { kind: "thread"; conversationId?: string; plan?: PeerPlan };
 
 const viewKey = (v: MessagesView) =>
-  v.kind === 'inbox'
-    ? 'inbox'
-    : `thread:${v.conversationId ?? (v.plan ? `plan:${v.plan.id}` : '?')}`;
+  v.kind === "inbox"
+    ? "inbox"
+    : `thread:${v.conversationId ?? (v.plan ? `plan:${v.plan.id}` : "?")}`;
 
 /* ------------------------------------------------------------------ */
 /* Geometry                                                             */
@@ -94,22 +94,22 @@ const lerp = (a: number, b: number, t: number) => a + (b - a) * t;
 
 // Cap-trimmed text (Figma measures type cap-to-cap). Chromium 133+.
 const capTrim = {
-  textBoxTrim: 'trim-both',
-  textBoxEdge: 'cap text',
+  textBoxTrim: "trim-both",
+  textBoxEdge: "cap text",
 } as CSSProperties;
 
 const buttonReset: CSSProperties = {
-  background: 'transparent',
-  border: 'none',
+  background: "transparent",
+  border: "none",
   padding: 0,
-  cursor: 'pointer',
-  textAlign: 'left',
+  cursor: "pointer",
+  textAlign: "left",
 };
 
 const ellipsis: CSSProperties = {
-  overflow: 'hidden',
-  textOverflow: 'ellipsis',
-  whiteSpace: 'nowrap',
+  overflow: "hidden",
+  textOverflow: "ellipsis",
+  whiteSpace: "nowrap",
 };
 
 /* ------------------------------------------------------------------ */
@@ -117,10 +117,26 @@ const ellipsis: CSSProperties = {
 /* ------------------------------------------------------------------ */
 
 /** Paper-plane send glyph — inline SVG (no baked raster), takes any color. */
-function SendGlyph({ size = 20, color: c = color.brand }: { size?: number; color?: string }) {
+function SendGlyph({
+  size = 20,
+  color: c = color.brand,
+}: {
+  size?: number;
+  color?: string;
+}) {
   return (
-    <svg width={size} height={size} viewBox="0 0 24 24" fill="none" aria-hidden style={{ display: 'block' }}>
-      <path d="M3.4 11.2 20 3.5c.6-.3 1.2.3.9.9L13.2 21c-.3.6-1.2.5-1.4-.1l-2-6.1a1 1 0 0 0-.6-.6l-6.1-2c-.7-.2-.8-1.1-.1-1.4Z" fill={c} />
+    <svg
+      width={size}
+      height={size}
+      viewBox="0 0 24 24"
+      fill="none"
+      aria-hidden
+      style={{ display: "block" }}
+    >
+      <path
+        d="M3.4 11.2 20 3.5c.6-.3 1.2.3.9.9L13.2 21c-.3.6-1.2.5-1.4-.1l-2-6.1a1 1 0 0 0-.6-.6l-6.1-2c-.7-.2-.8-1.1-.1-1.4Z"
+        fill={c}
+      />
     </svg>
   );
 }
@@ -131,27 +147,50 @@ function SendGlyph({ size = 20, color: c = color.brand }: { size?: number; color
 
 /** A conversation's lead avatar: the shared placeholder tile (1:1) or a 2-tile
  *  placeholder stack (group) — the same PeerPin guides used across the app. */
-function ConversationAvatar({ conv, size = 48 }: { conv: Conversation; size?: number }) {
-  const isGroup = conv.kind === 'group' && (conv.memberIds?.length ?? 0) >= 2;
+function ConversationAvatar({
+  conv,
+  size = 48,
+}: {
+  conv: Conversation;
+  size?: number;
+}) {
+  const isGroup = conv.kind === "group" && (conv.memberIds?.length ?? 0) >= 2;
   if (!isGroup) {
     return <PeerPin size={size} height={size * 1.05} />;
   }
   const tile = size * 0.72;
   return (
-    <div style={{ position: 'relative', width: size, height: size * 1.05, flexShrink: 0 }}>
+    <div
+      style={{
+        position: "relative",
+        width: size,
+        height: size * 1.05,
+        flexShrink: 0,
+      }}
+    >
       <PeerPin
         size={tile}
         height={tile * 1.05}
         stroke={color.brandDeep}
         strokeWidth={2}
-        style={{ position: 'absolute', right: 0, bottom: 0, transform: 'rotate(6deg)' }}
+        style={{
+          position: "absolute",
+          right: 0,
+          bottom: 0,
+          transform: "rotate(6deg)",
+        }}
       />
       <PeerPin
         size={tile}
         height={tile * 1.05}
         stroke={color.brandDeep}
         strokeWidth={2}
-        style={{ position: 'absolute', left: 0, top: 0, transform: 'rotate(-6deg)' }}
+        style={{
+          position: "absolute",
+          left: 0,
+          top: 0,
+          transform: "rotate(-6deg)",
+        }}
       />
     </div>
   );
@@ -161,27 +200,53 @@ function ConversationAvatar({ conv, size = 48 }: { conv: Conversation; size?: nu
 /* Inbox                                                                */
 /* ------------------------------------------------------------------ */
 
-function InboxRow({ conv, onOpen }: { conv: Conversation; onOpen: () => void }) {
+function InboxRow({
+  conv,
+  onOpen,
+}: {
+  conv: Conversation;
+  onOpen: () => void;
+}) {
   const press = usePressFeedback();
   const unread = conv.unread > 0;
   return (
-    <motion.button {...press} onClick={onOpen} style={{ ...buttonReset, width: '100%', flexShrink: 0 }}>
+    <motion.button
+      {...press}
+      onClick={onOpen}
+      style={{ ...buttonReset, width: "100%", flexShrink: 0 }}
+    >
       <Squircle
         role="card"
         fill={color.brandDeep}
         style={{
-          width: '100%',
+          width: "100%",
           height: 76,
-          display: 'flex',
-          alignItems: 'center',
+          display: "flex",
+          alignItems: "center",
           gap: 12,
-          padding: '0 14px',
-          boxSizing: 'border-box',
+          padding: "0 14px",
+          boxSizing: "border-box",
         }}
       >
         <ConversationAvatar conv={conv} size={48} />
-        <div style={{ flex: 1, minWidth: 0, display: 'flex', flexDirection: 'column', gap: 6 }}>
-          <span style={{ color: color.onBrand, fontSize: 16, fontWeight: 500, lineHeight: '16px', ...ellipsis }}>
+        <div
+          style={{
+            flex: 1,
+            minWidth: 0,
+            display: "flex",
+            flexDirection: "column",
+            gap: 6,
+          }}
+        >
+          <span
+            style={{
+              color: color.onBrand,
+              fontSize: 16,
+              fontWeight: 500,
+              lineHeight: "16px",
+              ...ellipsis,
+            }}
+          >
             {conversationName(conv)}
           </span>
           <span
@@ -189,16 +254,30 @@ function InboxRow({ conv, onOpen }: { conv: Conversation; onOpen: () => void }) 
               color: unread ? color.onBrand : color.lavender,
               fontSize: 13,
               fontWeight: unread ? 500 : 400,
-              lineHeight: '15px',
-              maxWidth: '100%',
+              lineHeight: "15px",
+              maxWidth: "100%",
               ...ellipsis,
             }}
           >
             {previewLine(conv)}
           </span>
         </div>
-        <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-end', gap: 8, flexShrink: 0 }}>
-          <span style={{ color: unread ? color.onBrand : color.lavender, fontSize: 11, fontWeight: 500 }}>
+        <div
+          style={{
+            display: "flex",
+            flexDirection: "column",
+            alignItems: "flex-end",
+            gap: 8,
+            flexShrink: 0,
+          }}
+        >
+          <span
+            style={{
+              color: unread ? color.onBrand : color.lavender,
+              fontSize: 11,
+              fontWeight: 500,
+            }}
+          >
             {conv.updatedLabel}
           </span>
           {unread ? (
@@ -206,15 +285,15 @@ function InboxRow({ conv, onOpen }: { conv: Conversation; onOpen: () => void }) 
               style={{
                 minWidth: 20,
                 height: 20,
-                padding: '0 6px',
-                boxSizing: 'border-box',
+                padding: "0 6px",
+                boxSizing: "border-box",
                 borderRadius: 10,
                 background: color.white,
                 color: color.brand,
                 fontSize: 12,
                 fontWeight: 600,
-                display: 'grid',
-                placeItems: 'center',
+                display: "grid",
+                placeItems: "center",
                 lineHeight: 1,
               }}
             >
@@ -236,8 +315,8 @@ function InboxView({
   conversations: Conversation[];
   onOpen: (conv: Conversation) => void;
 }) {
-  const dragScroll = useDragScroll('y');
-  const [query, setQuery] = useState('');
+  const dragScroll = useDragScroll("y");
+  const [query, setQuery] = useState("");
 
   const filtered = useMemo(() => {
     const q = query.trim().toLowerCase();
@@ -250,20 +329,57 @@ function InboxView({
   }, [conversations, query]);
 
   return (
-    <div style={{ position: 'absolute', inset: 0 }}>
+    <div style={{ position: "absolute", inset: 0 }}>
       {/* Header: title (drag the grabber down to dismiss, like the plans sheet) */}
-      <div style={{ position: 'absolute', left: PAD_X, right: PAD_X, top: HEAD_TOP }}>
-        <span style={{ color: color.onBrand, fontSize: 32, fontWeight: 600, lineHeight: '36px' }}>Messages</span>
+      <div
+        style={{
+          position: "absolute",
+          left: PAD_X,
+          right: PAD_X,
+          top: HEAD_TOP,
+        }}
+      >
+        <span
+          style={{
+            color: color.onBrand,
+            fontSize: 32,
+            fontWeight: 600,
+            lineHeight: "36px",
+          }}
+        >
+          Messages
+        </span>
       </div>
 
       {/* Search field */}
-      <div style={{ position: 'absolute', left: PAD_X, right: PAD_X, top: SEARCH_TOP }}>
+      <div
+        style={{
+          position: "absolute",
+          left: PAD_X,
+          right: PAD_X,
+          top: SEARCH_TOP,
+        }}
+      >
         <Squircle
           role="field"
           fill={color.brandDeep}
-          style={{ width: '100%', height: 48, display: 'flex', alignItems: 'center', gap: 8, padding: '0 14px', boxSizing: 'border-box' }}
+          style={{
+            width: "100%",
+            height: 48,
+            display: "flex",
+            alignItems: "center",
+            gap: 8,
+            padding: "0 14px",
+            boxSizing: "border-box",
+          }}
         >
-          <img src={figmaIcons.search} alt="" width={15} height={15} style={{ display: 'block', flexShrink: 0, opacity: 0.9 }} />
+          <img
+            src={figmaIcons.search}
+            alt=""
+            width={15}
+            height={15}
+            style={{ display: "block", flexShrink: 0, opacity: 0.9 }}
+          />
           <input
             value={query}
             onChange={(e) => setQuery(e.target.value)}
@@ -271,11 +387,11 @@ function InboxView({
             style={{
               flex: 1,
               minWidth: 0,
-              background: 'transparent',
-              border: 'none',
-              outline: 'none',
+              background: "transparent",
+              border: "none",
+              outline: "none",
               color: color.onBrand,
-              fontFamily: 'inherit',
+              fontFamily: "inherit",
               fontSize: 15,
               fontWeight: 400,
             }}
@@ -287,27 +403,37 @@ function InboxView({
       <div
         {...dragScroll}
         style={{
-          position: 'absolute',
+          position: "absolute",
           left: PAD_X,
           right: PAD_X,
           top: INBOX_LIST_TOP,
           height: VISIBLE_H - INBOX_LIST_TOP - 24,
-          display: 'flex',
-          flexDirection: 'column',
+          display: "flex",
+          flexDirection: "column",
           gap: 8,
-          overflowY: 'auto',
-          scrollbarWidth: 'none',
-          touchAction: 'pan-y',
-          overscrollBehavior: 'contain',
-          WebkitOverflowScrolling: 'touch',
+          overflowY: "auto",
+          scrollbarWidth: "none",
+          touchAction: "pan-y",
+          overscrollBehavior: "contain",
+          WebkitOverflowScrolling: "touch",
         }}
       >
         {filtered.length === 0 ? (
-          <span style={{ color: color.lavender, fontSize: 14, fontWeight: 400, marginTop: 12, textAlign: 'center' }}>
+          <span
+            style={{
+              color: color.lavender,
+              fontSize: 14,
+              fontWeight: 400,
+              marginTop: 12,
+              textAlign: "center",
+            }}
+          >
             No conversations match “{query}”.
           </span>
         ) : (
-          filtered.map((conv) => <InboxRow key={conv.id} conv={conv} onOpen={() => onOpen(conv)} />)
+          filtered.map((conv) => (
+            <InboxRow key={conv.id} conv={conv} onOpen={() => onOpen(conv)} />
+          ))
         )}
       </div>
     </div>
@@ -319,12 +445,17 @@ function InboxView({
 /* ------------------------------------------------------------------ */
 
 /** A run of consecutive messages from the same sender (one avatar + name). */
-type Run = { fromMe: boolean; senderKey: string; sample: ChatMessage; messages: ChatMessage[] };
+type Run = {
+  fromMe: boolean;
+  senderKey: string;
+  sample: ChatMessage;
+  messages: ChatMessage[];
+};
 
 function groupRuns(messages: ChatMessage[]): Run[] {
   const runs: Run[] = [];
   for (const m of messages) {
-    const senderKey = m.fromMe ? 'me' : m.senderId ?? m.senderName ?? '?';
+    const senderKey = m.fromMe ? "me" : (m.senderId ?? m.senderName ?? "?");
     const last = runs[runs.length - 1];
     if (last && last.senderKey === senderKey) last.messages.push(m);
     else runs.push({ fromMe: m.fromMe, senderKey, sample: m, messages: [m] });
@@ -344,9 +475,9 @@ function ThreadView({
   onSend: (text: string) => void;
 }) {
   const press = usePressFeedback();
-  const bubbleSq = useSquircle('bubble');
+  const bubbleSq = useSquircle("bubble");
   const scrollRef = useRef<HTMLDivElement>(null);
-  const [draft, setDraft] = useState('');
+  const [draft, setDraft] = useState("");
 
   const runs = useMemo(() => groupRuns(conv.messages), [conv.messages]);
 
@@ -361,40 +492,77 @@ function ThreadView({
     const text = draft.trim();
     if (!text) return;
     onSend(text);
-    setDraft('');
+    setDraft("");
   };
 
   const headerSub = isGroup
-    ? conv.subtitle ?? `${conv.memberIds?.length ?? 0} people`
+    ? (conv.subtitle ?? `${conv.memberIds?.length ?? 0} people`)
     : conv.personId
-      ? personTag(PEOPLE[conv.personId]).lines.join(' ')
-      : '';
+      ? personTag(PEOPLE[conv.personId]).lines.join(" ")
+      : "";
 
   return (
-    <div style={{ position: 'absolute', inset: 0 }}>
+    <div style={{ position: "absolute", inset: 0 }}>
       {/* Header: back + avatar + name/sub */}
       <div
         style={{
-          position: 'absolute',
+          position: "absolute",
           left: PAD_X,
           right: PAD_X,
           top: HEAD_TOP,
           height: THREAD_HEAD_H,
-          display: 'flex',
-          alignItems: 'center',
+          display: "flex",
+          alignItems: "center",
           gap: 12,
         }}
       >
-        <motion.button {...press} aria-label="Back" onClick={onBack} style={{ ...buttonReset, flexShrink: 0, display: 'grid', placeItems: 'center', width: 24, height: 24 }}>
+        <motion.button
+          {...press}
+          aria-label="Back"
+          onClick={onBack}
+          style={{
+            ...buttonReset,
+            flexShrink: 0,
+            display: "grid",
+            placeItems: "center",
+            width: 24,
+            height: 24,
+          }}
+        >
           <BackChevron height={19} color={color.onBrand} />
         </motion.button>
         <ConversationAvatar conv={conv} size={40} />
-        <div style={{ flex: 1, minWidth: 0, display: 'flex', flexDirection: 'column', gap: 4 }}>
-          <span style={{ color: color.onBrand, fontSize: 17, fontWeight: 600, lineHeight: '18px', ...ellipsis }}>
+        <div
+          style={{
+            flex: 1,
+            minWidth: 0,
+            display: "flex",
+            flexDirection: "column",
+            gap: 4,
+          }}
+        >
+          <span
+            style={{
+              color: color.onBrand,
+              fontSize: 17,
+              fontWeight: 600,
+              lineHeight: "18px",
+              ...ellipsis,
+            }}
+          >
             {conversationName(conv)}
           </span>
           {headerSub && (
-            <span style={{ color: color.lavender, fontSize: 12, fontWeight: 400, ...ellipsis }}>{headerSub}</span>
+            <span
+              style={{
+                color: color.lavender,
+                fontSize: 12,
+                fontWeight: 400,
+                ...ellipsis,
+              }}
+            >
+              {headerSub}
+            </span>
           )}
         </div>
       </div>
@@ -403,49 +571,63 @@ function ThreadView({
       <div
         ref={scrollRef}
         style={{
-          position: 'absolute',
+          position: "absolute",
           left: PAD_X,
           right: PAD_X,
           top: THREAD_LIST_TOP,
           height: COMPOSER_TOP - THREAD_LIST_TOP - 12,
-          display: 'flex',
-          flexDirection: 'column',
+          display: "flex",
+          flexDirection: "column",
           gap: 14,
-          overflowY: 'auto',
-          scrollbarWidth: 'none',
-          touchAction: 'pan-y',
-          overscrollBehavior: 'contain',
-          WebkitOverflowScrolling: 'touch',
+          overflowY: "auto",
+          scrollbarWidth: "none",
+          touchAction: "pan-y",
+          overscrollBehavior: "contain",
+          WebkitOverflowScrolling: "touch",
         }}
       >
         {runs.map((run, ri) => (
-          <MessageRun key={ri} run={run} isGroup={isGroup} bubbleSq={bubbleSq} isNewest={ri === runs.length - 1} />
+          <MessageRun
+            key={ri}
+            run={run}
+            isGroup={isGroup}
+            bubbleSq={bubbleSq}
+            isNewest={ri === runs.length - 1}
+          />
         ))}
       </div>
 
       {/* Composer */}
       <div
         style={{
-          position: 'absolute',
+          position: "absolute",
           left: PAD_X,
           right: PAD_X,
           top: COMPOSER_TOP,
           height: COMPOSER_H,
-          display: 'flex',
-          alignItems: 'center',
+          display: "flex",
+          alignItems: "center",
           gap: 10,
         }}
       >
         <Squircle
           role="field"
           fill={color.brandDeep}
-          style={{ flex: 1, minWidth: 0, height: COMPOSER_H, display: 'flex', alignItems: 'center', padding: '0 16px', boxSizing: 'border-box' }}
+          style={{
+            flex: 1,
+            minWidth: 0,
+            height: COMPOSER_H,
+            display: "flex",
+            alignItems: "center",
+            padding: "0 16px",
+            boxSizing: "border-box",
+          }}
         >
           <input
             value={draft}
             onChange={(e) => setDraft(e.target.value)}
             onKeyDown={(e) => {
-              if (e.key === 'Enter') {
+              if (e.key === "Enter") {
                 e.preventDefault();
                 send();
               }
@@ -454,11 +636,11 @@ function ThreadView({
             style={{
               flex: 1,
               minWidth: 0,
-              background: 'transparent',
-              border: 'none',
-              outline: 'none',
+              background: "transparent",
+              border: "none",
+              outline: "none",
               color: color.onBrand,
-              fontFamily: 'inherit',
+              fontFamily: "inherit",
               fontSize: 16,
               fontWeight: 400,
             }}
@@ -469,9 +651,23 @@ function ThreadView({
           aria-label="Send"
           onClick={send}
           disabled={draft.trim().length === 0}
-          style={{ ...buttonReset, flexShrink: 0, opacity: draft.trim() ? 1 : 0.45, transition: 'opacity 160ms ease' }}
+          style={{
+            ...buttonReset,
+            flexShrink: 0,
+            opacity: draft.trim() ? 1 : 0.45,
+            transition: "opacity 160ms ease",
+          }}
         >
-          <Squircle role="control" fill={color.white} style={{ width: 48, height: 48, display: 'grid', placeItems: 'center' }}>
+          <Squircle
+            role="control"
+            fill={color.white}
+            style={{
+              width: 48,
+              height: 48,
+              display: "grid",
+              placeItems: "center",
+            }}
+          >
             <SendGlyph size={20} color={color.brand} />
           </Squircle>
         </motion.button>
@@ -491,12 +687,19 @@ function MessageRun({
   bubbleSq: { radius: number; smoothing: number };
   isNewest: boolean;
 }) {
-  const entrance = useMotion('entrance');
+  const entrance = useMotion("entrance");
   const showMeta = isGroup && !run.fromMe;
   const lastTime = run.messages[run.messages.length - 1].time;
 
   return (
-    <div style={{ display: 'flex', gap: 8, alignItems: 'flex-end', flexDirection: run.fromMe ? 'row-reverse' : 'row' }}>
+    <div
+      style={{
+        display: "flex",
+        gap: 8,
+        alignItems: "flex-end",
+        flexDirection: run.fromMe ? "row-reverse" : "row",
+      }}
+    >
       {/* group incoming: sender placeholder tile aligned to the run's bottom bubble */}
       {showMeta && (
         <div style={{ flexShrink: 0, width: 28 }}>
@@ -505,15 +708,23 @@ function MessageRun({
       )}
       <div
         style={{
-          display: 'flex',
-          flexDirection: 'column',
+          display: "flex",
+          flexDirection: "column",
           gap: 4,
-          alignItems: run.fromMe ? 'flex-end' : 'flex-start',
-          maxWidth: '76%',
+          alignItems: run.fromMe ? "flex-end" : "flex-start",
+          maxWidth: "76%",
         }}
       >
         {showMeta && (
-          <span style={{ color: color.lavender, fontSize: 11, fontWeight: 500, marginLeft: 12, ...capTrim }}>
+          <span
+            style={{
+              color: color.lavender,
+              fontSize: 11,
+              fontWeight: 500,
+              marginLeft: 12,
+              ...capTrim,
+            }}
+          >
             {senderFirstName(run.sample)}
           </span>
         )}
@@ -525,14 +736,28 @@ function MessageRun({
             </SquircleBubble>
           );
           return isNewest && i === run.messages.length - 1 && m.fromMe ? (
-            <motion.div key={m.id} initial={{ scale: 0.7, opacity: 0 }} animate={{ scale: 1, opacity: 1 }} transition={entrance} style={{ transformOrigin: 'bottom right' }}>
+            <motion.div
+              key={m.id}
+              initial={{ scale: 0.7, opacity: 0 }}
+              animate={{ scale: 1, opacity: 1 }}
+              transition={entrance}
+              style={{ transformOrigin: "bottom right" }}
+            >
               {content}
             </motion.div>
           ) : (
             content
           );
         })}
-        <span style={{ color: color.lavender, fontSize: 10, fontWeight: 500, opacity: 0.8, margin: run.fromMe ? '0 6px 0 0' : '0 0 0 6px' }}>
+        <span
+          style={{
+            color: color.lavender,
+            fontSize: 10,
+            fontWeight: 500,
+            opacity: 0.8,
+            margin: run.fromMe ? "0 6px 0 0" : "0 0 0 6px",
+          }}
+        >
           {lastTime}
         </span>
       </div>
@@ -541,21 +766,29 @@ function MessageRun({
 }
 
 /** A single chat bubble, clipped to the registry `bubble` squircle. */
-function SquircleBubble({ fromMe, sq, children }: { fromMe: boolean; sq: { radius: number; smoothing: number }; children: ReactNode }) {
+function SquircleBubble({
+  fromMe,
+  sq,
+  children,
+}: {
+  fromMe: boolean;
+  sq: { radius: number; smoothing: number };
+  children: ReactNode;
+}) {
   return (
     <Squircle
       radius={sq.radius}
       smoothing={sq.smoothing}
       fill={fromMe ? color.white : color.bubbleOnBrand}
       style={{
-        maxWidth: '100%',
+        maxWidth: "100%",
         color: fromMe ? color.brand : color.onBrand,
         fontSize: 15,
         fontWeight: 400,
-        lineHeight: '19px',
-        padding: '10px 14px',
-        wordBreak: 'break-word',
-        boxSizing: 'border-box',
+        lineHeight: "19px",
+        padding: "10px 14px",
+        wordBreak: "break-word",
+        boxSizing: "border-box",
       }}
     >
       {children}
@@ -579,10 +812,10 @@ export function MessagesFlow({
   onPop: () => void;
   onClose: () => void;
 }) {
-  const controlSq = useSquircle('control');
-  const sheetSq = useSquircle('sheet');
-  const morph = useMotion('morph');
-  const snap = useMotion('snap');
+  const controlSq = useSquircle("control");
+  const sheetSq = useSquircle("sheet");
+  const morph = useMotion("morph");
+  const snap = useMotion("snap");
 
   const open = stack.length > 0;
 
@@ -603,10 +836,14 @@ export function MessagesFlow({
   );
 
   // Resolve a thread view to a concrete conversation (stored or transient).
-  const resolveConv = (v: Extract<MessagesView, { kind: 'thread' }>): Conversation | null => {
+  const resolveConv = (
+    v: Extract<MessagesView, { kind: "thread" }>,
+  ): Conversation | null => {
     if (v.conversationId) return convMap[v.conversationId] ?? null;
     if (v.plan) {
-      const existing = Object.values(convMap).find((c) => c.planId === v.plan!.id);
+      const existing = Object.values(convMap).find(
+        (c) => c.planId === v.plan!.id,
+      );
       return existing ?? synthConversationForPlan(v.plan);
     }
     return null;
@@ -615,9 +852,11 @@ export function MessagesFlow({
   // Clear unread when the top view is a thread (on open / when it changes).
   const top = open ? stack[stack.length - 1] : null;
   const topThreadId =
-    top?.kind === 'thread' ? (top.conversationId ?? (top.plan ? `plan:${top.plan.id}` : null)) : null;
+    top?.kind === "thread"
+      ? (top.conversationId ?? (top.plan ? `plan:${top.plan.id}` : null))
+      : null;
   useEffect(() => {
-    if (!top || top.kind !== 'thread') return;
+    if (!top || top.kind !== "thread") return;
     const conv = resolveConv(top);
     if (!conv) return;
     setConvMap((prev) => {
@@ -637,9 +876,17 @@ export function MessagesFlow({
         id: `me-${cur.messages.length}-${text.length}`,
         fromMe: true,
         text,
-        time: 'Now',
+        time: "Now",
       };
-      return { ...prev, [conv.id]: { ...cur, messages: [...cur.messages, msg], updatedLabel: 'Now', unread: 0 } };
+      return {
+        ...prev,
+        [conv.id]: {
+          ...cur,
+          messages: [...cur.messages, msg],
+          updatedLabel: "Now",
+          unread: 0,
+        },
+      };
     });
   };
 
@@ -656,10 +903,14 @@ export function MessagesFlow({
   const height = useTransform(m, (t) => lerp(REST.h, OPEN.h, t));
   // Round button → sheet corners (like the plans sheet; the bottom runs off
   // screen so only the rounded top corners ever show).
-  const radius = useTransform(m, (t) => lerp(controlSq.radius, sheetSq.radius, t));
+  const radius = useTransform(m, (t) =>
+    lerp(controlSq.radius, sheetSq.radius, t),
+  );
   const smooth = useTransform(m, () => sheetSq.smoothing);
-  const clipPath = useTransform([width, height, radius, smooth], ([w, h, r, s]) =>
-    `path('${getSvgPath({ width: w as number, height: h as number, cornerRadius: r as number, cornerSmoothing: s as number })}')`,
+  const clipPath = useTransform(
+    [width, height, radius, smooth],
+    ([w, h, r, s]) =>
+      `path('${getSvgPath({ width: w as number, height: h as number, cornerRadius: r as number, cornerSmoothing: s as number })}')`,
   );
   // Surface fades in fast at the very start of the grow (it starts exactly on
   // the button, so no pop); content arrives once there's room.
@@ -670,7 +921,9 @@ export function MessagesFlow({
   // pattern): a strict prefix of what we last rendered keeps the longer list.
   const layersRef = useRef<MessagesView[]>([]);
   const prev = layersRef.current;
-  const isPrefix = stack.length < prev.length && stack.every((v, i) => viewKey(v) === viewKey(prev[i]));
+  const isPrefix =
+    stack.length < prev.length &&
+    stack.every((v, i) => viewKey(v) === viewKey(prev[i]));
   const layers = open ? (isPrefix ? prev : stack) : prev;
   layersRef.current = layers;
   const topKey = open ? viewKey(stack[stack.length - 1]) : null;
@@ -686,8 +939,10 @@ export function MessagesFlow({
   // The drag hitzone covers the whole header band (much easier to grab than a
   // thin strip) but stops above the scroll list so it never blocks scrolling,
   // and — in a thread — clears the back button on the left so it stays tappable.
-  const activeView = (open ? stack : layers)[(open ? stack : layers).length - 1] ?? { kind: 'inbox' as const };
-  const inThread = activeView.kind === 'thread';
+  const activeView = (open ? stack : layers)[
+    (open ? stack : layers).length - 1
+  ] ?? { kind: "inbox" as const };
+  const inThread = activeView.kind === "thread";
   const dragZone = inThread
     ? { left: 56, height: THREAD_LIST_TOP - 4 }
     : { left: 0, height: SEARCH_TOP - 8 };
@@ -696,68 +951,76 @@ export function MessagesFlow({
     <>
       {/* Tap the exposed map strip to dismiss (shared with every sheet). */}
       <DismissScrim active={open} onDismiss={onClose} zIndex={44} />
-    <motion.div
-      style={{
-        position: 'absolute',
-        left,
-        top: topY,
-        y: dragY,
-        width,
-        height,
-        clipPath,
-        background: color.brand,
-        opacity: surfaceOpacity,
-        zIndex: 45, // above all map chrome + profile, below SystemUI (60)
-        pointerEvents: open ? 'auto' : 'none',
-      }}
-    >
-      <motion.div style={{ position: 'absolute', inset: 0, opacity: contentOpacity }}>
-        {layers.map((view, i) => {
-          const key = viewKey(view);
-          const visible = key === topKey;
-          const hiddenAs = i < stack.length - 1 ? 'parent' : 'child';
-          let content: ReactNode = null;
-          if (view.kind === 'inbox') {
-            content = (
-              <InboxView
-                conversations={conversations}
-                onOpen={(conv) => onPush({ kind: 'thread', conversationId: conv.id })}
-              />
-            );
-          } else {
-            const conv = resolveConv(view);
-            if (conv) {
+      <motion.div
+        style={{
+          position: "absolute",
+          left,
+          top: topY,
+          y: dragY,
+          width,
+          height,
+          clipPath,
+          background: color.brand,
+          opacity: surfaceOpacity,
+          zIndex: 45, // above all map chrome + profile, below SystemUI (60)
+          pointerEvents: open ? "auto" : "none",
+        }}
+      >
+        <motion.div
+          style={{ position: "absolute", inset: 0, opacity: contentOpacity }}
+        >
+          {layers.map((view, i) => {
+            const key = viewKey(view);
+            const visible = key === topKey;
+            const hiddenAs = i < stack.length - 1 ? "parent" : "child";
+            let content: ReactNode = null;
+            if (view.kind === "inbox") {
               content = (
-                <ThreadView
-                  conv={conv}
-                  isGroup={conv.kind === 'group'}
-                  onBack={onPop}
-                  onSend={(text) => sendTo(conv, text)}
+                <InboxView
+                  conversations={conversations}
+                  onOpen={(conv) =>
+                    onPush({ kind: "thread", conversationId: conv.id })
+                  }
                 />
               );
+            } else {
+              const conv = resolveConv(view);
+              if (conv) {
+                content = (
+                  <ThreadView
+                    conv={conv}
+                    isGroup={conv.kind === "group"}
+                    onBack={onPop}
+                    onSend={(text) => sendTo(conv, text)}
+                  />
+                );
+              }
             }
-          }
-          return (
-            <div
-              key={key}
-              style={{
-                position: 'absolute',
-                inset: 0,
-                pointerEvents: visible ? undefined : 'none',
-                ...layerZoomStyle(visible, hiddenAs),
-              }}
-            >
-              {content}
-            </div>
-          );
-        })}
+            return (
+              <div
+                key={key}
+                style={{
+                  position: "absolute",
+                  inset: 0,
+                  pointerEvents: visible ? undefined : "none",
+                  ...layerZoomStyle(visible, hiddenAs),
+                }}
+              >
+                {content}
+              </div>
+            );
+          })}
 
-        {/* Grabber pill + drag-to-dismiss hitzone (shared). The hitzone covers
+          {/* Grabber pill + drag-to-dismiss hitzone (shared). The hitzone covers
             the header band but stops above the scroll list and clears the
             thread's back button, so it never eats content taps. */}
-        <SheetGrabber handleProps={handleProps} left={dragZone.left} height={dragZone.height} />
+          <SheetGrabber
+            handleProps={handleProps}
+            left={dragZone.left}
+            height={dragZone.height}
+          />
+        </motion.div>
       </motion.div>
-    </motion.div>
     </>
   );
 }

@@ -1,5 +1,9 @@
-import { useMemo, useRef } from 'react';
-import type { PointerEvent as ReactPointerEvent, MouseEvent as ReactMouseEvent, WheelEvent as ReactWheelEvent } from 'react';
+import { useMemo, useRef } from "react";
+import type {
+  PointerEvent as ReactPointerEvent,
+  MouseEvent as ReactMouseEvent,
+  WheelEvent as ReactWheelEvent,
+} from "react";
 
 /**
  * Touch-style drag-to-scroll for MOUSE input, for spreading onto an
@@ -39,7 +43,7 @@ type DragScrollHandlers = {
   onWheel: (e: ReactWheelEvent<HTMLElement>) => void;
 };
 
-export function useDragScroll(axis: 'x' | 'y'): DragScrollHandlers {
+export function useDragScroll(axis: "x" | "y"): DragScrollHandlers {
   const state = useRef({
     downX: 0,
     downY: 0,
@@ -56,10 +60,12 @@ export function useDragScroll(axis: 'x' | 'y'): DragScrollHandlers {
 
   return useMemo(() => {
     const s = state.current;
-    const pos = (e: { clientX: number; clientY: number }) => (axis === 'x' ? e.clientX : e.clientY);
-    const getScroll = (el: HTMLElement) => (axis === 'x' ? el.scrollLeft : el.scrollTop);
+    const pos = (e: { clientX: number; clientY: number }) =>
+      axis === "x" ? e.clientX : e.clientY;
+    const getScroll = (el: HTMLElement) =>
+      axis === "x" ? el.scrollLeft : el.scrollTop;
     const setScroll = (el: HTMLElement, v: number) => {
-      if (axis === 'x') el.scrollLeft = v;
+      if (axis === "x") el.scrollLeft = v;
       else el.scrollTop = v;
     };
     const stopInertia = () => {
@@ -76,7 +82,8 @@ export function useDragScroll(axis: 'x' | 'y'): DragScrollHandlers {
         prev = now;
         setScroll(el, getScroll(el) - v * dt);
         v *= DECAY_PER_FRAME ** (dt / (1000 / 60));
-        if (Math.abs(v) >= MIN_FLICK_VELOCITY) s.raf = requestAnimationFrame(step);
+        if (Math.abs(v) >= MIN_FLICK_VELOCITY)
+          s.raf = requestAnimationFrame(step);
         else s.raf = 0;
       };
       s.raf = requestAnimationFrame(step);
@@ -85,7 +92,7 @@ export function useDragScroll(axis: 'x' | 'y'): DragScrollHandlers {
     const release = (e: ReactPointerEvent<HTMLElement>) => {
       if (!s.tracking) return;
       s.tracking = false;
-      document.body.style.userSelect = '';
+      document.body.style.userSelect = "";
       if (s.engaged) {
         s.suppressClick = true; // eat the click this drag would fire
         startInertia(e.currentTarget);
@@ -96,7 +103,7 @@ export function useDragScroll(axis: 'x' | 'y'): DragScrollHandlers {
 
     return {
       onPointerDown: (e) => {
-        if (e.pointerType !== 'mouse' || e.button !== 0) return;
+        if (e.pointerType !== "mouse" || e.button !== 0) return;
         stopInertia();
         s.tracking = true;
         s.engaged = false;
@@ -114,8 +121,8 @@ export function useDragScroll(axis: 'x' | 'y'): DragScrollHandlers {
         const dx = e.clientX - s.downX;
         const dy = e.clientY - s.downY;
         if (!s.engaged) {
-          const along = axis === 'x' ? dx : dy;
-          const across = axis === 'x' ? dy : dx;
+          const along = axis === "x" ? dx : dy;
+          const across = axis === "x" ? dy : dx;
           if (Math.max(Math.abs(dx), Math.abs(dy)) < ENGAGE_PX) return;
           if (Math.abs(along) <= Math.abs(across)) {
             s.rejected = true; // some other axis' scroller owns this gesture
@@ -123,14 +130,14 @@ export function useDragScroll(axis: 'x' | 'y'): DragScrollHandlers {
           }
           s.engaged = true;
           e.currentTarget.setPointerCapture?.(e.pointerId);
-          document.body.style.userSelect = 'none'; // no text selection mid-drag
+          document.body.style.userSelect = "none"; // no text selection mid-drag
         }
         const p = pos(e);
         const dt = e.timeStamp - s.lastT;
         if (dt > 0) s.velocity = (p - s.lastPos) / dt;
         s.lastPos = p;
         s.lastT = e.timeStamp;
-        setScroll(e.currentTarget, s.startScroll - (axis === 'x' ? dx : dy));
+        setScroll(e.currentTarget, s.startScroll - (axis === "x" ? dx : dy));
       },
       onPointerUp: release,
       onPointerCancel: release,

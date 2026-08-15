@@ -12,25 +12,26 @@
  * search): the host row of an activity you're looking at, a row in a friends
  * list, or the in-person QR screen.
  */
-import type { VenueId } from './venues';
-import { VENUES } from './venues';
-import { figmaIcons } from '../components/icons/figmaIcons';
-import type { CategoryId } from '../theme/categories';
+import type { VenueId } from "./venues";
+import { VENUES } from "./venues";
+import { figmaIcons } from "../components/icons/figmaIcons";
+import type { CategoryId } from "../theme/categories";
 
-import perePhoto from '../assets/profile/pere.png';
-import evaPhoto from '../assets/profile/eva.jpg';
-import friend1 from '../assets/profile/friend-1.png';
-import friend2 from '../assets/profile/friend-2.png';
-import friend3 from '../assets/profile/friend-3.png';
-import person1 from '../assets/people/person-1.png';
-import person2 from '../assets/people/person-2.png';
-import person3 from '../assets/people/person-3.png';
-import mapOwn from '../assets/profile/map-own.png';
-import mapEva from '../assets/profile/map-eva.png';
-import tagCocktail from '../assets/profile/tag-cocktail.svg';
-import tagRunner from '../assets/profile/tag-runner.svg';
+import perePhoto from "../assets/profile/pere.png";
+import evaPhoto from "../assets/profile/eva.jpg";
+import friend1 from "../assets/profile/friend-1.png";
+import friend2 from "../assets/profile/friend-2.png";
+import friend3 from "../assets/profile/friend-3.png";
+import person1 from "../assets/people/person-1.png";
+import person2 from "../assets/people/person-2.png";
+import person3 from "../assets/people/person-3.png";
+import mapOwn from "../assets/profile/map-own.png";
+import mapEva from "../assets/profile/map-eva.png";
+import tagCocktail from "../assets/profile/tag-cocktail.svg";
+import tagRunner from "../assets/profile/tag-runner.svg";
 
-export type PersonId = 'pere' | 'eva' | 'martin' | 'giulia' | 'theo' | 'emma' | 'marc' | 'lluc';
+export type PersonId =
+  "pere" | "eva" | "martin" | "giulia" | "theo" | "emma" | "marc" | "lluc";
 
 export type Person = {
   id: PersonId;
@@ -76,19 +77,54 @@ export type TagRule = {
 // One identity per category. Only drinks + sports have bespoke Figma glyphs;
 // the rest borrow the closest activity glyph until they're designed.
 export const TAG_RULES: Record<CategoryId, TagRule> = {
-  drinks: { lines: ['Professional', 'pub crawler'], glyph: tagCocktail, glyphSize: { w: 100, h: 100 }, glyphRotate: -10, pillGlyph: figmaIcons.cocktail, routeLabel: 'pub crawl' },
-  sports: { lines: ['Marathon', 'goblin'], glyph: tagRunner, glyphSize: { w: 106, h: 113 }, glyphRotate: 0, pillGlyph: figmaIcons.bouldering, routeLabel: 'training route' },
-  food: { lines: ['Certified', 'food hunter'], glyph: figmaIcons.utensils, glyphSize: { w: 90, h: 90 }, glyphRotate: -8, pillGlyph: figmaIcons.utensils, routeLabel: 'food trail' },
-  music: { lines: ['Front-row', 'regular'], glyph: figmaIcons.shootingStar, glyphSize: { w: 90, h: 90 }, glyphRotate: -8, pillGlyph: figmaIcons.shootingStar, routeLabel: 'gig trail' },
-  coffee: { lines: ['Espresso', 'evangelist'], glyph: figmaIcons.utensils, glyphSize: { w: 90, h: 90 }, glyphRotate: -8, pillGlyph: figmaIcons.utensils, routeLabel: 'café crawl' },
+  drinks: {
+    lines: ["Professional", "pub crawler"],
+    glyph: tagCocktail,
+    glyphSize: { w: 100, h: 100 },
+    glyphRotate: -10,
+    pillGlyph: figmaIcons.cocktail,
+    routeLabel: "pub crawl",
+  },
+  sports: {
+    lines: ["Marathon", "goblin"],
+    glyph: tagRunner,
+    glyphSize: { w: 106, h: 113 },
+    glyphRotate: 0,
+    pillGlyph: figmaIcons.bouldering,
+    routeLabel: "training route",
+  },
+  food: {
+    lines: ["Certified", "food hunter"],
+    glyph: figmaIcons.utensils,
+    glyphSize: { w: 90, h: 90 },
+    glyphRotate: -8,
+    pillGlyph: figmaIcons.utensils,
+    routeLabel: "food trail",
+  },
+  music: {
+    lines: ["Front-row", "regular"],
+    glyph: figmaIcons.shootingStar,
+    glyphSize: { w: 90, h: 90 },
+    glyphRotate: -8,
+    pillGlyph: figmaIcons.shootingStar,
+    routeLabel: "gig trail",
+  },
+  coffee: {
+    lines: ["Espresso", "evangelist"],
+    glyph: figmaIcons.utensils,
+    glyphSize: { w: 90, h: 90 },
+    glyphRotate: -8,
+    pillGlyph: figmaIcons.utensils,
+    routeLabel: "café crawl",
+  },
 };
 
 /** A venue's category, inferred from the glyph its pin wears. */
 export function venueCategory(venueId: VenueId): CategoryId {
   const icon = VENUES[venueId].icon;
-  if (icon === figmaIcons.cocktail) return 'drinks';
-  if (icon === figmaIcons.bouldering) return 'sports';
-  return 'food';
+  if (icon === figmaIcons.cocktail) return "drinks";
+  if (icon === figmaIcons.bouldering) return "sports";
+  return "food";
 }
 
 /** Dominant done-category → the person's tag. */
@@ -98,7 +134,7 @@ export function personTag(person: Person): TagRule {
     const c = venueCategory(v);
     counts.set(c, (counts.get(c) ?? 0) + 1);
   }
-  let best: CategoryId = 'drinks';
+  let best: CategoryId = "drinks";
   let bestN = -1;
   for (const [c, n] of counts) {
     if (n > bestN) {
@@ -111,138 +147,150 @@ export function personTag(person: Person): TagRule {
 
 /** "12 plans attended in 2026" / "04 plans done in 2026" (zero-padded). */
 export function tagCountLine(person: Person): string {
-  const n = String(person.doneVenueIds.length).padStart(2, '0');
-  return person.isMe ? `${n} plans attended in 2026` : `${n} plans done in 2026`;
+  const n = String(person.doneVenueIds.length).padStart(2, "0");
+  return person.isMe
+    ? `${n} plans attended in 2026`
+    : `${n} plans done in 2026`;
 }
 
 /* ------------------------------------------------------------------ */
 /* The people                                                           */
 /* ------------------------------------------------------------------ */
 
-export const ME: PersonId = 'pere';
+export const ME: PersonId = "pere";
 
 export const PEOPLE: Record<PersonId, Person> = {
   pere: {
-    id: 'pere',
-    firstName: 'Pere',
-    lastName: 'Vicenç',
+    id: "pere",
+    firstName: "Pere",
+    lastName: "Vicenç",
     photo: perePhoto,
     isMe: true,
-    friends: ['martin', 'giulia', 'theo', 'emma', 'marc', 'lluc'],
+    friends: ["martin", "giulia", "theo", "emma", "marc", "lluc"],
     // 12 bar nights in visit order — the "Professional pub crawler" route.
     doneVenueIds: [
-      'ritas', 'deldiego', 'salmonguru', 'costello', 'junco', 'macera',
-      'angelita', 'riviera', 'caracol', 'wurlitzer', 'bendito', 'salaequis',
+      "ritas",
+      "deldiego",
+      "salmonguru",
+      "costello",
+      "junco",
+      "macera",
+      "angelita",
+      "riviera",
+      "caracol",
+      "wurlitzer",
+      "bendito",
+      "salaequis",
     ],
     organized: [
-      { venueId: 'ritas', eventId: 'r1' },
-      { venueId: 'deldiego', eventId: 'd1' },
-      { venueId: 'comercial', eventId: 'co1' },
-      { venueId: 'costello', eventId: 'c1' },
+      { venueId: "ritas", eventId: "r1" },
+      { venueId: "deldiego", eventId: "d1" },
+      { venueId: "comercial", eventId: "co1" },
+      { venueId: "costello", eventId: "c1" },
     ],
     upcoming: [
-      { venueId: 'ritas', eventId: 'r1' },
-      { venueId: 'deldiego', eventId: 'd1' },
-      { venueId: 'comercial', eventId: 'co1' },
-      { venueId: 'molienda', eventId: 'm2' },
-      { venueId: 'costello', eventId: 'c1' },
+      { venueId: "ritas", eventId: "r1" },
+      { venueId: "deldiego", eventId: "d1" },
+      { venueId: "comercial", eventId: "co1" },
+      { venueId: "molienda", eventId: "m2" },
+      { venueId: "costello", eventId: "c1" },
     ],
-    link: 'localpal.com/user/ja18hP2aFSXSoR0F',
+    link: "localpal.com/user/ja18hP2aFSXSoR0F",
     tagMap: mapOwn,
   },
   eva: {
-    id: 'eva',
-    firstName: 'Eva',
-    lastName: 'Satorra',
+    id: "eva",
+    firstName: "Eva",
+    lastName: "Satorra",
     photo: evaPhoto,
-    friends: ['martin', 'giulia', 'theo'],
+    friends: ["martin", "giulia", "theo"],
     // Sports-heavy — the "Marathon goblin" route (04 plans done).
-    doneVenueIds: ['uadibloc', 'fabrica', 'molienda', 'junco'],
+    doneVenueIds: ["uadibloc", "fabrica", "molienda", "junco"],
     organized: [],
     upcoming: [
-      { venueId: 'ritas', eventId: 'r1' },
-      { venueId: 'molienda', eventId: 'm3' },
-      { venueId: 'molienda', eventId: 'm2' },
+      { venueId: "ritas", eventId: "r1" },
+      { venueId: "molienda", eventId: "m3" },
+      { venueId: "molienda", eventId: "m2" },
     ],
-    link: 'localpal.com/user/eR2mQx7VbNp4KsL0',
+    link: "localpal.com/user/eR2mQx7VbNp4KsL0",
     tagMap: mapEva,
   },
   martin: {
-    id: 'martin',
-    firstName: 'Martin',
-    lastName: 'Roca',
+    id: "martin",
+    firstName: "Martin",
+    lastName: "Roca",
     photo: friend1,
-    friends: ['pere', 'eva', 'giulia'],
-    doneVenueIds: ['ritas', 'costello', 'wurlitzer', 'salmonguru', 'molienda'],
-    organized: [{ venueId: 'ritas', eventId: 'r3' }],
+    friends: ["pere", "eva", "giulia"],
+    doneVenueIds: ["ritas", "costello", "wurlitzer", "salmonguru", "molienda"],
+    organized: [{ venueId: "ritas", eventId: "r3" }],
     upcoming: [
-      { venueId: 'ritas', eventId: 'r3' },
-      { venueId: 'comercial', eventId: 'co1' },
+      { venueId: "ritas", eventId: "r3" },
+      { venueId: "comercial", eventId: "co1" },
     ],
-    link: 'localpal.com/user/mR9tYw2ZaQx6PdN1',
+    link: "localpal.com/user/mR9tYw2ZaQx6PdN1",
     tagMap: mapEva,
   },
   giulia: {
-    id: 'giulia',
-    firstName: 'Giulia',
-    lastName: 'Moretti',
+    id: "giulia",
+    firstName: "Giulia",
+    lastName: "Moretti",
     photo: friend2,
-    friends: ['pere', 'eva', 'martin'],
-    doneVenueIds: ['molienda', 'toma', 'federal', 'lacomba', 'ritas'],
-    organized: [{ venueId: 'molienda', eventId: 'm1' }],
+    friends: ["pere", "eva", "martin"],
+    doneVenueIds: ["molienda", "toma", "federal", "lacomba", "ritas"],
+    organized: [{ venueId: "molienda", eventId: "m1" }],
     upcoming: [
-      { venueId: 'molienda', eventId: 'm1' },
-      { venueId: 'ritas', eventId: 'r2' },
+      { venueId: "molienda", eventId: "m1" },
+      { venueId: "ritas", eventId: "r2" },
     ],
-    link: 'localpal.com/user/gM4kLp8XcVb2WsJ7',
+    link: "localpal.com/user/gM4kLp8XcVb2WsJ7",
     tagMap: mapOwn,
   },
   theo: {
-    id: 'theo',
-    firstName: 'Theo',
-    lastName: 'Krüger',
+    id: "theo",
+    firstName: "Theo",
+    lastName: "Krüger",
     photo: friend3,
-    friends: ['pere', 'eva', 'martin', 'giulia'],
-    doneVenueIds: ['uadibloc', 'fabrica', 'ritas'],
-    organized: [{ venueId: 'ritas', eventId: 'r1' }],
-    upcoming: [{ venueId: 'ritas', eventId: 'r1' }],
-    link: 'localpal.com/user/tK6nBv3YdRz9QcM5',
+    friends: ["pere", "eva", "martin", "giulia"],
+    doneVenueIds: ["uadibloc", "fabrica", "ritas"],
+    organized: [{ venueId: "ritas", eventId: "r1" }],
+    upcoming: [{ venueId: "ritas", eventId: "r1" }],
+    link: "localpal.com/user/tK6nBv3YdRz9QcM5",
     tagMap: mapEva,
   },
   emma: {
-    id: 'emma',
-    firstName: 'Emma',
-    lastName: 'de Vries',
+    id: "emma",
+    firstName: "Emma",
+    lastName: "de Vries",
     photo: person1,
-    friends: ['pere'],
-    doneVenueIds: ['ritas', 'junco', 'angelita'],
-    organized: [{ venueId: 'ritas', eventId: 'r6' }],
-    upcoming: [{ venueId: 'ritas', eventId: 'r2' }],
-    link: 'localpal.com/user/eV1sHq5TfWm8Jxj3',
+    friends: ["pere"],
+    doneVenueIds: ["ritas", "junco", "angelita"],
+    organized: [{ venueId: "ritas", eventId: "r6" }],
+    upcoming: [{ venueId: "ritas", eventId: "r2" }],
+    link: "localpal.com/user/eV1sHq5TfWm8Jxj3",
     tagMap: mapOwn,
   },
   marc: {
-    id: 'marc',
-    firstName: 'Marc',
-    lastName: 'Serra',
+    id: "marc",
+    firstName: "Marc",
+    lastName: "Serra",
     photo: person2,
-    friends: ['pere'],
-    doneVenueIds: ['sanfernando', 'florida', 'toma', 'ritas'],
-    organized: [{ venueId: 'ritas', eventId: 'r5' }],
-    upcoming: [{ venueId: 'ritas', eventId: 'r5' }],
-    link: 'localpal.com/user/mS7wDn4UgXk1LzB6',
+    friends: ["pere"],
+    doneVenueIds: ["sanfernando", "florida", "toma", "ritas"],
+    organized: [{ venueId: "ritas", eventId: "r5" }],
+    upcoming: [{ venueId: "ritas", eventId: "r5" }],
+    link: "localpal.com/user/mS7wDn4UgXk1LzB6",
     tagMap: mapOwn,
   },
   lluc: {
-    id: 'lluc',
-    firstName: 'Lluc',
-    lastName: 'Ferrer',
+    id: "lluc",
+    firstName: "Lluc",
+    lastName: "Ferrer",
     photo: person3,
-    friends: ['pere'],
-    doneVenueIds: ['ritas', 'wurlitzer'],
+    friends: ["pere"],
+    doneVenueIds: ["ritas", "wurlitzer"],
     organized: [],
-    upcoming: [{ venueId: 'ritas', eventId: 'r7' }],
-    link: 'localpal.com/user/lF3xCm9RhYv5NqA8',
+    upcoming: [{ venueId: "ritas", eventId: "r7" }],
+    link: "localpal.com/user/lF3xCm9RhYv5NqA8",
     tagMap: mapEva,
   },
 };
@@ -259,5 +307,7 @@ export function personByFirstName(name: string): Person | null {
 /** Friends in common with ME (what the other-profile friends card shows). */
 export function friendsInCommon(person: Person): Person[] {
   const mine = new Set(PEOPLE[ME].friends);
-  return person.friends.filter((f) => mine.has(f) && f !== person.id).map((f) => PEOPLE[f]);
+  return person.friends
+    .filter((f) => mine.has(f) && f !== person.id)
+    .map((f) => PEOPLE[f]);
 }

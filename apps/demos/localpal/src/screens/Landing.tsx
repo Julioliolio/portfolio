@@ -1,19 +1,19 @@
-import { useEffect, useState, type CSSProperties, type ReactNode } from 'react';
-import { motion } from 'framer-motion';
-import { Squircle } from '../components/Squircle';
-import { QrCodeSvg } from '../components/profile/QrCodeSvg';
-import { usePressFeedback } from '../components/MotionProvider';
-import { color, font, text } from '../theme/tokens';
-import type { DeviceMode } from '../hooks/useDeviceMode';
-import { DEMO_FLOWS, type DemoIntent } from '../demo/flows';
+import { useEffect, useState, type CSSProperties, type ReactNode } from "react";
+import { motion } from "framer-motion";
+import { Squircle } from "../components/Squircle";
+import { QrCodeSvg } from "../components/profile/QrCodeSvg";
+import { usePressFeedback } from "../components/MotionProvider";
+import { color, font, text } from "../theme/tokens";
+import type { DeviceMode } from "../hooks/useDeviceMode";
+import { DEMO_FLOWS, type DemoIntent } from "../demo/flows";
 
 /** Shared style for the landing's discreet text links (flows toggle / DS). */
 const LINK_STYLE: CSSProperties = {
-  appearance: 'none',
-  border: 'none',
-  background: 'transparent',
-  padding: '4px 0',
-  cursor: 'pointer',
+  appearance: "none",
+  border: "none",
+  background: "transparent",
+  padding: "4px 0",
+  cursor: "pointer",
   fontFamily: font.family,
   fontSize: text.caption.size,
   fontWeight: font.weight.medium,
@@ -42,7 +42,7 @@ function Reveal({
     <div
       style={{
         opacity: shown ? 1 : 0,
-        transform: shown ? 'translateY(0)' : 'translateY(16px)',
+        transform: shown ? "translateY(0)" : "translateY(16px)",
         transition: `opacity 0.5s ease-out ${delay}s, transform 0.5s ease-out ${delay}s`,
         ...style,
       }}
@@ -69,22 +69,22 @@ export function Landing({
   onViewDesignSystem?: () => void;
 }) {
   const press = usePressFeedback();
-  const isDesktop = device === 'desktop';
+  const isDesktop = device === "desktop";
   const [showFlows, setShowFlows] = useState(false);
 
   // The clean public URL (never carries ?dev), so a scanned phone lands as a judge.
   const publicUrl =
-    typeof window !== 'undefined'
+    typeof window !== "undefined"
       ? window.location.origin + window.location.pathname
-      : '';
+      : "";
 
   const copy = (
     <Reveal
       style={{
-        display: 'flex',
-        flexDirection: 'column',
-        alignItems: isDesktop ? 'flex-start' : 'center',
-        textAlign: isDesktop ? 'left' : 'center',
+        display: "flex",
+        flexDirection: "column",
+        alignItems: isDesktop ? "flex-start" : "center",
+        textAlign: isDesktop ? "left" : "center",
         gap: 20,
         maxWidth: 420,
       }}
@@ -94,7 +94,7 @@ export function Landing({
           fontFamily: font.family,
           fontSize: isDesktop ? 68 : 52,
           fontWeight: font.weight.semibold,
-          letterSpacing: '-0.02em',
+          letterSpacing: "-0.02em",
           color: color.onBrand,
           lineHeight: 1,
         }}
@@ -114,26 +114,26 @@ export function Landing({
       </div>
 
       <motion.button
-        onClick={() => onLaunch('default')}
+        onClick={() => onLaunch("default")}
         {...press}
         style={{
-          appearance: 'none',
-          border: 'none',
-          background: 'transparent',
+          appearance: "none",
+          border: "none",
+          background: "transparent",
           padding: 0,
           marginTop: 8,
-          cursor: 'pointer',
+          cursor: "pointer",
         }}
       >
         <Squircle
           role="cta"
           fill={color.white}
           style={{
-            display: 'flex',
-            alignItems: 'center',
-            justifyContent: 'center',
+            display: "flex",
+            alignItems: "center",
+            justifyContent: "center",
             height: 60,
-            padding: '0 32px',
+            padding: "0 32px",
             fontFamily: font.family,
             fontSize: text.bodyLg.size,
             fontWeight: font.weight.semibold,
@@ -148,14 +148,14 @@ export function Landing({
           Kept low-key so the hero still reads as a product intro, not a dev menu. */}
       <div
         style={{
-          display: 'flex',
-          flexWrap: 'wrap',
+          display: "flex",
+          flexWrap: "wrap",
           gap: 16,
-          justifyContent: isDesktop ? 'flex-start' : 'center',
+          justifyContent: isDesktop ? "flex-start" : "center",
         }}
       >
         <button onClick={() => setShowFlows((v) => !v)} style={LINK_STYLE}>
-          {showFlows ? 'Ocultar flujos ▴' : 'Ver flujos ▾'}
+          {showFlows ? "Ocultar flujos ▴" : "Ver flujos ▾"}
         </button>
         {onViewDesignSystem && (
           <button onClick={onViewDesignSystem} style={LINK_STYLE}>
@@ -167,10 +167,10 @@ export function Landing({
       {showFlows && (
         <div
           style={{
-            display: 'flex',
-            flexWrap: 'wrap',
+            display: "flex",
+            flexWrap: "wrap",
             gap: 8,
-            justifyContent: isDesktop ? 'flex-start' : 'center',
+            justifyContent: isDesktop ? "flex-start" : "center",
             maxWidth: 360,
           }}
         >
@@ -180,18 +180,18 @@ export function Landing({
               onClick={() => onLaunch(flow.intent)}
               {...press}
               style={{
-                appearance: 'none',
-                border: 'none',
-                background: 'transparent',
+                appearance: "none",
+                border: "none",
+                background: "transparent",
                 padding: 0,
-                cursor: 'pointer',
+                cursor: "pointer",
               }}
             >
               <Squircle
                 role="chip"
                 fill={color.bubbleOnBrand}
                 style={{
-                  padding: '9px 14px',
+                  padding: "9px 14px",
                   fontFamily: font.family,
                   fontSize: text.caption.size,
                   fontWeight: font.weight.medium,
@@ -210,7 +210,12 @@ export function Landing({
   const qr = (
     <Reveal
       delay={0.08}
-      style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 16 }}
+      style={{
+        display: "flex",
+        flexDirection: "column",
+        alignItems: "center",
+        gap: 16,
+      }}
     >
       <Squircle
         role="qrCard"
@@ -225,7 +230,7 @@ export function Landing({
           fontSize: text.caption.size,
           fontWeight: font.weight.medium,
           color: color.onBrandMuted,
-          textAlign: 'center',
+          textAlign: "center",
           maxWidth: 200,
         }}
       >
@@ -237,15 +242,15 @@ export function Landing({
   return (
     <div
       style={{
-        width: '100%',
-        height: '100%',
+        width: "100%",
+        height: "100%",
         background: color.brand,
-        display: 'flex',
-        alignItems: 'center',
-        justifyContent: 'center',
+        display: "flex",
+        alignItems: "center",
+        justifyContent: "center",
         gap: isDesktop ? 96 : 0,
         padding: 32,
-        boxSizing: 'border-box',
+        boxSizing: "border-box",
       }}
     >
       {copy}

@@ -1,12 +1,12 @@
-import { useRef, useState } from 'react';
-import { color, device } from '../theme/tokens';
-import { PhoneFrame } from '../components/PhoneFrame';
-import { MapHome } from './MapHome';
-import { ShadowLab } from './lab/ShadowLab';
-import { SquircleLab } from './lab/SquircleLab';
-import { MotionLab } from './lab/MotionLab';
-import { ClusterLab } from './lab/ClusterLab';
-import { PlansLab } from './lab/PlansLab';
+import { useRef, useState } from "react";
+import { color, device } from "../theme/tokens";
+import { PhoneFrame } from "../components/PhoneFrame";
+import { MapHome } from "./MapHome";
+import { ShadowLab } from "./lab/ShadowLab";
+import { SquircleLab } from "./lab/SquircleLab";
+import { MotionLab } from "./lab/MotionLab";
+import { ClusterLab } from "./lab/ClusterLab";
+import { PlansLab } from "./lab/PlansLab";
 
 /**
  * Effects Lab — a sandbox to tune reusable design primitives with live sliders
@@ -19,7 +19,13 @@ import { PlansLab } from './lab/PlansLab';
  * tuning updates the actual UI in real time.
  */
 
-const TABS = ['Squircles', 'Motion', 'Floating shadow', 'Cluster', 'Plans'] as const;
+const TABS = [
+  "Squircles",
+  "Motion",
+  "Floating shadow",
+  "Cluster",
+  "Plans",
+] as const;
 type Tab = (typeof TABS)[number];
 
 const VP_W = 360;
@@ -38,12 +44,24 @@ function ContextPreview({
   // Grab-to-pan the viewport, but only once the pointer actually moves past a
   // threshold — a tap with no movement passes through to the buttons beneath.
   const vpRef = useRef<HTMLDivElement>(null);
-  const drag = useRef<{ x: number; y: number; l: number; t: number; active: boolean } | null>(null);
+  const drag = useRef<{
+    x: number;
+    y: number;
+    l: number;
+    t: number;
+    active: boolean;
+  } | null>(null);
 
   const onPointerDown = (e: React.PointerEvent) => {
     const el = vpRef.current;
     if (!el) return;
-    drag.current = { x: e.clientX, y: e.clientY, l: el.scrollLeft, t: el.scrollTop, active: false };
+    drag.current = {
+      x: e.clientX,
+      y: e.clientY,
+      l: el.scrollLeft,
+      t: el.scrollTop,
+      active: false,
+    };
   };
   const onPointerMove = (e: React.PointerEvent) => {
     const el = vpRef.current;
@@ -54,7 +72,7 @@ function ContextPreview({
       if (Math.hypot(dx, dy) < 5) return; // still a tap, don't hijack
       drag.current.active = true;
       el.setPointerCapture(e.pointerId);
-      el.style.cursor = 'grabbing';
+      el.style.cursor = "grabbing";
     }
     el.scrollLeft = drag.current.l - dx;
     el.scrollTop = drag.current.t - dy;
@@ -62,7 +80,7 @@ function ContextPreview({
   const onPointerUp = (e: React.PointerEvent) => {
     const el = vpRef.current;
     if (el && drag.current?.active) {
-      el.style.cursor = 'grab';
+      el.style.cursor = "grab";
       try {
         el.releasePointerCapture(e.pointerId);
       } catch {
@@ -73,9 +91,18 @@ function ContextPreview({
   };
 
   return (
-    <div style={{ position: 'sticky', top: 0, flex: '0 0 auto' }}>
-      <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginBottom: 8 }}>
-        <span style={{ fontSize: 12, color: '#9aa0a8' }}>Live context · drag to pan</span>
+    <div style={{ position: "sticky", top: 0, flex: "0 0 auto" }}>
+      <div
+        style={{
+          display: "flex",
+          alignItems: "center",
+          gap: 10,
+          marginBottom: 8,
+        }}
+      >
+        <span style={{ fontSize: 12, color: "#9aa0a8" }}>
+          Live context · drag to pan
+        </span>
         <input
           type="range"
           min={0.5}
@@ -85,7 +112,13 @@ function ContextPreview({
           onChange={(e) => onScale(parseFloat(e.target.value))}
           style={{ width: 90, accentColor: color.brand }}
         />
-        <span style={{ fontSize: 11, color: '#fff', fontVariantNumeric: 'tabular-nums' }}>
+        <span
+          style={{
+            fontSize: 11,
+            color: "#fff",
+            fontVariantNumeric: "tabular-nums",
+          }}
+        >
           {Math.round(scale * 100)}%
         </span>
       </div>
@@ -97,15 +130,20 @@ function ContextPreview({
         style={{
           width: Math.min(w, VP_W),
           height: Math.min(h, VP_H),
-          overflow: 'auto',
+          overflow: "auto",
           borderRadius: 20,
-          cursor: 'grab',
-          touchAction: 'none',
-          background: '#0b0b10',
+          cursor: "grab",
+          touchAction: "none",
+          background: "#0b0b10",
         }}
       >
         <div style={{ width: w, height: h }}>
-          <div style={{ transform: `scale(${scale})`, transformOrigin: 'top left' }}>
+          <div
+            style={{
+              transform: `scale(${scale})`,
+              transformOrigin: "top left",
+            }}
+          >
             <PhoneFrame>
               <MapHome interactive={false} />
             </PhoneFrame>
@@ -117,22 +155,29 @@ function ContextPreview({
 }
 
 export function Lab({ onStartOnboarding }: { onStartOnboarding?: () => void }) {
-  const [tab, setTab] = useState<Tab>('Squircles');
+  const [tab, setTab] = useState<Tab>("Squircles");
   const [showContext, setShowContext] = useState(false);
   const [previewScale, setPreviewScale] = useState(0.7);
 
   const tabStyle = (active: boolean): React.CSSProperties => ({
-    padding: '8px 16px',
+    padding: "8px 16px",
     borderRadius: 12,
     fontSize: 13,
     fontWeight: 600,
-    color: active ? '#fff' : '#aeb2ba',
-    background: active ? color.brand : 'rgba(255,255,255,0.08)',
+    color: active ? "#fff" : "#aeb2ba",
+    background: active ? color.brand : "rgba(255,255,255,0.08)",
   });
 
   return (
-    <div style={{ display: 'flex', flexDirection: 'column', gap: 20, width: 'min(1200px, 94vw)' }}>
-      <div style={{ display: 'flex', gap: 8, alignItems: 'center' }}>
+    <div
+      style={{
+        display: "flex",
+        flexDirection: "column",
+        gap: 20,
+        width: "min(1200px, 94vw)",
+      }}
+    >
+      <div style={{ display: "flex", gap: 8, alignItems: "center" }}>
         {TABS.map((t) => (
           <button key={t} onClick={() => setTab(t)} style={tabStyle(tab === t)}>
             {t}
@@ -142,7 +187,11 @@ export function Lab({ onStartOnboarding }: { onStartOnboarding?: () => void }) {
         {onStartOnboarding && (
           <button
             onClick={onStartOnboarding}
-            style={{ ...tabStyle(false), background: 'rgba(255,255,255,0.12)', color: '#fff' }}
+            style={{
+              ...tabStyle(false),
+              background: "rgba(255,255,255,0.12)",
+              color: "#fff",
+            }}
           >
             ▶ Run onboarding
           </button>
@@ -151,19 +200,31 @@ export function Lab({ onStartOnboarding }: { onStartOnboarding?: () => void }) {
           onClick={() => setShowContext((v) => !v)}
           style={{
             ...tabStyle(showContext),
-            background: showContext ? color.brand : 'rgba(255,255,255,0.12)',
-            color: '#fff',
+            background: showContext ? color.brand : "rgba(255,255,255,0.12)",
+            color: "#fff",
           }}
         >
-          {showContext ? 'Hide context' : 'Preview in context'}
+          {showContext ? "Hide context" : "Preview in context"}
         </button>
       </div>
 
-      <div style={{ display: 'flex', gap: 24, alignItems: 'flex-start' }}>
+      <div style={{ display: "flex", gap: 24, alignItems: "flex-start" }}>
         <div style={{ flex: 1, minWidth: 0 }}>
-          {tab === 'Squircles' ? <SquircleLab /> : tab === 'Motion' ? <MotionLab /> : tab === 'Floating shadow' ? <ShadowLab /> : tab === 'Cluster' ? <ClusterLab /> : <PlansLab />}
+          {tab === "Squircles" ? (
+            <SquircleLab />
+          ) : tab === "Motion" ? (
+            <MotionLab />
+          ) : tab === "Floating shadow" ? (
+            <ShadowLab />
+          ) : tab === "Cluster" ? (
+            <ClusterLab />
+          ) : (
+            <PlansLab />
+          )}
         </div>
-        {showContext && <ContextPreview scale={previewScale} onScale={setPreviewScale} />}
+        {showContext && (
+          <ContextPreview scale={previewScale} onScale={setPreviewScale} />
+        )}
       </div>
     </div>
   );

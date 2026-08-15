@@ -1,5 +1,5 @@
-import type { CSSProperties } from 'react';
-import type { Transition } from 'framer-motion';
+import type { CSSProperties } from "react";
+import type { Transition } from "framer-motion";
 
 /**
  * Central motion registry — ONE animation personality for the whole prototype.
@@ -37,14 +37,14 @@ export type MotionRoleTuning = {
 };
 
 export type MotionRole =
-  | 'press'
-  | 'snap'
-  | 'morph'
-  | 'entrance'
-  | 'pop'
-  | 'ambient'
-  | 'float'
-  | 'inform';
+  | "press"
+  | "snap"
+  | "morph"
+  | "entrance"
+  | "pop"
+  | "ambient"
+  | "float"
+  | "inform";
 
 /** Cross-role scalars that aren't a spring shape. */
 export type MotionExtras = {
@@ -63,19 +63,62 @@ export const MOTION_ROLES: Array<{
   /** false = deliberately NOT springy (informational motion). */
   springy: boolean;
 }> = [
-  { role: 'press', label: 'Press', hint: 'Touch squish: scale-down on press, spring back on release', springy: true },
-  { role: 'snap', label: 'Snap', hint: 'Click-into-place: slider ticks, drag-release, icon morphs', springy: true },
-  { role: 'morph', label: 'Morph', hint: 'Big surface reshaping: pill ⇄ sheet ⇄ text sheet', springy: true },
-  { role: 'entrance', label: 'Entrance', hint: 'Elements popping in/out: pins, nav buttons, day slider', springy: true },
-  { role: 'pop', label: 'Pop', hint: 'Joyful tap bump: bubble poke (drives the rAF sim too)', springy: true },
-  { role: 'ambient', label: 'Ambient', hint: 'Idle "alive" flourish: search-glyph reflection spin', springy: true },
-  { role: 'float', label: 'Float', hint: 'Idle floating-wave bob of the selected venue pin: smooth ease-in-out loop, never springs. Speed = half-cycle period.', springy: false },
-  { role: 'inform', label: 'Inform', hint: 'Progress/loading: calm ease-out, NEVER springs (would lie)', springy: false },
+  {
+    role: "press",
+    label: "Press",
+    hint: "Touch squish: scale-down on press, spring back on release",
+    springy: true,
+  },
+  {
+    role: "snap",
+    label: "Snap",
+    hint: "Click-into-place: slider ticks, drag-release, icon morphs",
+    springy: true,
+  },
+  {
+    role: "morph",
+    label: "Morph",
+    hint: "Big surface reshaping: pill ⇄ sheet ⇄ text sheet",
+    springy: true,
+  },
+  {
+    role: "entrance",
+    label: "Entrance",
+    hint: "Elements popping in/out: pins, nav buttons, day slider",
+    springy: true,
+  },
+  {
+    role: "pop",
+    label: "Pop",
+    hint: "Joyful tap bump: bubble poke (drives the rAF sim too)",
+    springy: true,
+  },
+  {
+    role: "ambient",
+    label: "Ambient",
+    hint: 'Idle "alive" flourish: search-glyph reflection spin',
+    springy: true,
+  },
+  {
+    role: "float",
+    label: "Float",
+    hint: "Idle floating-wave bob of the selected venue pin: smooth ease-in-out loop, never springs. Speed = half-cycle period.",
+    springy: false,
+  },
+  {
+    role: "inform",
+    label: "Inform",
+    hint: "Progress/loading: calm ease-out, NEVER springs (would lie)",
+    springy: false,
+  },
 ];
 
 // Tuned live in the Lab: a snappier, springier personality — fast 250ms
 // signature with a 0.23 base bounce, roles pushed quicker across the board.
-export const defaultSignature: MotionSignature = { duration: 250, bounce: 0.23 };
+export const defaultSignature: MotionSignature = {
+  duration: 250,
+  bounce: 0.23,
+};
 
 export const defaultMotionRoles: Record<MotionRole, MotionRoleTuning> = {
   press: { speed: 1.2, bounce: 1.25 },
@@ -105,12 +148,16 @@ export function resolveTransition(
   tuning: MotionRoleTuning,
 ): Transition {
   const duration = (sig.duration * tuning.speed) / 1000;
-  if (role === 'inform') return { type: 'tween', duration, ease: 'easeOut' };
+  if (role === "inform") return { type: "tween", duration, ease: "easeOut" };
   // `float` is an idle loop, not a commit: a reversed ease-in-out tween is a
   // sine wave (zero velocity at the turnarounds), so it floats continuously
   // with no spring settle. `duration` is the half-cycle (one rise or fall).
-  if (role === 'float') return { type: 'tween', duration, ease: 'easeInOut' };
-  return { type: 'spring', duration, bounce: clamp01(sig.bounce * tuning.bounce) };
+  if (role === "float") return { type: "tween", duration, ease: "easeInOut" };
+  return {
+    type: "spring",
+    duration,
+    bounce: clamp01(sig.bounce * tuning.bounce),
+  };
 }
 
 /* ------------------------------------------------------------------ */
@@ -147,9 +194,18 @@ export const defaultCameraEase: CameraEaseConfig = {
  * fraction t, for control points (x1,y1) and (x2,y2) between (0,0) and (1,1).
  * Solves x(u)=t (Newton + bisection fallback) then returns y(u).
  */
-export function cubicBezier(x1: number, y1: number, x2: number, y2: number): (t: number) => number {
-  const cx = 3 * x1, bx = 3 * (x2 - x1) - cx, ax = 1 - cx - bx;
-  const cy = 3 * y1, by = 3 * (y2 - y1) - cy, ay = 1 - cy - by;
+export function cubicBezier(
+  x1: number,
+  y1: number,
+  x2: number,
+  y2: number,
+): (t: number) => number {
+  const cx = 3 * x1,
+    bx = 3 * (x2 - x1) - cx,
+    ax = 1 - cx - bx;
+  const cy = 3 * y1,
+    by = 3 * (y2 - y1) - cy,
+    ay = 1 - cy - by;
   const sampleX = (u: number) => ((ax * u + bx) * u + cx) * u;
   const sampleY = (u: number) => ((ay * u + by) * u + cy) * u;
   const slopeX = (u: number) => (3 * ax * u + 2 * bx) * u + cx;
@@ -162,12 +218,14 @@ export function cubicBezier(x1: number, y1: number, x2: number, y2: number): (t:
       if (Math.abs(d) < 1e-6) break;
       u -= err / d;
     }
-    let lo = 0, hi = 1;
+    let lo = 0,
+      hi = 1;
     u = x;
     for (let i = 0; i < 20; i++) {
       const err = sampleX(u) - x;
       if (Math.abs(err) < 1e-6) break;
-      if (err > 0) hi = u; else lo = u;
+      if (err > 0) hi = u;
+      else lo = u;
       u = (lo + hi) / 2;
     }
     return u;
@@ -175,7 +233,10 @@ export function cubicBezier(x1: number, y1: number, x2: number, y2: number): (t:
   return (t: number) => (t <= 0 ? 0 : t >= 1 ? 1 : sampleY(solveX(t)));
 }
 
-export function resolveCameraEase(cfg: CameraEaseConfig): { durationMs: number; easing: (t: number) => number } {
+export function resolveCameraEase(cfg: CameraEaseConfig): {
+  durationMs: number;
+  easing: (t: number) => number;
+} {
   // Lock the bezier Y-handles to 0 and 1 → guaranteed monotonic, in-range: a
   // smooth accelerate-then-settle with no overshoot, whatever the X handles.
   const x1 = clamp01(cfg.easeIn);
@@ -211,29 +272,32 @@ export const layerZoom = {
   inDelayMs: 90,
   outMs: 300,
   /** Fast-commit ease-out — CSS cousin of the springy signature. */
-  ease: 'cubic-bezier(0.22, 1, 0.36, 1)',
+  ease: "cubic-bezier(0.22, 1, 0.36, 1)",
   childScale: 0.92,
   parentScale: 1.06,
   blurPx: 6,
 };
 
 /** Where a hidden layer sits in the zoom hierarchy relative to the visible one. */
-export type LayerDepth = 'parent' | 'child';
+export type LayerDepth = "parent" | "child";
 
 /** Style for one swappable content layer. Spread onto the layer wrapper. */
-export function layerZoomStyle(visible: boolean, hiddenAs: LayerDepth): CSSProperties {
+export function layerZoomStyle(
+  visible: boolean,
+  hiddenAs: LayerDepth,
+): CSSProperties {
   const z = layerZoom;
   if (visible) {
     return {
       opacity: 1,
-      transform: 'scale(1)',
-      filter: 'blur(0px)',
+      transform: "scale(1)",
+      filter: "blur(0px)",
       // 'inherit', NOT 'visible': visibility overrides ancestors, so a layer
       // that forced 'visible' would stay hit-testable (and paintable) inside
       // a CLOSED parent layer — an invisible button eating clicks. Inheriting
       // keeps nested layers (activity stack inside the activity layer) dead
       // whenever any ancestor layer is hidden.
-      visibility: 'inherit',
+      visibility: "inherit",
       transition:
         `opacity ${z.inMs}ms ${z.ease} ${z.inDelayMs}ms, ` +
         `transform ${z.inMs}ms ${z.ease} ${z.inDelayMs}ms, ` +
@@ -242,9 +306,9 @@ export function layerZoomStyle(visible: boolean, hiddenAs: LayerDepth): CSSPrope
   }
   return {
     opacity: 0,
-    transform: `scale(${hiddenAs === 'parent' ? z.parentScale : z.childScale})`,
+    transform: `scale(${hiddenAs === "parent" ? z.parentScale : z.childScale})`,
     filter: `blur(${z.blurPx}px)`,
-    visibility: 'hidden',
+    visibility: "hidden",
     transition:
       `opacity ${z.outMs}ms ${z.ease}, transform ${z.outMs}ms ${z.ease}, ` +
       `filter ${z.outMs}ms ${z.ease}, visibility 0s linear ${z.outMs}ms`,

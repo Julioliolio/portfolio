@@ -1,6 +1,6 @@
-import { useEffect, useRef } from 'react';
-import { animate, useMotionValue } from 'framer-motion';
-import { useMotion, useMotionExtras } from '../MotionProvider';
+import { useEffect, useRef } from "react";
+import { animate, useMotionValue } from "framer-motion";
+import { useMotion, useMotionExtras } from "../MotionProvider";
 
 /**
  * THE pill search glyph — vector paths extracted from Figma node 1358:1494
@@ -16,7 +16,7 @@ const CY = 14.6611;
 
 export function SearchGlyph({
   size = 33,
-  color = '#FEFEFE',
+  color = "#FEFEFE",
   ambient = true,
   spinNow = 0,
 }: {
@@ -27,13 +27,16 @@ export function SearchGlyph({
   spinNow?: number;
 }) {
   const rot = useMotionValue(0);
-  const spin = useMotion('ambient');
+  const spin = useMotion("ambient");
   const { ambientEvery } = useMotionExtras();
   // Write the SVG transform attribute directly — framer's `transform` prop is
   // treated as a CSS style and won't rotate around the lens centre.
   const gRef = useRef<SVGGElement>(null);
   useEffect(
-    () => rot.on('change', (r) => gRef.current?.setAttribute('transform', `rotate(${r} ${CX} ${CY})`)),
+    () =>
+      rot.on("change", (r) =>
+        gRef.current?.setAttribute("transform", `rotate(${r} ${CX} ${CY})`),
+      ),
     [rot],
   );
 
@@ -54,7 +57,14 @@ export function SearchGlyph({
   }, [ambient, ambientEvery, spin, rot, spinNow]);
 
   return (
-    <svg width={size} height={size} viewBox="0 0 33.2988 33.2451" fill="none" aria-hidden style={{ display: 'block' }}>
+    <svg
+      width={size}
+      height={size}
+      viewBox="0 0 33.2988 33.2451"
+      fill="none"
+      aria-hidden
+      style={{ display: "block" }}
+    >
       {/* magnifier body: ring + handle (Figma "Union") */}
       <path
         fillRule="evenodd"

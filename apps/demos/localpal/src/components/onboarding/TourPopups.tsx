@@ -11,19 +11,19 @@
  * roles) and the motion registry (`morph` slide, `entrance`/`pop` pops); the
  * beat state machine lives in MapHome — these are purely presentational.
  */
-import { motion } from 'framer-motion';
-import type { CSSProperties } from 'react';
-import { Squircle } from '../Squircle';
-import { useMotion, usePressFeedback } from '../MotionProvider';
-import { CrossIcon } from '../icons/CrossIcon';
-import { figmaIcons } from '../icons/figmaIcons';
-import { color, font, shadow } from '../../theme/tokens';
+import { motion } from "framer-motion";
+import type { CSSProperties } from "react";
+import { Squircle } from "../Squircle";
+import { useMotion, usePressFeedback } from "../MotionProvider";
+import { CrossIcon } from "../icons/CrossIcon";
+import { figmaIcons } from "../icons/figmaIcons";
+import { color, font, shadow } from "../../theme/tokens";
 
 const buttonReset: CSSProperties = {
-  background: 'transparent',
-  border: 'none',
+  background: "transparent",
+  border: "none",
   padding: 0,
-  cursor: 'pointer',
+  cursor: "pointer",
 };
 
 /** Small ✕ that kills the whole tour — present on every popup. */
@@ -37,7 +37,14 @@ function SkipDot({ onSkip }: { onSkip: () => void }) {
         e.stopPropagation();
         onSkip();
       }}
-      style={{ ...buttonReset, display: 'grid', placeItems: 'center', width: 18, height: 18, flexShrink: 0 }}
+      style={{
+        ...buttonReset,
+        display: "grid",
+        placeItems: "center",
+        width: 18,
+        height: 18,
+        flexShrink: 0,
+      }}
     >
       <CrossIcon size={7} color={color.muted} />
     </motion.button>
@@ -48,8 +55,16 @@ function SkipDot({ onSkip }: { onSkip: () => void }) {
  * iOS-style notification banner, sliding from the top. The host controls
  * mounting (wrap in AnimatePresence for the slide-away).
  */
-export function TourBanner({ title, body, onSkip }: { title: string; body: string; onSkip: () => void }) {
-  const morph = useMotion('morph');
+export function TourBanner({
+  title,
+  body,
+  onSkip,
+}: {
+  title: string;
+  body: string;
+  onSkip: () => void;
+}) {
+  const morph = useMotion("morph");
   return (
     <motion.div
       initial={{ y: -120, opacity: 0 }}
@@ -57,7 +72,7 @@ export function TourBanner({ title, body, onSkip }: { title: string; body: strin
       exit={{ y: -120, opacity: 0 }}
       transition={morph}
       style={{
-        position: 'absolute',
+        position: "absolute",
         top: 66,
         left: 16,
         width: 361,
@@ -69,23 +84,61 @@ export function TourBanner({ title, body, onSkip }: { title: string; body: strin
         role="banner"
         fill={color.white}
         style={{
-          width: '100%',
-          boxSizing: 'border-box',
-          display: 'flex',
-          alignItems: 'center',
+          width: "100%",
+          boxSizing: "border-box",
+          display: "flex",
+          alignItems: "center",
           gap: 12,
-          padding: '14px 16px',
+          padding: "14px 16px",
           boxShadow: shadow.fab,
         }}
       >
         {/* app-icon tile — the real LocalPal brand mark (favicon), clipped to
             a squircle so it reads as the app's own notification icon */}
-        <Squircle role="pin" style={{ width: 38, height: 38, overflow: 'hidden', flexShrink: 0 }}>
-          <img src="/favicon.svg" alt="" style={{ width: '100%', height: '100%', display: 'block', objectFit: 'cover' }} />
+        <Squircle
+          role="pin"
+          style={{ width: 38, height: 38, overflow: "hidden", flexShrink: 0 }}
+        >
+          <img
+            src="/favicon.svg"
+            alt=""
+            style={{
+              width: "100%",
+              height: "100%",
+              display: "block",
+              objectFit: "cover",
+            }}
+          />
         </Squircle>
-        <div style={{ display: 'flex', flexDirection: 'column', gap: 3, flex: 1, minWidth: 0 }}>
-          <span style={{ color: color.ink, fontSize: 13, fontWeight: 600, lineHeight: '16px' }}>{title}</span>
-          <span style={{ color: color.muted, fontSize: 12, fontWeight: 400, lineHeight: '15px' }}>{body}</span>
+        <div
+          style={{
+            display: "flex",
+            flexDirection: "column",
+            gap: 3,
+            flex: 1,
+            minWidth: 0,
+          }}
+        >
+          <span
+            style={{
+              color: color.ink,
+              fontSize: 13,
+              fontWeight: 600,
+              lineHeight: "16px",
+            }}
+          >
+            {title}
+          </span>
+          <span
+            style={{
+              color: color.muted,
+              fontSize: 12,
+              fontWeight: 400,
+              lineHeight: "15px",
+            }}
+          >
+            {body}
+          </span>
         </div>
         <SkipDot onSkip={onSkip} />
       </Squircle>
@@ -102,17 +155,17 @@ export function TourBubble({
   text,
   onSkip,
   width,
-  tailX = 'center',
+  tailX = "center",
   style,
 }: {
   text: string;
   onSkip: () => void;
   width?: number;
-  tailX?: number | 'center';
+  tailX?: number | "center";
   style?: CSSProperties;
 }) {
-  const entrance = useMotion('entrance');
-  const tailLeft = tailX === 'center' ? '50%' : `${tailX}px`;
+  const entrance = useMotion("entrance");
+  const tailLeft = tailX === "center" ? "50%" : `${tailX}px`;
   return (
     <motion.div
       initial={{ scale: 0.5, opacity: 0, y: 8 }}
@@ -120,10 +173,10 @@ export function TourBubble({
       exit={{ scale: 0.7, opacity: 0 }}
       transition={entrance}
       style={{
-        position: 'relative',
-        width: width ?? 'fit-content',
+        position: "relative",
+        width: width ?? "fit-content",
         maxWidth: 250,
-        transformOrigin: `${tailX === 'center' ? '50%' : `${tailX}px`} 100%`,
+        transformOrigin: `${tailX === "center" ? "50%" : `${tailX}px`} 100%`,
         fontFamily: font.family,
         ...style,
       }}
@@ -132,27 +185,36 @@ export function TourBubble({
         role="tooltip"
         fill={color.white}
         style={{
-          boxSizing: 'border-box',
-          display: 'flex',
-          alignItems: 'center',
+          boxSizing: "border-box",
+          display: "flex",
+          alignItems: "center",
           gap: 8,
-          padding: '12px 14px',
+          padding: "12px 14px",
           boxShadow: shadow.fab,
         }}
       >
-        <span style={{ color: color.brand, fontSize: 12.5, fontWeight: 600, lineHeight: '16px' }}>{text}</span>
+        <span
+          style={{
+            color: color.brand,
+            fontSize: 12.5,
+            fontWeight: 600,
+            lineHeight: "16px",
+          }}
+        >
+          {text}
+        </span>
         <SkipDot onSkip={onSkip} />
       </Squircle>
       {/* the tail — a rotated square peeking from under the bubble */}
       <div
         style={{
-          position: 'absolute',
+          position: "absolute",
           left: tailLeft,
           bottom: -5,
           width: 12,
           height: 12,
           background: color.white,
-          transform: 'translateX(-50%) rotate(45deg)',
+          transform: "translateX(-50%) rotate(45deg)",
           borderRadius: 2.5,
         }}
       />
@@ -165,7 +227,7 @@ export function TourBubble({
  * piece, and the host takes it away. Peak-end beat, kept small.
  */
 export function FirstPlanCard({ planTitle }: { planTitle: string }) {
-  const pop = useMotion('pop');
+  const pop = useMotion("pop");
   return (
     <motion.div
       initial={{ scale: 0.55, opacity: 0 }}
@@ -173,10 +235,10 @@ export function FirstPlanCard({ planTitle }: { planTitle: string }) {
       exit={{ scale: 0.8, opacity: 0 }}
       transition={pop}
       style={{
-        position: 'absolute',
-        left: '50%',
+        position: "absolute",
+        left: "50%",
         top: 170,
-        transform: 'translateX(-50%)',
+        transform: "translateX(-50%)",
         zIndex: 70,
         fontFamily: font.family,
       }}
@@ -185,31 +247,46 @@ export function FirstPlanCard({ planTitle }: { planTitle: string }) {
         role="planCard"
         fill={color.white}
         style={{
-          boxSizing: 'border-box',
-          display: 'flex',
-          flexDirection: 'column',
-          alignItems: 'center',
+          boxSizing: "border-box",
+          display: "flex",
+          flexDirection: "column",
+          alignItems: "center",
           gap: 8,
-          padding: '20px 26px',
+          padding: "20px 26px",
           boxShadow: shadow.fab,
           minWidth: 220,
         }}
       >
-        <img src={figmaIcons.shootingStar} alt="" style={{ width: 26, height: 26, display: 'block' }} />
-        <span style={{ color: color.ink, fontSize: 18, fontWeight: 600, lineHeight: '20px' }}>Your first plan</span>
+        <img
+          src={figmaIcons.shootingStar}
+          alt=""
+          style={{ width: 26, height: 26, display: "block" }}
+        />
+        <span
+          style={{
+            color: color.ink,
+            fontSize: 18,
+            fontWeight: 600,
+            lineHeight: "20px",
+          }}
+        >
+          Your first plan
+        </span>
         <span
           style={{
             color: color.brand,
             fontSize: 13,
             fontWeight: 600,
-            lineHeight: '16px',
-            textAlign: 'center',
+            lineHeight: "16px",
+            textAlign: "center",
             maxWidth: 220,
           }}
         >
           {planTitle}
         </span>
-        <span style={{ color: color.muted, fontSize: 12, fontWeight: 400 }}>you’re going — see you there</span>
+        <span style={{ color: color.muted, fontSize: 12, fontWeight: 400 }}>
+          you’re going — see you there
+        </span>
       </Squircle>
     </motion.div>
   );
