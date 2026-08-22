@@ -21,29 +21,30 @@ import { useEffect, useRef } from "react";
  * globals.css, applied only while this component is active — no-JS,
  * touch-only, and coarse-pointer sessions keep the OS cursor.
  *
- * The arrow is three photos of the same clay arrow re-posed slightly,
+ * The arrow is a set of photos of the same clay arrow re-posed slightly,
  * cycled at a stop-motion rate so the outline "boils" like a claymation
- * hold. prepare-cursor.mjs registers the frames at the tip and pads them
- * to identical dimensions, so swapping frames never moves the hotspot.
- *
- * The pointer-finger state swaps in over interactive elements once
- * /cursor/arrow-pointer-*.png exists — run scripts/prepare-cursor.mjs and
- * set POINTER_FRAMES below. Until then the arrow is used everywhere.
+ * hold. Over interactive elements it swaps to a clay pointing hand with its
+ * own boil frames, animated identically. prepare-cursor.mjs registers each
+ * variant's frames at its hotspot (arrow tip / index fingertip) and pads
+ * them to identical dimensions, so swapping frames never moves the hotspot.
  */
 
 // Physics + size knobs live in @portfolio/lab/cursor-tuning (mutable at
 // runtime — /lab/clay-cursor is a slider bench over them). Only the asset
 // geometry stays here.
-const HOTSPOT = { x: 0.064, y: 0.01 }; // arrow-tip position, fraction of image (measured from the trimmed asset)
+// Hotspots as fractions of the image (measured from the prepared assets —
+// prepare-cursor.mjs prints the pointer's fingertip column when it runs).
+const ARROW_HOTSPOT = { x: 0.064, y: 0.01 }; // arrow tip
+const POINTER_HOTSPOT = { x: 0.39, y: 0.01 }; // index fingertip
 
 const ARROW_FRAMES = Array.from(
   { length: 14 },
   (_, i) => `/cursor/arrow-${i + 1}.png`,
 );
-// The pointer-finger asset hasn't landed yet; set to its frame list once
-// prepare-cursor.mjs emits it. Kept null until then so no request is made
-// for files known to be missing.
-const POINTER_FRAMES: string[] | null = null;
+const POINTER_FRAMES = Array.from(
+  { length: 5 },
+  (_, i) => `/cursor/arrow-pointer-${i + 1}.png`,
+);
 const INTERACTIVE =
   "a,button,[role=button],label,select,summary,[data-cursor=pointer]";
 
@@ -73,7 +74,16 @@ export function ClayCursor() {
     let visible = false;
     let seenFirstMove = false;
 
-    // Rendered image metrics for hotspot math (updated on load/resize).
+    let variant: "arrow" | "pointer" = "arrow";
+    let frameIdx = 0;
+    let boilAcc = 0; // seconds accumulated toward the next boil frame
+
+    function hotspot() {
+      return variant === "pointer" ? POINTER_HOTSPOT : ARROW_HOTSPOT;
+    }
+
+    // Rendered image metrics for hotspot math (updated on load/resize and
+    // whenever the variant swaps — the hand is a different aspect ratio).
     let imgW = tuning.size;
     let imgH = tuning.size;
     let appliedSize = -1;
@@ -81,17 +91,14 @@ export function ClayCursor() {
       if (!img) return;
       imgW = img.offsetWidth || tuning.size;
       imgH = img.offsetHeight || tuning.size;
-      img.style.transformOrigin = `${HOTSPOT.x * 100}% ${HOTSPOT.y * 100}%`;
+      const { x, y } = hotspot();
+      img.style.transformOrigin = `${x * 100}% ${y * 100}%`;
     }
     img.addEventListener("load", measure);
     measure();
 
-    let variant: "arrow" | "pointer" = "arrow";
-    let frameIdx = 0;
-    let boilAcc = 0; // seconds accumulated toward the next boil frame
-
     // Warm the browser cache so frame swaps never flash a missing image.
-    const preload = [...ARROW_FRAMES, ...(POINTER_FRAMES ?? [])].map((src) => {
+    const preload = [...ARROW_FRAMES, ...POINTER_FRAMES].map((src) => {
       const im = new Image();
       im.src = src;
       return im;
@@ -99,9 +106,7 @@ export function ClayCursor() {
     void preload;
 
     function currentFrames(): string[] {
-      return variant === "pointer" && POINTER_FRAMES
-        ? POINTER_FRAMES
-        : ARROW_FRAMES;
+      return variant === "pointer" ? POINTER_FRAMES : ARROW_FRAMES;
     }
 
     function applyFrame() {
@@ -115,6 +120,7 @@ export function ClayCursor() {
       if (next === variant) return;
       variant = next;
       applyFrame();
+      measure(); // re-anchors the pivot now; load re-measures the new width
     }
 
     function show() {
@@ -184,7 +190,11 @@ export function ClayCursor() {
           const rect = iframe.getBoundingClientRect();
           const sx = rect.width / (iframe.clientWidth || rect.width || 1);
           const sy = rect.height / (iframe.clientHeight || rect.height || 1);
-          onMove(rect.left + e.clientX * sx, rect.top + e.clientY * sy, e.target);
+          onMove(
+            rect.left + e.clientX * sx,
+            rect.top + e.clientY * sy,
+            e.target,
+          );
         };
         doc.addEventListener("pointermove", frameMove, { passive: true });
         doc.addEventListener("pointerdown", press, { passive: true });
@@ -228,6 +238,13 @@ export function ClayCursor() {
       if (tuning.size !== appliedSize) {
         appliedSize = tuning.size;
         img!.style.height = `${tuning.size}px`;
+        // A soft contact shadow, traced from the cursor's own alpha (not a
+        // boxy CSS shadow) via drop-shadow — scaled with size so it stays
+        // proportional if the cursor is resized on the bench. Light from
+        // upper-left, like the page is lit from the same side as the UI.
+        img!.style.filter = `drop-shadow(${tuning.size * 0.05}px ${
+          tuning.size * 0.08
+        }px ${tuning.size * 0.06}px rgba(0, 0, 0, 0.35))`;
         measure();
       }
 
@@ -280,8 +297,9 @@ export function ClayCursor() {
         dt;
       scale += scaleVel * dt;
 
-      root!.style.transform = `translate3d(${pos.x - HOTSPOT.x * imgW}px, ${
-        pos.y - HOTSPOT.y * imgH
+      const hs = hotspot();
+      root!.style.transform = `translate3d(${pos.x - hs.x * imgW}px, ${
+        pos.y - hs.y * imgH
       }px, 0)`;
       img!.style.transform = `rotate(${angle}deg) scale(${scale})`;
     }
