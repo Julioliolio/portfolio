@@ -99,7 +99,7 @@ type Axes = { x: number; y: number }; // normalized -1..1, positive = right/down
 
 const FRONT: Cell = { col: 0, row: 0 };
 const TICK_MS = 1000 / 12; // the walker's cadence: photo swaps "on twos"
-const BOB_TICK_MS = 1000 / 24; // the bob's cadence: motion "on ones"
+// The bob's cadence is BobParams.fps (24 by default: motion "on ones").
 
 // The four full-corner photos are excluded — the walker rounds corners
 // through the half-step frames instead. Flip to true to bring them back.
@@ -181,6 +181,7 @@ type BobParams = {
   spring: number; // 0 = soft sine float, 1 = snappy move-and-hold
   smear: number; // stretch per unit of step speed — smear frames, not blur
   echo: number; // opacity of the outgoing photo's one-tick echo on a cut
+  fps: number; // the bob's cadence: 24 = "on ones", 12 = the walker's twos
 };
 
 // Values dialed in by Julio with the on-page sliders.
@@ -190,6 +191,7 @@ const BOB_DEFAULTS: BobParams = {
   spring: 0.2,
   smear: 1,
   echo: 0.075,
+  fps: 24,
 };
 
 // The cast shadow: a drop-shadow filter on the frame stack, so it traces
@@ -276,8 +278,8 @@ const BOB_PARK_SNAP = 0.05; // below this magnitude (%), snap to flat
 const SMEAR_GAIN = 6;
 const SMEAR_MAX = 0.03;
 
-function makeBobFrames({ amount, cycleSec, spring }: BobParams): number[] {
-  const n = Math.max(8, Math.round(cycleSec * 24));
+function makeBobFrames({ amount, cycleSec, spring, fps }: BobParams): number[] {
+  const n = Math.max(4, Math.round(cycleSec * fps));
   const raw: number[] = [];
   for (let i = 0; i < n; i++) {
     const th = (2 * Math.PI * i) / n;
@@ -1053,14 +1055,49 @@ function SpinCurveEditor({
   );
 }
 
+/**
+ * The mount entrance (see the `entrance` prop): the site's shared sm-drop
+ * keyframes and --sm-duration, generated from the motion tuning by
+ * <MotionStyles> in the root layout (packages/lab/src/motion.tsx), so
+ * /lab/motion tunes this too. Fill backwards so that once it ends the
+ * wrapper carries no transform at all.
+ */
+const ENTRANCE_CSS = `
+.cartel-enter { animation: sm-drop var(--sm-duration, .38s) steps(1, end) backwards; transform-origin: 50% 60%; }
+@media (prefers-reduced-motion: reduce) { .cartel-enter { animation-duration: .01ms; } }
+`;
+
 export default function Cartel({
   height = "min(70vh, 600px)",
   controls = true,
+  spin: spinOverride,
+  bob: bobOverride,
+  glideFps = 0,
+  entrance = true,
 }: {
   /** CSS height of the sign; width follows via the frame aspect ratio. */
   height?: string;
   /** Show the tuning-slider panel. */
   controls?: boolean;
+  /** Values laid over SPIN_DEFAULTS / BOB_DEFAULTS — for trial pages
+   *  that want another feel without touching the defaults. Re-applied
+   *  whenever the values change (a toggle), which resets bench edits. */
+  spin?: Partial<SpinParams>;
+  bob?: Partial<BobParams>;
+  /**
+   * Stop-motion beat for the pointer glide (the smooth drift layer
+   * between photo cuts), cuts per second. 0 = the 60fps ease. Above 0
+   * the ease still runs but the sign is only redrawn on the beat, so the
+   * drift reads as held poses like everything else.
+   */
+  glideFps?: number;
+  /**
+   * Play the mount entrance once the frames are decoded: the sign stamps
+   * in through hard cuts (cartel-enter) — from above, small and tilted;
+   * past its mark, wide and short; a hair narrow; rest — on a wrapper
+   * around the stack, so the walker's own transform is untouched.
+   */
+  entrance?: boolean;
 } = {}) {
   const [mode, setMode] = useState<Mode>("pending");
   const [phase, setPhase] = useState<"loading" | "ready">("loading");
@@ -1097,9 +1134,11 @@ export default function Cartel({
   // tearing the effect down.
   const bobFramesRef = useRef(makeBobFrames(BOB_DEFAULTS));
   const bobSmearRef = useRef(BOB_DEFAULTS.smear);
+  const bobFpsRef = useRef(BOB_DEFAULTS.fps);
   useEffect(() => {
     bobFramesRef.current = makeBobFrames(bobParams);
     bobSmearRef.current = bobParams.smear;
+    bobFpsRef.current = bobParams.fps;
   }, [bobParams]);
 
   // Spin timing, read at trigger time through a ref (same live-retune
@@ -1110,6 +1149,25 @@ export default function Cartel({
   useEffect(() => {
     spinParamsRef.current = spinParams;
   }, [spinParams]);
+
+  // Trial-page overrides: laid over the defaults whenever their values
+  // change. Keyed by content so a fresh literal per render is a no-op.
+  const spinKey = JSON.stringify(spinOverride ?? null);
+  const bobKey = JSON.stringify(bobOverride ?? null);
+  useEffect(() => {
+    if (spinOverride !== undefined)
+      setSpinParams({ ...SPIN_DEFAULTS, ...spinOverride });
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [spinKey]);
+  useEffect(() => {
+    if (bobOverride !== undefined)
+      setBobParams({ ...BOB_DEFAULTS, ...bobOverride });
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [bobKey]);
+  const glideFpsRef = useRef(glideFps);
+  useEffect(() => {
+    glideFpsRef.current = glideFps;
+  }, [glideFps]);
 
   const containerRef = useRef<HTMLDivElement>(null);
   const stackRef = useRef<HTMLDivElement>(null);
@@ -1210,13 +1268,17 @@ export default function Cartel({
 
     let axes: Axes = { x: 0, y: 0 };
     let axesTarget: Axes = { x: 0, y: 0 };
+    // The axes the sign is drawn with: `axes` itself at glideFps 0, else
+    // a sample of it taken on the beat (see glide) so the drift holds.
+    let axesShown: Axes = { x: 0, y: 0 };
+    let glideAcc = 0; // ms banked toward the next glide cut
     let raf: number | null = null;
     let glidePrev = 0;
 
     function writeTransform() {
       if (stackRef.current) {
         stackRef.current.style.transform = signTransform(
-          axes,
+          axesShown,
           bobY + spinJumpY,
           cutStretch.x,
           cutStretch.y + bobStretch + spinStretchY,
@@ -1238,7 +1300,23 @@ export default function Cartel({
         Math.abs(axesTarget.x - axes.x) < 0.001 &&
         Math.abs(axesTarget.y - axes.y) < 0.001;
       if (converged) axes = { ...axesTarget };
-      writeTransform();
+      // Stop-motion glide: the ease runs every frame, the drawing only
+      // catches up on the beat. The converged frame always draws, so the
+      // sign never rests a cut short of where the pointer left it.
+      const fps = glideFpsRef.current;
+      if (fps <= 0 || converged) {
+        axesShown = { ...axes };
+        glideAcc = 0;
+        writeTransform();
+      } else {
+        glideAcc += dt;
+        const hold = 1000 / fps;
+        if (glideAcc >= hold) {
+          glideAcc %= hold;
+          axesShown = { ...axes };
+          writeTransform();
+        }
+      }
       raf = converged ? null : requestAnimationFrame(glide);
       if (converged) glidePrev = 0;
     }
@@ -1262,9 +1340,12 @@ export default function Cartel({
       );
     }
 
+    // A self-rescheduling timeout rather than an interval, so the cadence
+    // follows bobFpsRef live (a trial toggle or the bench slider).
     function startBob() {
       if (bob != null) return;
-      bob = window.setInterval(() => {
+      const step = () => {
+        bob = window.setTimeout(step, 1000 / bobFpsRef.current);
         if (ticker != null) {
           // Mid-cut: ease the offset flat in diminishing steps so the bob
           // is absorbed by the move instead of chopped by it. Only actual
@@ -1290,12 +1371,13 @@ export default function Cartel({
           bobStretch = stretch;
           writeTransform();
         }
-      }, BOB_TICK_MS);
+      };
+      bob = window.setTimeout(step, 1000 / bobFpsRef.current);
     }
 
     function stopBob() {
       if (bob != null) {
-        window.clearInterval(bob);
+        window.clearTimeout(bob);
         bob = null;
       }
     }
@@ -1933,6 +2015,18 @@ export default function Cartel({
           }
         }}
       >
+        {/* The entrance wrapper: the stamp-in animation runs here, not on
+            the stack (whose transform the walker writes every cut).
+            preserve-3d keeps the stack's rotateX/Y in the perspective
+            above while the wrapper's own transform is in play. */}
+        <div
+          className={entrance && phase === "ready" ? "cartel-enter" : undefined}
+          style={{
+            position: "absolute",
+            inset: 0,
+            transformStyle: "preserve-3d",
+          }}
+        >
         <div
           ref={stackRef}
           style={{
@@ -2020,7 +2114,9 @@ export default function Cartel({
           )}
           {/* eslint-enable @next/next/no-img-element */}
         </div>
+        </div>
       </div>
+      <style>{ENTRANCE_CSS}</style>
       {motionPill && (
         <button
           type="button"
@@ -2085,6 +2181,15 @@ export default function Cartel({
             />
           </Section>
           <Section title="Stop motion">
+            <TuneSlider
+              label="Beat"
+              min={4}
+              max={30}
+              step={1}
+              unit="fps"
+              value={bobParams.fps}
+              onChange={(fps) => setBobParams((p) => ({ ...p, fps }))}
+            />
             <TuneSlider
               label="Amount"
               min={0}

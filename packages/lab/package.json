@@ -5,7 +5,8 @@
   "type": "module",
   "exports": {
     "./registry": "./src/registry.ts",
-    "./cursor-tuning": "./src/cursor-tuning.ts"
+    "./cursor-tuning": "./src/cursor-tuning.ts",
+    "./motion": "./src/motion.tsx"
   },
   "scripts": {
     "typecheck": "tsc --noEmit"

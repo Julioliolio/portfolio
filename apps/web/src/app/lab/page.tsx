@@ -22,6 +22,21 @@ export default function LabIndexPage() {
           </Link>
           <p>The sign alone on a white wall, with its cast shadow.</p>
         </li>
+        <li>
+          <Link className="underline" href="/lab/card-trial">
+            Project card — trial
+          </Link>
+          <p>Five directions for the card the road-sign rope leads to.</p>
+        </li>
+        <li>
+          <Link className="underline" href="/lab/stop-motion-trial">
+            Stop motion — trial
+          </Link>
+          <p>
+            Hard-cut entrances, and every piece switchable between its current
+            beat and the sparse one.
+          </p>
+        </li>
       </ul>
     </main>
   );

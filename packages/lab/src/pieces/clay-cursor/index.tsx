@@ -1,10 +1,12 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useRef, useState, type CSSProperties } from "react";
 import {
   CLAY_CURSOR_DEFAULTS,
+  clayCursorOverride,
   clayCursorTuning,
   type ClayCursorTuning,
+  type ClayCursorVariant,
 } from "../../cursor-tuning";
 
 /**
@@ -26,6 +28,30 @@ type Field = {
 
 const FIELDS: Field[] = [
   { key: "size", label: "Size (px)", min: 24, max: 96, step: 1 },
+  {
+    key: "pointerScale",
+    label: "Hand size",
+    min: 0.8,
+    max: 1.5,
+    step: 0.01,
+    hint: "hand height as a multiple of the arrow's — dial until the swap has no size pop",
+  },
+  {
+    key: "swapMs",
+    label: "Swap fade (ms)",
+    min: 0,
+    max: 1500,
+    step: 10,
+    hint: "arrow<->hand crossfade length — 0 is a hard cut; push it up to watch the swap in slow motion",
+  },
+  {
+    key: "swapSquish",
+    label: "Swap squish",
+    min: 0,
+    max: 1,
+    step: 0.05,
+    hint: "pinch-in at the midpoint of the swap — 0 is a pure crossfade, 1 collapses to the tip",
+  },
   {
     key: "tiltPerVx",
     label: "Lean per velocity",
@@ -70,24 +96,91 @@ const FIELDS: Field[] = [
     step: 1,
     hint: "stop-motion frame cycling — 0 holds a single frame",
   },
+  {
+    key: "stepFps",
+    label: "Body beat (fps)",
+    min: 0,
+    max: 30,
+    step: 1,
+    hint: "stop-motion cuts for the lean and squish — 0 draws every frame; the tip always tracks the pointer",
+  },
 ];
 
 const mono = "ui-monospace, SFMono-Regular, Menlo, monospace";
+
+type Shape = ClayCursorVariant | "auto";
+const SHAPES: { value: Shape; label: string }[] = [
+  { value: "auto", label: "Auto" },
+  { value: "arrow", label: "Arrow" },
+  { value: "pointer", label: "Hand" },
+];
+
+const btn = (active = false): CSSProperties => ({
+  font: "inherit",
+  color: "inherit",
+  background: active ? "#3a3a3a" : "#222",
+  border: `1px solid ${active ? "#888" : "#555"}`,
+  borderRadius: 8,
+  padding: "6px 14px",
+});
 
 export default function ClayCursorTuner() {
   const [values, setValues] = useState<ClayCursorTuning>({
     ...clayCursorTuning,
   });
   const [copied, setCopied] = useState(false);
+  const [shape, setShapeState] = useState<Shape>("auto");
+  const [playing, setPlaying] = useState(false);
+  const playTimers = useRef<ReturnType<typeof setTimeout>[]>([]);
 
   function set(key: keyof ClayCursorTuning, value: number) {
     clayCursorTuning[key] = value;
     setValues((prev) => ({ ...prev, [key]: value }));
   }
 
+  function setShape(next: Shape) {
+    clayCursorOverride.variant = next === "auto" ? null : next;
+    setShapeState(next);
+  }
+
+  // Play the swap both ways without hunting for a link: pin the arrow,
+  // fade to the hand, hold, fade back, then hand control back to whatever
+  // shape was selected. Holds scale with the fade so slow-motion still
+  // shows a settled pose between the two crossfades.
+  function playSwap() {
+    if (playing) return;
+    setPlaying(true);
+    const hold = clayCursorTuning.swapMs + 450;
+    const end = 300 + hold * 2;
+    const steps: [number, ClayCursorVariant | null][] = [
+      [0, "arrow"],
+      [300, "pointer"],
+      [300 + hold, "arrow"],
+      [end, shape === "auto" ? null : shape],
+    ];
+    playTimers.current = steps.map(([at, variant]) =>
+      setTimeout(() => {
+        clayCursorOverride.variant = variant;
+        if (at === end) setPlaying(false);
+      }, at),
+    );
+  }
+
+  // Never leave the site cursor pinned once the bench unmounts.
+  useEffect(
+    () => () => {
+      playTimers.current.forEach(clearTimeout);
+      clayCursorOverride.variant = null;
+    },
+    [],
+  );
+
   function reset() {
     Object.assign(clayCursorTuning, CLAY_CURSOR_DEFAULTS);
     setValues({ ...CLAY_CURSOR_DEFAULTS });
+    playTimers.current.forEach(clearTimeout);
+    setPlaying(false);
+    setShape("auto");
   }
 
   async function copy() {
@@ -133,6 +226,41 @@ export default function ClayCursorTuner() {
             press me
           </button>
         </span>
+      </div>
+
+      <div
+        style={{
+          display: "grid",
+          gridTemplateColumns: "11rem 1fr",
+          alignItems: "center",
+          gap: 12,
+          fontSize: 13,
+        }}
+      >
+        <span title="pin the shape to inspect either state, or play the swap on demand">
+          Shape
+        </span>
+        <div style={{ display: "flex", gap: 8, flexWrap: "wrap" }}>
+          {SHAPES.map(({ value, label }) => (
+            <button
+              key={value}
+              type="button"
+              onClick={() => setShape(value)}
+              aria-pressed={shape === value}
+              style={btn(shape === value)}
+            >
+              {label}
+            </button>
+          ))}
+          <button
+            type="button"
+            onClick={playSwap}
+            disabled={playing}
+            style={{ ...btn(), opacity: playing ? 0.5 : 1, marginLeft: 8 }}
+          >
+            {playing ? "Playing…" : "▶ Play swap"}
+          </button>
+        </div>
       </div>
 
       <div id="tuner" style={{ display: "grid", gap: 10 }}>

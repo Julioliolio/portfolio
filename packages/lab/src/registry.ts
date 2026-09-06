@@ -48,4 +48,19 @@ export const registry: LabPiece[] = [
     background: "white",
     load: () => import("./pieces/cartel"),
   },
+  {
+    slug: "motion",
+    title: "Motion",
+    description:
+      "The stop-motion bench — one set of knobs for every entrance on the site: beat, distance, overshoot, squash, stagger.",
+    load: () => import("./pieces/motion"),
+  },
+  {
+    slug: "road-signs",
+    title: "Road signs",
+    description:
+      "The projects stack — three photographed road signs. Hovering one lifts it and steps the others back, cut at 12fps.",
+    background: "white",
+    load: () => import("./pieces/road-signs"),
+  },
 ];

@@ -1,6 +1,9 @@
 "use client";
 
-import { clayCursorTuning as tuning } from "@portfolio/lab/cursor-tuning";
+import {
+  clayCursorOverride as override,
+  clayCursorTuning as tuning,
+} from "@portfolio/lab/cursor-tuning";
 import { useEffect, useRef } from "react";
 
 /**
@@ -23,10 +26,17 @@ import { useEffect, useRef } from "react";
  *
  * The arrow is a set of photos of the same clay arrow re-posed slightly,
  * cycled at a stop-motion rate so the outline "boils" like a claymation
- * hold. Over interactive elements it swaps to a clay pointing hand with its
+ * hold. Over interactive elements it becomes a clay pointing hand with its
  * own boil frames, animated identically. prepare-cursor.mjs registers each
  * variant's frames at its hotspot (arrow tip / index fingertip) and pads
  * them to identical dimensions, so swapping frames never moves the hotspot.
+ *
+ * Both variants are always mounted, stacked with their hotspots on the same
+ * point. The arrow<->hand change is a short crossfade with a squish dip at
+ * the midpoint, so the clay reads as re-forming rather than being cut to a
+ * different object. The hand is drawn at tuning.pointerScale x the arrow's
+ * height so the two read as the same size — see that knob for why equal
+ * pixel heights do not look equal.
  */
 
 // Physics + size knobs live in @portfolio/lab/cursor-tuning (mutable at
@@ -48,20 +58,36 @@ const POINTER_FRAMES = Array.from(
 const INTERACTIVE =
   "a,button,[role=button],label,select,summary,[data-cursor=pointer]";
 
+type Variant = "arrow" | "pointer";
+
 export function ClayCursor() {
   const rootRef = useRef<HTMLDivElement>(null);
-  const imgRef = useRef<HTMLImageElement>(null);
+  const arrowRef = useRef<HTMLImageElement>(null);
+  const pointerRef = useRef<HTMLImageElement>(null);
 
   useEffect(() => {
     const root = rootRef.current;
-    const img = imgRef.current;
-    if (!root || !img) return;
+    const arrowImg = arrowRef.current;
+    const pointerImg = pointerRef.current;
+    if (!root || !arrowImg || !pointerImg) return;
 
     const finePointer = window.matchMedia("(pointer: fine)");
     if (!finePointer.matches) return;
     const reducedMotion = window.matchMedia("(prefers-reduced-motion: reduce)");
 
     document.documentElement.classList.add("clay-cursor");
+
+    const layers: Record<
+      Variant,
+      { img: HTMLImageElement; frames: string[]; hotspot: { x: number; y: number } }
+    > = {
+      arrow: { img: arrowImg, frames: ARROW_FRAMES, hotspot: ARROW_HOTSPOT },
+      pointer: {
+        img: pointerImg,
+        frames: POINTER_FRAMES,
+        hotspot: POINTER_HOTSPOT,
+      },
+    };
 
     // Physics state, mutated per-frame outside React.
     const pos = { x: -100, y: -100 }; // real pointer; drawn 1:1, never animated
@@ -74,28 +100,44 @@ export function ClayCursor() {
     let visible = false;
     let seenFirstMove = false;
 
-    let variant: "arrow" | "pointer" = "arrow";
+    // Arrow<->hand blend: 0 = arrow, 1 = hand. Moves linearly toward the
+    // target so a hover that flickers just reverses mid-way instead of
+    // restarting; the eased value drives opacity, the raw value the squish.
+    let target: Variant = "arrow";
+    let blend = 0;
+    let drawnBlend = -1;
+
     let frameIdx = 0;
     let boilAcc = 0; // seconds accumulated toward the next boil frame
-
-    function hotspot() {
-      return variant === "pointer" ? POINTER_HOTSPOT : ARROW_HOTSPOT;
-    }
-
-    // Rendered image metrics for hotspot math (updated on load/resize and
-    // whenever the variant swaps — the hand is a different aspect ratio).
-    let imgW = tuning.size;
-    let imgH = tuning.size;
     let appliedSize = -1;
-    function measure() {
-      if (!img) return;
-      imgW = img.offsetWidth || tuning.size;
-      imgH = img.offsetHeight || tuning.size;
-      const { x, y } = hotspot();
-      img.style.transformOrigin = `${x * 100}% ${y * 100}%`;
+    // What the body is drawn with. Tracks the physics every frame at
+    // tuning.stepFps 0; otherwise sampled from it on the beat.
+    let stepAcc = 0;
+    let shownAngle = 0;
+    let shownScale = 1;
+
+    /** Display height per variant. The variants ship at the same pixel
+     * height, but the hand carries a thin raised finger where the arrow has
+     * solid body, so matching heights makes the hand read smaller —
+     * pointerScale compensates so the swap has no size pop. */
+    function displaySize(v: Variant) {
+      return v === "pointer" ? tuning.size * tuning.pointerScale : tuning.size;
     }
-    img.addEventListener("load", measure);
-    measure();
+
+    function applySizes() {
+      for (const v of ["arrow", "pointer"] as const) {
+        const size = displaySize(v);
+        const { img } = layers[v];
+        img.style.height = `${size}px`;
+        // A soft contact shadow, traced from the cursor's own alpha (not a
+        // boxy CSS shadow) via drop-shadow — scaled with size so it stays
+        // proportional if the cursor is resized on the bench. Light from
+        // upper-left, like the page is lit from the same side as the UI.
+        img.style.filter = `drop-shadow(${size * 0.05}px ${size * 0.08}px ${
+          size * 0.06
+        }px rgba(0, 0, 0, 0.35))`;
+      }
+    }
 
     // Warm the browser cache so frame swaps never flash a missing image.
     const preload = [...ARROW_FRAMES, ...POINTER_FRAMES].map((src) => {
@@ -105,22 +147,12 @@ export function ClayCursor() {
     });
     void preload;
 
-    function currentFrames(): string[] {
-      return variant === "pointer" ? POINTER_FRAMES : ARROW_FRAMES;
-    }
-
-    function applyFrame() {
-      if (!img) return;
-      const frames = currentFrames();
-      const next = frames[frameIdx % frames.length];
-      if (next && !img.src.endsWith(next)) img.src = next;
-    }
-
-    function setVariant(next: "arrow" | "pointer") {
-      if (next === variant) return;
-      variant = next;
-      applyFrame();
-      measure(); // re-anchors the pivot now; load re-measures the new width
+    function applyFrames() {
+      for (const v of ["arrow", "pointer"] as const) {
+        const { img, frames } = layers[v];
+        const next = frames[frameIdx % frames.length];
+        if (next && !img.src.endsWith(next)) img.src = next;
+      }
     }
 
     function show() {
@@ -135,7 +167,7 @@ export function ClayCursor() {
 
     const prev = { x: -100, y: -100 }; // pos at last frame, for velocity
 
-    function onMove(x: number, y: number, target: EventTarget | null) {
+    function onMove(x: number, y: number, eventTarget: EventTarget | null) {
       if (!seenFirstMove) {
         // Don't register the jump from the parked position as a flick.
         prev.x = x;
@@ -145,8 +177,8 @@ export function ClayCursor() {
       pos.x = x;
       pos.y = y;
       show();
-      const el = target instanceof Element ? target : null;
-      setVariant(el?.closest(INTERACTIVE) ? "pointer" : "arrow");
+      const el = eventTarget instanceof Element ? eventTarget : null;
+      target = el?.closest(INTERACTIVE) ? "pointer" : "arrow";
     }
 
     const press = () => {
@@ -235,24 +267,19 @@ export function ClayCursor() {
       lastT = t;
       if (dt <= 0) return;
 
-      if (tuning.size !== appliedSize) {
-        appliedSize = tuning.size;
-        img!.style.height = `${tuning.size}px`;
-        // A soft contact shadow, traced from the cursor's own alpha (not a
-        // boxy CSS shadow) via drop-shadow — scaled with size so it stays
-        // proportional if the cursor is resized on the bench. Light from
-        // upper-left, like the page is lit from the same side as the UI.
-        img!.style.filter = `drop-shadow(${tuning.size * 0.05}px ${
-          tuning.size * 0.08
-        }px ${tuning.size * 0.06}px rgba(0, 0, 0, 0.35))`;
-        measure();
+      // Sizes are re-derived each frame so bench edits land immediately;
+      // the style writes only happen when something changed.
+      const sizeKey = tuning.size * 1000 + tuning.pointerScale;
+      if (sizeKey !== appliedSize) {
+        appliedSize = sizeKey;
+        applySizes();
       }
 
       const instVx = (pos.x - prev.x) / dt;
       prev.x = pos.x;
       prev.y = pos.y;
-      const blend = 1 - Math.exp(-dt * tuning.velocitySmoothing);
-      vx += (instVx - vx) * blend;
+      const blendRate = 1 - Math.exp(-dt * tuning.velocitySmoothing);
+      vx += (instVx - vx) * blendRate;
 
       // Stop-motion boil: hold each frame for 1/boilFps, then jump to a
       // random other frame — never the same one twice, so every beat is a
@@ -263,13 +290,23 @@ export function ClayCursor() {
         const hold = 1 / tuning.boilFps;
         if (boilAcc >= hold) {
           boilAcc %= hold;
-          const count = currentFrames().length;
-          if (count > 1) {
-            const step = 1 + Math.floor(Math.random() * (count - 1));
-            frameIdx = (frameIdx + step) % count;
-          }
-          applyFrame();
+          // One shared index drives both layers; a step shorter than the
+          // smaller set guarantees each layer's `idx % length` changes on
+          // every beat, so neither variant ever holds the same pose twice.
+          const count = Math.min(ARROW_FRAMES.length, POINTER_FRAMES.length);
+          if (count > 1) frameIdx += 1 + Math.floor(Math.random() * (count - 1));
+          applyFrames();
         }
+      }
+
+      // Arrow<->hand transition. The bench can pin the shape to play the
+      // swap on demand; otherwise hover decides.
+      const blendTarget = (override.variant ?? target) === "pointer" ? 1 : 0;
+      if (reducedMotion.matches || tuning.swapMs <= 0) {
+        blend = blendTarget;
+      } else {
+        const maxStep = (dt * 1000) / tuning.swapMs;
+        blend += Math.max(-maxStep, Math.min(maxStep, blendTarget - blend));
       }
 
       if (reducedMotion.matches) {
@@ -279,12 +316,12 @@ export function ClayCursor() {
         // Lean with velocity, pivoting at the tip; near-critical damping
         // means it eases back upright with no bounce when the pointer
         // stops — the weight reads from the ramp and glide, not wobble.
-        const target = Math.max(
+        const targetAngle = Math.max(
           -tuning.maxTilt,
           Math.min(tuning.maxTilt, vx * tuning.tiltPerVx),
         );
         angleVel +=
-          (tuning.tiltStiffness * (target - angle) -
+          (tuning.tiltStiffness * (targetAngle - angle) -
             tuning.tiltDamping * angleVel) *
           dt;
         angle += angleVel * dt;
@@ -297,11 +334,43 @@ export function ClayCursor() {
         dt;
       scale += scaleVel * dt;
 
-      const hs = hotspot();
-      root!.style.transform = `translate3d(${pos.x - hs.x * imgW}px, ${
-        pos.y - hs.y * imgH
-      }px, 0)`;
-      img!.style.transform = `rotate(${angle}deg) scale(${scale})`;
+      // The squish dip peaks half-way through the crossfade, so the clay
+      // looks like it pinches in and re-forms as the other shape.
+      const morph = 1 - tuning.swapSquish * Math.sin(Math.PI * blend);
+
+      // Stop-motion body: the springs above run every frame, but the lean
+      // and squish that get drawn only catch up on the beat, so the body
+      // moves in held poses (and overshoots, since the springs do). The
+      // position write below is never held — the tip stays on the pointer.
+      if (tuning.stepFps > 0 && !reducedMotion.matches) {
+        stepAcc += dt;
+        const hold = 1 / tuning.stepFps;
+        if (stepAcc >= hold) {
+          stepAcc %= hold;
+          shownAngle = angle;
+          shownScale = scale * morph;
+        }
+      } else {
+        stepAcc = 0;
+        shownAngle = angle;
+        shownScale = scale * morph;
+      }
+
+      root!.style.transform = `translate3d(${pos.x}px, ${pos.y}px, 0)`;
+      // Each layer is pinned by its own hotspot: the percent translate is
+      // relative to that image's box, so no measuring is needed and the
+      // rotate/scale (origin 0 0, applied after) pivot exactly on the tip.
+      for (const v of ["arrow", "pointer"] as const) {
+        const { img, hotspot } = layers[v];
+        img.style.transform = `rotate(${shownAngle}deg) scale(${shownScale}) translate(${-hotspot.x * 100}%, ${-hotspot.y * 100}%)`;
+      }
+
+      if (blend !== drawnBlend) {
+        drawnBlend = blend;
+        const eased = blend * blend * (3 - 2 * blend);
+        arrowImg!.style.opacity = `${1 - eased}`;
+        pointerImg!.style.opacity = `${eased}`;
+      }
     }
     raf = requestAnimationFrame(tick);
 
@@ -318,6 +387,15 @@ export function ClayCursor() {
     };
   }, []);
 
+  const layerStyle = {
+    position: "absolute" as const,
+    top: 0,
+    left: 0,
+    width: "auto",
+    maxWidth: "none",
+    transformOrigin: "0 0",
+  };
+
   return (
     <div
       ref={rootRef}
@@ -327,11 +405,23 @@ export function ClayCursor() {
     >
       {/* eslint-disable-next-line @next/next/no-img-element -- tiny asset, transforms every frame; next/image adds nothing here */}
       <img
-        ref={imgRef}
+        ref={arrowRef}
         src={ARROW_FRAMES[0]}
         alt=""
         draggable={false}
-        style={{ height: `${tuning.size}px`, width: "auto" }}
+        style={{ ...layerStyle, height: `${tuning.size}px`, opacity: 1 }}
+      />
+      {/* eslint-disable-next-line @next/next/no-img-element -- same as above */}
+      <img
+        ref={pointerRef}
+        src={POINTER_FRAMES[0]}
+        alt=""
+        draggable={false}
+        style={{
+          ...layerStyle,
+          height: `${tuning.size * tuning.pointerScale}px`,
+          opacity: 0,
+        }}
       />
     </div>
   );

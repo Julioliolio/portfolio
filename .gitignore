@@ -20,3 +20,6 @@ apps/web/public/demos/
 # misc
 .DS_Store
 npm-debug.log*
+
+# licensed typeface, not redistributable (see apps/web/src/fonts/README.md)
+apps/web/src/fonts/*.woff2
