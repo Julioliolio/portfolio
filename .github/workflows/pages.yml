@@ -20,6 +20,16 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
+      # The site's typeface is licensed and gitignored (see
+      # apps/web/src/fonts/README.md). It lives in the private
+      # Julioliolio/portfolio-fonts repo, checked out here with a read-only
+      # deploy key stored as the FONTS_DEPLOY_KEY secret.
+      - uses: actions/checkout@v4
+        with:
+          repository: Julioliolio/portfolio-fonts
+          ssh-key: ${{ secrets.FONTS_DEPLOY_KEY }}
+          path: .fonts-private
+      - run: cp .fonts-private/*.woff2 apps/web/src/fonts/
       - uses: pnpm/action-setup@v4 # version comes from package.json packageManager
       - uses: actions/setup-node@v4
         with:
