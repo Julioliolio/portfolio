@@ -29,6 +29,15 @@ export default function LabIndexPage() {
           <p>Five directions for the card the road-sign rope leads to.</p>
         </li>
         <li>
+          <Link className="underline" href="/lab/cursor-demo">
+            Cursor — demo
+          </Link>
+          <p>
+            A recording stage: one button on a white wall, nothing else in
+            frame.
+          </p>
+        </li>
+        <li>
           <Link className="underline" href="/lab/stop-motion-trial">
             Stop motion — trial
           </Link>

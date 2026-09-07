@@ -32,10 +32,15 @@ import { useMotionTuning } from "../../motion";
  * real spring (stiffness 118, damping 15.5) that sags from flat to 44px on
  * first reveal and is nudged ±8px by the pointer's height over the card.
  * The card is a link and stays up while the pointer travels to it
- * (leaving the sign toward the card waits 240ms, elsewhere 70ms; leaving
- * the card 140ms; leaving the stage 100ms), and its sign stays lifted
- * meanwhile. Hiding pulls the sag back to flat and fades both out. See
- * RopeState / showProject / hideProject / animateRope.
+ * (leaving the sign toward the card — its right half — waits 240ms,
+ * elsewhere 70ms; leaving the card 140ms; leaving the stage 100ms), and
+ * its sign stays lifted meanwhile. An invisible wedge (see drawBridge)
+ * fans out from the hot sign's middle to the card's left edge while the
+ * card is up: the pointer can cross the wall along any straight-ish line
+ * between the two without the card dropping, and the wedge sits under the
+ * signs and the card so it never steals a hover from them. Hiding pulls
+ * the sag back to flat and fades both out. See RopeState / showProject /
+ * hideProject / animateRope.
  *
  * Motion is stop-motion, not tweened: every pose change is walked in a
  * handful of hard cuts on a beat (see Tuning.steps / fps), the
@@ -416,6 +421,9 @@ type RopeDom = {
   path: SVGPathElement;
   start: SVGCircleElement;
   end: SVGCircleElement;
+  /** The safe wedge's own svg (under the signs) and its polygon. */
+  bridgeSvg: SVGSVGElement;
+  bridge: SVGPolygonElement;
 };
 
 /**
@@ -476,6 +484,21 @@ function createRope(): RopeState {
 /** Where a sign's right edge currently is, in stage space: its layout box
  *  plus the walk's transform. The rope starts just off it. */
 function signEdge(e: Engine, slug: string): { x: number; y: number } | null {
+  const g = signGeom(e, slug);
+  if (!g) return null;
+  const rad = (g.tilt * Math.PI) / 180;
+  return {
+    x: g.cx + g.halfW * Math.cos(rad),
+    y: g.cy + g.halfW * Math.sin(rad),
+  };
+}
+
+/** A sign's current centre and half extents in stage space: its layout
+ *  box plus the walk's transform (scale, squeeze, nudge, re-tuck). */
+function signGeom(
+  e: Engine,
+  slug: string,
+): { cx: number; cy: number; halfW: number; halfH: number; tilt: number } | null {
   const i = SIGNS.findIndex((s) => s.slug === slug);
   const sign = SIGNS[i];
   if (!sign) return null;
@@ -484,16 +507,15 @@ function signEdge(e: Engine, slug: string): { x: number; y: number } | null {
   const padX = H * 0.6;
   const padY = H * 0.2;
   const bw = H * sign.aspect;
-  const cx = e.rope.stackAt.x + padX + bw / 2;
-  const cy = e.rope.stackAt.y + padY + i * (H + t.gap) + H / 2;
   const w = e.walks.get(slug);
   const pose = w?.cur ?? REST;
   const q = 1 + (w?.squash ?? 0);
-  const half = (bw / 2) * pose.scale * q;
-  const rad = (pose.tilt * Math.PI) / 180;
   return {
-    x: cx + pose.x + half * Math.cos(rad),
-    y: cy + (w?.y ?? 0) + half * Math.sin(rad),
+    cx: e.rope.stackAt.x + padX + bw / 2 + pose.x,
+    cy: e.rope.stackAt.y + padY + i * (H + t.gap) + H / 2 + (w?.y ?? 0),
+    halfW: (bw / 2) * pose.scale * q,
+    halfH: (H / 2) * (pose.scale / q),
+    tilt: pose.tilt,
   };
 }
 
@@ -547,6 +569,37 @@ function drawRope(e: Engine) {
   start.setAttribute("cy", p.sy.toFixed(2));
   end.setAttribute("cx", p.ex.toFixed(2));
   end.setAttribute("cy", p.ey.toFixed(2));
+  drawBridge(e);
+}
+
+/**
+ * Writes the safe wedge: a quad from the hot sign's vertical midline
+ * (its full height plus a little slack, so a tilted sign's corners are
+ * inside it) to the card's left edge, top to bottom, overlapping the card
+ * by a few px so there is no seam. Anything inside it counts as "still on
+ * the way to the card". It is drawn under the signs and the card, so
+ * wherever they overlap it, they win the hover.
+ */
+function drawBridge(e: Engine) {
+  const r = e.rope;
+  const { bridge } = r.dom;
+  if (!bridge || !r.active || !r.stage) return;
+  const card = r.cards.get(r.active);
+  const g = signGeom(e, r.active);
+  if (!card || !g) return;
+  const sr = r.stage.getBoundingClientRect();
+  const cr = card.getBoundingClientRect();
+  const slack = g.halfH * 0.35;
+  const sx = g.cx;
+  const top = g.cy - g.halfH - slack;
+  const bottom = g.cy + g.halfH + slack;
+  const ex = cr.left - sr.left + 8;
+  const ct = cr.top - sr.top;
+  const cb = cr.bottom - sr.top;
+  bridge.setAttribute(
+    "points",
+    `${sx.toFixed(1)},${top.toFixed(1)} ${sx.toFixed(1)},${bottom.toFixed(1)} ${ex.toFixed(1)},${cb.toFixed(1)} ${ex.toFixed(1)},${ct.toFixed(1)}`,
+  );
 }
 
 /** One frame of the sag spring. Runs until it settles; a settle while
@@ -631,6 +684,7 @@ function showProject(e: Engine, slug: string) {
     r.beatAcc = 0;
   }
   r.dom.svg?.classList.add("is-visible");
+  r.dom.bridgeSvg?.classList.add("is-live");
   drawRope(e);
   ensureRope(e);
   r.onActive(slug);
@@ -646,6 +700,7 @@ function hideProject(e: Engine) {
   if (card) card.tabIndex = -1;
   card?.querySelector("video")?.pause();
   r.dom.svg?.classList.remove("is-visible");
+  r.dom.bridgeSvg?.classList.remove("is-live");
   r.sagTarget = 0;
   r.closing = true;
   ensureRope(e);
@@ -1229,11 +1284,12 @@ export default function RoadSigns({
   function onSignLeave(ev: ReactPointerEvent<HTMLAnchorElement>) {
     cancelShow(engine);
     const t = engine.tuning;
+    // Leaving through the sign's right half counts as heading for the
+    // card, whatever the angle: the tilted photo's real edge sits inside
+    // its bounding box, so an exact right-edge test rarely fired. The
+    // wedge (drawBridge) catches the pointer from here on.
     const rect = ev.currentTarget.getBoundingClientRect();
-    const towardCard =
-      ev.clientX >= rect.right - 2 &&
-      ev.clientY >= rect.top &&
-      ev.clientY <= rect.bottom;
+    const towardCard = ev.clientX >= rect.left + rect.width / 2;
     scheduleHide(engine, towardCard ? t.hideTowardCard : t.hideDelay);
   }
 
@@ -1312,6 +1368,21 @@ export default function RoadSigns({
           ...stageVars,
         }}
       >
+        {/* The safe wedge between the hot sign and its card. First in the
+            stage so it paints — and hit-tests — under the signs and the
+            card; only the polygon takes the pointer, and only while a
+            card is up (is-live). Geometry is written by drawBridge. */}
+        <svg
+          ref={(el) => registerRope("bridgeSvg", el)}
+          className="rs-bridge"
+          aria-hidden
+        >
+          <polygon
+            ref={(el) => registerRope("bridge", el)}
+            onPointerEnter={() => cancelHide(engine)}
+            onPointerLeave={() => scheduleHide(engine, tuning.hideFromCard)}
+          />
+        </svg>
         <div
           onPointerLeave={() => setHovered(null)}
           style={{
@@ -1955,6 +2026,11 @@ const CARD_CSS = `
 .rs-rope.is-visible { opacity: 1; }
 .rs-rope path { fill: none; stroke: currentColor; stroke-width: 2; stroke-linecap: round; vector-effect: non-scaling-stroke; }
 .rs-rope circle { fill: currentColor; }
+/* The safe wedge: invisible, and only a pointer target while a card is
+   up. No z-index — it paints in DOM order, under the signs. */
+.rs-bridge { position: absolute; inset: 0; width: 100%; height: 100%; overflow: visible; pointer-events: none; }
+.rs-bridge polygon { fill: transparent; pointer-events: none; }
+.rs-bridge.is-live polygon { pointer-events: fill; }
 .rs-card { position: absolute; right: 0; z-index: 3; display: flex; opacity: 0; visibility: hidden; pointer-events: none; transform: translateY(-46%) scale(.965) rotate(.35deg); transform-origin: 8% 50%; transition: opacity var(--rs-fade, .18s), visibility linear calc(var(--rs-fade, .18s) + .06s), transform var(--rs-pop, .58s) cubic-bezier(.16, 1.08, .28, 1); will-change: transform, opacity; color: ${INK}; text-decoration: none; font-family: inherit; }
 .rs-card.is-active { opacity: 1; visibility: visible; pointer-events: auto; transform: translateY(-50%) scale(1) rotate(0deg); transition-delay: 0s; }
 .rs-card.is-wide { width: var(--rs-wide, 640px); flex-direction: column; gap: 26px; }
