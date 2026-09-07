@@ -4,7 +4,9 @@
   "private": true,
   "type": "module",
   "exports": {
+    "./asset": "./src/asset.ts",
     "./registry": "./src/registry.ts",
+    "./loaders": "./src/loaders.ts",
     "./cursor-tuning": "./src/cursor-tuning.ts",
     "./motion": "./src/motion.tsx"
   },

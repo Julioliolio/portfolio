@@ -1,5 +1,6 @@
 "use client";
 
+import { asset } from "@portfolio/lab/asset";
 import {
   clayCursorOverride as override,
   clayCursorTuning as tuning,
@@ -47,13 +48,13 @@ import { useEffect, useRef } from "react";
 const ARROW_HOTSPOT = { x: 0.064, y: 0.01 }; // arrow tip
 const POINTER_HOTSPOT = { x: 0.39, y: 0.01 }; // index fingertip
 
-const ARROW_FRAMES = Array.from(
-  { length: 14 },
-  (_, i) => `/cursor/arrow-${i + 1}.png`,
+// WebP at 2x the display size (prepare-cursor.mjs) — the whole set is a
+// few dozen KB, so warming every frame on mount is cheap.
+const ARROW_FRAMES = Array.from({ length: 14 }, (_, i) =>
+  asset(`/cursor/arrow-${i + 1}.webp`),
 );
-const POINTER_FRAMES = Array.from(
-  { length: 5 },
-  (_, i) => `/cursor/arrow-pointer-${i + 1}.png`,
+const POINTER_FRAMES = Array.from({ length: 5 }, (_, i) =>
+  asset(`/cursor/arrow-pointer-${i + 1}.webp`),
 );
 const INTERACTIVE =
   "a,button,[role=button],label,select,summary,[data-cursor=pointer]";

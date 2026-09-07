@@ -23,7 +23,7 @@ export default function CursorDemoPage() {
            the static export has none). */
         nextjs-portal { display: none; }
         .cursor-demo-button {
-          font: 500 18px/1 var(--font-sans), "Helvetica Neue", Arial, sans-serif;
+          font: 500 18px/1 var(--font-neue-montreal-extra), var(--font-sans), "Helvetica Neue", Arial, sans-serif;
           letter-spacing: -0.01em;
           color: #2b2722;
           background: transparent;

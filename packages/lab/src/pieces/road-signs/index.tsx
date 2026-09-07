@@ -7,6 +7,7 @@ import {
   type PointerEvent as ReactPointerEvent,
   type ReactNode,
 } from "react";
+import { asset } from "../../asset";
 import { useMotionTuning } from "../../motion";
 
 /**
@@ -116,11 +117,11 @@ type CardSpec = {
 
 /** Placeholder clips, until each project has its own. */
 const PLACEHOLDER_WIDE = {
-  src: "/media/placeholder-wide.mp4",
+  src: asset("/media/placeholder-wide.mp4"),
   aspect: 1056 / 720,
 };
 const PLACEHOLDER_TALL = {
-  src: "/media/placeholder-tall.mp4",
+  src: asset("/media/placeholder-tall.mp4"),
   aspect: 720 / 826,
 };
 
@@ -139,8 +140,8 @@ const SIGNS: Sign[] = [
   {
     slug: "localpal",
     title: "LocalPal",
-    src: "/signs/localpal.webp",
-    href: "/work/localpal",
+    src: asset("/signs/localpal.webp"),
+    href: asset("/work/localpal"),
     aspect: 3.31,
     card: {
       media: "tall",
@@ -153,8 +154,8 @@ const SIGNS: Sign[] = [
   {
     slug: "camper",
     title: "Camper",
-    src: "/signs/camper.webp",
-    href: "/work/camper",
+    src: asset("/signs/camper.webp"),
+    href: asset("/work/camper"),
     aspect: 3.563,
     card: {
       media: "wide",
@@ -167,8 +168,8 @@ const SIGNS: Sign[] = [
   {
     slug: "convertr",
     title: "Convertr",
-    src: "/signs/convertr.webp",
-    href: "/work/convertr",
+    src: asset("/signs/convertr.webp"),
+    href: asset("/work/convertr"),
     aspect: 3.303,
     card: {
       media: "wide",

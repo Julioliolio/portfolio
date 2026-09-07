@@ -7,6 +7,7 @@ import { execSync } from "node:child_process";
 import { cpSync, existsSync, readdirSync, rmSync } from "node:fs";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
+import { BASE_PATH } from "./base-path.mjs";
 
 const root = path.resolve(path.dirname(fileURLToPath(import.meta.url)), "..");
 const demosDir = path.join(root, "apps/demos");
@@ -24,7 +25,13 @@ for (const name of readdirSync(demosDir)) {
   if (!existsSync(path.join(dir, "package.json"))) continue;
 
   console.log(`\n▸ building demo: ${name}`);
-  execSync("pnpm build", { cwd: dir, stdio: "inherit" });
+  // Demos that need an absolute base (see localpal/vite.config.ts) read the
+  // site's base path from the environment so it is defined in one place.
+  execSync("pnpm build", {
+    cwd: dir,
+    stdio: "inherit",
+    env: { ...process.env, PORTFOLIO_BASE_PATH: BASE_PATH },
+  });
 
   const dist = path.join(dir, "dist");
   if (!existsSync(dist)) {

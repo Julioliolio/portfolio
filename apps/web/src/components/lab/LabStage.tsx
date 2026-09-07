@@ -1,17 +1,23 @@
 "use client";
 
-import { registry } from "@portfolio/lab/registry";
+import { loaders } from "@portfolio/lab/loaders";
+import type { LabPieceModule, LabSlug } from "@portfolio/lab/registry";
 import { Suspense, lazy } from "react";
 
 // Created once at module scope so components stay stable across renders.
 // lazy() is free until first render — no piece code loads until it's shown.
+// The stage renders every piece prop-less, so the loaders' differing prop
+// types are widened to the plain module shape here.
 const lazyPieces = new Map(
-  registry.map((piece) => [piece.slug, lazy(piece.load)]),
+  (Object.keys(loaders) as LabSlug[]).map((slug) => [
+    slug,
+    lazy(loaders[slug] as () => Promise<LabPieceModule>),
+  ]),
 );
 
-/** Resolves a lab piece from the registry and renders it lazily. */
+/** Resolves a lab piece by slug and renders it lazily. */
 export function LabStage({ slug }: { slug: string }) {
-  const Piece = lazyPieces.get(slug);
+  const Piece = lazyPieces.get(slug as LabSlug);
 
   if (!Piece) {
     return <p>Unknown lab piece: {slug}</p>;

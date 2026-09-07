@@ -1,18 +1,17 @@
 "use client";
 
-import { registry } from "@portfolio/lab/registry";
+import { loadPiece } from "@portfolio/lab/loaders";
 import { Suspense, lazy, type ComponentType } from "react";
 
-// Loaded through the registry's load() like LabStage — pieces are never
-// imported directly. The cast adds the height prop Cartel accepts but the
-// generic registry type doesn't carry.
-const Cartel = lazy(() => {
-  const piece = registry.find((entry) => entry.slug === "cartel");
-  if (!piece) throw new Error("cartel is not in the lab registry");
-  return piece.load() as Promise<{
-    default: ComponentType<{ height?: string; controls?: boolean }>;
-  }>;
-});
+// Loaded through the lab loaders like LabStage — pieces are never imported
+// directly. The cast adds the height prop Cartel accepts but the generic
+// piece module type doesn't carry.
+const Cartel = lazy(
+  () =>
+    loadPiece("cartel") as Promise<{
+      default: ComponentType<{ height?: string; controls?: boolean }>;
+    }>,
+);
 
 /** A smaller, centered Cartel for layout trials. */
 export function CartelTrialStage() {

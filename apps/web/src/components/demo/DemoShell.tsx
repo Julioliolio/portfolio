@@ -1,6 +1,7 @@
 "use client";
 
 import { isDemoReady } from "@portfolio/demo-protocol";
+import { asset } from "@portfolio/lab/asset";
 import { useEffect, useRef, useState, type ReactNode } from "react";
 import { DeviceFrame, type DeviceVariant } from "./DeviceFrame";
 
@@ -102,7 +103,7 @@ export function DemoShell({
         )}
         {state !== "idle" && (
           <iframe
-            src={`/demos/${demo}/index.html${query}`}
+            src={asset(`/demos/${demo}/index.html${query}`)}
             title={title}
             loading="lazy"
             className="absolute inset-0 size-full border-0"

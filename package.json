@@ -10,6 +10,7 @@
     "demos": "node scripts/build-demos.mjs",
     "build": "pnpm --filter web build",
     "analyze": "pnpm --filter web analyze",
+    "budget": "pnpm --filter web budget",
     "typecheck": "pnpm -r --if-present typecheck",
     "lint": "pnpm -r --if-present lint",
     "format": "prettier --write ."

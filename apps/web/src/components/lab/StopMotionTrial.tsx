@@ -1,6 +1,7 @@
 "use client";
 
-import { registry } from "@portfolio/lab/registry";
+import { loadPiece } from "@portfolio/lab/loaders";
+import type { LabSlug } from "@portfolio/lab/registry";
 import Link from "next/link";
 import {
   CLAY_CURSOR_DEFAULTS,
@@ -61,15 +62,13 @@ const CARTEL_SPARSE = {
 const POINTER_TILT_SPARSE_FPS = 10;
 const CURSOR_SPARSE_FPS = 10;
 
-// Pieces are loaded through the registry like LabStage — never imported
+// Pieces are loaded through the lab loaders like LabStage — never imported
 // directly. The casts add the props the pieces accept that the generic
-// registry type doesn't carry.
-function pieceLoader<P>(slug: string) {
-  return lazy(() => {
-    const piece = registry.find((entry) => entry.slug === slug);
-    if (!piece) throw new Error(`${slug} is not in the lab registry`);
-    return piece.load() as Promise<{ default: ComponentType<P> }>;
-  });
+// piece module type doesn't carry.
+function pieceLoader<P>(slug: LabSlug) {
+  return lazy(
+    () => loadPiece(slug) as Promise<{ default: ComponentType<P> }>,
+  );
 }
 
 const RoadSigns = pieceLoader<{
@@ -91,7 +90,7 @@ const CSS = `
 .smt { color: #2b2722; font-family: var(--font-neue-montreal), "Helvetica Neue", Arial, sans-serif; -webkit-font-smoothing: antialiased; }
 .smt .mono { font-family: var(--font-neue-montreal-mono), ui-monospace, Menlo, monospace; }
 .smt-intro { max-width: 640px; margin: 0 0 40px; font-size: 13px; line-height: 1.5; color: #57514a; }
-.smt-intro h1 { margin: 0 0 6px; font-size: 13px; font-weight: 500; color: #2b2722; letter-spacing: .02em; text-transform: uppercase; }
+.smt-intro h1 { margin: 0 0 6px; font: 500 13px/normal var(--font-neue-montreal-extra), var(--font-sans), sans-serif; color: #2b2722; letter-spacing: .02em; text-transform: uppercase; }
 .smt-master { display: flex; gap: 8px; align-items: center; margin-top: 14px; font-size: 12px; }
 
 .smt-section { padding: 24px 0 36px; border-top: 1px solid rgba(43, 39, 34, .12); }

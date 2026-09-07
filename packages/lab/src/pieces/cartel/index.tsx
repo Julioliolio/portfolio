@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useRef, useState, type ReactNode } from "react";
+import { asset } from "../../asset";
 
 /**
  * Cartel: a photographed lightbox street sign that "looks at" the pointer.
@@ -683,8 +684,8 @@ function routeLen(from: Cell, to: Cell): number {
 
 const srcOf = (key: string) =>
   key.startsWith("about-")
-    ? `/cartel/about/${key.slice("about-".length)}.webp`
-    : `/cartel/julio/${key}.webp`;
+    ? asset(`/cartel/about/${key.slice("about-".length)}.webp`)
+    : asset(`/cartel/julio/${key}.webp`);
 
 const clamp1 = (v: number) => Math.max(-1, Math.min(1, v));
 

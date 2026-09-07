@@ -25,6 +25,23 @@ body {
   font-family: var(--font-sans), "Helvetica Neue", Arial, sans-serif;
 }
 
+/* Medium, Bold and Italic are a separate, non-preloaded family (see
+   layout.tsx): a font file is only fetched once text matches it, so these
+   selectors are what puts the cuts on the wire. Anything medium, bold or
+   italic must go through them (or set the family explicitly), or the
+   browser substitutes the nearest preloaded cut. */
+b,
+strong,
+.font-medium,
+.font-bold,
+i,
+em,
+.italic {
+  font-family:
+    var(--font-neue-montreal-extra), var(--font-sans), "Helvetica Neue", Arial,
+    sans-serif;
+}
+
 /* Native cursor hides only while the ClayCursor component is mounted and
    active (fine pointer, JS running) — it owns this class. Iframes have
    their own documents; ClayCursor injects the same rule into same-origin

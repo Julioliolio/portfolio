@@ -7,7 +7,10 @@
  *   arrow.png                — single-frame fallback if no numbered frames
  *   arrow-pointer-1.png..N   — pointing-hand state shown over interactive
  *     elements, same numbering convention
- * Output: apps/web/public/cursor/<name>-<i>.png — one file per boil frame.
+ * Output: apps/web/public/cursor/<name>-<i>.webp — one file per boil frame,
+ *   lossy WebP with alpha at TARGET_HEIGHT (2x the ~48px display size).
+ *   The set has to stay small: every frame is fetched on first load so the
+ *   boil never flashes a missing image.
  *
  * Frames are exported individually, so their canvases are not registered to
  * each other. Each frame is trimmed to its alpha bounding box, then padded to
@@ -33,7 +36,8 @@ import { join, dirname } from "node:path";
 import { fileURLToPath } from "node:url";
 import sharp from "sharp";
 
-const TARGET_HEIGHT = 192; // 4x headroom over the ~48px display size
+const TARGET_HEIGHT = 96; // 2x the ~48px display size — sharp on retina, tiny on the wire
+const WEBP = { quality: 82, alphaQuality: 90, effort: 6 };
 // Slots emitted when only a single/placeholder source exists. Real frame
 // sources are picked up open-endedly (arrow-1.png, arrow-2.png, ... until a
 // gap) — keep the component's frame list in sync with what lands on disk.
@@ -78,18 +82,18 @@ for (const name of ["arrow", "arrow-pointer"]) {
       // Placeholder into every slot so the cycling component still works.
       const buf = await sharp(Buffer.from(PLACEHOLDER_SVG), { density: 300 })
         .resize({ height: TARGET_HEIGHT })
-        .png()
+        .webp(WEBP)
         .toBuffer();
       for (let i = 1; i <= FALLBACK_FRAME_COUNT; i++) {
-        await sharp(buf).toFile(join(outDir, `${name}-${i}.png`));
+        await sharp(buf).toFile(join(outDir, `${name}-${i}.webp`));
       }
       console.log(
-        `${name}-*.png  (placeholder — drop real PNGs in ${inputDir})`,
+        `${name}-*.webp  (placeholder — drop real PNGs in ${inputDir})`,
       );
     } else {
       // No pointer asset yet: the component falls back to the arrow frames,
       // so emit nothing rather than a wrong placeholder.
-      console.log(`${name}-*.png  skipped (no source yet)`);
+      console.log(`${name}-*.webp  skipped (no source yet)`);
     }
     continue;
   }
@@ -120,7 +124,7 @@ for (const name of ["arrow", "arrow-pointer"]) {
 
   for (let i = 0; i < trimmed.length; i++) {
     const { data, info } = trimmed[i];
-    const outPath = join(outDir, `${name}-${i + 1}.png`);
+    const outPath = join(outDir, `${name}-${i + 1}.webp`);
     const left = anchorX - anchors[i];
     // Two passes: sharp always applies resize before extend within one
     // pipeline, which would pad *after* scaling and desync the frame sizes.
@@ -133,9 +137,12 @@ for (const name of ["arrow", "arrow-pointer"]) {
       })
       .png()
       .toBuffer();
-    await sharp(padded).resize({ height: TARGET_HEIGHT }).png().toFile(outPath);
+    await sharp(padded)
+      .resize({ height: TARGET_HEIGHT })
+      .webp(WEBP)
+      .toFile(outPath);
     console.log(
-      `${name}-${i + 1}.png  ${(statSync(outPath).size / 1024).toFixed(0)}KB`,
+      `${name}-${i + 1}.webp  ${(statSync(outPath).size / 1024).toFixed(0)}KB`,
     );
   }
   if (name === "arrow-pointer") {
