@@ -14,13 +14,12 @@
  * before the photos decode (no layout jump on first paint).
  *
  * Usage: node scripts/prepare-signs.mjs [input-dir]
- *   default input: ~/portfolio-assets/signs
+ *   default input: source-assets/signs (gitignored, in-repo)
  *
- * Sources are not committed (originals live in ~/portfolio-assets/signs);
+ * Sources are not committed (originals live in source-assets/signs, gitignored);
  * outputs are.
  */
 import { mkdirSync, statSync } from "node:fs";
-import { homedir } from "node:os";
 import { join, dirname } from "node:path";
 import { fileURLToPath } from "node:url";
 import sharp from "sharp";
@@ -32,8 +31,8 @@ const SLUGS = ["localpal", "camper", "convertr"];
 const TARGET_HEIGHT = 400;
 const WEBP_QUALITY = 85;
 
-const inputDir = process.argv[2] ?? join(homedir(), "portfolio-assets/signs");
 const root = join(dirname(fileURLToPath(import.meta.url)), "..");
+const inputDir = process.argv[2] ?? join(root, "source-assets/signs");
 const outDir = join(root, "apps/web/public/signs");
 mkdirSync(outDir, { recursive: true });
 

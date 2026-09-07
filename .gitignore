@@ -23,3 +23,6 @@ npm-debug.log*
 
 # licensed typeface, not redistributable (see apps/web/src/fonts/README.md)
 apps/web/src/fonts/*.woff2
+
+# uncommitted source photos for scripts/prepare-*.mjs (146MB of PNGs)
+source-assets/

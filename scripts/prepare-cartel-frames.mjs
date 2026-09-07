@@ -17,9 +17,9 @@
  * frames decode.
  *
  * Usage: node scripts/prepare-cartel-frames.mjs <input-dir>
- *   e.g. node scripts/prepare-cartel-frames.mjs ~/portfolio-assets/cartel
+ *   e.g. node scripts/prepare-cartel-frames.mjs source-assets/cartel
  *
- * Sources are not committed (originals live in ~/portfolio-assets/cartel);
+ * Sources are not committed (originals live in source-assets/cartel, gitignored);
  * outputs are. Frames are served with default public/ caching (ETag). If
  * frames are regenerated after the sign graduates to the homepage hero,
  * move to a versioned dir (/cartel/v2/) before adding immutable headers.

@@ -1,7 +1,7 @@
 /**
  * Prepares the clay cursor images for the web app.
  *
- * Input: ~/portfolio-assets/cursor/ (or a dir passed as argv[2]) containing
+ * Input: source-assets/cursor/ (gitignored; or a dir passed as argv[2]) containing
  *   arrow-1.png..arrow-N.png — boil frames of the clay arrow (transparent
  *     background), each a separate photo of the same arrow re-posed slightly
  *   arrow.png                — single-frame fallback if no numbered frames
@@ -29,7 +29,6 @@
  *   node scripts/prepare-cursor.mjs
  */
 import { existsSync, mkdirSync, statSync } from "node:fs";
-import { homedir } from "node:os";
 import { join, dirname } from "node:path";
 import { fileURLToPath } from "node:url";
 import sharp from "sharp";
@@ -40,8 +39,8 @@ const TARGET_HEIGHT = 192; // 4x headroom over the ~48px display size
 // gap) — keep the component's frame list in sync with what lands on disk.
 const FALLBACK_FRAME_COUNT = 3;
 
-const inputDir = process.argv[2] ?? join(homedir(), "portfolio-assets/cursor");
 const root = join(dirname(fileURLToPath(import.meta.url)), "..");
+const inputDir = process.argv[2] ?? join(root, "source-assets/cursor");
 const outDir = join(root, "apps/web/public/cursor");
 mkdirSync(outDir, { recursive: true });
 
