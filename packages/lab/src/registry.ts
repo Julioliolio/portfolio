@@ -19,9 +19,8 @@ import type { ComponentType } from "react";
  * - A piece's entry module default-exports a client component.
  * - Pieces are always loaded lazily via loaders.ts — never import a piece
  *   directly from the portfolio.
- * - Animation: use `motion` (`motion/react`). If a piece needs gsap, load it
- *   inside the piece with `await import("gsap")` so it never lands in the
- *   shared bundle.
+ * - Animation: use `motion` (`motion/react`), inside the piece, so nothing
+ *   heavy lands in the shared bundle.
  */
 
 export type LabPiece = {

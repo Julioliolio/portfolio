@@ -86,10 +86,10 @@ export default function RootLayout({ children }: LayoutProps<"/">) {
       className={`${neueMontreal.variable} ${neueMontrealExtra.variable} ${neueMontrealMono.variable} h-full antialiased`}
     >
       <body className="flex min-h-full flex-col">
-        {/* No MotionProvider here on purpose: mounting it in the root layout
-            put the whole Motion core on every page's first load. It goes at
-            the closest ancestor of the `m` elements that need it — see
-            src/lib/motion.tsx. */}
+        {/* Nothing animation-related mounts here on purpose: anything in the
+            root layout is on every page's first load. Pieces that need the
+            Motion runtime wrap themselves; scripts/check-budget.mjs flags a
+            regression. */}
         {children}
         {/* The stop-motion stylesheet, generated from the motion tuning
             (packages/lab/src/motion.tsx); /lab/motion is its bench. */}

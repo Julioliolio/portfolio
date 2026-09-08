@@ -6,6 +6,7 @@ node_modules/
 out/
 dist/
 *.tsbuildinfo
+apps/web/next-env.d.ts
 
 # generated demo output (rebuilt by scripts/build-demos.mjs)
 apps/web/public/demos/

@@ -6,7 +6,9 @@ import type { LabPieceModule, LabSlug } from "./registry";
  * the loaders are kept away from the server-rendered pages.
  *
  * The `satisfies` clause makes a registry entry without a loader (or a
- * loader without an entry) a type error.
+ * loader without an entry) a type error, while each loader keeps its
+ * piece's real module type — `lazy(loaders.cartel)` is typed with
+ * Cartel's own props.
  */
 export const loaders = {
   "pointer-tilt": () => import("./pieces/pointer-tilt"),
@@ -15,7 +17,3 @@ export const loaders = {
   motion: () => import("./pieces/motion"),
   "road-signs": () => import("./pieces/road-signs"),
 } satisfies Record<LabSlug, () => Promise<LabPieceModule>>;
-
-export function loadPiece(slug: LabSlug): Promise<LabPieceModule> {
-  return loaders[slug]();
-}

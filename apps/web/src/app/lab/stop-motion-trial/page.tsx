@@ -5,7 +5,7 @@ import { LabBackdrop } from "@/components/lab/LabBackdrop";
 export const metadata: Metadata = { title: "Stop motion — trial" };
 
 /**
- * The stop-motion trial: the hard-cut entrances (components/motion/Enter)
+ * The stop-motion trial: the hard-cut entrances (@portfolio/lab/motion)
  * on a board up top, then every lab piece switchable between the beat it
  * ships with and the sparse one — 3 to 4 cuts at about 10 a second, the
  * punch of arjunr.dev's appear animations. Nothing here changes a piece's

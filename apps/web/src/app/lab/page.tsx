@@ -23,12 +23,6 @@ export default function LabIndexPage() {
           <p>The sign alone on a white wall, with its cast shadow.</p>
         </li>
         <li>
-          <Link className="underline" href="/lab/card-trial">
-            Project card — trial
-          </Link>
-          <p>Five directions for the card the road-sign rope leads to.</p>
-        </li>
-        <li>
           <Link className="underline" href="/lab/cursor-demo">
             Cursor — demo
           </Link>
