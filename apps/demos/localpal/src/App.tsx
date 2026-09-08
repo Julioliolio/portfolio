@@ -1,6 +1,5 @@
-import { useEffect, useRef, useState } from "react";
+import { Suspense, lazy, useEffect, useRef, useState } from "react";
 import { PhoneFrame, FullScreenPhone } from "./components/PhoneFrame";
-import { CaptureButton } from "./components/CaptureButton";
 import { SquircleProvider } from "./components/SquircleProvider";
 import { MotionProvider } from "./components/MotionProvider";
 import { PinSizeProvider } from "./components/PinSizeProvider";
@@ -9,14 +8,34 @@ import { FloatShadowProvider } from "./components/FloatShadowProvider";
 import { AvatarClusterProvider } from "./components/AvatarClusterProvider";
 import { PlansProvider } from "./components/PlansProvider";
 import { MapHome } from "./screens/MapHome";
-import { Lab } from "./screens/Lab";
-import { DesignSystemWeb } from "./screens/ds-web/DesignSystemWeb";
-import { Landing } from "./screens/Landing";
-import { CaptureApp } from "./screens/capture/CaptureApp";
 import { useDeviceMode } from "./hooks/useDeviceMode";
 import { usePlansState } from "./components/PlansProvider";
 import { resolveIntent, type DemoIntent } from "./demo/flows";
 import { color, font } from "./theme/tokens";
+
+// Everything outside the prototype itself — the Lab, the design-system
+// showcase, the landing page, the capture stages and the screenshot button
+// — loads on demand. The portfolio embed (?embed) only ever renders MapHome,
+// so none of it lands in that first load.
+const Lab = lazy(() => import("./screens/Lab").then((m) => ({ default: m.Lab })));
+const DesignSystemWeb = lazy(() =>
+  import("./screens/ds-web/DesignSystemWeb").then((m) => ({
+    default: m.DesignSystemWeb,
+  })),
+);
+const Landing = lazy(() =>
+  import("./screens/Landing").then((m) => ({ default: m.Landing })),
+);
+const CaptureApp = lazy(() =>
+  import("./screens/capture/CaptureApp").then((m) => ({
+    default: m.CaptureApp,
+  })),
+);
+const CaptureButton = lazy(() =>
+  import("./components/CaptureButton").then((m) => ({
+    default: m.CaptureButton,
+  })),
+);
 
 // The dev view (Map/Lab/DS Web toggles) is gated behind ?dev so the public
 // URL only ever shows the polished Landing → prototype flow. The builder keeps
@@ -56,7 +75,9 @@ function App() {
           <MapDensityProvider>
             <FloatShadowProvider>
               <AvatarClusterProvider>
-                <PlansProvider>{content}</PlansProvider>
+                <PlansProvider>
+                  <Suspense fallback={null}>{content}</Suspense>
+                </PlansProvider>
               </AvatarClusterProvider>
             </FloatShadowProvider>
           </MapDensityProvider>
