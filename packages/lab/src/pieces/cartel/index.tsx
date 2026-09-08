@@ -1,6 +1,13 @@
 "use client";
 
-import { useEffect, useRef, useState, type ReactNode } from "react";
+import {
+  useEffect,
+  useRef,
+  useState,
+  type Dispatch,
+  type ReactNode,
+  type SetStateAction,
+} from "react";
 import { asset } from "../../asset";
 
 /**
@@ -97,6 +104,7 @@ import { asset } from "../../asset";
 type Level = -2 | -1 | 0 | 1 | 2; // half-steps: ±1 half, ±2 full
 type Cell = { col: Level; row: Level };
 type Axes = { x: number; y: number }; // normalized -1..1, positive = right/down
+type Point = { x: number; y: number }; // viewport px
 
 const FRONT: Cell = { col: 0, row: 0 };
 const TICK_MS = 1000 / 12; // the walker's cadence: photo swaps "on twos"
@@ -800,6 +808,75 @@ function TuneSlider({
       </span>
     </label>
   );
+}
+
+/** Keys of T that hold a number — what a slider row can drive. */
+type NumericKey<T> = {
+  [K in keyof T]: T[K] extends number ? K : never;
+}[keyof T];
+
+type Field<T> = {
+  key: NumericKey<T> & string;
+  label: string;
+  min: number;
+  max: number;
+  step: number;
+  unit: string;
+};
+
+const BOB_FIELDS: Field<BobParams>[] = [
+  { key: "fps", label: "Beat", min: 4, max: 30, step: 1, unit: "fps" },
+  { key: "amount", label: "Amount", min: 0, max: 4, step: 0.1, unit: "%" },
+  { key: "cycleSec", label: "Cycle", min: 0.5, max: 4, step: 0.1, unit: "s" },
+  { key: "spring", label: "Spring", min: 0, max: 1, step: 0.05, unit: "" },
+  { key: "smear", label: "Smear", min: 0, max: 2, step: 0.05, unit: "" },
+  { key: "echo", label: "Echo", min: 0, max: 0.6, step: 0.025, unit: "" },
+];
+
+const SPIN_FIELDS: Field<SpinParams>[] = [
+  { key: "fps", label: "Fps", min: 6, max: 60, step: 1, unit: "" },
+  { key: "durationMs", label: "Time", min: 300, max: 2500, step: 50, unit: "" },
+  { key: "holdMs", label: "Hold", min: 0, max: 1000, step: 50, unit: "" },
+  { key: "settleMs", label: "Settle", min: 0, max: 1500, step: 50, unit: "" },
+  { key: "squashDepth", label: "Squash", min: 0, max: 2, step: 0.1, unit: "×" },
+];
+
+const JUMP_FIELDS: Field<SpinParams>[] = [
+  { key: "jump", label: "Jump", min: 0, max: 15, step: 0.5, unit: "%" },
+];
+
+const SHADOW_FIELDS: Field<ShadowParams>[] = [
+  { key: "x", label: "X", min: -10, max: 10, step: 0.5, unit: "%" },
+  { key: "y", label: "Y", min: -10, max: 15, step: 0.5, unit: "%" },
+  { key: "blur", label: "Blur", min: 0, max: 15, step: 0.5, unit: "%" },
+  { key: "opacity", label: "Opacity", min: 0, max: 0.8, step: 0.02, unit: "" },
+];
+
+const GLOW_FIELDS: Field<GlowParams>[] = [
+  { key: "strength", label: "Strength", min: 0, max: 1, step: 0.05, unit: "" },
+  { key: "blur", label: "Blur", min: 0, max: 8, step: 0.25, unit: "%" },
+  { key: "boost", label: "Boost", min: 1, max: 2, step: 0.05, unit: "×" },
+  { key: "warmth", label: "Warmth", min: 0, max: 0.6, step: 0.05, unit: "" },
+];
+
+/** One slider per field, writing the key into a params state. */
+function sliders<T extends object>(
+  fields: Field<T>[],
+  values: T,
+  set: Dispatch<SetStateAction<T>>,
+) {
+  return fields.map((f) => (
+    <TuneSlider
+      key={f.key}
+      label={f.label}
+      min={f.min}
+      max={f.max}
+      step={f.step}
+      unit={f.unit}
+      value={values[f.key] as number}
+      onChange={(v) => set((p) => ({ ...p, [f.key]: v }))}
+    />
+  ));
 }
 
 // A collapsible group in the tuning panel. Every group starts closed so
@@ -1556,7 +1633,9 @@ export default function Cartel({
       applyExposure(spinIndex);
     }
 
-    function finishSpin() {
+    // Stops the sheet and clears its transform contributions. `spinDone`
+    // is left alone: finishSpin fires it, cancelSpin drops it.
+    function resetSpin() {
       if (spinTimer != null) {
         window.clearInterval(spinTimer);
         spinTimer = null;
@@ -1566,6 +1645,10 @@ export default function Cartel({
       spinScaleX = 1;
       spinJumpY = 0;
       spinStretchY = 0;
+    }
+
+    function finishSpin() {
+      resetSpin();
       face = spinToFace;
       // The landing exposures resolved to the live pointer cell — the
       // walker must agree with what's on screen, or its next route would
@@ -1595,15 +1678,7 @@ export default function Cartel({
 
     // Shared by visibilitychange and unmount: no resume side effects.
     function cancelSpin() {
-      if (spinTimer != null) {
-        window.clearInterval(spinTimer);
-        spinTimer = null;
-      }
-      spinPhase = "none";
-      spinIndex = 0;
-      spinScaleX = 1;
-      spinJumpY = 0;
-      spinStretchY = 0;
+      resetSpin();
       spinDone = null;
     }
 
@@ -1645,7 +1720,7 @@ export default function Cartel({
 
     // --- input wiring ---
 
-    let center: Axes | null = null;
+    let center: Point | null = null;
     let signWidth = 0;
     let signHeight = 0;
     // Set by scroll/resize; the next processed pointer frame re-measures.
@@ -1677,7 +1752,7 @@ export default function Cartel({
     // with a rAF trailing pass so a burst always settles on its final
     // position. The throttle, not the rAF, carries the tracking: if rAF
     // stalls (hidden tab, embedded panes), pointer input still works.
-    let pointerLast: Axes | null = null;
+    let pointerLast: Point | null = null;
     let pointerRaf: number | null = null;
     let pointerProcessedAt = 0;
 
@@ -2182,60 +2257,7 @@ export default function Cartel({
             />
           </Section>
           <Section title="Stop motion">
-            <TuneSlider
-              label="Beat"
-              min={4}
-              max={30}
-              step={1}
-              unit="fps"
-              value={bobParams.fps}
-              onChange={(fps) => setBobParams((p) => ({ ...p, fps }))}
-            />
-            <TuneSlider
-              label="Amount"
-              min={0}
-              max={4}
-              step={0.1}
-              unit="%"
-              value={bobParams.amount}
-              onChange={(amount) => setBobParams((p) => ({ ...p, amount }))}
-            />
-            <TuneSlider
-              label="Cycle"
-              min={0.5}
-              max={4}
-              step={0.1}
-              unit="s"
-              value={bobParams.cycleSec}
-              onChange={(cycleSec) => setBobParams((p) => ({ ...p, cycleSec }))}
-            />
-            <TuneSlider
-              label="Spring"
-              min={0}
-              max={1}
-              step={0.05}
-              unit=""
-              value={bobParams.spring}
-              onChange={(spring) => setBobParams((p) => ({ ...p, spring }))}
-            />
-            <TuneSlider
-              label="Smear"
-              min={0}
-              max={2}
-              step={0.05}
-              unit=""
-              value={bobParams.smear}
-              onChange={(smear) => setBobParams((p) => ({ ...p, smear }))}
-            />
-            <TuneSlider
-              label="Echo"
-              min={0}
-              max={0.6}
-              step={0.025}
-              unit=""
-              value={bobParams.echo}
-              onChange={(echo) => setBobParams((p) => ({ ...p, echo }))}
-            />
+            {sliders(BOB_FIELDS, bobParams, setBobParams)}
           </Section>
           <Section title="Spin">
             <span style={{ opacity: 0.4, fontSize: 10 }}>Velocity</span>
@@ -2269,57 +2291,7 @@ export default function Cartel({
                 </button>
               ))}
             </div>
-            <TuneSlider
-              label="Fps"
-              min={6}
-              max={60}
-              step={1}
-              unit=""
-              value={spinParams.fps}
-              onChange={(fps) => setSpinParams((p) => ({ ...p, fps }))}
-            />
-            <TuneSlider
-              label="Time"
-              min={300}
-              max={2500}
-              step={50}
-              unit=""
-              value={spinParams.durationMs}
-              onChange={(durationMs) =>
-                setSpinParams((p) => ({ ...p, durationMs }))
-              }
-            />
-            <TuneSlider
-              label="Hold"
-              min={0}
-              max={1000}
-              step={50}
-              unit=""
-              value={spinParams.holdMs}
-              onChange={(holdMs) => setSpinParams((p) => ({ ...p, holdMs }))}
-            />
-            <TuneSlider
-              label="Settle"
-              min={0}
-              max={1500}
-              step={50}
-              unit=""
-              value={spinParams.settleMs}
-              onChange={(settleMs) =>
-                setSpinParams((p) => ({ ...p, settleMs }))
-              }
-            />
-            <TuneSlider
-              label="Squash"
-              min={0}
-              max={2}
-              step={0.1}
-              unit="×"
-              value={spinParams.squashDepth}
-              onChange={(squashDepth) =>
-                setSpinParams((p) => ({ ...p, squashDepth }))
-              }
-            />
+            {sliders(SPIN_FIELDS, spinParams, setSpinParams)}
             <span style={{ opacity: 0.4, fontSize: 10, marginTop: 4 }}>
               Jump arc
             </span>
@@ -2328,91 +2300,13 @@ export default function Cartel({
               onChange={setSpinParams}
               field="jumpCurve"
             />
-            <TuneSlider
-              label="Jump"
-              min={0}
-              max={15}
-              step={0.5}
-              unit="%"
-              value={spinParams.jump}
-              onChange={(jump) => setSpinParams((p) => ({ ...p, jump }))}
-            />
+            {sliders(JUMP_FIELDS, spinParams, setSpinParams)}
           </Section>
           <Section title="Shadow">
-            <TuneSlider
-              label="X"
-              min={-10}
-              max={10}
-              step={0.5}
-              unit="%"
-              value={shadow.x}
-              onChange={(x) => setShadow((p) => ({ ...p, x }))}
-            />
-            <TuneSlider
-              label="Y"
-              min={-10}
-              max={15}
-              step={0.5}
-              unit="%"
-              value={shadow.y}
-              onChange={(y) => setShadow((p) => ({ ...p, y }))}
-            />
-            <TuneSlider
-              label="Blur"
-              min={0}
-              max={15}
-              step={0.5}
-              unit="%"
-              value={shadow.blur}
-              onChange={(blur) => setShadow((p) => ({ ...p, blur }))}
-            />
-            <TuneSlider
-              label="Opacity"
-              min={0}
-              max={0.8}
-              step={0.02}
-              unit=""
-              value={shadow.opacity}
-              onChange={(opacity) => setShadow((p) => ({ ...p, opacity }))}
-            />
+            {sliders(SHADOW_FIELDS, shadow, setShadow)}
           </Section>
           <Section title="Glow">
-            <TuneSlider
-              label="Strength"
-              min={0}
-              max={1}
-              step={0.05}
-              unit=""
-              value={glow.strength}
-              onChange={(strength) => setGlow((p) => ({ ...p, strength }))}
-            />
-            <TuneSlider
-              label="Blur"
-              min={0}
-              max={8}
-              step={0.25}
-              unit="%"
-              value={glow.blur}
-              onChange={(blur) => setGlow((p) => ({ ...p, blur }))}
-            />
-            <TuneSlider
-              label="Boost"
-              min={1}
-              max={2}
-              step={0.05}
-              unit="×"
-              value={glow.boost}
-              onChange={(boost) => setGlow((p) => ({ ...p, boost }))}
-            />
-            <TuneSlider
-              label="Warmth"
-              min={0}
-              max={0.6}
-              step={0.05}
-              unit=""
-              value={glow.warmth}
-              onChange={(warmth) => setGlow((p) => ({ ...p, warmth }))}
-            />
+            {sliders(GLOW_FIELDS, glow, setGlow)}
           </Section>
           <button
             type="button"

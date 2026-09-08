@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useSyncExternalStore } from "react";
 
 /**
  * Per-page background switcher for lab pages: a few studio-wall presets
@@ -12,6 +12,10 @@ import { useEffect, useState } from "react";
  *
  * Text color follows the background's luminance so headings and controls
  * stay readable on any wall.
+ *
+ * The stored choice is read through useSyncExternalStore: the server and
+ * the hydrating render see no override, the stored value lands right
+ * after, and `choose` notifies so the swatches follow.
  */
 
 const SWATCHES = ["#ffffff", "#f3efe9", "#b8b2a7", "#565248", "#171717"];
@@ -25,16 +29,23 @@ function textFor(bg: string): string {
   return luminance > 0.5 ? "#171717" : "#ededed";
 }
 
+const listeners = new Set<() => void>();
+
+function subscribe(fn: () => void) {
+  listeners.add(fn);
+  return () => {
+    listeners.delete(fn);
+  };
+}
+
 export function LabBackdrop({ pageKey }: { pageKey: string }) {
   const storageKey = `lab-bg:${pageKey}`;
-  // null = no override (page default). Read lazily so SSR and the first
-  // client render agree; the stored value lands in an effect.
-  const [bg, setBg] = useState<string | null>(null);
-
-  useEffect(() => {
-    const stored = localStorage.getItem(storageKey);
-    if (stored) setBg(stored);
-  }, [storageKey]);
+  // null = no override (page default).
+  const bg = useSyncExternalStore(
+    subscribe,
+    () => localStorage.getItem(storageKey),
+    () => null,
+  );
 
   useEffect(() => {
     const body = document.body;
@@ -52,9 +63,9 @@ export function LabBackdrop({ pageKey }: { pageKey: string }) {
   }, [bg]);
 
   function choose(next: string | null) {
-    setBg(next);
     if (next) localStorage.setItem(storageKey, next);
     else localStorage.removeItem(storageKey);
+    for (const fn of listeners) fn();
   }
 
   return (

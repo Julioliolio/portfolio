@@ -214,14 +214,7 @@ export default function ClayCursorTuner() {
           swing the pointer around here — <a href="#tuner">hover a link</a> or{" "}
           <button
             type="button"
-            style={{
-              font: "inherit",
-              color: "inherit",
-              background: "#222",
-              border: "1px solid #555",
-              borderRadius: 8,
-              padding: "2px 10px",
-            }}
+            style={{ ...btn(), padding: "2px 10px" }}
           >
             press me
           </button>
@@ -303,28 +296,14 @@ export default function ClayCursorTuner() {
         <button
           type="button"
           onClick={reset}
-          style={{
-            font: "inherit",
-            color: "inherit",
-            background: "#222",
-            border: "1px solid #555",
-            borderRadius: 8,
-            padding: "6px 14px",
-          }}
+          style={btn()}
         >
           Reset
         </button>
         <button
           type="button"
           onClick={copy}
-          style={{
-            font: "inherit",
-            color: "inherit",
-            background: "#222",
-            border: "1px solid #555",
-            borderRadius: 8,
-            padding: "6px 14px",
-          }}
+          style={btn()}
         >
           {copied ? "Copied ✓" : "Copy values"}
         </button>

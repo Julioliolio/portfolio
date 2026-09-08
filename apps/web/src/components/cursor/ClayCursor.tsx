@@ -72,8 +72,6 @@ export function ClayCursor() {
     const pointerImg = pointerRef.current;
     if (!root || !arrowImg || !pointerImg) return;
 
-    const finePointer = window.matchMedia("(pointer: fine)");
-    if (!finePointer.matches) return;
     const reducedMotion = window.matchMedia("(prefers-reduced-motion: reduce)");
 
     document.documentElement.classList.add("clay-cursor");

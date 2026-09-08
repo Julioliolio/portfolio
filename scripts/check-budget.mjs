@@ -95,17 +95,11 @@ const fmt = (n) => `${(n / KB).toFixed(1)} KB`;
 const rows = [];
 let failed = false;
 
-function check(label, kind, value) {
+function check(route, kind, bytes) {
   const budget = BUDGETS[kind];
-  const over = value > budget;
+  const over = bytes > budget;
   failed ||= over;
-  rows.push({
-    route: label,
-    kind,
-    size: fmt(value),
-    budget: fmt(budget),
-    status: over ? "OVER" : "ok",
-  });
+  rows.push({ route, kind, bytes, budget, over });
 }
 
 for (const html of walkHtml(out).sort()) {
@@ -131,18 +125,24 @@ const cursorBytes = readdirSync(cursorDir)
 check("public/cursor", "cursorFrames", cursorBytes);
 
 console.table(
-  rows.filter((r) => r.status === "OVER" || process.argv.includes("--all")),
+  rows
+    .filter((r) => r.over || process.argv.includes("--all"))
+    .map((r) => ({
+      route: r.route,
+      kind: r.kind,
+      size: fmt(r.bytes),
+      budget: fmt(r.budget),
+      status: r.over ? "OVER" : "ok",
+    })),
 );
 const worst = {};
 for (const r of rows) {
-  const n = parseFloat(r.size);
-  if (!(r.kind in worst) || n > worst[r.kind].n)
-    worst[r.kind] = { n, route: r.route, budget: r.budget };
+  if (!(r.kind in worst) || r.bytes > worst[r.kind].bytes) worst[r.kind] = r;
 }
 console.log("largest per kind:");
 for (const [kind, w] of Object.entries(worst)) {
   console.log(
-    `  ${kind.padEnd(13)} ${fmt(w.n * KB).padStart(9)} / ${w.budget.padStart(9)}  (${w.route})`,
+    `  ${kind.padEnd(13)} ${fmt(w.bytes).padStart(9)} / ${fmt(w.budget).padStart(9)}  (${w.route})`,
   );
 }
 

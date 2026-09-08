@@ -18,8 +18,8 @@ type ShellState = "idle" | "loading" | "ready";
  *   emit it).
  * - ready: iframe revealed.
  *
- * NOTE: src must point at the explicit index.html — Next's public/ serving
- * does not resolve directory indexes consistently across dev/start/Vercel.
+ * src points at the explicit index.html rather than the directory, so the
+ * iframe URL resolves the same under `next dev` and the static export.
  */
 export function DemoShell({
   demo,
