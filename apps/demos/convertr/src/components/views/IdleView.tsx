@@ -10,7 +10,9 @@ import {
 import type { VideoInfo } from "../../App";
 import { calculateBBoxTargets } from "../../engine/bbox-calc";
 import { setAppState } from "../../state/app";
-import { uploadFileWithProgress, waitForPreview } from "../../api/upload";
+import { uploadFileWithProgress } from "../../api/upload";
+import { ACCENT, BG, DOT_BG_IMAGE } from "../../shared/tokens";
+import { Chip, Cross, CornerCrosshair, GuideLine } from "../../shared/ui";
 import { pct, scrambleText } from "../../shared/utils";
 import CarrierBricks from "../loading/CarrierBricks";
 
@@ -25,7 +27,7 @@ const IDLE_RATIOS = [16 / 9, 9 / 16, 4 / 3, 1 / 1];
 // Uses the same logic as bbox-calc.ts so the idle box is always properly centered
 // and aspect-ratio-constrained regardless of window size.
 function computeIdlePos(vw: number, vh: number, aspect: number) {
-  const { x1, y1, x2, y2 } = calculateBBoxTargets(vw, vh, aspect, "idle");
+  const { x1, y1, x2, y2 } = calculateBBoxTargets(vw, vh, aspect);
   return {
     x1,
     y1,
@@ -63,9 +65,6 @@ function computeLoadingPos(vw: number, vh: number) {
     helperBottom: vh - y2 + 16 + "px",
   };
 }
-
-import { ACCENT, BG, DOT_BG_IMAGE } from "../../shared/tokens";
-import { Chip, Cross, CornerCrosshair, GuideLine } from "../../shared/ui";
 
 type Phase = "splash" | "contracting" | "idle" | "loading";
 
@@ -586,12 +585,6 @@ const IdleView: Component<{ onVideoSelected: (info: VideoInfo) => void }> = (
           setAppState("currentJobId", result.jobId);
           setAppState("uploadReady", true);
           setAppState("inputFormat", result.inputFormat);
-          setAppState("needsProxy", !!result.needsProxy);
-          if (result.needsProxy) {
-            waitForPreview(result.jobId).then((url) => {
-              if (url) setAppState("previewUrl", url);
-            });
-          }
           const w = result.meta?.width || dims.w;
           const h = result.meta?.height || dims.h;
           seedSourceDefaults(result.meta?.fps, w);
@@ -637,82 +630,8 @@ const IdleView: Component<{ onVideoSelected: (info: VideoInfo) => void }> = (
     if (isLoading()) return; // another job already in flight
 
     // Demo build: URL fetching needs the desktop app's server (yt-dlp).
-    // Everything below is the real flow, kept for the desktop parity diff.
     setFetchStatus("URL fetch needs the desktop app — drop a file instead");
     setTimeout(() => setFetchStatus(null), 3000);
-    return;
-
-    // Start the bar — bbox morphs into the loading bar shape.
-    setPhase("loading");
-    startPacedLoading();
-
-    const resetIdle = () => {
-      stopPacedLoading();
-      setPhase("idle");
-    };
-
-    try {
-      const res = await fetch("/fetch", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ url: text }),
-      });
-      if (!res.ok) {
-        setFetchStatus("Failed to fetch URL");
-        setTimeout(() => setFetchStatus(null), 3000);
-        resetIdle();
-        return;
-      }
-      const { jobId } = await res.json();
-
-      // Listen for download progress via SSE. Server caps download progress
-      // at 30 (line 143 of server.js), so stretch to 0-100 for the bar fill.
-      const sse = new EventSource(`/progress/${jobId}`);
-      sse.onmessage = (ev) => {
-        try {
-          const data = JSON.parse(ev.data);
-          if (data.error) {
-            sse.close();
-            setFetchStatus(`Error: ${data.message ?? "Download failed"}`);
-            setTimeout(() => setFetchStatus(null), 3000);
-            resetIdle();
-            return;
-          }
-          if (data.status === "downloaded") {
-            sse.close();
-            const meta = data.meta ?? {};
-            finishPacedLoading(() => {
-              setAppState("currentJobId", jobId);
-              setAppState("uploadJobId", jobId);
-              setAppState("uploadReady", true);
-              setAppState("inputFormat", data.inputFormat ?? "mp4");
-              setAppState("needsProxy", !!data.needsProxy);
-              seedSourceDefaults(meta.fps, meta.width);
-              props.onVideoSelected({
-                url: text,
-                name: data.fileName ?? text!.split("/").pop() ?? "video",
-                sizeBytes: data.inputSize ?? 0,
-                width: meta.width || 1280,
-                height: meta.height || 720,
-                objectUrl: `/input/${jobId}`,
-              });
-            });
-          }
-        } catch {
-          /* ignore */
-        }
-      };
-      sse.onerror = () => {
-        sse.close();
-        setFetchStatus("Connection error");
-        setTimeout(() => setFetchStatus(null), 3000);
-        resetIdle();
-      };
-    } catch {
-      setFetchStatus("Failed to fetch URL");
-      setTimeout(() => setFetchStatus(null), 3000);
-      resetIdle();
-    }
   };
 
   onMount(() => document.addEventListener("paste", handlePaste));

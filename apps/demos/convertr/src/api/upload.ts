@@ -12,7 +12,6 @@ export interface UploadResult {
   jobId: string;
   meta: ServerMeta;
   inputFormat: string;
-  needsProxy: boolean;
 }
 
 /** Probe duration/dimensions client-side (the server used ffprobe). */
@@ -113,18 +112,9 @@ export function uploadFileWithProgress(
                 : 0,
           },
           inputFormat: ext,
-          needsProxy: false,
         });
       });
     };
     requestAnimationFrame(tick);
   });
-}
-
-/** Demo: browsers preview the original directly — no proxy is ever needed. */
-export async function waitForPreview(
-  _jobId?: string,
-  _timeoutMs?: number,
-): Promise<string | null> {
-  return null;
 }

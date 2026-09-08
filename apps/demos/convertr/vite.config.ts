@@ -6,7 +6,7 @@ import solidPlugin from "vite-plugin-solid";
 export default defineConfig({
   plugins: [solidPlugin()],
   base: "./",
-  publicDir: "static",
+  publicDir: false,
   build: {
     outDir: "dist",
     target: "esnext",

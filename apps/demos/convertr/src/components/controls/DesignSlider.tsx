@@ -14,47 +14,27 @@ export interface TickMark {
   label: string;
 }
 
-interface NotchParams {
-  notchIdleW: number;
-  notchIdleH: number;
-  notchDragH: number;
-  duration: number;
-  easing: string;
-}
-
-interface ThumbParams {
-  duration: number;
-  x1: number;
-  y1: number;
-  x2: number;
-  y2: number;
-}
-
-const DEFAULT_NOTCH: NotchParams = {
+const NOTCH = {
   notchIdleW: 6,
   notchIdleH: 12,
   notchDragH: 6,
   duration: 150,
   easing: "cubic-bezier(0.330, 0.595, 0.599, 1.170)",
 };
-const DEFAULT_THUMB: ThumbParams = {
+const THUMB = {
   duration: 250,
   x1: 0.631,
   y1: 0.013,
   x2: 0,
   y2: 0.993,
 };
-const DEFAULT_SNAP_RADIUS = 5; // % of range
+const SNAP_RADIUS = 5; // % of range
 
 interface DesignSliderProps {
   ticks: TickMark[];
   value: number;
   onChange: (v: number) => void;
   unit: string;
-  notch?: NotchParams;
-  thumb?: ThumbParams;
-  snapRadius?: number; // % of range (0..100)
-  displayValue?: (v: number) => string; // override badge text (e.g. "orig")
   onFocus?: () => void;
 }
 
@@ -79,9 +59,9 @@ const DesignSlider: Component<DesignSliderProps> = (props) => {
   let downX = 0;
   const MOVE_THRESHOLD = 3;
 
-  const notch = () => props.notch ?? DEFAULT_NOTCH;
-  const thumb = () => props.thumb ?? DEFAULT_THUMB;
-  const snapRadius = () => props.snapRadius ?? DEFAULT_SNAP_RADIUS;
+  const notch = () => NOTCH;
+  const thumb = () => THUMB;
+  const snapRadius = () => SNAP_RADIUS;
 
   const min = () => props.ticks[0].value;
   const max = () => props.ticks[props.ticks.length - 1].value;
@@ -91,10 +71,8 @@ const DesignSlider: Component<DesignSliderProps> = (props) => {
   // Memoized so sub-integer float changes to props.value (e.g. while dragging
   // fps) don't re-trigger the layout-reading effect below. The measured text
   // only changes when the rounded display value changes.
-  const badgeText = createMemo(() =>
-    props.displayValue
-      ? props.displayValue(props.value)
-      : `${Math.round(props.value)}${props.unit}`,
+  const badgeText = createMemo(
+    () => `${Math.round(props.value)}${props.unit}`,
   );
 
   // Keep badge width in sync with its text content (+8 for 4px padding each side)

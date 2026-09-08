@@ -14,7 +14,6 @@ const SettingsColumn: Component<{
     style={{
       position: "absolute",
       overflow: "hidden",
-      "-webkit-app-region": "no-drag",
     }}
   >
     <VideoSettings

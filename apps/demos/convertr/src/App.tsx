@@ -4,7 +4,6 @@ import EditorView from "./components/views/EditorView";
 
 export interface VideoInfo {
   file?: File;
-  url?: string;
   name: string;
   sizeBytes: number;
   width: number;

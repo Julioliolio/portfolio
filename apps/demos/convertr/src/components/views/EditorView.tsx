@@ -12,7 +12,7 @@ import type { VideoInfo } from "../../App";
 import { calculateBBoxTargets } from "../../engine/bbox-calc";
 import { startConversion } from "../../api/convert";
 import { listenProgress, stopProgress } from "../../api/progress";
-import { uploadFileWithProgress, waitForPreview } from "../../api/upload";
+import { uploadFileWithProgress } from "../../api/upload";
 import { fetchEstimate, cancelEstimate } from "../../api/estimate";
 import { appState, setAppState, type OutputFormat } from "../../state/app";
 import { ACCENT, BG, MONO, DOT_BG_IMAGE } from "../../shared/tokens";
@@ -310,13 +310,8 @@ const EditorView: Component<{ video: VideoInfo; onBack: () => void }> = (
   const [dragging, setDragging] = createSignal(false);
   const [frames, setFrames] = createSignal<string[]>([]);
 
-  // ── Effective video src: prefer the server-generated preview proxy when the
-  // original isn't browser-playable (gif, avi, flv, wmv, ts, …). The memo is
-  // reactive, so swapping in the preview URL reloads the <video> element and
-  // re-fires loadedmetadata automatically.
-  const effectiveSrc = createMemo(
-    () => appState.previewUrl || props.video.objectUrl,
-  );
+  // ── Video src: the demo previews the original directly.
+  const effectiveSrc = createMemo(() => props.video.objectUrl);
 
   // ── Conversion state ─────────────────────────────────────────────────────────
   const [isConverting, setIsConverting] = createSignal(false);
@@ -431,7 +426,6 @@ const EditorView: Component<{ video: VideoInfo; onBack: () => void }> = (
     if (!appState.uploadReady || !jobId) return;
     cancelEstimate();
     scrambleTo("...");
-    setAppState("estimating", true);
     fetchEstimate({
       jobId,
       outputFormat: appState.outputFormat,
@@ -447,8 +441,6 @@ const EditorView: Component<{ video: VideoInfo; onBack: () => void }> = (
       trimEnd: trimEnd(),
     }).then((bytes) => {
       const result = bytes != null ? fmtBytes(bytes) : analyticalSize();
-      if (bytes != null) setAppState("estimatedBytes", bytes);
-      setAppState("estimating", false);
       scrambleTo(result);
     });
   };
@@ -565,7 +557,7 @@ const EditorView: Component<{ video: VideoInfo; onBack: () => void }> = (
   const snapToIdle = () => {
     const vw = containerRef.offsetWidth;
     const vh = containerRef.offsetHeight;
-    const { x1, y1, x2, y2 } = calculateBBoxTargets(vw, vh, null, "idle");
+    const { x1, y1, x2, y2 } = calculateBBoxTargets(vw, vh, null);
     const gl = pct(x1, vw),
       gr = pct(x2, vw),
       gt = pct(y1, vh),
@@ -906,18 +898,12 @@ const EditorView: Component<{ video: VideoInfo; onBack: () => void }> = (
   const triggerExit = () => {
     if (isExiting) return;
     isExiting = true;
-    setAppState("selectedFile", null);
-    setAppState("fileUrl", null);
     setAppState("converting", false);
     setAppState("progress", 0);
     setAppState("progressMsg", "");
     setAppState("uploadJobId", null);
     setAppState("uploadReady", false);
-    setAppState("estimatedBytes", null);
-    setAppState("estimating", false);
-    setAppState("previewUrl", null);
     setAppState("inputFormat", null);
-    setAppState("needsProxy", false);
     cancelEstimate();
     stopProgress();
     const a = anim;
@@ -1007,14 +993,9 @@ const EditorView: Component<{ video: VideoInfo; onBack: () => void }> = (
     ro.observe(containerRef);
 
     // ── Seed app state with the newly loaded video ───────────────────────────
-    setAppState("selectedFile", props.video.file ?? null);
-    setAppState("fileUrl", props.video.url ?? null);
-    setAppState("estimatedBytes", null);
     setAppState("uploadReady", false);
     setAppState("uploadJobId", null);
-    setAppState("previewUrl", null);
     setAppState("inputFormat", null);
-    setAppState("needsProxy", false);
 
     // Default output = same format as input whenever we accept it as an output
     // (gif, mp4, mov, mkv, webm, avi). For inputs we don't round-trip
@@ -1027,11 +1008,11 @@ const EditorView: Component<{ video: VideoInfo; onBack: () => void }> = (
     setAppState("outputFormat", pickedFormat as OutputFormat);
     setDisplayFormat(pickedFormat.toUpperCase());
 
-    // ── Upload to server ───────────────────────────────────────────────────
-    // IdleView now handles both file upload (XHR + progress bar) and URL
-    // fetch (SSE + progress bar) BEFORE transitioning here, so uploadReady
-    // should already be true. The fallback below covers legacy callers that
-    // transition straight into EditorView without uploading.
+    // ── Upload ─────────────────────────────────────────────────────────────
+    // IdleView handles the file upload (with its progress bar) BEFORE
+    // transitioning here, so uploadReady should already be true. The
+    // fallback below covers callers that transition straight into
+    // EditorView without uploading.
     if (!appState.uploadReady && props.video.file) {
       uploadFileWithProgress(props.video.file).then((result) => {
         if (result) {
@@ -1039,23 +1020,8 @@ const EditorView: Component<{ video: VideoInfo; onBack: () => void }> = (
           setAppState("currentJobId", result.jobId);
           setAppState("uploadReady", true);
           setAppState("inputFormat", result.inputFormat);
-          setAppState("needsProxy", !!result.needsProxy);
-          if (result.needsProxy) {
-            waitForPreview(result.jobId).then((url) => {
-              if (url) setAppState("previewUrl", url);
-            });
-          }
         }
       });
-    } else if (
-      !appState.uploadReady &&
-      props.video.url &&
-      appState.currentJobId
-    ) {
-      // URL mode fallback (IdleView should have already set these).
-      setAppState("uploadJobId", appState.currentJobId);
-      setAppState("uploadReady", true);
-      setAppState("inputFormat", "mp4");
     }
 
     // ── Video setup ────────────────────────────────────────────────────────────
@@ -1274,7 +1240,6 @@ const EditorView: Component<{ video: VideoInfo; onBack: () => void }> = (
         bottom: "0",
         background: BG,
         overflow: "hidden",
-        "-webkit-app-region": "drag",
       }}
     >
       <style>{`
@@ -1332,7 +1297,6 @@ const EditorView: Component<{ video: VideoInfo; onBack: () => void }> = (
         style={{
           position: "absolute",
           overflow: "hidden",
-          "-webkit-app-region": "no-drag",
         }}
       >
         {/* Dotted background — rendered FIRST so it sits behind the input
@@ -2006,7 +1970,6 @@ const EditorView: Component<{ video: VideoInfo; onBack: () => void }> = (
           position: "absolute",
           "box-sizing": "border-box",
           overflow: "hidden",
-          "-webkit-app-region": "no-drag",
         }}
       >
         <FormatPicker
