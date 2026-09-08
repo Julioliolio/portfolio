@@ -18,13 +18,7 @@ import { useMotion, usePressFeedback } from "../MotionProvider";
 import { CrossIcon } from "../icons/CrossIcon";
 import { figmaIcons } from "../icons/figmaIcons";
 import { color, font, shadow } from "../../theme/tokens";
-
-const buttonReset: CSSProperties = {
-  background: "transparent",
-  border: "none",
-  padding: 0,
-  cursor: "pointer",
-};
+import { buttonReset } from "../../theme/resets";
 
 /** Small ✕ that kills the whole tour — present on every popup. */
 function SkipDot({ onSkip }: { onSkip: () => void }) {

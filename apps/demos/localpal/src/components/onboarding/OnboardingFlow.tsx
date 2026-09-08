@@ -41,6 +41,11 @@ import { useFloatShadow } from "../FloatShadowProvider";
 import { useScramble } from "../useScramble";
 import { layerZoom, layerZoomStyle } from "../../theme/motion";
 import { color, device } from "../../theme/tokens";
+import {
+  capTrim,
+  inputReset,
+  textButtonReset as buttonReset,
+} from "../../theme/resets";
 import { INTEREST_MIN, type InterestId } from "../../theme/interests";
 import {
   stagePalette,
@@ -93,11 +98,6 @@ const MOTIVATIONS = [
   "Just looking around",
 ];
 
-const capTrim = {
-  textBoxTrim: "trim-both",
-  textBoxEdge: "cap text",
-} as CSSProperties;
-
 // Ink text sits straight on the paper city — a soft light halo lifts it off
 // the street texture beneath.
 const TEXT_HALO = `0 1px 10px rgba(${stagePalette.vignette},0.9)`;
@@ -105,23 +105,6 @@ const TEXT_HALO = `0 1px 10px rgba(${stagePalette.vignette},0.9)`;
 /** Soft lift for white chrome floating directly over the map (plates, CTAs). */
 const liftShadow = (c: string) =>
   `drop-shadow(0 1px 2px rgba(${c},0.1)) drop-shadow(0 3px 10px rgba(${c},0.12))`;
-
-const buttonReset: CSSProperties = {
-  background: "transparent",
-  border: "none",
-  padding: 0,
-  cursor: "pointer",
-  textAlign: "left",
-};
-
-const inputReset: CSSProperties = {
-  background: "transparent",
-  border: "none",
-  outline: "none",
-  padding: 0,
-  margin: 0,
-  fontFamily: "inherit",
-};
 
 /* ------------------------------------------------------------------ */
 /* Chrome                                                               */

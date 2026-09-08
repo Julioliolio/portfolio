@@ -24,6 +24,7 @@ import { BackChevron } from "./icons/BackChevron";
 import { ShareIcon } from "./icons/ShareIcon";
 import { color } from "../theme/tokens";
 import { layerZoom } from "../theme/motion";
+import { buttonReset } from "../theme/resets";
 import { VENUES } from "../data/venues";
 import { VENUE_CTA } from "./VenueSheet";
 import { ACTIVITY_CTA, type ActivityView } from "./ActivitySheet";
@@ -41,13 +42,6 @@ const LABELS: Record<CtaView["kind"], string> = {
 
 const SMALL = 64; // the square button (== CTA height)
 const GAP = 12;
-
-const buttonReset: CSSProperties = {
-  background: "transparent",
-  border: "none",
-  padding: 0,
-  cursor: "pointer",
-};
 
 export function CtaRow({
   view,

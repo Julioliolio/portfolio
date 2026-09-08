@@ -56,6 +56,11 @@ import { PersonIcon } from "./icons/PersonIcon";
 import { ShareIcon } from "./icons/ShareIcon";
 import { figmaIcons } from "./icons/figmaIcons";
 import { color } from "../theme/tokens";
+import {
+  capTrim,
+  inputReset,
+  textButtonReset as buttonReset,
+} from "../theme/resets";
 import { CATEGORIES, type CategoryId } from "../theme/categories";
 import { VENUES, type Venue, type VenueId } from "../data/venues";
 import { ADDRESSES } from "../data/addresses";
@@ -159,29 +164,6 @@ type DraftTag = {
 const CHIP_ICON: Partial<Record<string, string>> = {
   drinks: figmaIcons.chipDrinks,
   sports: figmaIcons.chipSports,
-};
-
-// Cap-trimmed text (Figma measures type cap-to-cap). Chromium 133+.
-const capTrim = {
-  textBoxTrim: "trim-both",
-  textBoxEdge: "cap text",
-} as CSSProperties;
-
-const buttonReset: CSSProperties = {
-  background: "transparent",
-  border: "none",
-  padding: 0,
-  cursor: "pointer",
-  textAlign: "left",
-};
-
-const inputReset: CSSProperties = {
-  background: "transparent",
-  border: "none",
-  outline: "none",
-  padding: 0,
-  margin: 0,
-  fontFamily: "inherit",
 };
 
 /* ------------------------------------------------------------------ */

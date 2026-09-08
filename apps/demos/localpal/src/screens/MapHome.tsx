@@ -9,6 +9,7 @@ import Map, {
 } from "react-map-gl/maplibre";
 import "maplibre-gl/dist/maplibre-gl.css";
 import { color, font, device } from "../theme/tokens";
+import { lerp } from "../theme/motion";
 import { MapPin } from "../components/MapPin";
 import { BottomBar, CAL } from "../components/BottomBar";
 import {
@@ -449,8 +450,6 @@ function zoomForRadius(lat: number, radiusM: number, radiusPx: number) {
   const mppAtZoom0 = 156543.03392 * Math.cos((lat * Math.PI) / 180);
   return Math.log2(mppAtZoom0 / mppTarget);
 }
-
-const lerp = (a: number, b: number, t: number) => a + (b - a) * t;
 
 export function MapHome({
   interactive = true,

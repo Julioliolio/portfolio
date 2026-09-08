@@ -15,7 +15,7 @@
  * screen edge, exactly like the design — the scroll region is full-bleed with
  * padded content so that overhang clips at the screen edge, not at the column.
  */
-import { useState, type CSSProperties } from "react";
+import { useState } from "react";
 import { motion } from "framer-motion";
 import { Squircle } from "./Squircle";
 import { usePressFeedback, useMotion } from "./MotionProvider";
@@ -23,6 +23,7 @@ import { useDragScroll } from "./useDragScroll";
 import { figmaIcons } from "./icons/figmaIcons";
 import { BookmarkIcon } from "./icons/BookmarkIcon";
 import { color, device } from "../theme/tokens";
+import { capTrim } from "../theme/resets";
 import type { Venue, VenueEvent } from "../data/venues";
 
 const SHEET_W = 393;
@@ -58,12 +59,6 @@ export const VENUE_CTA = {
   y: SHEET_TOP + ACTIONS.top,
   mainW: ACTIONS.mainW,
 };
-
-// Cap-trimmed text (Figma measures type cap-to-cap). Chromium 133+.
-const capTrim = {
-  textBoxTrim: "trim-both",
-  textBoxEdge: "cap text",
-} as CSSProperties;
 
 export function VenueSheet({
   venue,

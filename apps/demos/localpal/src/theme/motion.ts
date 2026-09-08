@@ -334,3 +334,5 @@ export function resolveSimSpring(
     damp: Math.max(0, 1 - (2 * zeta * omega) / fps),
   };
 }
+
+export const lerp = (a: number, b: number, t: number) => a + (b - a) * t;

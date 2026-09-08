@@ -41,7 +41,8 @@ import { PeerPin } from "../PeerPin";
 import { BackChevron } from "../icons/BackChevron";
 import { figmaIcons } from "../icons/figmaIcons";
 import { color, device } from "../../theme/tokens";
-import { layerZoomStyle } from "../../theme/motion";
+import { layerZoomStyle, lerp } from "../../theme/motion";
+import { capTrim, textButtonReset as buttonReset } from "../../theme/resets";
 import { PEOPLE, personTag } from "../../data/people";
 import type { PeerPlan } from "../../data/peerPlans";
 import {
@@ -89,22 +90,6 @@ const THREAD_HEAD_H = 52;
 const THREAD_LIST_TOP = HEAD_TOP + THREAD_HEAD_H + 12;
 const COMPOSER_H = 48;
 const COMPOSER_TOP = VISIBLE_H - 40 - COMPOSER_H; // 40px clear of the home indicator
-
-const lerp = (a: number, b: number, t: number) => a + (b - a) * t;
-
-// Cap-trimmed text (Figma measures type cap-to-cap). Chromium 133+.
-const capTrim = {
-  textBoxTrim: "trim-both",
-  textBoxEdge: "cap text",
-} as CSSProperties;
-
-const buttonReset: CSSProperties = {
-  background: "transparent",
-  border: "none",
-  padding: 0,
-  cursor: "pointer",
-  textAlign: "left",
-};
 
 const ellipsis: CSSProperties = {
   overflow: "hidden",

@@ -20,7 +20,7 @@
  * pinned to the bottom edge across all levels — label scrambles, plate width
  * and price morph, plus glyph and back chevron persist.
  */
-import type { CSSProperties, ReactNode, Ref } from "react";
+import type { ReactNode, Ref } from "react";
 import { useCallback, useRef } from "react";
 import { motion } from "framer-motion";
 import { Squircle } from "./Squircle";
@@ -31,6 +31,7 @@ import { AvatarCluster } from "./AvatarCluster";
 import { usePressFeedback } from "./MotionProvider";
 import { figmaIcons } from "./icons/figmaIcons";
 import { color } from "../theme/tokens";
+import { buttonReset, capTrim } from "../theme/resets";
 import {
   VENUES,
   dayLabel,
@@ -90,19 +91,6 @@ export const ACTIVITY_CTA = {
   priceW: PRICE_W,
 };
 const MAX_SCROLL_H = ACTIVITY_MAX_H - PAD_TOP - PAD_BOTTOM - COL_GAP - CTA_H; // 342
-
-// Cap-trimmed text (Figma measures type cap-to-cap). Chromium 133+.
-const capTrim = {
-  textBoxTrim: "trim-both",
-  textBoxEdge: "cap text",
-} as CSSProperties;
-
-const buttonReset: CSSProperties = {
-  background: "transparent",
-  border: "none",
-  padding: 0,
-  cursor: "pointer",
-};
 
 // View swaps ride the shared hierarchical zoom (theme/motion layerZoomStyle),
 // direction-aware: pushing deeper, the old view scales past you ('parent');

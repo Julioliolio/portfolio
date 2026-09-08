@@ -14,18 +14,7 @@ import { figmaIcons } from "../components/icons/figmaIcons";
 import type { Venue } from "./venues";
 import type { PeerPlan } from "./peerPlans";
 
-// The Figma glyph each category's pins wear on the map — the SAME icon the
-// bubble for that category shows, so a "Drinks" blob and the cocktail pins it
-// filters to read as the same thing. (Single source of truth for both.)
-export const CATEGORY_PIN_ICON: Record<CategoryId, string> = {
-  drinks: figmaIcons.cocktail,
-  music: figmaIcons.music,
-  sports: figmaIcons.bouldering,
-  food: figmaIcons.utensils,
-  coffee: figmaIcons.coffee,
-};
-
-// Inverse: a venue's map icon IS its type, so it maps 1:1 to a category. The
+// A venue's map icon IS its type, so it maps 1:1 to a category. The
 // museum glyph is culture — none of the five activity categories — so those
 // pins carry no category (they hide under any filter, which is correct).
 const ICON_CATEGORY: Record<string, CategoryId> = {

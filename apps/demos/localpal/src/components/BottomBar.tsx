@@ -32,7 +32,7 @@ import { SearchGlyph } from "./icons/SearchGlyph";
 import { CrossIcon } from "./icons/CrossIcon";
 import { figmaIcons } from "./icons/figmaIcons";
 import { color, font } from "../theme/tokens";
-import { layerZoomStyle } from "../theme/motion";
+import { layerZoomStyle, lerp } from "../theme/motion";
 import type { FilterChip } from "../search/filters";
 import { classifyQuery } from "../search/smartSearch";
 import type { Venue, VenueId } from "../data/venues";
@@ -101,8 +101,6 @@ const FIELD_OPEN_W = 306.36;
 // freeze mid-flight in throttled/background tabs (headless screenshots!),
 // which could leave a stale layer painted over the new one. Hierarchy here:
 // search sheet < venue < activity.
-
-const lerp = (a: number, b: number, t: number) => a + (b - a) * t;
 
 export function BottomBar({
   venue = null,

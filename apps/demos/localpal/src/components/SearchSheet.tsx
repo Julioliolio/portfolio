@@ -29,7 +29,7 @@
  * y 127.22, 362 × 697). Text uses CSS cap trimming (text-box) so the Figma
  * gaps — measured cap-to-cap — apply directly.
  */
-import type { CSSProperties, ReactNode } from "react";
+import type { ReactNode } from "react";
 import { useEffect, useMemo, useRef, useState } from "react";
 import { AnimatePresence, motion } from "framer-motion";
 import { Squircle } from "./Squircle";
@@ -42,6 +42,7 @@ import { ThinkingTheater } from "./ThinkingTheater";
 import { figmaIcons } from "./icons/figmaIcons";
 import { peerSticker } from "../theme/peerStickers";
 import { color } from "../theme/tokens";
+import { capTrim } from "../theme/resets";
 import { CATEGORIES, type CategoryId } from "../theme/categories";
 import type { VenueId } from "../data/venues";
 import type { PeerPlan } from "../data/peerPlans";
@@ -89,12 +90,6 @@ const RESULT_CARD_H = 88; // grows to fit the why-line
 
 // How long a natural-language query may rest before the AI fires on its own.
 const PAUSE_MS = 900;
-
-// Cap-trimmed text (Figma measures type cap-to-cap). Chromium 133+.
-const capTrim = {
-  textBoxTrim: "trim-both",
-  textBoxEdge: "cap text",
-} as CSSProperties;
 
 export function SearchSheet({
   filters,

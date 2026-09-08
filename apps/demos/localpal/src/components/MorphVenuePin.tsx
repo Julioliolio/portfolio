@@ -22,6 +22,7 @@ import { useMotion } from "./MotionProvider";
 import { useFloatShadow, usePointShadow } from "./FloatShadowProvider";
 import { PointShadowDot } from "./PointShadowDot";
 import { color, font } from "../theme/tokens";
+import { lerp } from "../theme/motion";
 
 // Expanded lozenge metrics, transcribed from Figma (126×64 for "Rita's";
 // width hugs the measured label so longer names fit).
@@ -39,8 +40,6 @@ const ACTIVITY = {
   cx: 29.75086 / 32.0015, //       ring centre X ÷ pin width  → 0.9297
   cy: 2.63086 / 31.001, //         ring centre Y ÷ pin height → 0.0849
 };
-
-const lerp = (a: number, b: number, t: number) => a + (b - a) * t;
 
 export function MorphVenuePin({
   icon,

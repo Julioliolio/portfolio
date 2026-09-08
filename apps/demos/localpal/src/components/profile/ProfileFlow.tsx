@@ -57,7 +57,8 @@ import { CrossIcon } from "../icons/CrossIcon";
 import { BackChevron } from "../icons/BackChevron";
 import { figmaIcons } from "../icons/figmaIcons";
 import { color, device } from "../../theme/tokens";
-import { layerZoomStyle, layerZoom } from "../../theme/motion";
+import { layerZoomStyle, layerZoom, lerp } from "../../theme/motion";
+import { capTrim, textButtonReset as buttonReset } from "../../theme/resets";
 import {
   PEOPLE,
   ME,
@@ -127,22 +128,6 @@ const QR_BTN = { x: 165, y: rel(745), w: 63, h: 64 };
 const QR_CARD = { x: 63, y: rel(322), w: 267.75, h: 272 };
 const ADD_BTN = { y: rel(746), w: 221, h: 64 };
 const SHEET_BOTTOM = device.height - SHEET.y; // 733 — visible band of the sheet
-
-// Cap-trimmed text (Figma measures type cap-to-cap). Chromium 133+.
-const capTrim = {
-  textBoxTrim: "trim-both",
-  textBoxEdge: "cap text",
-} as CSSProperties;
-
-const buttonReset: CSSProperties = {
-  background: "transparent",
-  border: "none",
-  padding: 0,
-  cursor: "pointer",
-  textAlign: "left",
-};
-
-const lerp = (a: number, b: number, t: number) => a + (b - a) * t;
 
 /* ------------------------------------------------------------------ */
 /* Small shared bits                                                    */

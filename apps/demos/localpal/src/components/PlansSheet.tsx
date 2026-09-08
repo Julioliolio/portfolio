@@ -18,7 +18,7 @@
  * A bottom brand fade + the floating "Propose a plan" CTA sit over the list,
  * exactly like the venue sheet's fade/CTA pattern.
  */
-import type { CSSProperties, PointerEvent as ReactPointerEvent } from "react";
+import type { PointerEvent as ReactPointerEvent } from "react";
 import { useEffect, useLayoutEffect, useRef, useState } from "react";
 import { animate, motion, useMotionValue, useTransform } from "framer-motion";
 import { Squircle } from "./Squircle";
@@ -33,6 +33,7 @@ import { BackChevron } from "./icons/BackChevron";
 import { CheckIcon } from "./icons/CheckIcon";
 import { CrossIcon } from "./icons/CrossIcon";
 import { color, device } from "../theme/tokens";
+import { capTrim, textButtonReset as buttonReset } from "../theme/resets";
 import { VENUES, type VenueId } from "../data/venues";
 import type { PeerPlan } from "../data/peerPlans";
 import {
@@ -66,20 +67,6 @@ const BADGE = { w: 90, h: 50 };
 // Bottom chrome (Figma 1384:2406 / 2407): fade at 665, CTA at 745 (screen).
 const FADE = { top: 665 - PLANS.y, h: 187 };
 const CTA = { top: 745 - PLANS.y, w: 301.33, h: 64 };
-
-// Cap-trimmed text (Figma measures type cap-to-cap). Chromium 133+.
-const capTrim = {
-  textBoxTrim: "trim-both",
-  textBoxEdge: "cap text",
-} as CSSProperties;
-
-const buttonReset: CSSProperties = {
-  background: "transparent",
-  border: "none",
-  padding: 0,
-  cursor: "pointer",
-  textAlign: "left",
-};
 
 /* ------------------------------------------------------------------ */
 /* The focused card's bottom plate: day/time ⇄ RSVP slider ⇄ countdown  */

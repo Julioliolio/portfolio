@@ -19,6 +19,7 @@ import type { CSSProperties } from "react";
 import { Squircle } from "./Squircle";
 import { useMotion, usePressFeedback } from "./MotionProvider";
 import { color } from "../theme/tokens";
+import { buttonReset as sharedButtonReset } from "../theme/resets";
 
 export type ConfirmConfig = {
   /** Prompt, e.g. "Join this plan?" */
@@ -31,13 +32,7 @@ export type ConfirmConfig = {
   onConfirm: () => void;
 };
 
-const buttonReset: CSSProperties = {
-  background: "transparent",
-  border: "none",
-  padding: 0,
-  cursor: "pointer",
-  width: "100%",
-};
+const buttonReset: CSSProperties = { ...sharedButtonReset, width: "100%" };
 
 export function ConfirmSheet({
   config,
