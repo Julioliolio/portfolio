@@ -33,7 +33,10 @@ const BUDGETS = {
   js: 165 * KB, // gzip
   css: 12 * KB, // gzip
   fonts: 115 * KB, // raw woff2 — Regular + SemiBold of the sans, nothing else
-  images: 8 * KB, // raw — nothing should be image-preloaded today
+  // raw — the landing preloads the cartel's front frame (its largest
+  // paint, ~68 KB) and nothing else; every other photo on the site comes
+  // in without a hint.
+  images: 80 * KB,
   cursorFrames: 64 * KB, // raw — all 19 WebP boil frames together
 };
 

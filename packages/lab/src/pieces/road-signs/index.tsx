@@ -8,7 +8,14 @@ import {
   type ReactNode,
 } from "react";
 import { asset } from "../../asset";
-import { useMotionTuning } from "../../motion";
+import { replayClass, useMotionTuning } from "../../motion";
+import {
+  SOUND_FIELDS,
+  play,
+  resetSoundTuning,
+  setSoundTuning,
+  useSoundTuning,
+} from "../../sound";
 
 /**
  * Road signs: the projects stack. Three photographed road signs, one per
@@ -161,8 +168,8 @@ const SIGNS: Sign[] = [
       media: "wide",
       ...PLACEHOLDER_WIDE,
       blurb:
-        "Placeholder: a trip planner for van travel — routes, stops and the weather in between. Media and copy to come.",
-      tags: ["Concept", "Motion", "Web"],
+        "A proposal film for Camper, made end to end with generative AI: everyone is equal in their feet. Concept, storyboard, every shot.",
+      tags: ["Film", "Generative AI", "Concept"],
     },
   },
   {
@@ -175,7 +182,7 @@ const SIGNS: Sign[] = [
       media: "wide",
       ...PLACEHOLDER_WIDE,
       blurb:
-        "A desktop file converter with a mocked conversion flow — drop files, pick a format, get results. Runs live inside the portfolio.",
+        "A desktop video converter where one bounding box is the whole interface — drop a video, trim it, drag the result out. Runs live inside the portfolio.",
       tags: ["Desktop", "Product Design", "Live demo"],
     },
   },
@@ -499,7 +506,13 @@ function signEdge(e: Engine, slug: string): { x: number; y: number } | null {
 function signGeom(
   e: Engine,
   slug: string,
-): { cx: number; cy: number; halfW: number; halfH: number; tilt: number } | null {
+): {
+  cx: number;
+  cy: number;
+  halfW: number;
+  halfH: number;
+  tilt: number;
+} | null {
   const i = SIGNS.findIndex((s) => s.slug === slug);
   const sign = SIGNS[i];
   if (!sign) return null;
@@ -666,6 +679,8 @@ function showProject(e: Engine, slug: string) {
     old?.querySelector("video")?.pause();
   }
   const changed = r.active !== slug;
+  // The card sliding out (or a fresh card swapping in): paper on wood.
+  if (changed || firstReveal) play("slide");
   r.active = slug;
   card.classList.add("is-active");
   card.setAttribute("aria-hidden", "false");
@@ -695,6 +710,7 @@ function hideProject(e: Engine) {
   const r = e.rope;
   cancelHide(e);
   if (r.active === null) return;
+  play("slideOut");
   const card = r.cards.get(r.active);
   card?.classList.remove("is-active");
   card?.setAttribute("aria-hidden", "true");
@@ -755,8 +771,9 @@ function geometry(t: RoadSignsTuning) {
   const padX = H * 0.6;
   const padY = H * 0.2;
   const maxSignW = Math.max(...SIGNS.map((s) => H * s.aspect));
+  const signsH = SIGNS.length * H + (SIGNS.length - 1) * t.gap;
   const stackW = maxSignW + 2 * padX;
-  const stackH = SIGNS.length * H + (SIGNS.length - 1) * t.gap + 2 * padY;
+  const stackH = signsH + 2 * padY;
   // A tall card is media plus the same width of copy beside it.
   const cardW = Math.max(t.cardWide, t.cardTall * 2 + 26);
   // Wide: the media plus the copy row. Tall: the media. Each clip's own
@@ -776,6 +793,8 @@ function geometry(t: RoadSignsTuning) {
   return {
     stage: { w: stageW, h: maxY - minY },
     stackAt: { x: 0, y: -minY },
+    /** The signs at rest — the stack's box without its padding. */
+    signs: { w: maxSignW, h: signsH },
     cardTop: ay - minY,
     padX,
     padY,
@@ -1127,8 +1146,19 @@ export default function RoadSigns({
   controls = true,
   tuning: override,
   entrance = true,
+  frame = "stage",
+  replay = 0,
 }: {
   controls?: boolean;
+  /**
+   * What the piece's root box is sized to. "stage" (default): the whole
+   * stage — the stack plus the room the card and rope need — for pages
+   * that center the piece. "signs": just the signs at rest, with the
+   * stage hanging off it (overflow visible), so a page can put the stack
+   * on a wall by its own edges — the landing parks it bottom-left. The
+   * card still pops to the stage's right edge either way.
+   */
+  frame?: "stage" | "signs";
   /**
    * Play the mount entrance: the signs drop in one after another in hard
    * cuts — the site's shared `sm-drop` keyframes (packages/lab/src/motion),
@@ -1139,6 +1169,13 @@ export default function RoadSigns({
    * it ends.
    */
   entrance?: boolean;
+  /**
+   * Bump to play the entrance again in place: each sign's drop restarts
+   * from its first pose, on the same stagger, with the stack otherwise
+   * untouched — no teardown, so a page that brings the signs back into
+   * view replays them with no dead frames.
+   */
+  replay?: number;
   /**
    * Values laid over ROAD_SIGNS_DEFAULTS — for trial pages that want the
    * stack at a different feel without touching the defaults. Applied at
@@ -1161,6 +1198,7 @@ export default function RoadSigns({
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [overrideKey]);
   const [hovered, setHovered] = useState<string | null>(null);
+  const sound = useSoundTuning();
   // Bench-only: pin a sign hovered so its hot pose holds while the pointer
   // is over the sliders. null = the real pointer decides.
   const [pinned, setPinned] = useState<string | null>(null);
@@ -1218,6 +1256,13 @@ export default function RoadSigns({
     if (active === null && engine.nudge.phase === null) scheduleNudge(engine);
   }, [engine, active, tuning]);
 
+  // A replay restarts every sign's entrance in place, on the same
+  // stagger (the delays are still on the elements).
+  useEffect(() => {
+    if (replay === 0 || !entrance) return;
+    for (const w of engine.walks.values()) replayClass(w.el, "rs-sign-enter");
+  }, [engine, entrance, replay]);
+
   // Bench pin: holds the card up too, no hover needed.
   useEffect(() => {
     if (pinned !== null) showProject(engine, pinned);
@@ -1273,6 +1318,7 @@ export default function RoadSigns({
   // The site's title handlers, on the signs. The sign's own lift is still
   // React's `hovered`; these drive the card and rope.
   function onSignEnter(slug: string) {
+    play("tap");
     setHovered(slug);
     const r = engine.rope;
     if (r.active === slug && !r.closing) {
@@ -1353,133 +1399,168 @@ export default function RoadSigns({
     "--rs-fade": `${tuning.cardFps > 0 ? 0 : tuning.fadeDuration}s`,
   } as CSSProperties;
 
-  return (
-    <>
-      <style>{CARD_CSS}</style>
-      <div
-        ref={(el) => {
-          engine.rope.stage = el;
-        }}
-        className={tuning.cardFps > 0 ? "is-cut" : undefined}
-        onPointerLeave={() => scheduleHide(engine, tuning.hideFromStage)}
-        style={{
-          position: "relative",
-          width: geo.stage.w,
-          height: geo.stage.h,
-          ...stageVars,
-        }}
-      >
-        {/* The safe wedge between the hot sign and its card. First in the
+  // frame="signs": the root is the signs' rest box and the stage is
+  // offset inside it so the first sign's top-left corner lands on the
+  // root's — the stack's padding and the card room above it are hung
+  // outside, overflow visible.
+  const signsBox = frame === "signs" ? geo.signs : null;
+
+  const stage = (
+    <div
+      ref={(el) => {
+        engine.rope.stage = el;
+      }}
+      className={tuning.cardFps > 0 ? "is-cut" : undefined}
+      onPointerLeave={() => scheduleHide(engine, tuning.hideFromStage)}
+      style={{
+        position: signsBox ? "absolute" : "relative",
+        left: signsBox ? -(geo.stackAt.x + geo.padX) : undefined,
+        top: signsBox ? -(geo.stackAt.y + geo.padY) : undefined,
+        width: geo.stage.w,
+        height: geo.stage.h,
+        ...stageVars,
+      }}
+    >
+      {/* The safe wedge between the hot sign and its card. First in the
             stage so it paints — and hit-tests — under the signs and the
             card; only the polygon takes the pointer, and only while a
             card is up (is-live). Geometry is written by drawBridge. */}
-        <svg
-          ref={(el) => registerRope("bridgeSvg", el)}
-          className="rs-bridge"
-          aria-hidden
-        >
-          <polygon
-            ref={(el) => registerRope("bridge", el)}
-            onPointerEnter={() => cancelHide(engine)}
-            onPointerLeave={() => scheduleHide(engine, tuning.hideFromCard)}
-          />
-        </svg>
-        <div
-          onPointerLeave={() => setHovered(null)}
-          style={{
-            position: "absolute",
-            left: geo.stackAt.x,
-            top: geo.stackAt.y,
-            display: "grid",
-            justifyItems: "start",
-            gap: tuning.gap,
-            // Room for the hot sign to grow and nudge without clipping
-            // against the stage edge.
-            padding: `${geo.padY}px ${geo.padX}px`,
-          }}
-        >
-          {SIGNS.map((sign, i) => (
-            <a
-              key={sign.slug}
-              ref={(el) => register(sign.slug, el)}
-              href={sign.href}
-              aria-label={sign.title}
-              className={entrance ? "rs-sign-enter" : undefined}
-              onPointerEnter={() => onSignEnter(sign.slug)}
-              onPointerLeave={onSignLeave}
-              onFocus={() => {
-                setHovered(sign.slug);
-                showProject(engine, sign.slug);
-              }}
-              onBlur={() => {
-                setHovered((h) => (h === sign.slug ? null : h));
-                scheduleHide(engine, 120);
-              }}
-              style={{
-                display: "block",
-                position: "relative",
-                zIndex: active === sign.slug ? 1 : 0,
-                height: tuning.height,
-                width: tuning.height * sign.aspect,
-                transformOrigin: "50% 50%",
-                // Hard cuts only — the walk writes transform/opacity on the
-                // beat and nothing may ease between them.
-                transition: "none",
-                outline: "none",
-                // Stagger of the mount entrance (see rs-sign-enter).
-                animationDelay: `${motion.lead + i * motion.stagger}ms`,
-              }}
-            >
-              {/* eslint-disable-next-line @next/next/no-img-element -- static pre-sized WebP with imperative transforms; the Next optimizer adds nothing here */}
-              <img
-                src={sign.src}
-                alt=""
-                draggable={false}
-                decoding="async"
-                style={{
-                  display: "block",
-                  width: "100%",
-                  height: "100%",
-                  userSelect: "none",
-                }}
-              />
-            </a>
-          ))}
-        </div>
-
-        {/* The rope. Geometry is written by drawRope; the fade is CSS. */}
-        <svg
-          ref={(el) => registerRope("svg", el)}
-          className="rs-rope"
-          aria-hidden
-        >
-          <path ref={(el) => registerRope("path", el)} />
-          <circle ref={(el) => registerRope("start", el)} r={4} />
-          <circle ref={(el) => registerRope("end", el)} r={4} />
-        </svg>
-
-        {/* One card per project, all mounted; showProject toggles
-            is-active and the stylesheet does the pop. */}
-        {SIGNS.map((sign) => (
+      <svg
+        ref={(el) => registerRope("bridgeSvg", el)}
+        className="rs-bridge"
+        aria-hidden
+      >
+        <polygon
+          ref={(el) => registerRope("bridge", el)}
+          onPointerEnter={() => cancelHide(engine)}
+          onPointerLeave={() => scheduleHide(engine, tuning.hideFromCard)}
+        />
+      </svg>
+      <div
+        onPointerLeave={() => setHovered(null)}
+        style={{
+          position: "absolute",
+          left: geo.stackAt.x,
+          top: geo.stackAt.y,
+          display: "grid",
+          justifyItems: "start",
+          gap: tuning.gap,
+          // Room for the hot sign to grow and nudge without clipping
+          // against the stage edge.
+          padding: `${geo.padY}px ${geo.padX}px`,
+        }}
+      >
+        {SIGNS.map((sign, i) => (
           <a
             key={sign.slug}
-            ref={(el) => registerCard(sign.slug, el)}
-            className={`rs-card is-${sign.card.media}`}
+            ref={(el) => register(sign.slug, el)}
             href={sign.href}
-            aria-label={`Open ${sign.title}`}
-            aria-hidden="true"
-            tabIndex={-1}
-            style={{ top: geo.cardTop }}
-            onPointerEnter={() => cancelHide(engine)}
-            onPointerLeave={() => scheduleHide(engine, tuning.hideFromCard)}
-            onPointerMove={(ev) =>
-              nudgeSag(engine, ev.currentTarget, ev.clientY)
-            }
+            aria-label={sign.title}
+            className={entrance ? "rs-sign-enter" : undefined}
+            onPointerEnter={() => onSignEnter(sign.slug)}
+            onPointerLeave={onSignLeave}
+            onClick={() => play("knock")}
+            onFocus={() => {
+              play("tap");
+              setHovered(sign.slug);
+              showProject(engine, sign.slug);
+            }}
+            onBlur={() => {
+              setHovered((h) => (h === sign.slug ? null : h));
+              scheduleHide(engine, 120);
+            }}
+            style={{
+              display: "block",
+              position: "relative",
+              zIndex: active === sign.slug ? 1 : 0,
+              height: tuning.height,
+              width: tuning.height * sign.aspect,
+              transformOrigin: "50% 50%",
+              // Hard cuts only — the walk writes transform/opacity on the
+              // beat and nothing may ease between them.
+              transition: "none",
+              outline: "none",
+              // Stagger of the mount entrance (see rs-sign-enter).
+              animationDelay: `${motion.lead + i * motion.stagger}ms`,
+            }}
           >
-            <CardPanel sign={sign} />
+            {/* eslint-disable-next-line @next/next/no-img-element -- static pre-sized WebP with imperative transforms; the Next optimizer adds nothing here */}
+            <img
+              src={sign.src}
+              alt=""
+              draggable={false}
+              decoding="async"
+              // No preload hint: React would otherwise hoist a
+              // <link rel=preload> for every sign into the page head, and
+              // on the landing the stack is a screen below the cartel,
+              // whose front frame is the largest paint. The boxes are
+              // pre-sized and the walk never waits on the photos, so they
+              // can come in behind the critical set.
+              fetchPriority="low"
+              style={{
+                display: "block",
+                width: "100%",
+                height: "100%",
+                userSelect: "none",
+              }}
+            />
           </a>
         ))}
       </div>
+
+      {/* The rope. Geometry is written by drawRope; the fade is CSS. */}
+      <svg
+        ref={(el) => registerRope("svg", el)}
+        className="rs-rope"
+        aria-hidden
+      >
+        <path ref={(el) => registerRope("path", el)} />
+        <circle ref={(el) => registerRope("start", el)} r={4} />
+        <circle ref={(el) => registerRope("end", el)} r={4} />
+      </svg>
+
+      {/* One card per project, all mounted; showProject toggles
+            is-active and the stylesheet does the pop. */}
+      {SIGNS.map((sign) => (
+        <a
+          key={sign.slug}
+          ref={(el) => registerCard(sign.slug, el)}
+          className={`rs-card is-${sign.card.media}`}
+          href={sign.href}
+          // The clay cursor reads this: a small "open" tag rides beside
+          // the hand while the pointer is over the card.
+          data-cursor-label="open"
+          aria-label={`Open ${sign.title}`}
+          aria-hidden="true"
+          tabIndex={-1}
+          style={{ top: geo.cardTop }}
+          onPointerEnter={() => cancelHide(engine)}
+          onPointerLeave={() => scheduleHide(engine, tuning.hideFromCard)}
+          onPointerMove={(ev) => nudgeSag(engine, ev.currentTarget, ev.clientY)}
+          onClick={() => play("knock")}
+        >
+          <CardPanel sign={sign} />
+        </a>
+      ))}
+    </div>
+  );
+
+  return (
+    <>
+      <style>{CARD_CSS}</style>
+      {signsBox ? (
+        <div
+          style={{
+            position: "relative",
+            width: signsBox.w,
+            height: signsBox.h,
+          }}
+        >
+          {stage}
+        </div>
+      ) : (
+        stage
+      )}
 
       {controls && (
         <div
@@ -1610,6 +1691,39 @@ export default function RoadSigns({
             summary="the sag spring and the delays"
           >
             {ROPE_FIELDS.map(slider)}
+          </Section>
+
+          <Section title="Sound" summary="taps, slides, knocks, letters">
+            {SOUND_FIELDS.map((f) => (
+              <TuneSlider
+                key={f.key}
+                label={f.label}
+                hint={f.hint}
+                min={f.min}
+                max={f.max}
+                step={f.step}
+                unit={f.unit}
+                value={sound[f.key]}
+                onChange={(v) => setSoundTuning({ [f.key]: v })}
+              />
+            ))}
+            <div style={{ display: "flex", gap: 6, flexWrap: "wrap" }}>
+              {(["cut", "tap", "knock", "slide", "slideOut", "letter"] as const).map(
+                (name) => (
+                  <button
+                    key={name}
+                    type="button"
+                    onClick={() => play(name)}
+                    style={btn}
+                  >
+                    ▶ {name}
+                  </button>
+                ),
+              )}
+              <button type="button" onClick={resetSoundTuning} style={btn}>
+                Reset sound
+              </button>
+            </div>
           </Section>
 
           <div

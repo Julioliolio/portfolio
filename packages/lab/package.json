@@ -8,7 +8,11 @@
     "./registry": "./src/registry.ts",
     "./loaders": "./src/loaders.ts",
     "./cursor-tuning": "./src/cursor-tuning.ts",
-    "./motion": "./src/motion.tsx"
+    "./motion": "./src/motion.tsx",
+    "./cue": "./src/cue.tsx",
+    "./greeting": "./src/greeting.tsx",
+    "./hello": "./src/hello.tsx",
+    "./sound": "./src/sound.tsx"
   },
   "scripts": {
     "typecheck": "tsc --noEmit"

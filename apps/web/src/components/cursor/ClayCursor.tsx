@@ -32,6 +32,12 @@ import { useEffect, useRef } from "react";
  * variant's frames at its hotspot (arrow tip / index fingertip) and pads
  * them to identical dimensions, so swapping frames never moves the hotspot.
  *
+ * Over an element carrying `data-cursor-label` a small tag with that text
+ * rides beside the hand — cut in with the site's pop entrance (the sm-pop
+ * keyframes from @portfolio/lab/motion, in the document via the root
+ * layout), cut off the moment the pointer leaves. The landing's project
+ * cards say "open".
+ *
  * Both variants are always mounted, stacked with their hotspots on the same
  * point. The arrow<->hand change is a short crossfade with a squish dip at
  * the midpoint, so the clay reads as re-forming rather than being cut to a
@@ -59,18 +65,26 @@ const POINTER_FRAMES = Array.from({ length: 5 }, (_, i) =>
 const INTERACTIVE =
   "a,button,[role=button],label,select,summary,[data-cursor=pointer]";
 
+// The label: a small ink-on-wall tag in the mono cut, growing from its
+// left edge (next to the hand) when it pops in.
+const LABEL_CSS = `
+.clay-cursor-label { position: absolute; display: none; padding: 5px 9px; border: 1px solid #2b2722; border-radius: 999px; background: #faf9f6; color: #2b2722; font: 500 11px/1 var(--font-neue-montreal-mono), ui-monospace, Menlo, monospace; letter-spacing: .08em; text-transform: uppercase; white-space: nowrap; transform-origin: 0 50%; box-shadow: 0 2px 6px rgba(0, 0, 0, .12); }
+`;
+
 type Variant = "arrow" | "pointer";
 
 export function ClayCursor() {
   const rootRef = useRef<HTMLDivElement>(null);
   const arrowRef = useRef<HTMLImageElement>(null);
   const pointerRef = useRef<HTMLImageElement>(null);
+  const labelRef = useRef<HTMLSpanElement>(null);
 
   useEffect(() => {
     const root = rootRef.current;
     const arrowImg = arrowRef.current;
     const pointerImg = pointerRef.current;
-    if (!root || !arrowImg || !pointerImg) return;
+    const labelEl = labelRef.current;
+    if (!root || !arrowImg || !pointerImg || !labelEl) return;
 
     const reducedMotion = window.matchMedia("(prefers-reduced-motion: reduce)");
 
@@ -78,7 +92,11 @@ export function ClayCursor() {
 
     const layers: Record<
       Variant,
-      { img: HTMLImageElement; frames: string[]; hotspot: { x: number; y: number } }
+      {
+        img: HTMLImageElement;
+        frames: string[];
+        hotspot: { x: number; y: number };
+      }
     > = {
       arrow: { img: arrowImg, frames: ARROW_FRAMES, hotspot: ARROW_HOTSPOT },
       pointer: {
@@ -105,6 +123,9 @@ export function ClayCursor() {
     let target: Variant = "arrow";
     let blend = 0;
     let drawnBlend = -1;
+    // The tag beside the hand; null while the pointer is over nothing
+    // labelled.
+    let label: string | null = null;
 
     let frameIdx = 0;
     let boilAcc = 0; // seconds accumulated toward the next boil frame
@@ -124,6 +145,9 @@ export function ClayCursor() {
     }
 
     function applySizes() {
+      // The tag sits off the hand's lower right, clear of the finger.
+      labelEl!.style.left = `${tuning.size * 0.62}px`;
+      labelEl!.style.top = `${tuning.size * 0.98}px`;
       for (const v of ["arrow", "pointer"] as const) {
         const size = displaySize(v);
         const { img } = layers[v];
@@ -154,6 +178,27 @@ export function ClayCursor() {
       }
     }
 
+    /** The label an element asks for, if any. */
+    function labelOf(el: Element | null): string | null {
+      return (
+        el?.closest("[data-cursor-label]")?.getAttribute("data-cursor-label") ||
+        null
+      );
+    }
+
+    /** Swaps the tag. A new text pops in from its first pose: the tag is
+     *  hidden and shown again across a reflow, which restarts its
+     *  animation; no text cuts it off at once. */
+    function applyLabel(next: string | null) {
+      if (next === label) return;
+      label = next;
+      labelEl!.style.display = "none";
+      if (!next) return;
+      labelEl!.textContent = next;
+      void labelEl!.offsetWidth;
+      labelEl!.style.display = "block";
+    }
+
     function show() {
       if (visible) return;
       visible = true;
@@ -178,6 +223,7 @@ export function ClayCursor() {
       show();
       const el = eventTarget instanceof Element ? eventTarget : null;
       target = el?.closest(INTERACTIVE) ? "pointer" : "arrow";
+      applyLabel(labelOf(el));
     }
 
     const press = () => {
@@ -195,6 +241,14 @@ export function ClayCursor() {
     window.addEventListener("pointerup", release, { passive: true });
     document.documentElement.addEventListener("mouseleave", hide);
     window.addEventListener("blur", hide);
+    // A card that leaves under a still pointer (the road signs drop
+    // theirs on a timer) must take its tag with it.
+    const onOut = (e: PointerEvent) => {
+      applyLabel(
+        e.relatedTarget instanceof Element ? labelOf(e.relatedTarget) : null,
+      );
+    };
+    window.addEventListener("pointerout", onOut, { passive: true });
 
     // --- same-origin iframe wiring ---
     const wiredDocs = new WeakSet<Document>();
@@ -293,7 +347,8 @@ export function ClayCursor() {
           // smaller set guarantees each layer's `idx % length` changes on
           // every beat, so neither variant ever holds the same pose twice.
           const count = Math.min(ARROW_FRAMES.length, POINTER_FRAMES.length);
-          if (count > 1) frameIdx += 1 + Math.floor(Math.random() * (count - 1));
+          if (count > 1)
+            frameIdx += 1 + Math.floor(Math.random() * (count - 1));
           applyFrames();
         }
       }
@@ -380,6 +435,7 @@ export function ClayCursor() {
       window.removeEventListener("pointermove", onWindowMove);
       window.removeEventListener("pointerdown", press);
       window.removeEventListener("pointerup", release);
+      window.removeEventListener("pointerout", onOut);
       window.removeEventListener("blur", hide);
       document.documentElement.removeEventListener("mouseleave", hide);
       document.documentElement.classList.remove("clay-cursor");
@@ -402,6 +458,7 @@ export function ClayCursor() {
       className="pointer-events-none fixed top-0 left-0 opacity-0"
       style={{ zIndex: 2147483647 }}
     >
+      <style>{LABEL_CSS}</style>
       {/* eslint-disable-next-line @next/next/no-img-element -- tiny asset, transforms every frame; next/image adds nothing here */}
       <img
         ref={arrowRef}
@@ -422,6 +479,8 @@ export function ClayCursor() {
           opacity: 0,
         }}
       />
+      {/* The pop (sm-enter sm-pop) plays each time the tag is shown. */}
+      <span ref={labelRef} className="clay-cursor-label sm-enter sm-pop" />
     </div>
   );
 }

@@ -9,6 +9,16 @@ import {
   type SetStateAction,
 } from "react";
 import { asset } from "../../asset";
+import { replayClass } from "../../motion";
+import {
+  SOUND_FIELDS,
+  getSoundTuning,
+  play,
+  resetSoundTuning,
+  setSoundTuning,
+  useSoundTuning,
+  type SoundTuning,
+} from "../../sound";
 
 /**
  * Cartel: a photographed lightbox street sign that "looks at" the pointer.
@@ -57,24 +67,16 @@ import { asset } from "../../asset";
  * SpinCurveEditor).
  *
  * The sign has two faces: "julio" (Julio Romero, the full angle grid) and
- * "about" (About me, front + one returning angle). Hovering the sign spins
- * it to the About face; hovering off spins it back. The swap happens
- * mid-spin while the back frames show — no text is visible there, so the
- * turn starts reading one name and lands reading the other. While hovered
- * the sign holds front (About) with the idle bob; pointer tracking is
- * gated off. A hover change during a spin queues the reverse spin for
- * when the current one finishes. The click flourish stays and keeps
- * whatever face it started on (external buttons will trigger transitions
- * later — the hover pair is the interaction seam). Any spin landing on
- * the julio face comes out already IN the pointer-tracked pose (see
- * landingCell) rather than landing front and walking there.
- *
- * The hover hitbox is not the sign's box: entering requires the central
- * plus shape (a vertical and a horizontal band crossing at the center, the
- * four corners dead), so a pointer skimming across an edge or corner on
- * its way elsewhere doesn't flip the sign. Once engaged, the hover only
- * releases outside the whole box plus a margin — roaming the sign can't
- * strobe it (see HOVER_*).
+ * "about" (About me, front + one returning angle). The click flourish is
+ * the flip between them: the swap happens mid-spin while the back frames
+ * show — no text is visible there, so the turn starts reading one name
+ * and lands reading the other. Landed on About, the sign holds front with
+ * the idle bob (pointer tracking gated off) for ABOUT_HOLD_MS, then flips
+ * back to Julio the same way. A click during the hold brings it back
+ * early; clicks during a spin are ignored, not stacked. Any spin landing
+ * on the julio face comes out already IN the pointer-tracked pose (see
+ * landingCell) rather than landing front and walking there. Hovering the
+ * sign does nothing to its face — under the pointer it only turns to look.
  *
  * Inputs: pointer inside a circle of attention around the sign (outside it
  * the sign faces front and ignores the pointer), gyroscope on touch devices
@@ -143,19 +145,10 @@ const INVERT_Y = false;
 const POINTER_RADIUS = 2;
 const RADIUS_EXIT = 1.12;
 
-// The hover hitbox for the face transition, in normalized container
-// coordinates (0..1 across each axis). Entering demands intent: only the
-// central plus shape counts — a vertical band (half-width BAND_X) running
-// the height minus CAP_Y at each end, crossed by a horizontal band
-// (half-height BAND_Y) running the width minus CAP_X at each side. The
-// four corners are dead, so skimming past the sign's edge on the way
-// somewhere else doesn't spin it. Leaving is generous: the hover holds
-// until the pointer exits the whole box grown by EXIT on every side.
-const HOVER_BAND_X = 0.25; // vertical band: central 50% of the width
-const HOVER_BAND_Y = 0.22; // horizontal band: central 44% of the height
-const HOVER_CAP_Y = 0.05; // vertical band's inset from top/bottom edges
-const HOVER_CAP_X = 0.07; // horizontal band's inset from left/right edges
-const HOVER_EXIT = 0.08; // release margin around the full box
+// How long the sign rests on the About face after a click before it flips
+// back to Julio — long enough to read "About me", short enough that the
+// sign doesn't feel stuck.
+const ABOUT_HOLD_MS = 1500;
 
 // Both axes quantize to 5 levels: |n| below B0 is 0, between B0 and B1 a
 // half (±1), past B1 full (±2). HYST is the margin a value must clear beyond
@@ -879,16 +872,28 @@ function sliders<T extends object>(
   ));
 }
 
+/** The sound store, shaped like a state setter so `sliders` can drive it. */
+function setSoundState(update: SetStateAction<SoundTuning>) {
+  setSoundTuning(
+    typeof update === "function" ? update(getSoundTuning()) : update,
+  );
+}
+
+/** The panel's push buttons: Spin, and the sound previews. */
+const panelBtn = {
+  padding: "6px 0",
+  borderRadius: 8,
+  border: "1px solid rgba(128, 128, 128, 0.4)",
+  background: "rgba(255, 255, 255, 0.08)",
+  color: "#fff",
+  fontSize: 11,
+  cursor: "pointer",
+} as const;
+
 // A collapsible group in the tuning panel. Every group starts closed so
 // the panel reads as a short table of contents; open only what's being
 // tuned. Plain local state — nothing outside the panel cares.
-function Section({
-  title,
-  children,
-}: {
-  title: string;
-  children: ReactNode;
-}) {
+function Section({ title, children }: { title: string; children: ReactNode }) {
   const [open, setOpen] = useState(false);
   return (
     <div
@@ -1142,6 +1147,9 @@ function SpinCurveEditor({
  */
 const ENTRANCE_CSS = `
 .cartel-enter { animation: sm-drop var(--sm-duration, .38s) steps(1, end) backwards; transform-origin: 50% 60%; }
+/* entrance="held": revealed but not yet released — out of sight until
+   the first replay puts cartel-enter on. */
+.cartel-held { visibility: hidden; }
 @media (prefers-reduced-motion: reduce) { .cartel-enter { animation-duration: .01ms; } }
 `;
 
@@ -1152,6 +1160,10 @@ export default function Cartel({
   bob: bobOverride,
   glideFps = 0,
   entrance = true,
+  radius: radiusOverride = POINTER_RADIUS,
+  placeholder = true,
+  onEntrance,
+  replay = 0,
 }: {
   /** CSS height of the sign; width follows via the frame aspect ratio. */
   height?: string;
@@ -1174,11 +1186,38 @@ export default function Cartel({
    * in through hard cuts (cartel-enter) — from above, small and tilted;
    * past its mark, wide and short; a hair narrow; rest — on a wrapper
    * around the stack, so the walker's own transform is untouched.
+   * "held" decodes the frames but keeps the sign out of sight until the
+   * first `replay` bump, which then plays the entrance — for a page that
+   * sequences the sign after something else. Later bumps replay as usual.
    */
-  entrance?: boolean;
+  entrance?: boolean | "held";
+  /**
+   * The circle of attention: how far from its center, in sign widths,
+   * the pointer still drives the sign (POINTER_RADIUS by default; the
+   * full turn lives at the circle's edge). "page" makes the whole
+   * viewport the zone: the pointer drives the sign wherever it is on the
+   * page, the full turn lives at the page's edges (normalized per axis,
+   * so the far left of the page is the full left turn whatever the
+   * aspect), and only leaving the window lets go.
+   */
+  radius?: number | "page";
+  /** Show the blurred front while the frames decode. Off for a wall that
+   *  should stay bare until the stamp. */
+  placeholder?: boolean;
+  /** Called the moment the sign appears (the stamp's first cut; at once in
+   *  reduced mode) — for a page that sequences other entrances after it. */
+  onEntrance?: () => void;
+  /**
+   * Bump to play the entrance again in place — the sign is not torn down
+   * and rebuilt, its stamp-in just restarts from the first pose, so a
+   * page that brings the sign back into view can replay it with no dead
+   * frames. Frames, walker and pointer state are untouched.
+   */
+  replay?: number;
 } = {}) {
   const [mode, setMode] = useState<Mode>("pending");
   const [phase, setPhase] = useState<"loading" | "ready">("loading");
+  const soundTuning = useSoundTuning();
   // cur is the shown photo; ghost is the outgoing photo, kept translucent
   // for one walker tick after a cut (the echo).
   const [shown, setShown] = useState<{ cur: string; ghost: string | null }>({
@@ -1192,7 +1231,7 @@ export default function Cartel({
   // Radius of the circle of attention, in sign widths. Read inside the input
   // handlers through a ref so dragging the slider retunes the live zone
   // without tearing the effect down; `inRange` only drives the lab overlay.
-  const [radius, setRadius] = useState(POINTER_RADIUS);
+  const [radius, setRadius] = useState<number | "page">(radiusOverride);
   const [inRange, setInRange] = useState(false);
   const radiusRef = useRef(radius);
   useEffect(() => {
@@ -1255,6 +1294,38 @@ export default function Cartel({
   // reduced mode, so clicks are inert there for free.
   const playSpinRef = useRef<((onComplete?: () => void) => void) | null>(null);
 
+  // Read when the sign appears, through a ref, so the effects below
+  // don't re-run on a parent's re-render.
+  const onEntranceRef = useRef(onEntrance);
+  useEffect(() => {
+    onEntranceRef.current = onEntrance;
+  }, [onEntrance]);
+
+  // The sign appears once its front frame is in and it is released — at
+  // once, or for entrance="held" by the first `replay` bump; that is when
+  // the entrance wrapper (see cartel-enter) puts its class on and plays
+  // from the first pose. Later bumps restart the animation in place.
+  const enterRef = useRef<HTMLDivElement>(null);
+  const [released, setReleased] = useState(entrance !== "held");
+  const appeared = phase === "ready" && released;
+  useEffect(() => {
+    if (appeared) onEntranceRef.current?.();
+  }, [appeared]);
+  useEffect(() => {
+    if (replay === 0) return;
+    if (!released) {
+      setReleased(true);
+      return;
+    }
+    const el = enterRef.current;
+    if (!el || !el.classList.contains("cartel-enter")) return;
+    replayClass(el, "cartel-enter");
+    onEntranceRef.current?.();
+    // `released` is read here, not watched: its flip is the release
+    // above, not a replay.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [replay]);
+
   useEffect(() => {
     if (window.matchMedia("(prefers-reduced-motion: reduce)").matches) {
       setMode("reduced");
@@ -1278,6 +1349,9 @@ export default function Cartel({
     let ticker: number | null = null;
     let cutStretch: Axes = { x: 0, y: 0 };
     let cutClear: number | undefined;
+    // Cuts tick (see ../../sound) unless the walk was set by the idle
+    // look-around — the sign shouldn't click at nobody.
+    let walkSilent = false;
 
     function stopTicker() {
       if (ticker != null) {
@@ -1324,6 +1398,7 @@ export default function Cartel({
       current = next;
       // The cut, plus its one-tick echo and axis-aligned smear stretch.
       setShown({ cur: keyOf(current), ghost: keyOf(prev) });
+      if (!walkSilent) play("cut");
       cutStretch = {
         x: current.col !== prev.col ? CUT_SMEAR * bobSmearRef.current : 0,
         y: current.row !== prev.row ? CUT_SMEAR * bobSmearRef.current : 0,
@@ -1480,6 +1555,9 @@ export default function Cartel({
     // front — until the sheet's first non-front exposure (the windup) or
     // liftoff, so the sign never holds on front before the launch.
     let spinTookOver = false;
+    // Whether the last exposure had the sign off the ground — the
+    // landing sound fires on the air-to-ground edge.
+    let spinAirborne = false;
     let spinDone: (() => void) | null = null;
 
     // The face pair a running spin resolves its exposures against: the
@@ -1488,17 +1566,26 @@ export default function Cartel({
     let face: Face = "julio";
     let spinFromFace: Face = "julio";
     let spinToFace: Face = "julio";
-    // Whether the pointer is over the sign itself (not the circle of
-    // attention). Drives which face the sign should be resting on.
-    let hovered = false;
+    // Whether the sign has been clicked over to the About face. Drives
+    // which face the sign should be resting on; the hold timer clears it.
+    let flipped = false;
+    let holdTimer: number | null = null;
 
-    const desiredFace = (): Face => (hovered ? "about" : "julio");
+    const desiredFace = (): Face => (flipped ? "about" : "julio");
+
+    function clearHold() {
+      if (holdTimer != null) {
+        window.clearTimeout(holdTimer);
+        holdTimer = null;
+      }
+    }
 
     function startSpin(toFace: Face, onComplete?: () => void) {
       // Re-triggers during a spin are ignored, not stacked — finishSpin
-      // re-checks the desired face, so a hover change mid-spin queues the
+      // re-checks the desired face, so a flip change mid-spin queues the
       // reverse instead of firing ~1.5s late and reading as a glitch.
       if (!revealed || spinPhase !== "none") return;
+      play("knock");
       spinDone = onComplete ?? null;
       spinFromFace = face;
       spinToFace = toFace;
@@ -1510,16 +1597,37 @@ export default function Cartel({
       startSheet();
     }
 
-    // The click/button flourish: a full turn that keeps the current face.
+    // The click/button flourish: flip to the other face. Resting on
+    // Julio it turns to About (and the hold, set on landing, turns it
+    // back); resting on About it turns back now. Mid-spin it is ignored.
     function playSpin(onComplete?: () => void) {
-      startSpin(face, onComplete);
+      if (!revealed || spinPhase !== "none") return;
+      clearHold();
+      flipped = !flipped;
+      startSpin(desiredFace(), onComplete);
     }
 
-    // Spin toward the hovered-or-not face if the sign isn't already there
-    // (or already turning; finishSpin calls back here for the queue).
+    // Spin toward the wanted face if the sign isn't already there (or
+    // already turning; finishSpin calls back here for the queue).
     function syncFace() {
       if (spinPhase !== "none") return;
       if (face !== desiredFace()) startSpin(desiredFace());
+    }
+
+    // The zone the pointer is measured against, resolved per event: the
+    // circle in px (grown by EXIT while engaged so its edge doesn't
+    // strobe) or, for radius="page", the viewport — half its width and
+    // height as the axes, and no edge to fall out of.
+    function zone(): { limit: number; rx: number; ry: number } {
+      if (radiusRef.current === "page") {
+        return {
+          limit: Infinity,
+          rx: window.innerWidth / 2,
+          ry: window.innerHeight / 2,
+        };
+      }
+      const r = signWidth * radiusRef.current;
+      return { limit: engaged ? r * RADIUS_EXIT : r, rx: r, ry: r };
     }
 
     // The cell a julio-landing spin should come out on: the live quantized
@@ -1527,18 +1635,18 @@ export default function Cartel({
     // instead of defaulting to front and walking there. Fresh quantize —
     // faceFront zeroed the hysteresis levels at launch, so prev=0 matches
     // what the first processPointer after the spin will compute. Falls
-    // back to front when the pointer is gone or outside the circle (and
+    // back to front when the pointer is gone or outside the zone (and
     // in gyro mode, where pointerLast never exists).
     function landingCell(): Cell {
       if (!pointerLast || !center || !signWidth) return FRONT;
-      const radius = signWidth * radiusRef.current;
+      const { limit, rx, ry } = zone();
       const dx = pointerLast.x - center.x;
       const dy = pointerLast.y - center.y;
-      if (Math.hypot(dx, dy) > (engaged ? radius * RADIUS_EXIT : radius)) {
+      if (Math.hypot(dx, dy) > limit) {
         return FRONT;
       }
-      const ax = (INVERT_X ? -dx : dx) / radius;
-      const ay = (INVERT_Y ? -dy : dy) / radius;
+      const ax = (INVERT_X ? -dx : dx) / rx;
+      const ay = (INVERT_Y ? -dy : dy) / ry;
       return snapCell(
         quantize5(ax, 0, POINTER_B0, POINTER_B1, POINTER_HYST),
         quantize5(ay, 0, POINTER_B0, POINTER_B1, POINTER_HYST),
@@ -1556,6 +1664,7 @@ export default function Cartel({
       spinSheet = makeSpinSheet(params);
       spinLastKey = null;
       spinTookOver = cellId(current) === cellId(FRONT);
+      spinAirborne = false;
       // The bob hands over: its interval stops and any residual offset
       // decays tick by tick in stepSheet, so the crouch starts from the
       // float's current height instead of popping to zero. The glide keeps
@@ -1612,7 +1721,13 @@ export default function Cartel({
       if (spinTookOver && key !== spinLastKey) {
         setShown({ cur: key, ghost: null });
         spinLastKey = key;
+        play("cut");
       }
+      // Touchdown: the first grounded exposure after the air is the
+      // landing, a softer knock than the launch.
+      const airborne = exposure.jumpY < -0.001;
+      if (spinAirborne && !airborne) play("knock", 0.6);
+      spinAirborne = airborne;
       spinScaleX = exposure.squashX;
       spinJumpY = exposure.jumpY;
       spinStretchY = exposure.stretchY;
@@ -1663,17 +1778,27 @@ export default function Cartel({
       const done = spinDone;
       spinDone = null;
       done?.();
-      // The hover state may have flipped mid-spin: play the queued reverse
-      // back-to-back instead of resting on the wrong face.
+      // The wanted face may have changed mid-spin (a hidden tab, say):
+      // play the queued reverse back-to-back instead of resting wrong.
       if (face !== desiredFace()) {
         startSpin(desiredFace());
         return;
       }
       startBob();
+      if (face === "about") {
+        // Landed on About: rest there, then flip back. A hidden tab can't
+        // run a spin — onVisibility's syncFace plays the return instead.
+        clearHold();
+        holdTimer = window.setTimeout(() => {
+          holdTimer = null;
+          flipped = false;
+          if (!document.hidden) syncFace();
+        }, ABOUT_HOLD_MS);
+        return;
+      }
       // Re-engage tracking from wherever the pointer is now: moves kept
-      // recording during the spin, only their processing was gated. While
-      // hovered there is nothing to re-engage — the sign holds front.
-      if (!hovered && pointerLast) requestProcess();
+      // recording during the spin, only their processing was gated.
+      if (pointerLast) requestProcess();
     }
 
     // Shared by visibilitychange and unmount: no resume side effects.
@@ -1682,11 +1807,19 @@ export default function Cartel({
       spinDone = null;
     }
 
-    playSpinRef.current = playSpin;
+    // The spin needs its own frames: inert until the whole set is in.
+    playSpinRef.current = (onComplete) => {
+      if (armed) playSpin(onComplete);
+    };
 
     // Single entry point for all inputs: quantized cell for the walker plus
     // (optionally raw) axes for the glide.
-    function setTarget(cell: Cell, rawAxes: Axes = cellAxes(cell)) {
+    function setTarget(
+      cell: Cell,
+      rawAxes: Axes = cellAxes(cell),
+      silent = false,
+    ) {
+      walkSilent = silent;
       axesTarget = rawAxes;
       if (raf == null) raf = requestAnimationFrame(glide);
       target = cell;
@@ -1707,7 +1840,7 @@ export default function Cartel({
         if (spinPhase !== "none") return; // pause, don't skip ahead
         idleIndex = (idleIndex + 1) % IDLE_SEQUENCE.length;
         const next = IDLE_SEQUENCE[idleIndex];
-        if (next) setTarget(next);
+        if (next) setTarget(next, undefined, true);
       }, IDLE_STEP_MS);
     }
 
@@ -1780,50 +1913,20 @@ export default function Cartel({
       if (pointerLast) requestProcess();
     }
 
-    // Geometric hover, not DOM pointerenter: entering needs the central
-    // plus shape (intent), leaving needs the whole box plus a margin
-    // (hold). Runs off the same processed pointer stream as tracking, and
-    // keeps running during spins so a mid-spin change queues the reverse.
-    function updateHover(u: number, v: number) {
-      const inBox =
-        u >= -HOVER_EXIT &&
-        u <= 1 + HOVER_EXIT &&
-        v >= -HOVER_EXIT &&
-        v <= 1 + HOVER_EXIT;
-      const inCross =
-        (Math.abs(u - 0.5) <= HOVER_BAND_X &&
-          v >= HOVER_CAP_Y &&
-          v <= 1 - HOVER_CAP_Y) ||
-        (Math.abs(v - 0.5) <= HOVER_BAND_Y &&
-          u >= HOVER_CAP_X &&
-          u <= 1 - HOVER_CAP_X);
-      const next = hovered ? inBox : inCross;
-      if (next !== hovered) {
-        hovered = next;
-        syncFace();
-      }
-    }
-
     function processPointer() {
       if (!pointerLast) return;
       pointerProcessedAt = performance.now();
       if (measureDirty) measure();
       if (!center || !signWidth || !signHeight) return;
-      updateHover(
-        (pointerLast.x - center.x) / signWidth + 0.5,
-        (pointerLast.y - center.y) / signHeight + 0.5,
-      );
       // During a spin the pointer keeps recording (pointerLast) but must
       // not retarget the walker; finishSpin re-processes the last position.
       if (spinPhase !== "none") return;
-      // While hovered the sign holds front on the About face — tracking
-      // would swap Julio grid photos back in.
-      if (hovered) return;
-      const radius = signWidth * radiusRef.current;
+      // Flipped to About the sign holds front — tracking would swap Julio
+      // grid photos back in.
+      if (flipped) return;
+      const { limit, rx, ry } = zone();
       const dx = pointerLast.x - center.x;
       const dy = pointerLast.y - center.y;
-      // Grown by EXIT while engaged so the boundary doesn't strobe.
-      const limit = engaged ? radius * RADIUS_EXIT : radius;
       if (Math.hypot(dx, dy) > limit) {
         if (engaged) {
           engaged = false;
@@ -1836,10 +1939,10 @@ export default function Cartel({
         engaged = true;
         setInRange(true);
       }
-      // Normalized against the radius: the full turn lives at the circle's
-      // edge, whatever size the zone is dialed to.
-      const x = dx / radius;
-      const y = dy / radius;
+      // Normalized against the zone: the full turn lives at its edge,
+      // whatever size it is dialed to.
+      const x = dx / rx;
+      const y = dy / ry;
       const ax = INVERT_X ? -x : x;
       const ay = INVERT_Y ? -y : y;
       colLevel = quantize5(ax, colLevel, POINTER_B0, POINTER_B1, POINTER_HYST);
@@ -1856,17 +1959,15 @@ export default function Cartel({
       setTarget(FRONT);
     }
 
-    // Leaving the window or the document counts as leaving the circle (and
-    // the sign — pointerleave doesn't fire on tab switches). The stored
-    // pointer is dropped so a later scroll can't re-engage from a position
-    // the pointer no longer occupies.
+    // Leaving the window or the document counts as leaving the circle. The
+    // stored pointer is dropped so a later scroll can't re-engage from a
+    // position the pointer no longer occupies. A flip in progress or on
+    // hold is untouched — it was asked for, and the hold sees it home.
     function disengage() {
       engaged = false;
       pointerLast = null;
-      hovered = false;
       setInRange(false);
       faceFront();
-      syncFace();
     }
 
     function onDocumentLeave(event: MouseEvent) {
@@ -1969,39 +2070,53 @@ export default function Cartel({
         axes = { ...axesTarget };
         writeTransform();
         if (revealed) startBob();
-        // The pointer may still be over the sign (no pointerleave fires on
-        // tab switches): replay any transition the cancel swallowed.
+        // Replay any flip the cancel swallowed (or whose hold ran out
+        // while hidden).
         syncFace();
       }
     }
 
     // --- preload: decode every frame before revealing the stack ---
 
+    // The sign shows as soon as its front frame is in — the stamp plays
+    // on that one photo — while the rest of the set keeps decoding; the
+    // pointer walk (and the spin, which needs its own frames) arm once
+    // every frame is in. On a warm cache both happen within a beat; on a
+    // cold one the sign is up hundreds of ms before it starts to turn,
+    // instead of the wall staying bare that long.
     let revealed = false;
+    let armed = false;
 
     function reveal() {
       if (revealed || disposed) return;
       revealed = true;
       setPhase("ready");
-      startInput();
       startBob();
     }
 
-    Promise.all(
-      ALL_KEYS.map((key) =>
-        imgRefs.current
-          .get(key)
-          ?.decode()
-          .catch(() => undefined),
-      ),
-    ).then(reveal);
+    function arm() {
+      if (armed || disposed) return;
+      armed = true;
+      reveal();
+      startInput();
+    }
+
+    const decodeOf = (key: string) =>
+      imgRefs.current
+        .get(key)
+        ?.decode()
+        .catch(() => undefined);
+
+    decodeOf("front")?.then(reveal);
+    Promise.all(ALL_KEYS.map(decodeOf)).then(arm);
     // A stalled frame can't wedge the sign.
-    const revealTimer = window.setTimeout(reveal, 4000);
+    const revealTimer = window.setTimeout(arm, 4000);
 
     document.addEventListener("visibilitychange", onVisibility);
 
     return () => {
       disposed = true;
+      clearHold();
       cancelSpin();
       stopTicker();
       stopIdle();
@@ -2029,7 +2144,8 @@ export default function Cartel({
   // the height prop so the same values read identically at any render size.
   // React only diffs the properties it owns, so updating `filter` here never
   // disturbs the imperatively-written transform on the same element.
-  const shadowLen = (v: number) => `calc((${height}) * ${(v / 100).toFixed(4)})`;
+  const shadowLen = (v: number) =>
+    `calc((${height}) * ${(v / 100).toFixed(4)})`;
   const shadowFilter =
     shadow.opacity > 0
       ? `drop-shadow(${shadowLen(shadow.x)} ${shadowLen(shadow.y)} ${shadowLen(shadow.blur)} rgba(0, 0, 0, ${shadow.opacity}))`
@@ -2049,7 +2165,7 @@ export default function Cartel({
           it rides with the slider panel. Sized in % of the container width
           (aspectRatio keeps it round) so it tracks the same sign-width unit
           the pointer math uses. */}
-      {controls && showFrames && (
+      {controls && showFrames && typeof radius === "number" && (
         <div
           aria-hidden
           style={{
@@ -2082,7 +2198,7 @@ export default function Cartel({
         }}
         role="button"
         tabIndex={0}
-        aria-label="Spin the sign"
+        aria-label="Flip the sign"
         onClick={() => playSpinRef.current?.()}
         onKeyDown={(e) => {
           if (e.key === "Enter" || e.key === " ") {
@@ -2096,100 +2212,111 @@ export default function Cartel({
             preserve-3d keeps the stack's rotateX/Y in the perspective
             above while the wrapper's own transform is in play. */}
         <div
-          className={entrance && phase === "ready" ? "cartel-enter" : undefined}
+          ref={enterRef}
+          className={
+            !entrance || phase !== "ready"
+              ? undefined
+              : released
+                ? "cartel-enter"
+                : "cartel-held"
+          }
           style={{
             position: "absolute",
             inset: 0,
             transformStyle: "preserve-3d",
           }}
         >
-        <div
-          ref={stackRef}
-          style={{
-            position: "absolute",
-            inset: 0,
-            willChange: "transform",
-            filter: shadowFilter,
-          }}
-        >
-          {/* eslint-disable @next/next/no-img-element -- preloaded stacked frames swapped at 12fps; the Next optimizer adds nothing for pre-sized static WebP and would break decode-before-reveal */}
-          <img
-            src={srcOf("front-blur")}
-            alt=""
-            aria-hidden
-            draggable={false}
+          <div
+            ref={stackRef}
             style={{
               position: "absolute",
               inset: 0,
-              width: "100%",
-              height: "100%",
-              objectFit: "contain",
-              opacity: phase === "loading" ? 1 : 0,
-              transition: "opacity 300ms",
+              willChange: "transform",
+              filter: shadowFilter,
             }}
-          />
-          {(showFrames ? ALL_KEYS : ["front"]).map((key) => (
-            <img
-              key={key}
-              ref={(el) => {
-                if (el) imgRefs.current.set(key, el);
-                else imgRefs.current.delete(key);
-              }}
-              src={srcOf(key)}
-              alt={key === "front" ? "Julio Romero — lightbox street sign" : ""}
-              draggable={false}
-              style={{
-                position: "absolute",
-                inset: 0,
-                width: "100%",
-                height: "100%",
-                objectFit: "contain",
-                // Hard cuts on purpose: no transition — this is the stop
-                // motion. The ghost is the outgoing photo's one-tick echo,
-                // painted above the incoming one so the double image reads.
-                opacity:
-                  phase !== "ready"
-                    ? 0
-                    : shown.cur === key
-                      ? 1
-                      : shown.ghost === key
-                        ? bobParams.echo
-                        : 0,
-                zIndex: shown.ghost === key ? 2 : 1,
-              }}
-            />
-          ))}
-          {/* The glow (see GlowParams): a blurred screen-blend copy of the
+          >
+            {/* eslint-disable @next/next/no-img-element -- preloaded stacked frames swapped at 12fps; the Next optimizer adds nothing for pre-sized static WebP and would break decode-before-reveal */}
+            {placeholder && (
+              <img
+                src={srcOf("front-blur")}
+                alt=""
+                aria-hidden
+                draggable={false}
+                style={{
+                  position: "absolute",
+                  inset: 0,
+                  width: "100%",
+                  height: "100%",
+                  objectFit: "contain",
+                  opacity: phase === "loading" ? 1 : 0,
+                  transition: "opacity 300ms",
+                }}
+              />
+            )}
+            {(showFrames ? ALL_KEYS : ["front"]).map((key) => (
+              <img
+                key={key}
+                ref={(el) => {
+                  if (el) imgRefs.current.set(key, el);
+                  else imgRefs.current.delete(key);
+                }}
+                src={srcOf(key)}
+                alt={
+                  key === "front" ? "Julio Romero — lightbox street sign" : ""
+                }
+                draggable={false}
+                style={{
+                  position: "absolute",
+                  inset: 0,
+                  width: "100%",
+                  height: "100%",
+                  objectFit: "contain",
+                  // Hard cuts on purpose: no transition — this is the stop
+                  // motion. The ghost is the outgoing photo's one-tick echo,
+                  // painted above the incoming one so the double image reads.
+                  opacity:
+                    phase !== "ready"
+                      ? 0
+                      : shown.cur === key
+                        ? 1
+                        : shown.ghost === key
+                          ? bobParams.echo
+                          : 0,
+                  zIndex: shown.ghost === key ? 2 : 1,
+                }}
+              />
+            ))}
+            {/* The glow (see GlowParams): a blurred screen-blend copy of the
               current photo, above the frames and the ghost. Same src as the
               shown frame, so it swaps in the same commit as each cut and
               hits the already-decoded cache. The stack's drop-shadow reads
               alpha after this layer, so the shadow softens a hair at the
               edges the bleed crosses — invisible at these radii. */}
-          {glow.strength > 0 && (
-            <img
-              src={srcOf(shown.cur)}
-              alt=""
-              aria-hidden
-              draggable={false}
-              style={{
-                position: "absolute",
-                inset: 0,
-                width: "100%",
-                height: "100%",
-                objectFit: "contain",
-                opacity: phase === "ready" ? glow.strength : 0,
-                filter: `blur(${shadowLen(glow.blur)}) brightness(${glow.boost}) sepia(${glow.warmth})`,
-                mixBlendMode: "screen",
-                maskImage: GLOW_MASK,
-                maskComposite: "intersect",
-                WebkitMaskComposite: "source-in",
-                zIndex: 3,
-                pointerEvents: "none",
-              }}
-            />
-          )}
-          {/* eslint-enable @next/next/no-img-element */}
-        </div>
+            {glow.strength > 0 && (
+              <img
+                src={srcOf(shown.cur)}
+                alt=""
+                aria-hidden
+                draggable={false}
+                style={{
+                  position: "absolute",
+                  inset: 0,
+                  width: "100%",
+                  height: "100%",
+                  objectFit: "contain",
+                  opacity: phase === "ready" ? glow.strength : 0,
+                  filter: `blur(${shadowLen(glow.blur)}) brightness(${glow.boost}) sepia(${glow.warmth})`,
+                  mixBlendMode: "screen",
+                  maskImage: GLOW_MASK,
+                  maskComposite: "intersect",
+                  WebkitMaskComposite: "source-in",
+                  zIndex: 3,
+                  pointerEvents: "none",
+                }}
+              />
+            )}
+            {/* eslint-enable @next/next/no-img-element */}
+          </div>
         </div>
       </div>
       <style>{ENTRANCE_CSS}</style>
@@ -2237,15 +2364,18 @@ export default function Cartel({
           }}
         >
           <Section title="Pointer">
-            <TuneSlider
-              label="Radius"
-              min={0.5}
-              max={8}
-              step={0.1}
-              unit="×"
-              value={radius}
-              onChange={setRadius}
-            />
+            {/* No circle to size when the zone is the page. */}
+            {typeof radius === "number" && (
+              <TuneSlider
+                label="Radius"
+                min={0.5}
+                max={8}
+                step={0.1}
+                unit="×"
+                value={radius}
+                onChange={setRadius}
+              />
+            )}
             <TuneSlider
               label="Chase"
               min={0}
@@ -2305,22 +2435,35 @@ export default function Cartel({
           <Section title="Shadow">
             {sliders(SHADOW_FIELDS, shadow, setShadow)}
           </Section>
-          <Section title="Glow">
-            {sliders(GLOW_FIELDS, glow, setGlow)}
+          <Section title="Glow">{sliders(GLOW_FIELDS, glow, setGlow)}</Section>
+          <Section title="Sound">
+            {sliders(SOUND_FIELDS, soundTuning, setSoundState)}
+            <div style={{ display: "flex", gap: 4, marginTop: 4 }}>
+              {(["cut", "tap", "knock", "slide", "letter"] as const).map(
+                (name) => (
+                  <button
+                    key={name}
+                    type="button"
+                    onClick={() => play(name)}
+                    style={{ ...panelBtn, flex: 1 }}
+                  >
+                    {name}
+                  </button>
+                ),
+              )}
+              <button
+                type="button"
+                onClick={resetSoundTuning}
+                style={{ ...panelBtn, flex: 1 }}
+              >
+                reset
+              </button>
+            </div>
           </Section>
           <button
             type="button"
             onClick={() => playSpinRef.current?.()}
-            style={{
-              marginTop: 6,
-              padding: "6px 0",
-              borderRadius: 8,
-              border: "1px solid rgba(128, 128, 128, 0.4)",
-              background: "rgba(255, 255, 255, 0.08)",
-              color: "#fff",
-              fontSize: 11,
-              cursor: "pointer",
-            }}
+            style={{ ...panelBtn, marginTop: 6 }}
           >
             Spin
           </button>

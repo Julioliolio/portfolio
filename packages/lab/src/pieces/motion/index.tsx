@@ -1,10 +1,17 @@
 "use client";
 
-import { useState, type CSSProperties } from "react";
+import { useState } from "react";
+import {
+  BENCH_CSS,
+  CopyValues,
+  Group,
+  btn,
+  mono,
+  type Field,
+} from "../../bench";
 import {
   ENTER_KINDS,
   Enter,
-  MOTION_DEFAULTS,
   Stagger,
   resetMotionTuning,
   setMotionTuning,
@@ -21,17 +28,7 @@ import {
  * MOTION_DEFAULTS in packages/lab/src/motion.tsx.
  */
 
-type Field = {
-  key: keyof MotionTuning;
-  label: string;
-  min: number;
-  max: number;
-  step: number;
-  unit?: string;
-  hint?: string;
-};
-
-const BEAT: Field[] = [
+const BEAT: Field<MotionTuning>[] = [
   {
     key: "duration",
     label: "Run",
@@ -69,7 +66,7 @@ const BEAT: Field[] = [
   },
 ];
 
-const PUNCH: Field[] = [
+const PUNCH: Field<MotionTuning>[] = [
   {
     key: "distance",
     label: "Distance",
@@ -125,7 +122,7 @@ const PUNCH: Field[] = [
   },
 ];
 
-const RESPONSE: Field[] = [
+const RESPONSE: Field<MotionTuning>[] = [
   {
     key: "hoverLift",
     label: "Hover lift",
@@ -152,71 +149,6 @@ const RESPONSE: Field[] = [
   },
 ];
 
-const mono = "var(--font-neue-montreal-mono), ui-monospace, Menlo, monospace";
-
-const btn: CSSProperties = {
-  font: "inherit",
-  fontSize: 12,
-  color: "inherit",
-  background: "rgba(128, 128, 128, 0.12)",
-  border: "1px solid rgba(128, 128, 128, 0.45)",
-  borderRadius: 8,
-  padding: "6px 14px",
-};
-
-function Group({
-  title,
-  fields,
-  values,
-}: {
-  title: string;
-  fields: Field[];
-  values: MotionTuning;
-}) {
-  return (
-    <div style={{ display: "grid", gap: 8 }}>
-      <div
-        style={{
-          fontSize: 11,
-          letterSpacing: ".08em",
-          textTransform: "uppercase",
-          opacity: 0.6,
-          marginTop: 6,
-        }}
-      >
-        {title}
-      </div>
-      {fields.map(({ key, label, min, max, step, unit, hint }) => (
-        <label
-          key={key}
-          title={hint}
-          style={{
-            display: "grid",
-            gridTemplateColumns: "7rem 1fr 5rem",
-            alignItems: "center",
-            gap: 12,
-            fontSize: 13,
-          }}
-        >
-          <span>{label}</span>
-          <input
-            type="range"
-            min={min}
-            max={max}
-            step={step}
-            value={values[key]}
-            onChange={(e) => setMotionTuning({ [key]: Number(e.target.value) })}
-          />
-          <span style={{ fontFamily: mono, fontSize: 12, textAlign: "right" }}>
-            {values[key]}
-            {unit ?? ""}
-          </span>
-        </label>
-      ))}
-    </div>
-  );
-}
-
 const PREVIEW_CSS = `
 .mb-board { position: relative; display: grid; grid-template-columns: 150px 1fr; gap: 24px; align-items: start; padding: 24px; background: #f3efe9; color: #2b2722; border: 1px solid rgba(43, 39, 34, .12); }
 .mb-polaroid { box-sizing: border-box; width: 150px; padding: 8px 8px 26px; background: #fff; box-shadow: 0 0 0 1px rgba(43, 39, 34, .2), 0 10px 18px rgba(0, 0, 0, .12); }
@@ -233,29 +165,22 @@ const PREVIEW_CSS = `
 export default function MotionBench() {
   const values = useMotionTuning();
   const [run, setRun] = useState(0);
-  const [copied, setCopied] = useState(false);
-
-  async function copy() {
-    const lines = (Object.keys(MOTION_DEFAULTS) as (keyof MotionTuning)[])
-      .map((k) => `  ${k}: ${values[k]},`)
-      .join("\n");
-    await navigator.clipboard.writeText(`{\n${lines}\n}`);
-    setCopied(true);
-    setTimeout(() => setCopied(false), 1500);
-  }
 
   const beat = values.cuts / values.duration;
 
   return (
     <div style={{ display: "grid", gap: 20, width: "min(720px, 100%)" }}>
-      <style>{PREVIEW_CSS}</style>
+      <style>{BENCH_CSS + PREVIEW_CSS}</style>
 
-      <div style={{ display: "flex", gap: 12, alignItems: "center", fontSize: 13 }}>
+      <div
+        style={{ display: "flex", gap: 12, alignItems: "center", fontSize: 13 }}
+      >
         <button type="button" style={btn} onClick={() => setRun((r) => r + 1)}>
           ▶ Replay
         </button>
         <span style={{ fontFamily: mono, fontSize: 12, opacity: 0.7 }}>
-          {beat.toFixed(1)} cuts/s · a drop every {Math.round((values.duration / values.cuts) * 1000)}ms
+          {beat.toFixed(1)} cuts/s · a drop every{" "}
+          {Math.round((values.duration / values.cuts) * 1000)}ms
         </span>
       </div>
 
@@ -268,7 +193,11 @@ export default function MotionBench() {
           </Enter>
           <Enter kind="stamp" as="header">
             <h2 className="mb-h2">Road signs</h2>
-            <Enter kind="rule" className="mb-rule" delay={values.lead + values.stagger * 2} />
+            <Enter
+              kind="rule"
+              className="mb-rule"
+              delay={values.lead + values.stagger * 2}
+            />
             <Stagger base={values.lead + values.stagger * 3}>
               <Enter kind="slide" as="p" className="mb-p">
                 Three photographed road signs, stacked like a signpost.
@@ -278,7 +207,10 @@ export default function MotionBench() {
               </Enter>
             </Stagger>
             <div className="mb-chips">
-              <Stagger step={Math.round(values.stagger * 0.8)} base={values.lead + values.stagger * 6}>
+              <Stagger
+                step={Math.round(values.stagger * 0.8)}
+                base={values.lead + values.stagger * 6}
+              >
                 <Enter kind="pop" as="span" className="mb-chip sm-hover-shake">
                   iOS
                 </Enter>
@@ -303,23 +235,32 @@ export default function MotionBench() {
         </div>
       </div>
 
-      <Group title="Beat" fields={BEAT} values={values} />
-      <Group title="Punch" fields={PUNCH} values={values} />
-      <Group title="Responses" fields={RESPONSE} values={values} />
+      <Group title="Beat" fields={BEAT} values={values} set={setMotionTuning} />
+      <Group
+        title="Punch"
+        fields={PUNCH}
+        values={values}
+        set={setMotionTuning}
+      />
+      <Group
+        title="Responses"
+        fields={RESPONSE}
+        values={values}
+        set={setMotionTuning}
+      />
 
-      <div style={{ display: "flex", alignItems: "center", gap: 12, fontSize: 13 }}>
+      <div
+        style={{ display: "flex", alignItems: "center", gap: 12, fontSize: 13 }}
+      >
         <button type="button" style={btn} onClick={resetMotionTuning}>
           Reset
         </button>
-        <button type="button" style={btn} onClick={copy}>
-          {copied ? "Copied ✓" : "Copy values"}
-        </button>
+        <CopyValues values={values} />
       </div>
       <p style={{ margin: 0, fontSize: 12, opacity: 0.6, lineHeight: 1.5 }}>
-        These values apply on every page of the site in this browser (the
-        road signs&apos; and cartel&apos;s entrances too) until Reset. Lock a
-        feel in by pasting them into MOTION_DEFAULTS in
-        packages/lab/src/motion.tsx.
+        These values apply on every page of the site in this browser (the road
+        signs&apos; and cartel&apos;s entrances too) until Reset. Lock a feel in
+        by pasting them into MOTION_DEFAULTS in packages/lab/src/motion.tsx.
       </p>
     </div>
   );

@@ -63,6 +63,33 @@ const pieces = [
       "The stop-motion bench — one set of knobs for every entrance on the site: beat, distance, overshoot, squash, stagger.",
   },
   {
+    slug: "hello",
+    title: "Hello screen",
+    description:
+      "The home page's first screen, full size — where the sign sits and how big, the row and the words, tuned live.",
+    background: "white",
+  },
+  {
+    slug: "greeting",
+    title: "Greeting",
+    description:
+      "The greeting's words under the pointer — the letters' stamp, tilt, hairline and wave, tuned live; the selection highlight is a bench-only extra. A hover the home page keeps plain.",
+    background: "white",
+  },
+  {
+    slug: "boil",
+    title: "Boil",
+    description:
+      "Every boil on the site under one set of knobs — the scroll cue's words and the hero's lit letters, wobbling in held frames: rate, wait, shove, wave and grain, tuned live.",
+  },
+  {
+    slug: "sound",
+    title: "Sound",
+    description:
+      "The site's sounds under one set of knobs — the greeting's felt-piano letters to hover, every one-shot to preview, and the bed that can play under the landing, switchable to hear the letters with and without it.",
+    background: "white",
+  },
+  {
     slug: "road-signs",
     title: "Road signs",
     description:

@@ -1,36 +1,23 @@
-import Link from "next/link";
+import { Landing } from "@/components/landing/Landing";
 
+/**
+ * The home page: the cartel on one screen, the road signs on the next,
+ * snapped (see components/landing/Landing). The proof pages the
+ * foundation linked from here still exist at their own URLs — /work/*
+ * and /lab.
+ */
 export default function Home() {
   return (
-    <main className="mx-auto grid min-h-screen w-full max-w-2xl content-center gap-4 p-8">
-      <h1 className="text-2xl font-semibold">portfolio — foundation</h1>
-      <p>No UI yet. Proof pages:</p>
-      <ul className="list-disc pl-6">
-        <li>
-          <Link className="underline" href="/work/sample">
-            /work/sample
-          </Link>{" "}
-          — embedded demo pipeline
-        </li>
-        <li>
-          <Link className="underline" href="/work/localpal">
-            /work/localpal
-          </Link>{" "}
-          — LocalPal, live in a phone frame
-        </li>
-        <li>
-          <Link className="underline" href="/work/convertr">
-            /work/convertr
-          </Link>{" "}
-          — Convertr, mocked conversion flow
-        </li>
-        <li>
-          <Link className="underline" href="/lab">
-            /lab
-          </Link>{" "}
-          — microinteraction playground
-        </li>
-      </ul>
+    <main className="w-full">
+      {/* The wall — the warm off-white of the mockup, set on the root so
+          nothing dark shows on overscroll or first paint regardless of
+          the site theme. Scroll-snap lives on the root too: the viewport
+          is the scroller, and each screen is a snap point. */}
+      <style>{`
+        html { background: #faf9f6; scroll-snap-type: y mandatory; }
+        body { background: #faf9f6; color: #171717; }
+      `}</style>
+      <Landing />
     </main>
   );
 }

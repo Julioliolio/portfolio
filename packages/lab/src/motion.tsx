@@ -6,12 +6,11 @@ import {
   createElement,
   isValidElement,
   useCallback,
-  useEffect,
-  useSyncExternalStore,
   type CSSProperties,
   type ReactElement,
   type ReactNode,
 } from "react";
+import { createTuningStore } from "./tuning-store";
 
 /**
  * The stop-motion system, in one place.
@@ -25,7 +24,7 @@ import {
  * Everything that appears with that punch reads this module:
  *
  *   - `MotionTuning` is the set of knobs (beat, distance, overshoot…),
- *     a mutable store like cursor-tuning. `/lab/motion` is its bench.
+ *     a tuning store (see tuning-store.ts). `/lab/motion` is its bench.
  *   - `motionCss()` turns the tuning into the stylesheet: the shared
  *     keyframes (sm-drop, sm-stamp, sm-pop, …), the `.sm-*` classes, the
  *     hover/press responses. <MotionStyles> keeps that stylesheet in the
@@ -91,85 +90,18 @@ export const MOTION_DEFAULTS: Readonly<MotionTuning> = Object.freeze({
 
 // ------------------------------------------------------------- the store
 
-const STORAGE_KEY = "motion-tuning";
-
-let current: MotionTuning = { ...MOTION_DEFAULTS };
-const listeners = new Set<() => void>();
-
-function emit() {
-  for (const fn of listeners) fn();
-}
-
-export function getMotionTuning(): MotionTuning {
-  return current;
-}
+const store = createTuningStore("motion-tuning", MOTION_DEFAULTS);
 
 /** Lays `patch` over the current values and tells every subscriber. */
-export function setMotionTuning(patch: Partial<MotionTuning>) {
-  current = { ...current, ...patch };
-  try {
-    localStorage.setItem(STORAGE_KEY, JSON.stringify(current));
-  } catch {
-    // Storage may be unavailable (private mode, sandboxed frame) — the
-    // values still apply for this page.
-  }
-  emit();
-}
-
-export function resetMotionTuning() {
-  current = { ...MOTION_DEFAULTS };
-  try {
-    localStorage.removeItem(STORAGE_KEY);
-  } catch {
-    // see setMotionTuning
-  }
-  emit();
-}
-
-export function subscribeMotion(fn: () => void): () => void {
-  listeners.add(fn);
-  return () => listeners.delete(fn);
-}
-
-/** Bench values saved on this browser, if any. Called once by
- *  <MotionStyles> after hydration so the server and first client render
- *  agree on the defaults. */
-function loadStored() {
-  try {
-    const raw = localStorage.getItem(STORAGE_KEY);
-    if (!raw) return;
-    const parsed = JSON.parse(raw) as Partial<MotionTuning>;
-    const next: MotionTuning = { ...MOTION_DEFAULTS };
-    for (const key of Object.keys(MOTION_DEFAULTS) as (keyof MotionTuning)[]) {
-      const v = parsed[key];
-      if (typeof v === "number" && Number.isFinite(v)) next[key] = v;
-    }
-    current = next;
-    emit();
-  } catch {
-    // A bad value in storage is ignored; the defaults stand.
-  }
-}
-
+export const setMotionTuning = store.set;
+export const resetMotionTuning = store.reset;
 /** The live tuning, re-rendering the caller on every change. */
-export function useMotionTuning(): MotionTuning {
-  return useSyncExternalStore(
-    subscribeMotion,
-    getMotionTuning,
-    () => MOTION_DEFAULTS,
-  );
-}
+export const useMotionTuning = store.useTuning;
 
 // -------------------------------------------------------- the stylesheet
 
 export type EnterKind =
-  | "drop"
-  | "stamp"
-  | "pop"
-  | "slide"
-  | "unfold"
-  | "tape"
-  | "rule";
+  "drop" | "stamp" | "pop" | "slide" | "unfold" | "tape" | "rule";
 
 export const ENTER_KINDS: readonly EnterKind[] = [
   "drop",
@@ -282,7 +214,13 @@ function keyframes(name: string, all: string[], cuts: number) {
     string,
   ];
   const middle =
-    c === 1 ? [] : c === 2 ? [land] : c === 3 ? [land, settle] : [land, settle, land2];
+    c === 1
+      ? []
+      : c === 2
+        ? [land]
+        : c === 3
+          ? [land, settle]
+          : [land, settle, land2];
   const steps = [start, ...middle, rest];
   const total = steps.length - 1;
   const body = steps
@@ -344,14 +282,22 @@ ${kinds.join("\n")}
 /**
  * Keeps the generated stylesheet in the document. Mount once, in the
  * root layout. Server and first client render use the defaults; stored
- * bench values land in an effect right after.
+ * bench values land right after hydration.
  */
 export function MotionStyles() {
-  const t = useMotionTuning();
-  useEffect(() => {
-    loadStored();
-  }, []);
-  return <style data-motion="">{motionCss(t)}</style>;
+  return <style data-motion="">{motionCss(useMotionTuning())}</style>;
+}
+
+/**
+ * Plays the entrance a class drives again, from its first pose: the
+ * class comes off, a reflow commits that, and it goes back on. For an
+ * element React keeps rendering with the same class — a piece replaying
+ * its entrance in place without being torn down.
+ */
+export function replayClass(el: HTMLElement, className: string) {
+  el.classList.remove(className);
+  void el.offsetWidth;
+  el.classList.add(className);
 }
 
 // ----------------------------------------------------------- <Enter>
@@ -364,7 +310,15 @@ type EnterProps = {
    *  "mount" plays immediately. */
   gate?: "view" | "mount";
   /** Wrapper element. Defaults to a div. */
-  as?: "div" | "span" | "li" | "section" | "article" | "header" | "p";
+  as?:
+    | "div"
+    | "span"
+    | "li"
+    | "section"
+    | "article"
+    | "header"
+    | "p"
+    | "blockquote";
   className?: string;
   style?: CSSProperties;
   children?: ReactNode;
