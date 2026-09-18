@@ -4,6 +4,7 @@ import {
   useEffect,
   useRef,
   useState,
+  type CSSProperties,
   type Dispatch,
   type ReactNode,
   type SetStateAction,
@@ -110,6 +111,7 @@ type Axes = { x: number; y: number }; // normalized -1..1, positive = right/down
 type Point = { x: number; y: number }; // viewport px
 
 const FRONT: Cell = { col: 0, row: 0 };
+const sameCell = (a: Cell, b: Cell) => a.col === b.col && a.row === b.row;
 const TICK_MS = 1000 / 12; // the walker's cadence: photo swaps "on twos"
 // The bob's cadence is BobParams.fps (24 by default: motion "on ones").
 
@@ -274,6 +276,9 @@ const CUT_SMEAR = 0.018;
 // a hard cut.
 const BOB_PARK_EASE = 0.7;
 const BOB_PARK_SNAP = 0.05; // below this magnitude (%), snap to flat
+/** One step of the bob easing to flat while it is parked. */
+const parkBob = (y: number) =>
+  Math.abs(y) < BOB_PARK_SNAP ? 0 : y * BOB_PARK_EASE;
 
 // Smear stretch per tick: |Δy per frame, %| / 100 * gain * params.smear,
 // capped. Lives for exactly the tick that moved fast — the Spider-Verse
@@ -351,6 +356,15 @@ const SPIN_KEYS = ["spin-a", "spin-b", "spin-c"];
 // walker can't reach them: only spin exposures resolve to them.
 const ABOUT_KEYS = ["about-front", "about-return"];
 const ALL_KEYS = [...FRAME_KEYS, ...SPIN_KEYS, ...ABOUT_KEYS];
+
+/** Every photo layer: stacked over the sign's box, whole. */
+const PHOTO: CSSProperties = {
+  position: "absolute",
+  inset: 0,
+  width: "100%",
+  height: "100%",
+  objectFit: "contain",
+};
 
 // Which text the sign is showing (or spinning toward).
 type Face = "julio" | "about";
@@ -438,7 +452,8 @@ const JUMP_POSTURE_MAX = 0.1;
 
 // Where each photo sits on one lap of the turn; a sample shows the nearest
 // stop (midpoint boundaries).
-const TURN_STOPS: { key: string; deg: number }[] = [
+type TurnStop = { key: string; deg: number };
+const TURN_STOPS: TurnStop[] = [
   { key: "front", deg: 0 },
   { key: "spin-a", deg: 160 },
   { key: "spin-b", deg: 255 },
@@ -450,8 +465,8 @@ const TURN_STOPS: { key: string; deg: number }[] = [
 // bookended by the windup (`left` mirrored to -15°) and the overshoot
 // (`right` at +15° past the last turn) — reachable only when the curve
 // dips below 0 or crosses above 1.
-function spinStops(turns: number): { key: string; deg: number }[] {
-  const stops: { key: string; deg: number }[] = [{ key: "left", deg: -15 }];
+function spinStops(turns: number): TurnStop[] {
+  const stops: TurnStop[] = [{ key: "left", deg: -15 }];
   for (let t = 0; t < turns; t++) {
     for (const stop of TURN_STOPS) {
       stops.push({ key: stop.key, deg: stop.deg + t * 360 });
@@ -462,10 +477,7 @@ function spinStops(turns: number): { key: string; deg: number }[] {
   return stops;
 }
 
-function stopForDeg(
-  stops: { key: string; deg: number }[],
-  deg: number,
-): string {
+function stopForDeg(stops: TurnStop[], deg: number): string {
   let best = stops[0]!;
   for (const stop of stops) {
     if (Math.abs(deg - stop.deg) < Math.abs(deg - best.deg)) best = stop;
@@ -540,6 +552,9 @@ type SpinExposure = {
   pastSwap: boolean;
 };
 
+/** Off the ground, past rounding. */
+const isAirborne = (e: SpinExposure) => e.jumpY < -0.001;
+
 // front hold · the turn sampled off the curve at fps ticks · front settle.
 function makeSpinSheet(p: SpinParams): SpinExposure[] {
   const sheet: SpinExposure[] = [];
@@ -592,7 +607,7 @@ function makeSpinSheet(p: SpinParams): SpinExposure[] {
       JUMP_POSTURE_MAX,
       Math.max(0, exposure.jumpY) * JUMP_POSTURE_GAIN,
     );
-    const airborne = exposure.jumpY < -0.001;
+    const airborne = isAirborne(exposure);
     exposure.stretchY = airborne ? travel : -travel - posture;
     prevY = exposure.jumpY;
   }
@@ -675,7 +690,7 @@ const NEXT_STEP: Map<string, Map<string, Cell>> = (() => {
 function routeLen(from: Cell, to: Cell): number {
   let n = 0;
   let cur = from;
-  while (cur.col !== to.col || cur.row !== to.row) {
+  while (!sameCell(cur, to)) {
     const next = NEXT_STEP.get(cellId(cur))?.get(cellId(to));
     if (!next) return n; // unreachable: the graph is connected
     cur = next;
@@ -1279,7 +1294,7 @@ export default function Cartel({
   const enableMotionRef = useRef<(() => void) | null>(null);
   // Assigned inside the [mode] effect (like enableMotionRef); stays null in
   // reduced mode, so clicks are inert there for free.
-  const playSpinRef = useRef<((onComplete?: () => void) => void) | null>(null);
+  const playSpinRef = useRef<(() => void) | null>(null);
 
   // Read when the sign appears, through a ref, so the effects below
   // don't re-run on a parent's re-render.
@@ -1364,7 +1379,7 @@ export default function Cartel({
 
     function tick() {
       ticker = null;
-      if (current.col === target.col && current.row === target.row) return;
+      if (sameCell(current, target)) return;
       // One cut along the precomputed route (see NEXT_STEP) — guaranteed to
       // reach any target, so the walker can't strand mid-path.
       const next = NEXT_STEP.get(cellId(current))?.get(cellId(target));
@@ -1373,12 +1388,7 @@ export default function Cartel({
       // taking the last cut — the sign crouches at the angle it arrived
       // from and the sheet's windup cut carries it into the launch, so
       // front is never shown as a pre-spin hold.
-      if (
-        spinPhase === "playing" &&
-        !spinTookOver &&
-        next.col === FRONT.col &&
-        next.row === FRONT.row
-      ) {
+      if (spinPhase === "playing" && !spinTookOver && sameCell(next, FRONT)) {
         return;
       }
       const prev = current;
@@ -1493,8 +1503,7 @@ export default function Cartel({
           // drift without a state change) composes with it instead.
           bobIndex = 0;
           if (bobY !== 0 || bobStretch !== 0) {
-            const next =
-              Math.abs(bobY) < BOB_PARK_SNAP ? 0 : bobY * BOB_PARK_EASE;
+            const next = parkBob(bobY);
             bobStretch = smearOf(next - bobY);
             bobY = next;
             writeTransform();
@@ -1545,7 +1554,6 @@ export default function Cartel({
     // Whether the last exposure had the sign off the ground — the
     // landing sound fires on the air-to-ground edge.
     let spinAirborne = false;
-    let spinDone: (() => void) | null = null;
 
     // The face pair a running spin resolves its exposures against: the
     // outgoing text before the swap point, the incoming after. Equal for
@@ -1567,13 +1575,12 @@ export default function Cartel({
       }
     }
 
-    function startSpin(toFace: Face, onComplete?: () => void) {
+    function startSpin(toFace: Face) {
       // Re-triggers during a spin are ignored, not stacked — finishSpin
       // re-checks the desired face, so a flip change mid-spin queues the
       // reverse instead of firing ~1.5s late and reading as a glitch.
       if (!revealed || spinPhase !== "none") return;
       play("knock", 1, { at: "spin" });
-      spinDone = onComplete ?? null;
       spinFromFace = face;
       spinToFace = toFace;
       // The sheet starts NOW, wherever the sign is looking: the walker
@@ -1587,11 +1594,11 @@ export default function Cartel({
     // The click/button flourish: flip to the other face. Resting on
     // Julio it turns to About (and the hold, set on landing, turns it
     // back); resting on About it turns back now. Mid-spin it is ignored.
-    function playSpin(onComplete?: () => void) {
+    function playSpin() {
       if (!revealed || spinPhase !== "none") return;
       clearHold();
       flipped = !flipped;
-      startSpin(desiredFace(), onComplete);
+      startSpin(desiredFace());
     }
 
     // Spin toward the wanted face if the sign isn't already there (or
@@ -1617,6 +1624,21 @@ export default function Cartel({
       return { limit: engaged ? r * RADIUS_EXIT : r, rx: r, ry: r };
     }
 
+    // The pointer against the zone, each axis normalized so the full
+    // turn lives at the zone's edge, whatever size it is dialed to. Null
+    // with no pointer, before the first measure, or outside the zone.
+    function pointerAxes(): { ax: number; ay: number } | null {
+      if (!pointerLast || !center) return null;
+      const { limit, rx, ry } = zone();
+      const dx = pointerLast.x - center.x;
+      const dy = pointerLast.y - center.y;
+      if (Math.hypot(dx, dy) > limit) return null;
+      return {
+        ax: (INVERT_X ? -dx : dx) / rx,
+        ay: (INVERT_Y ? -dy : dy) / ry,
+      };
+    }
+
     // The cell a julio-landing spin should come out on: the live quantized
     // pointer target, so the turn ends already looking at the pointer
     // instead of defaulting to front and walking there. Fresh quantize —
@@ -1625,18 +1647,11 @@ export default function Cartel({
     // back to front when the pointer is gone or outside the zone (and
     // in gyro mode, where pointerLast never exists).
     function landingCell(): Cell {
-      if (!pointerLast || !center || !signWidth) return FRONT;
-      const { limit, rx, ry } = zone();
-      const dx = pointerLast.x - center.x;
-      const dy = pointerLast.y - center.y;
-      if (Math.hypot(dx, dy) > limit) {
-        return FRONT;
-      }
-      const ax = (INVERT_X ? -dx : dx) / rx;
-      const ay = (INVERT_Y ? -dy : dy) / ry;
+      const axes = signWidth ? pointerAxes() : null;
+      if (!axes) return FRONT;
       return snapCell(
-        quantize5(ax, 0, POINTER_B0, POINTER_B1, POINTER_HYST),
-        quantize5(ay, 0, POINTER_B0, POINTER_B1, POINTER_HYST),
+        quantize5(axes.ax, 0, POINTER_B0, POINTER_B1, POINTER_HYST),
+        quantize5(axes.ay, 0, POINTER_B0, POINTER_B1, POINTER_HYST),
       );
     }
 
@@ -1670,10 +1685,7 @@ export default function Cartel({
     function applyExposure(index: number) {
       const exposure = spinSheet[index];
       if (!exposure) return;
-      if (
-        !spinTookOver &&
-        (exposure.key !== "front" || exposure.jumpY < -0.001)
-      ) {
+      if (!spinTookOver && (exposure.key !== "front" || isAirborne(exposure))) {
         // The windup cut or liftoff, whichever comes first: the sheet takes
         // the photos over and the parked walker is snapped home silently —
         // `current` must be truthful for cancel/finish, but front itself is
@@ -1712,7 +1724,7 @@ export default function Cartel({
       }
       // Touchdown: the first grounded exposure after the air is the
       // landing, a softer knock than the launch.
-      const airborne = exposure.jumpY < -0.001;
+      const airborne = isAirborne(exposure);
       if (spinAirborne && !airborne) play("knock", 0.6, { at: "spin" });
       spinAirborne = airborne;
       spinScaleX = exposure.squashX;
@@ -1724,9 +1736,7 @@ export default function Cartel({
     function stepSheet() {
       // Residual bob offset from the moment of the click eases flat in
       // diminishing steps, absorbed into the crouch.
-      if (bobY !== 0) {
-        bobY = Math.abs(bobY) < BOB_PARK_SNAP ? 0 : bobY * BOB_PARK_EASE;
-      }
+      bobY = parkBob(bobY);
       spinIndex++;
       if (spinIndex >= spinSheet.length) {
         finishSpin();
@@ -1735,8 +1745,8 @@ export default function Cartel({
       applyExposure(spinIndex);
     }
 
-    // Stops the sheet and clears its transform contributions. `spinDone`
-    // is left alone: finishSpin fires it, cancelSpin drops it.
+    // Stops the sheet and clears its transform contributions. Also what
+    // visibilitychange and unmount call: no resume side effects.
     function resetSpin() {
       if (spinTimer != null) {
         window.clearInterval(spinTimer);
@@ -1762,9 +1772,6 @@ export default function Cartel({
         setShown({ cur: keyOf(cell), ghost: null });
       }
       writeTransform();
-      const done = spinDone;
-      spinDone = null;
-      done?.();
       // The wanted face may have changed mid-spin (a hidden tab, say):
       // play the queued reverse back-to-back instead of resting wrong.
       if (face !== desiredFace()) {
@@ -1788,15 +1795,9 @@ export default function Cartel({
       if (pointerLast) requestProcess();
     }
 
-    // Shared by visibilitychange and unmount: no resume side effects.
-    function cancelSpin() {
-      resetSpin();
-      spinDone = null;
-    }
-
     // The spin needs its own frames: inert until the whole set is in.
-    playSpinRef.current = (onComplete) => {
-      if (armed) playSpin(onComplete);
+    playSpinRef.current = () => {
+      if (armed) playSpin();
     };
 
     // Single entry point for all inputs: quantized cell for the walker plus
@@ -1911,10 +1912,8 @@ export default function Cartel({
       // Flipped to About the sign holds front — tracking would swap Julio
       // grid photos back in.
       if (flipped) return;
-      const { limit, rx, ry } = zone();
-      const dx = pointerLast.x - center.x;
-      const dy = pointerLast.y - center.y;
-      if (Math.hypot(dx, dy) > limit) {
+      const axes = pointerAxes();
+      if (!axes) {
         if (engaged) {
           engaged = false;
           setInRange(false);
@@ -1926,12 +1925,7 @@ export default function Cartel({
         engaged = true;
         setInRange(true);
       }
-      // Normalized against the zone: the full turn lives at its edge,
-      // whatever size it is dialed to.
-      const x = dx / rx;
-      const y = dy / ry;
-      const ax = INVERT_X ? -x : x;
-      const ay = INVERT_Y ? -y : y;
+      const { ax, ay } = axes;
       colLevel = quantize5(ax, colLevel, POINTER_B0, POINTER_B1, POINTER_HYST);
       rowLevel = quantize5(ay, rowLevel, POINTER_B0, POINTER_B1, POINTER_HYST);
       setTarget(snapCell(colLevel, rowLevel), {
@@ -2044,7 +2038,7 @@ export default function Cartel({
         // stale exposures); the visible branch below already snaps to the
         // front frame — target and current are both FRONT during a spin —
         // and restarts the bob, which is exactly the recovery we want.
-        cancelSpin();
+        resetSpin();
         stopTicker();
         stopBob();
       } else {
@@ -2104,7 +2098,7 @@ export default function Cartel({
     return () => {
       disposed = true;
       clearHold();
-      cancelSpin();
+      resetSpin();
       stopTicker();
       stopIdle();
       stopBob();
@@ -2230,11 +2224,7 @@ export default function Cartel({
                 aria-hidden
                 draggable={false}
                 style={{
-                  position: "absolute",
-                  inset: 0,
-                  width: "100%",
-                  height: "100%",
-                  objectFit: "contain",
+                  ...PHOTO,
                   opacity: phase === "loading" ? 1 : 0,
                   transition: "opacity 300ms",
                 }}
@@ -2253,11 +2243,7 @@ export default function Cartel({
                 }
                 draggable={false}
                 style={{
-                  position: "absolute",
-                  inset: 0,
-                  width: "100%",
-                  height: "100%",
-                  objectFit: "contain",
+                  ...PHOTO,
                   // Hard cuts on purpose: no transition — this is the stop
                   // motion. The ghost is the outgoing photo's one-tick echo,
                   // painted above the incoming one so the double image reads.
@@ -2286,11 +2272,7 @@ export default function Cartel({
                 aria-hidden
                 draggable={false}
                 style={{
-                  position: "absolute",
-                  inset: 0,
-                  width: "100%",
-                  height: "100%",
-                  objectFit: "contain",
+                  ...PHOTO,
                   opacity: phase === "ready" ? glow.strength : 0,
                   filter: `blur(${shadowLen(glow.blur)}) brightness(${glow.boost}) sepia(${glow.warmth})`,
                   mixBlendMode: "screen",
