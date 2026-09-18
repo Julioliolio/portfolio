@@ -2,7 +2,7 @@
 
 import { useEffect, useId, useRef, useState, type CSSProperties } from "react";
 import { BOIL_SEEDS, BoilFilter } from "./boil";
-import { Enter, cutPoses, useMotionTuning, type MotionTuning } from "./motion";
+import { Enter, keyframes, useMotionTuning, type MotionTuning } from "./motion";
 import { getSoundTuning, play, useBed } from "./sound";
 import { createTuningStore } from "./tuning-store";
 
@@ -196,27 +196,20 @@ function greetingCss(m: MotionTuning, g: GreetingTuning): string {
   const pose = (x: number, y: number, r: number, scale: number) =>
     `transform: translate(${dip(x * lift, "px")}, ${dip(y * lift, "px")}) rotate(calc(${n(r * sw)}deg * var(--dip) - ${n(g.tilt)}deg * var(--way) * var(--dip))) scale(calc(1 + ${dip((scale - 1) * grow, "")}));`;
   const rest = pose(0, 0, 0, 1);
-  const steps = cutPoses(
-    [
-      pose(-d * 0.17, -d * 0.25, -m.tilt * 0.3, 1 / m.startScale),
-      pose(d * 0.04, d * 0.06, m.tilt * 0.15, 1 - over * 0.6),
-      pose(-d * 0.02, -d * 0.02, -m.tilt * 0.06, 1 + over * 0.25),
-      pose(0, 0, 0, 1 - over * 0.2),
-      rest,
-    ],
-    m.cuts,
-  );
-  const total = steps.length - 1;
-  const frames = steps
-    .map((body, i) => `${n((i / total) * 100, 1)}% { ${body} }`)
-    .join(" ");
+  const stamp = [
+    pose(-d * 0.17, -d * 0.25, -m.tilt * 0.3, 1 / m.startScale),
+    pose(d * 0.04, d * 0.06, m.tilt * 0.15, 1 - over * 0.6),
+    pose(-d * 0.02, -d * 0.02, -m.tilt * 0.06, 1 + over * 0.25),
+    pose(0, 0, 0, 1 - over * 0.2),
+    rest,
+  ];
   const stampMs = m.duration * 1000 * g.beat;
   return `${BASE_CSS}
 .greeting-letter { --way: calc(${n(1 - g.scatter)} + ${n(g.scatter)} * var(--stray, 0)); padding: ${n(g.catch)}em 0; margin: -${n(g.catch)}em 0; }
 .greeting-letter-held .greeting-glyph { ${rest} }
 .greeting-letter-on .greeting-glyph { animation-duration: ${n(stampMs, 0)}ms; }
 .greeting-letter-off .greeting-glyph { animation-duration: ${n(stampMs * g.back, 0)}ms; }
-@keyframes greeting-letter-stamp { ${frames} }
+${keyframes("greeting-letter-stamp", stamp, m.cuts)}
 @keyframes greeting-letter-back { 0% { transform: scale(calc(1 - ${dip(over * 0.5 * grow, "")})); } 50%, 100% { transform: none; } }
 @media (prefers-reduced-motion: reduce) {
   .greeting-letter-on .greeting-glyph, .greeting-letter-off .greeting-glyph { animation-duration: 1ms; }

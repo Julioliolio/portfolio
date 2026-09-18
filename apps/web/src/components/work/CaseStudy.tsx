@@ -616,46 +616,32 @@ function FigureView({
             {/* Plain <img>: the static export has no image optimizer, and
                 every public/ path goes through asset() for the basePath. */}
             {/* eslint-disable-next-line @next/next/no-img-element */}
-            <img src={asset(figure.src as `/${string}`)} alt={figure.alt} />
+            <img src={asset(figure.src)} alt={figure.alt} />
           </div>
           {cap}
         </figure>
       );
-    case "video":
+    case "video": {
+      // A film has controls and sound; a loop plays itself, muted.
+      const loop = figure.mode === "loop";
       return (
         <figure className={className} style={style}>
           <div className="cs-media" style={{ aspectRatio: figure.aspect }}>
-            {figure.mode === "film" ? (
-              <video
-                src={asset(figure.src as `/${string}`)}
-                poster={
-                  figure.poster
-                    ? asset(figure.poster as `/${string}`)
-                    : undefined
-                }
-                controls
-                playsInline
-                preload="metadata"
-              />
-            ) : (
-              <video
-                src={asset(figure.src as `/${string}`)}
-                poster={
-                  figure.poster
-                    ? asset(figure.poster as `/${string}`)
-                    : undefined
-                }
-                autoPlay
-                muted
-                loop
-                playsInline
-                preload="metadata"
-              />
-            )}
+            <video
+              src={asset(figure.src)}
+              poster={figure.poster && asset(figure.poster)}
+              controls={!loop}
+              autoPlay={loop}
+              muted={loop}
+              loop={loop}
+              playsInline
+              preload="metadata"
+            />
           </div>
           {cap}
         </figure>
       );
+    }
     case "demo":
       return (
         <figure className={className ?? "cs-demo"} style={style}>

@@ -23,15 +23,16 @@ export type Figure =
     }
   | {
       kind: "image";
-      src: string;
+      /** A public/ path; the template routes it through asset(). */
+      src: `/${string}`;
       alt: string;
       aspect: number;
       caption?: string;
     }
   | {
       kind: "video";
-      src: string;
-      poster?: string;
+      src: `/${string}`;
+      poster?: `/${string}`;
       aspect: number;
       /** Autoplaying loops are muted and controls-free; a film has
        *  controls and sound. */

@@ -8,7 +8,7 @@ import {
   useState,
   type ReactNode,
 } from "react";
-import { Enter, cutPoses, useMotionTuning } from "./motion";
+import { Enter, keyframes, squashed, useMotionTuning } from "./motion";
 import { createTuningStore } from "./tuning-store";
 
 /**
@@ -103,42 +103,33 @@ const EXIT_CUTS = 2;
 
 const n = (v: number, d = 3) => Number(v.toFixed(d)).toString();
 
-function squashed(scale: number, q: number) {
-  return `scale(${n(scale * (1 + q))}, ${n(scale * (1 - q))})`;
-}
+/** The open's held poses, 2 to 4, and how long they and the close's
+ *  take, ms. */
+const openCuts = (t: WindowTuning) =>
+  Math.min(4, Math.max(2, Math.round(t.cuts)));
+const openMs = (t: WindowTuning) => openCuts(t) * t.beat;
+const exitMs = (t: WindowTuning) => EXIT_CUTS * t.beat;
 
-/** One @keyframes block: the poses evenly spaced, the last one rest. */
-function keyframes(name: string, steps: string[]) {
-  const total = steps.length - 1;
-  const body = steps
-    .map((pose, i) => `  ${n((i / total) * 100, 1)}% { ${pose} }`)
-    .join("\n");
-  return `@keyframes ${name} {\n${body}\n}`;
-}
-
-/** The open's five poses — start, land, settle, a second smaller
- *  landing, rest — cut to the tuning's count. */
+/** The open's five poses: start, land, settle, a second smaller
+ *  landing, rest. */
 function openPoses(t: WindowTuning): string[] {
   const d = t.distance;
   const q = t.squash;
   const over = t.overshoot - 1;
-  return cutPoses(
-    [
-      `opacity: 0; transform: translateY(${n(d)}px) scale(${n(t.startScale)});`,
-      `opacity: 1; transform: translateY(${n(-d * 0.08)}px) ${squashed(t.overshoot, q)};`,
-      `opacity: 1; transform: translateY(${n(d * 0.03)}px) ${squashed(1 - over * 0.5, -q / 3)};`,
-      `opacity: 1; transform: translateY(${n(-d * 0.01)}px) scale(${n(1 + over * 0.3)});`,
-      `opacity: 1; transform: none;`,
-    ],
-    t.cuts,
-  );
+  return [
+    `opacity: 0; transform: translateY(${n(d)}px) scale(${n(t.startScale)});`,
+    `opacity: 1; transform: translateY(${n(-d * 0.08)}px) ${squashed(t.overshoot, q)};`,
+    `opacity: 1; transform: translateY(${n(d * 0.03)}px) ${squashed(1 - over * 0.5, -q / 3)};`,
+    `opacity: 1; transform: translateY(${n(-d * 0.01)}px) scale(${n(1 + over * 0.3)});`,
+    `opacity: 1; transform: none;`,
+  ];
 }
 
 /** The whole stylesheet for a tuning. */
 export function windowCss(t: WindowTuning): string {
-  const cuts = Math.min(4, Math.max(2, Math.round(t.cuts)));
-  const open = cuts * t.beat;
-  const exit = EXIT_CUTS * t.beat;
+  const cuts = openCuts(t);
+  const open = openMs(t);
+  const exit = exitMs(t);
   const step = `${n(open, 0)}ms steps(${cuts}, end)`;
   const d = t.distance;
   return `
@@ -174,7 +165,7 @@ export function windowCss(t: WindowTuning): string {
    same way. Plays while the window is still mounted. */
 .pw.is-leaving .pw-shell { animation: pw-exit ${n(exit, 0)}ms steps(1, end) both; }
 .pw.is-leaving .pw-backdrop { animation: pw-undim ${n(exit, 0)}ms steps(1, end) both; }
-${keyframes("pw-open", openPoses(t))}
+${keyframes("pw-open", openPoses(t), t.cuts)}
 @keyframes pw-exit { 0% { opacity: 0.5; transform: translateY(${n(d * 0.2)}px) scale(0.97); } 50%, 100% { opacity: 0; transform: translateY(${n(d * 0.45)}px) scale(0.94); } }
 @keyframes pw-dim { 0% { opacity: 0; } 100% { opacity: 1; } }
 @keyframes pw-undim { 0% { opacity: 0.5; } 50%, 100% { opacity: 0; } }
@@ -201,12 +192,8 @@ ${keyframes("pw-open", openPoses(t))}
  *  first click from the cache. */
 const sounds = () => import("./sound");
 
-function tap() {
-  void sounds().then((m) => m.play("tap", 1, { at: "click" }));
-}
-
-function knock() {
-  void sounds().then((m) => m.play("knock", 1, { at: "click" }));
+function click(name: "tap" | "knock") {
+  void sounds().then((m) => m.play(name, 1, { at: "click" }));
 }
 
 // ---------------------------------------------------------- the scroller
@@ -279,8 +266,9 @@ type ProjectWindowProps = {
   label: string;
   /** Page mode: where the close goes. */
   closeHref?: string;
-  onSelect: (slug: string) => void;
-  onClose: () => void;
+  /** Modal mode: a pill was picked; the window asks to close. */
+  onSelect?: (slug: string) => void;
+  onClose?: () => void;
   children?: ReactNode;
 };
 
@@ -317,15 +305,15 @@ export function ProjectWindow({
     setPrevShown(shown);
     setLeaving(!shown);
   }
-  const exitMs = EXIT_CUTS * t.beat;
+  const exit = exitMs(t);
   useEffect(() => {
     if (!leaving) return;
     const id = window.setTimeout(() => {
       setLeaving(false);
       setFull(false);
-    }, exitMs);
+    }, exit);
     return () => window.clearTimeout(id);
-  }, [leaving, exitMs]);
+  }, [leaving, exit]);
 
   const mounted = shown || leaving;
 
@@ -348,7 +336,7 @@ export function ProjectWindow({
     const onKey = (e: KeyboardEvent) => {
       if (e.key === "Escape") {
         e.preventDefault();
-        onClose();
+        onClose?.();
       }
     };
     window.addEventListener("keydown", onKey);
@@ -365,8 +353,7 @@ export function ProjectWindow({
 
   if (!mounted) return null;
 
-  const cuts = Math.min(4, Math.max(2, Math.round(t.cuts)));
-  const landed = cuts * t.beat;
+  const landed = openMs(t);
 
   return (
     <div
@@ -412,8 +399,8 @@ export function ProjectWindow({
                     return;
                   e.preventDefault();
                   if (tab.slug === active) return;
-                  tap();
-                  onSelect(tab.slug);
+                  click("tap");
+                  onSelect?.(tab.slug);
                 }}
               >
                 {tab.title}
@@ -438,7 +425,7 @@ export function ProjectWindow({
                 aria-pressed={full}
                 data-cursor-label={full ? "shrink" : "expand"}
                 onClick={() => {
-                  tap();
+                  click("tap");
                   setFull((f) => !f);
                 }}
               >
@@ -461,8 +448,8 @@ export function ProjectWindow({
                 aria-label="Close"
                 data-cursor-label="close"
                 onClick={() => {
-                  knock();
-                  onClose();
+                  click("knock");
+                  onClose?.();
                 }}
               >
                 {CLOSE}

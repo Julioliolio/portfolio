@@ -127,7 +127,7 @@ const KIND_LENGTH: Record<EnterKind, number> = {
 const n = (v: number, d = 2) => Number(v.toFixed(d)).toString();
 
 /** A landing squash as a scale(): wide and short by `q`, area kept. */
-function squashed(scale: number, q: number) {
+export function squashed(scale: number, q: number) {
   return `scale(${n(scale * (1 + q), 3)}, ${n(scale * (1 - q), 3)})`;
 }
 
@@ -208,7 +208,7 @@ function poses(kind: EnterKind, t: MotionTuning): string[] {
  * `cuts - 1` of the middle three, and rest. The greeting's hover stamp
  * is cut the same way.
  */
-export function cutPoses<T>(all: readonly T[], cuts: number): T[] {
+function cutPoses<T>(all: readonly T[], cuts: number): T[] {
   const c = Math.min(4, Math.max(1, Math.round(cuts)));
   const [start, land, settle, land2, rest] = all as [T, T, T, T, T];
   return [start, ...[land, settle, land2].slice(0, c - 1), rest];
@@ -216,7 +216,7 @@ export function cutPoses<T>(all: readonly T[], cuts: number): T[] {
 
 /** One @keyframes block: the start pose, `cuts` held poses, evenly
  *  spaced, the last one being rest. */
-function keyframes(name: string, all: string[], cuts: number) {
+export function keyframes(name: string, all: string[], cuts: number) {
   const steps = cutPoses(all, cuts);
   const total = steps.length - 1;
   const body = steps

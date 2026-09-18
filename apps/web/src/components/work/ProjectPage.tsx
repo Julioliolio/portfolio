@@ -24,8 +24,6 @@ export function ProjectPage({ project }: { project: Project }) {
         shown
         label={project.title}
         closeHref={asset("/")}
-        onSelect={() => {}}
-        onClose={() => {}}
       >
         <CaseStudy project={project} home />
       </ProjectWindow>
