@@ -20,4 +20,5 @@ export const loaders = {
   boil: () => import("./pieces/boil"),
   sound: () => import("./pieces/sound"),
   "road-signs": () => import("./pieces/road-signs"),
+  window: () => import("./pieces/window"),
 } satisfies Record<LabSlug, () => Promise<LabPieceModule>>;

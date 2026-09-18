@@ -73,7 +73,7 @@ const pieces = [
     slug: "greeting",
     title: "Greeting",
     description:
-      "The greeting's words under the pointer — the letters' stamp, tilt, hairline and wave, tuned live; the selection highlight is a bench-only extra. A hover the home page keeps plain.",
+      "The greeting's words under the pointer — the letters' stamp, tilt, hairline, swing, clock and wave, tuned live. Exactly the home page's hover.",
     background: "white",
   },
   {
@@ -94,6 +94,13 @@ const pieces = [
     title: "Road signs",
     description:
       "The projects stack — three photographed road signs. Hovering one lifts it and steps the others back, cut at 12fps.",
+    background: "white",
+  },
+  {
+    slug: "window",
+    title: "Project window",
+    description:
+      "The case study's window over the landing — the card's stamp-in, its size and shadow, the dim and blur behind it, the pills and the expand — tuned live.",
     background: "white",
   },
 ] as const satisfies readonly LabPiece[];

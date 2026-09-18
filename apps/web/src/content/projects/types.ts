@@ -61,12 +61,29 @@ export type Block =
   | { type: "quote"; text: string; source?: string }
   /** One figure, full width of the column. */
   | { type: "figure"; figure: Figure }
-  /** Several figures side by side (two or three), wrapping on phones. */
-  | { type: "figures"; figures: Figure[] };
+  /** Several figures side by side (two or three), each with its own
+   *  caption under it, wrapping on phones. */
+  | { type: "figures"; figures: Figure[] }
+  /** The project's scope as a timeline: phases as bars over a row of
+   *  months. `from` and `to` are month indices into `months`, `to`
+   *  exclusive, so { from: 0, to: 2 } spans the first two. */
+  | {
+      type: "timeline";
+      months: string[];
+      phases: { label: string; from: number; to: number }[];
+      /** A line under the bars — what the timeline stands for. */
+      note?: string;
+    }
+  /** A row of figures wider than the column, dragged through
+   *  sideways; each figure's caption sits under it. */
+  | { type: "carousel"; figures: Figure[]; hint?: string };
 
 export type Section = {
   /** Anchor id, used by the table of contents. */
   id: string;
+  /** A word or two for the section's eyebrow and the rail: "Research",
+   *  "The problem". */
+  label: string;
   /** Sentence-style, the way a heading reads in conversation. */
   heading: string;
   blocks: Block[];
@@ -75,6 +92,11 @@ export type Section = {
 export type Project = {
   slug: string;
   title: string;
+  /** The eyebrow over the title: what kind of thing and when, in a few
+   *  words — "Master's thesis · 2025–2026". */
+  kicker: string;
+  /** The project's own colour: the next-case-study card wears it. */
+  accent: string;
   /** One line under the title — what it is, in a breath. */
   tagline: string;
   /** For <title> and the description meta. */

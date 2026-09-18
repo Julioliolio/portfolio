@@ -9,6 +9,8 @@ import type { Project } from "./types";
 export const camper: Project = {
   slug: "camper",
   title: "Camper",
+  kicker: "Proposal film · 2894 Studio · 2026",
+  accent: "#d94f2b",
   tagline: "Everyone is equal in their feet.",
   summary:
     "A sixty-second proposal film for Camper, made end to end with generative AI at 2894 Studio: concept, storyboard, every still and every shot.",
@@ -33,6 +35,7 @@ export const camper: Project = {
   sections: [
     {
       id: "idea",
+      label: "The idea",
       heading: "One brand, every kind of feet",
       blocks: [
         {
@@ -62,6 +65,7 @@ export const camper: Project = {
     },
     {
       id: "process",
+      label: "Process",
       heading: "From a storyboard to sixty seconds",
       blocks: [
         {
@@ -99,6 +103,7 @@ export const camper: Project = {
     },
     {
       id: "learnings",
+      label: "Learnings",
       heading: "What it taught me",
       blocks: [
         {

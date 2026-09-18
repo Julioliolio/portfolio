@@ -12,7 +12,17 @@ import {
 } from "@portfolio/lab/greeting";
 import { HelloStyles, useHelloTuning } from "@portfolio/lab/hello";
 import { SoundToggle, play } from "@portfolio/lab/sound";
-import { Suspense, lazy, useEffect, useRef, useState } from "react";
+import { asset } from "@portfolio/lab/asset";
+import {
+  Suspense,
+  lazy,
+  useCallback,
+  useEffect,
+  useRef,
+  useState,
+  type MouseEvent,
+} from "react";
+import { ProjectWindowMount, warmWindow } from "./ProjectWindowMount";
 
 /**
  * The landing: two screens on the wall, snapped.
@@ -32,9 +42,9 @@ import { Suspense, lazy, useEffect, useRef, useState } from "react";
  * sign (held until "I’m" has landed and its frame is decoded — whichever
  * is later), then the line, then the scroll cue. Each word taps as it
  * lands. The words stay; the sign keeps its pointer walk and its click
- * flip to About and back. The words are plain under the pointer:
- * the letter-by-letter hover they could have lives on /lab/greeting
- * only (see @portfolio/lab/greeting).
+ * flip to About and back. The words take the pointer letter by
+ * letter — the wave, its notes and the bed — as @portfolio/lab/greeting
+ * says it, tuned on /lab/greeting.
  *
  * Every arrival on a screen plays that screen's entrance, with no dead
  * frames: both pieces are mounted once, at load, and stay mounted. An
@@ -45,6 +55,14 @@ import { Suspense, lazy, useEffect, useRef, useState } from "react";
  * restarts from its first pose while the screen is still sliding in, so
  * it is landing by the time the scroll settles. The first screen's
  * load-time mount is its first play.
+ *
+ * A plain click on a sign (or its card) opens the project in the
+ * window (@portfolio/lab/window) over this page rather than leaving it:
+ * the click is caught on the projects screen, the slug goes into state
+ * and /work/<slug>/ onto the history stack, so Back closes the window,
+ * a reload lands on the project's own page, and a modified click still
+ * opens it in a new tab. Switching pills swaps the slug and the URL in
+ * place; closing goes back. See ProjectWindowMount for what loads when.
  *
  * Pieces come through the lab loaders like everywhere else — never
  * imported directly.
@@ -63,8 +81,6 @@ const IN = 0.4;
 const OUT = 0.2;
 const HELD = 0.6;
 
-/** How loud a word lands, relative to the tap's tuned level. */
-const WORD_TAP = 0.6;
 /** Words in each speech, for its timers. */
 const HELLO_WORDS = countWords(GREETING_HELLO);
 const LINE_WORDS = countWords(GREETING_LINE);
@@ -163,7 +179,10 @@ function schedule(
   const timers: number[] = [];
   for (let i = 0; i < words; i++) {
     timers.push(
-      window.setTimeout(() => play("tap", WORD_TAP), base + i * motion.stagger),
+      window.setTimeout(
+        () => play("tap", 1, { at: "word" }),
+        base + i * motion.stagger,
+      ),
     );
   }
   timers.push(
@@ -336,6 +355,57 @@ export function Landing() {
     ref.current?.scrollIntoView({ behavior: "smooth", block: "start" });
   }
 
+  // The project window: which case study is open, kept in step with
+  // the history stack. Opening pushes the project's URL (its state
+  // carries the slug), a switch replaces it, and a close goes back —
+  // so Back and the close button are the same thing, and a popstate
+  // from either sets the state. Next patches pushState to keep its own
+  // tree in the state; ours rides along.
+  const [open, setOpen] = useState<string | null>(null);
+  const openProject = useCallback((slug: string) => {
+    setOpen(slug);
+    history.pushState(
+      { ...history.state, pw: slug },
+      "",
+      asset(`/work/${slug}/`),
+    );
+  }, []);
+  const switchProject = useCallback((slug: string) => {
+    setOpen(slug);
+    history.replaceState(
+      { ...history.state, pw: slug },
+      "",
+      asset(`/work/${slug}/`),
+    );
+  }, []);
+  const closeProject = useCallback(() => {
+    if (history.state?.pw) history.back();
+    else setOpen(null);
+  }, []);
+  useEffect(() => {
+    const onPop = (e: PopStateEvent) => {
+      setOpen((e.state as { pw?: string } | null)?.pw ?? null);
+    };
+    window.addEventListener("popstate", onPop);
+    return () => window.removeEventListener("popstate", onPop);
+  }, []);
+  // The window's chunks come in as the projects screen arrives, so the
+  // first click has nothing to wait for.
+  useEffect(() => {
+    if (screens.projects.held) warmWindow();
+  }, [screens.projects.held]);
+  // A plain left click on a link to a project opens it here; anything
+  // modified, or any other link, is the browser's.
+  function onProjectsClick(e: MouseEvent<HTMLElement>) {
+    if (e.defaultPrevented || e.button !== 0) return;
+    if (e.metaKey || e.ctrlKey || e.shiftKey || e.altKey) return;
+    const a = (e.target as Element).closest("a[href]");
+    const slug = a?.getAttribute("href")?.match(/\/work\/([^/?#]+)/)?.[1];
+    if (!slug) return;
+    e.preventDefault();
+    openProject(slug);
+  }
+
   return (
     <>
       <style>{CSS}</style>
@@ -414,7 +484,7 @@ export function Landing() {
           label="Scroll to the projects"
           text={["View", "projects"]}
           onClick={() => {
-            play("knock");
+            play("knock", 1, { at: "click" });
             scrollTo(projectsScreen);
           }}
         />
@@ -426,6 +496,7 @@ export function Landing() {
           .filter(Boolean)
           .join(" ")}
         aria-label="Projects"
+        onClick={onProjectsClick}
       >
         <Cue
           dir="up"
@@ -434,7 +505,7 @@ export function Landing() {
           label="Scroll back to the top"
           text={["Back", "up"]}
           onClick={() => {
-            play("knock");
+            play("knock", 1, { at: "click" });
             scrollTo(helloScreen);
           }}
         />
@@ -449,6 +520,13 @@ export function Landing() {
           </Suspense>
         </div>
       </section>
+
+      {/* The project window, over everything, while a sign is open. */}
+      <ProjectWindowMount
+        open={open}
+        onSelect={switchProject}
+        onClose={closeProject}
+      />
 
       {/* Sound (see @portfolio/lab/sound): the pieces tick, strike and
           knock on their own; this is the switch that mutes all of it,

@@ -9,6 +9,8 @@ import type { Project } from "./types";
 export const localpal: Project = {
   slug: "localpal",
   title: "LocalPal",
+  kicker: "Master’s thesis · UDIT · 2025–2026",
+  accent: "#3121ff",
   tagline: "Finding and organising the plans a city doesn't show you.",
   summary:
     "A map-first app where young adults in European cities discover the niche things to do and find the people to do them with. Master's thesis: research, service concept, brand, design system and a working prototype.",
@@ -34,6 +36,7 @@ export const localpal: Project = {
   sections: [
     {
       id: "overview",
+      label: "Overview",
       heading: "Overview",
       blocks: [
         {
@@ -49,10 +52,37 @@ export const localpal: Project = {
           text: "A city is much more than its obvious plans. The best ones don't exist until someone makes them happen. LocalPal is where they happen.",
           source: "The brand claim",
         },
+        {
+          // The phases as the memoir orders them; the months are a first
+          // guess off its dates (research through March 2026) — confirm
+          // against the plan.
+          type: "timeline",
+          months: [
+            "Oct",
+            "Nov",
+            "Dec",
+            "Jan",
+            "Feb",
+            "Mar",
+            "Apr",
+            "May",
+            "Jun",
+          ],
+          phases: [
+            { label: "Framework and netnography", from: 0, to: 3 },
+            { label: "Interviews and analysis", from: 3, to: 6 },
+            { label: "Concept and requirements", from: 4, to: 6 },
+            { label: "Brand and design system", from: 5, to: 7 },
+            { label: "Prototype", from: 6, to: 9 },
+            { label: "Memoir and defence", from: 7, to: 9 },
+          ],
+          note: "Nine months, from the theoretical framework to the defence.",
+        },
       ],
     },
     {
       id: "moment",
+      label: "The moment",
       heading: "Nights out are shrinking and the climbing gyms are full",
       blocks: [
         {
@@ -75,6 +105,7 @@ export const localpal: Project = {
     },
     {
       id: "problem",
+      label: "The problem",
       heading: "Discovery and coordination are the same operation",
       blocks: [
         {
@@ -89,6 +120,7 @@ export const localpal: Project = {
     },
     {
       id: "research",
+      label: "Research",
       heading: "Reddit first, then six long conversations",
       blocks: [
         {
@@ -111,6 +143,7 @@ export const localpal: Project = {
     },
     {
       id: "findings",
+      label: "Findings",
       heading: "What people actually told me",
       blocks: [
         {
@@ -148,6 +181,7 @@ export const localpal: Project = {
     },
     {
       id: "curve",
+      label: "Timing",
       heading: "The window opens somewhere between week six and twelve",
       blocks: [
         {
@@ -170,6 +204,7 @@ export const localpal: Project = {
     },
     {
       id: "precedents",
+      label: "Precedents",
       heading: "Nobody had heard of the competition",
       blocks: [
         {
@@ -192,6 +227,7 @@ export const localpal: Project = {
     },
     {
       id: "requirements",
+      label: "Requirements",
       heading: "Five requirements, each with a reason attached",
       blocks: [
         {
@@ -228,6 +264,7 @@ export const localpal: Project = {
     },
     {
       id: "concept",
+      label: "Concept",
       heading: "Three people to design for, and a map that never goes away",
       blocks: [
         {
@@ -235,22 +272,26 @@ export const localpal: Project = {
           text: "From the research I built three behavioural personas rather than demographic ones. The initiator, who arrives when the channel is concentrated and easy to reach but nothing in the app is useful to her yet — she is the timing problem, and the onboarding and early utility are designed for her. The enthusiast, motivated but never quite starting: he knows climbing exists, he doesn't know which gym or how to walk in alone — LocalPal is his on-ramp. And the cautious one, who anticipates everything that could go wrong before trying: she is the trust case, and she is why the defences are structural instead of reactive.",
         },
         {
-          type: "figures",
+          type: "carousel",
+          hint: "Drag through the three",
           figures: [
             {
               kind: "placeholder",
               aspect: 3 / 4,
               need: "Persona card: the initiator (figure 3 in the thesis).",
+              caption: "The initiator — the timing problem.",
             },
             {
               kind: "placeholder",
               aspect: 3 / 4,
               need: "Persona card: the enthusiast (figure 4).",
+              caption: "The enthusiast — the on-ramp.",
             },
             {
               kind: "placeholder",
               aspect: 3 / 4,
               need: "Persona card: the cautious one (figure 5).",
+              caption: "The cautious one — the trust case.",
             },
           ],
         },
@@ -277,6 +318,7 @@ export const localpal: Project = {
     },
     {
       id: "brand",
+      label: "Brand",
       heading: "Blue like a hyperlink, soft like a sticker",
       blocks: [
         {
@@ -330,6 +372,7 @@ export const localpal: Project = {
     },
     {
       id: "prototype",
+      label: "Prototype",
       heading: "The map is the feed",
       blocks: [
         {
@@ -436,6 +479,7 @@ export const localpal: Project = {
     },
     {
       id: "learnings",
+      label: "Learnings",
       heading: "What I'd do differently, and what I'm keeping",
       blocks: [
         {

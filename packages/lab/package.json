@@ -12,7 +12,8 @@
     "./cue": "./src/cue.tsx",
     "./greeting": "./src/greeting.tsx",
     "./hello": "./src/hello.tsx",
-    "./sound": "./src/sound.tsx"
+    "./sound": "./src/sound.tsx",
+    "./window": "./src/window.tsx"
   },
   "scripts": {
     "typecheck": "tsc --noEmit"

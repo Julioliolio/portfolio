@@ -9,6 +9,8 @@ import type { Project } from "./types";
 export const convertr: Project = {
   slug: "convertr",
   title: "Convertr",
+  kicker: "Side project · Desktop app · 2026",
+  accent: "#ff3d8f",
   tagline: "A video converter where the box is the whole interface.",
   summary:
     "A desktop app that turns any video into a GIF, MP4, WebM, MOV, AVI, MKV or MP3 — drop it, trim it, drag the result out. Designed and built solo; the real UI runs live on this page.",
@@ -30,11 +32,25 @@ export const convertr: Project = {
   sections: [
     {
       id: "why",
+      label: "Why",
       heading: "I convert a lot of videos for moodboards",
       blocks: [
         {
           type: "lede",
           text: "Convertr is a desktop app that takes any video — dropped in or fetched from a URL — and gives you back a GIF, an MP4, a WebM, whatever you need, trimmed to the bit you wanted.",
+        },
+        {
+          // Spring 2026, roughly, as the copy tells it — the design, the
+          // build, then the mocked engine that runs it on this page. The
+          // months are a first guess; confirm.
+          type: "timeline",
+          months: ["Mar", "Apr", "May", "Jun"],
+          phases: [
+            { label: "Design", from: 0, to: 1.5 },
+            { label: "Build", from: 1, to: 3 },
+            { label: "Mocked engine for the web", from: 3, to: 4 },
+          ],
+          note: "A side project over a spring.",
         },
         {
           type: "p",
@@ -48,6 +64,7 @@ export const convertr: Project = {
     },
     {
       id: "box",
+      label: "The box",
       heading: "One bounding box, morphing through everything",
       blocks: [
         {
@@ -55,27 +72,32 @@ export const convertr: Project = {
           text: "The whole design is one box. When the app is idle, the box sits in the middle of the window drawn by four guide lines and corner crosshairs, cycling through the shapes a video can be — widescreen, vertical, four-by-three, square — one step per spin of the cross. Drop a file on it and the box becomes a loading bar. Then it becomes the video, sized to the video's own aspect. Open the settings and the box gives up one dimension to make room, cropping the video instead of shrinking it, so it stays big. Press convert and it collapses into a bar again with a row of bricks carrying the progress. And when the result lands, the box steps outward, the dotted grid shows around the media, and three chips hang off the corners: the output size, the delta against the original, and download — which you drag.",
         },
         {
-          type: "figures",
+          type: "carousel",
+          hint: "Drag through the states",
           figures: [
             {
               kind: "placeholder",
               aspect: 16 / 10,
               need: "Screen: the idle state — the box drawn by guide lines and crosshairs, the 'DROP A FILE OR PASTE A URL' hint.",
+              caption: "Idle: four guide lines, cycling through the shapes.",
             },
             {
               kind: "placeholder",
               aspect: 16 / 10,
               need: "Screen: the editor with a vertical video loaded, the box narrow and tall, the format dropdown open.",
+              caption: "Loaded: the box takes the video's own aspect.",
             },
             {
               kind: "placeholder",
               aspect: 16 / 10,
               need: "Screen: converting — the box collapsed into a bar with the carrier bricks mid-run.",
+              caption: "Converting: a bar again, bricks carrying the progress.",
             },
             {
               kind: "placeholder",
               aspect: 16 / 10,
               need: "Screen: the result — the box stepped out, the dotted grid visible, OUTPUT SIZE, delta and DOWNLOAD chips on the corners.",
+              caption: "The result: stepped out, chips on the corners.",
             },
           ],
         },
@@ -95,6 +117,7 @@ export const convertr: Project = {
     },
     {
       id: "details",
+      label: "Details",
       heading: "The small things it does",
       blocks: [
         {
@@ -123,6 +146,7 @@ export const convertr: Project = {
     },
     {
       id: "learnings",
+      label: "Learnings",
       heading: "What building it myself changed",
       blocks: [
         {
