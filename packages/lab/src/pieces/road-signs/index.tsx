@@ -492,9 +492,7 @@ function createRope(): RopeState {
 
 /** Where a sign's right edge currently is, in stage space: its layout box
  *  plus the walk's transform. The rope starts just off it. */
-function signEdge(e: Engine, slug: string): { x: number; y: number } | null {
-  const g = signGeom(e, slug);
-  if (!g) return null;
+function signEdge(g: SignGeom): { x: number; y: number } {
   const rad = (g.tilt * Math.PI) / 180;
   return {
     x: g.cx + g.halfW * Math.cos(rad),
@@ -504,23 +502,24 @@ function signEdge(e: Engine, slug: string): { x: number; y: number } | null {
 
 /** A sign's current centre and half extents in stage space: its layout
  *  box plus the walk's transform (scale, squeeze, nudge, re-tuck). */
-function signGeom(
-  e: Engine,
-  slug: string,
-): {
+/** The stack's padding around its signs, off the sign height. */
+const stackPad = (H: number) => ({ padX: H * 0.6, padY: H * 0.2 });
+
+type SignGeom = {
   cx: number;
   cy: number;
   halfW: number;
   halfH: number;
   tilt: number;
-} | null {
+};
+
+function signGeom(e: Engine, slug: string): SignGeom | null {
   const i = SIGNS.findIndex((s) => s.slug === slug);
   const sign = SIGNS[i];
   if (!sign) return null;
   const t = e.tuning;
   const H = t.height;
-  const padX = H * 0.6;
-  const padY = H * 0.2;
+  const { padX, padY } = stackPad(H);
   const bw = H * sign.aspect;
   const w = e.walks.get(slug);
   const pose = w?.cur ?? REST;
@@ -544,25 +543,45 @@ function cancelShow(e: Engine) {
   e.rope.showTimer = null;
 }
 
-/** The rope's ends: just off the sign's edge, and just short of the
- *  card's left edge at its vertical middle. Measured live, since the card
+/** The hot sign and its card's box, in stage space — what the rope and
+ *  the wedge are drawn from. Measured live, once a draw, since the card
  *  is mid-transition while it pops. */
-function ropePoints(e: Engine) {
+type RopeSpan = {
+  sign: SignGeom;
+  card: { left: number; top: number; bottom: number; height: number };
+};
+
+function ropeSpan(e: Engine): RopeSpan | null {
   const r = e.rope;
-  const t = e.tuning;
   if (!r.active || !r.stage) return null;
   const card = r.cards.get(r.active);
-  const edge = signEdge(e, r.active);
-  if (!card || !edge) return null;
+  const sign = signGeom(e, r.active);
+  if (!card || !sign) return null;
   const sr = r.stage.getBoundingClientRect();
   const cr = card.getBoundingClientRect();
+  return {
+    sign,
+    card: {
+      left: cr.left - sr.left,
+      top: cr.top - sr.top,
+      bottom: cr.bottom - sr.top,
+      height: cr.height,
+    },
+  };
+}
+
+/** The rope's ends: just off the sign's edge, and just short of the
+ *  card's left edge at its vertical middle. */
+function ropePoints(e: Engine, { sign, card }: RopeSpan) {
+  const t = e.tuning;
+  const edge = signEdge(sign);
   let sx = edge.x + t.ropeInset;
-  let ex = cr.left - sr.left - t.ropeInset;
+  let ex = card.left - t.ropeInset;
   if (ex < sx + 30) {
     sx = edge.x + 8;
-    ex = cr.left - sr.left - 8;
+    ex = card.left - 8;
   }
-  return { sx, sy: edge.y, ex, ey: cr.top - sr.top + cr.height * 0.5 };
+  return { sx, sy: edge.y, ex, ey: card.top + card.height * 0.5 };
 }
 
 /** Writes the rope: a cubic with handles at 34% and 69% of the way
@@ -570,8 +589,9 @@ function ropePoints(e: Engine) {
 function drawRope(e: Engine) {
   const { path, start, end } = e.rope.dom;
   if (!path || !start || !end) return;
-  const p = ropePoints(e);
-  if (!p) return;
+  const span = ropeSpan(e);
+  if (!span) return;
+  const p = ropePoints(e, span);
   const sag = e.rope.sagShown;
   const dx = p.ex - p.sx;
   const c1x = p.sx + dx * 0.34;
@@ -584,7 +604,7 @@ function drawRope(e: Engine) {
   start.setAttribute("cy", p.sy.toFixed(2));
   end.setAttribute("cx", p.ex.toFixed(2));
   end.setAttribute("cy", p.ey.toFixed(2));
-  drawBridge(e);
+  drawBridge(e, span);
 }
 
 /**
@@ -595,22 +615,16 @@ function drawRope(e: Engine) {
  * the way to the card". It is drawn under the signs and the card, so
  * wherever they overlap it, they win the hover.
  */
-function drawBridge(e: Engine) {
-  const r = e.rope;
-  const { bridge } = r.dom;
-  if (!bridge || !r.active || !r.stage) return;
-  const card = r.cards.get(r.active);
-  const g = signGeom(e, r.active);
-  if (!card || !g) return;
-  const sr = r.stage.getBoundingClientRect();
-  const cr = card.getBoundingClientRect();
+function drawBridge(e: Engine, { sign: g, card }: RopeSpan) {
+  const { bridge } = e.rope.dom;
+  if (!bridge) return;
   const slack = g.halfH * 0.35;
   const sx = g.cx;
   const top = g.cy - g.halfH - slack;
   const bottom = g.cy + g.halfH + slack;
-  const ex = cr.left - sr.left + 8;
-  const ct = cr.top - sr.top;
-  const cb = cr.bottom - sr.top;
+  const ex = card.left + 8;
+  const ct = card.top;
+  const cb = card.bottom;
   bridge.setAttribute(
     "points",
     `${sx.toFixed(1)},${top.toFixed(1)} ${sx.toFixed(1)},${bottom.toFixed(1)} ${ex.toFixed(1)},${cb.toFixed(1)} ${ex.toFixed(1)},${ct.toFixed(1)}`,
@@ -666,6 +680,19 @@ function ensureRope(e: Engine) {
   }
 }
 
+/** Puts a card up or takes it down: shown, reachable, and its clip
+ *  running only while it is up (autoplay would also let the browser
+ *  pause it as "offscreen" while the card is hidden). */
+function setCardUp(card: HTMLElement | undefined, up: boolean) {
+  if (!card) return;
+  card.classList.toggle("is-active", up);
+  card.setAttribute("aria-hidden", String(!up));
+  card.tabIndex = up ? 0 : -1;
+  const video = card.querySelector("video");
+  if (up) video?.play().catch(() => {});
+  else video?.pause();
+}
+
 function showProject(e: Engine, slug: string) {
   const r = e.rope;
   cancelHide(e);
@@ -673,25 +700,13 @@ function showProject(e: Engine, slug: string) {
   if (!card) return;
   const firstReveal = r.active === null || r.closing;
   if (r.active !== null && r.active !== slug) {
-    const old = r.cards.get(r.active);
-    old?.classList.remove("is-active");
-    old?.setAttribute("aria-hidden", "true");
-    if (old) old.tabIndex = -1;
-    old?.querySelector("video")?.pause();
+    setCardUp(r.cards.get(r.active), false);
   }
   const changed = r.active !== slug;
   // The card sliding out (or a fresh card swapping in): paper on wood.
   if (changed || firstReveal) play("slide", 1, { at: "card" });
   r.active = slug;
-  card.classList.add("is-active");
-  card.setAttribute("aria-hidden", "false");
-  card.tabIndex = 0;
-  // The clip runs only while its card is up (autoplay would also let the
-  // browser pause it as "offscreen" while the card is hidden).
-  card
-    .querySelector("video")
-    ?.play()
-    .catch(() => {});
+  setCardUp(card, true);
   r.closing = false;
   r.sagTarget = e.tuning.sagRest;
   if (changed && firstReveal) {
@@ -712,11 +727,7 @@ function hideProject(e: Engine) {
   cancelHide(e);
   if (r.active === null) return;
   play("slideOut", 1, { at: "card" });
-  const card = r.cards.get(r.active);
-  card?.classList.remove("is-active");
-  card?.setAttribute("aria-hidden", "true");
-  if (card) card.tabIndex = -1;
-  card?.querySelector("video")?.pause();
+  setCardUp(r.cards.get(r.active), false);
   r.dom.svg?.classList.remove("is-visible");
   r.dom.bridgeSvg?.classList.remove("is-live");
   r.sagTarget = 0;
@@ -769,8 +780,7 @@ function ropeCleanup(e: Engine) {
  */
 function geometry(t: RoadSignsTuning) {
   const H = t.height;
-  const padX = H * 0.6;
-  const padY = H * 0.2;
+  const { padX, padY } = stackPad(H);
   const maxSignW = Math.max(...SIGNS.map((s) => H * s.aspect));
   const signsH = SIGNS.length * H + (SIGNS.length - 1) * t.gap;
   const stackW = maxSignW + 2 * padX;
@@ -1069,13 +1079,11 @@ function tick(e: Engine, dt: number): boolean {
     }
   }
 
-  if (!walking) {
-    // A nudge that was due while the stack was still moving plays now.
-    if (g.pending) {
-      g.pending = false;
-      startNudge(e);
-      return e.frame !== null || walking;
-    }
+  // A nudge that was due while the stack was still moving plays now.
+  if (!walking && g.pending) {
+    g.pending = false;
+    startNudge(e);
+    return e.frame !== null;
   }
   return walking;
 }
