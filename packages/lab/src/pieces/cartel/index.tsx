@@ -9,6 +9,7 @@ import {
   type SetStateAction,
 } from "react";
 import { asset } from "../../asset";
+import type { Field } from "../../bench";
 import { replayClass } from "../../motion";
 import {
   SOUND_FIELDS,
@@ -803,20 +804,6 @@ function TuneSlider({
   );
 }
 
-/** Keys of T that hold a number — what a slider row can drive. */
-type NumericKey<T> = {
-  [K in keyof T]: T[K] extends number ? K : never;
-}[keyof T];
-
-type Field<T> = {
-  key: NumericKey<T> & string;
-  label: string;
-  min: number;
-  max: number;
-  step: number;
-  unit: string;
-};
-
 const BOB_FIELDS: Field<BobParams>[] = [
   { key: "fps", label: "Beat", min: 4, max: 30, step: 1, unit: "fps" },
   { key: "amount", label: "Amount", min: 0, max: 4, step: 0.1, unit: "%" },
@@ -865,7 +852,7 @@ function sliders<T extends object>(
       min={f.min}
       max={f.max}
       step={f.step}
-      unit={f.unit}
+      unit={f.unit ?? ""}
       value={values[f.key] as number}
       onChange={(v) => set((p) => ({ ...p, [f.key]: v }))}
     />

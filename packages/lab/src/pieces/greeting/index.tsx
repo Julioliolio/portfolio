@@ -14,7 +14,7 @@ import {
   GREETING_LINE,
   GreetingStyles,
   Speech,
-  countWords,
+  afterHello,
   resetGreetingTuning,
   setGreetingTuning,
   useGreetingTuning,
@@ -162,8 +162,7 @@ export default function GreetingBench() {
   const motion = useMotionTuning();
   const [run, setRun] = useState(0);
 
-  const afterHello =
-    motion.lead + countWords(GREETING_HELLO) * motion.stagger + 200;
+  const lineAt = afterHello(motion);
 
   return (
     <div style={{ display: "grid", gap: 20, width: "min(720px, 100%)" }}>
@@ -190,7 +189,7 @@ export default function GreetingBench() {
         />
         <Speech
           lines={GREETING_LINE}
-          base={afterHello}
+          base={lineAt}
           step={motion.stagger}
           className="gb-words"
         />

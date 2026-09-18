@@ -7,7 +7,7 @@ import {
   GREETING_LINE,
   GreetingStyles,
   Speech,
-  countWords,
+  afterHello,
 } from "../../greeting";
 import {
   HelloStyles,
@@ -140,8 +140,7 @@ export default function HelloBench() {
   const motion = useMotionTuning();
   const [run, setRun] = useState(0);
 
-  const afterHello =
-    motion.lead + countWords(GREETING_HELLO) * motion.stagger + 200;
+  const lineAt = afterHello(motion);
 
   return (
     <>
@@ -170,7 +169,7 @@ export default function HelloBench() {
           <div className="hello-line-slot">
             <Speech
               lines={GREETING_LINE}
-              base={afterHello}
+              base={lineAt}
               step={motion.stagger}
               className="hello-words"
             />

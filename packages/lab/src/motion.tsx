@@ -226,7 +226,7 @@ export function keyframes(name: string, all: string[], cuts: number) {
 }
 
 /** The whole stylesheet for the current tuning. */
-export function motionCss(t: MotionTuning): string {
+function motionCss(t: MotionTuning): string {
   const kinds = ENTER_KINDS.map((kind) => {
     const dur = n(t.duration * KIND_LENGTH[kind], 3);
     return [

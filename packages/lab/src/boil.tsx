@@ -52,7 +52,7 @@ export type BoilTuning = {
 
 // Julio's numbers off the bench, 2026-09-16: five frames a second, a
 // beat after the words land, a 2.5% shove of broad, smooth noise.
-export const BOIL_DEFAULTS: Readonly<BoilTuning> = Object.freeze({
+const BOIL_DEFAULTS: Readonly<BoilTuning> = Object.freeze({
   boilFps: 5,
   boilWait: 150,
   boilShove: 2.5,
@@ -68,7 +68,7 @@ export const useBoilTuning = store.useTuning;
 
 /** The span the tuning's wave and shove are measured across, ems: the
  *  cue's wider word ("projects", Medium) is 71 of its 20-unit ems. */
-export const BOIL_EM = 71 / 20;
+const BOIL_EM = 71 / 20;
 
 /** The seeds of a cycle, sixteen in a shuffled order: at five frames a
  *  second a frame comes round every three seconds and change, and no

@@ -15,6 +15,7 @@ import {
   GREETING_LINE,
   GreetingStyles,
   Speech,
+  afterHello,
   countWords,
 } from "../../greeting";
 import { loaders } from "../../loaders";
@@ -114,8 +115,7 @@ export default function SoundBench() {
 
   // The words land as on the home page: a tap as each one arrives, on
   // the motion tuning's clock, every time they are said.
-  const afterHello =
-    motion.lead + countWords(GREETING_HELLO) * motion.stagger + 200;
+  const lineAt = afterHello(motion);
   useEffect(() => {
     const timers: number[] = [];
     const say = (words: number, base: number) => {
@@ -129,7 +129,7 @@ export default function SoundBench() {
       }
     };
     say(countWords(GREETING_HELLO), motion.lead);
-    say(countWords(GREETING_LINE), afterHello);
+    say(countWords(GREETING_LINE), lineAt);
     return () => {
       for (const t of timers) window.clearTimeout(t);
     };
@@ -184,7 +184,7 @@ export default function SoundBench() {
           />
           <Speech
             lines={GREETING_LINE}
-            base={afterHello}
+            base={lineAt}
             step={motion.stagger}
             className="sb-words"
             bed={bed}

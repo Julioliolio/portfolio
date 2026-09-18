@@ -8,6 +8,7 @@ import {
   type ReactNode,
 } from "react";
 import { asset } from "../../asset";
+import type { Field as BenchField, NumericKey } from "../../bench";
 import { replayClass, useMotionTuning } from "../../motion";
 import {
   SOUND_FIELDS,
@@ -1340,7 +1341,7 @@ export default function RoadSigns({
     scheduleHide(engine, towardCard ? t.hideTowardCard : t.hideDelay);
   }
 
-  function set(key: NumericKey, value: number) {
+  function set(key: NumericKey<RoadSignsTuning>, value: number) {
     setTuning((prev) => ({ ...prev, [key]: value }));
   }
 
@@ -1752,21 +1753,9 @@ export default function RoadSigns({
   );
 }
 
-/** Tuning keys the generic slider rows can drive (everything but the
- *  per-sign tilt maps). */
-type NumericKey = {
-  [K in keyof RoadSignsTuning]: RoadSignsTuning[K] extends number ? K : never;
-}[keyof RoadSignsTuning];
-
-type Field = {
-  key: NumericKey;
-  label: string;
-  hint: string;
-  min: number;
-  max: number;
-  step: number;
-  unit: string;
-};
+/** A slider row over the tuning's numbers (everything but the per-sign
+ *  tilt maps), each with its hint and unit. */
+type Field = Required<BenchField<RoadSignsTuning>>;
 
 const HOT_FIELDS: Field[] = [
   {

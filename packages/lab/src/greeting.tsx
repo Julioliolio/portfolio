@@ -109,7 +109,7 @@ export type GreetingTuning = {
 // little per letter, shared in full by every neighbour out to the edge
 // of a wider reach; a bigger jump in and more of the stamp's tilt
 // either way; a thicker hairline.
-export const GREETING_DEFAULTS: Readonly<GreetingTuning> = Object.freeze({
+const GREETING_DEFAULTS: Readonly<GreetingTuning> = Object.freeze({
   reach: 1.4,
   falloff: 1,
   tilt: 15,
@@ -531,3 +531,8 @@ export function Speech({
 /** Words in a speech, for a caller's timers. */
 export const countWords = (lines: readonly (readonly string[])[]) =>
   lines.reduce((sum, line) => sum + line.length, 0);
+
+/** When the benches start the line: the hello's words on the stagger,
+ *  and a beat of 200ms. */
+export const afterHello = (m: MotionTuning) =>
+  m.lead + countWords(GREETING_HELLO) * m.stagger + 200;

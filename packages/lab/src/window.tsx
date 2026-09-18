@@ -66,7 +66,7 @@ export type WindowTuning = {
 };
 
 // The reference's sizes and darkness; the cuts on the site's beat.
-export const WINDOW_DEFAULTS: Readonly<WindowTuning> = Object.freeze({
+const WINDOW_DEFAULTS: Readonly<WindowTuning> = Object.freeze({
   beat: 100,
   cuts: 3,
   distance: 56,
@@ -126,7 +126,7 @@ function openPoses(t: WindowTuning): string[] {
 }
 
 /** The whole stylesheet for a tuning. */
-export function windowCss(t: WindowTuning): string {
+function windowCss(t: WindowTuning): string {
   const cuts = openCuts(t);
   const open = openMs(t);
   const exit = exitMs(t);

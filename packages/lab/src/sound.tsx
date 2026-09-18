@@ -6,6 +6,7 @@ import {
   type CSSProperties,
   type ReactNode,
 } from "react";
+import type { Field } from "./bench";
 import { createTuningStore } from "./tuning-store";
 
 /**
@@ -118,15 +119,7 @@ const SOUND_DEFAULTS: Readonly<SoundTuning> = Object.freeze({
 });
 
 /** One row per tuning key, for the pieces' bench panels. */
-export const SOUND_FIELDS: {
-  key: keyof SoundTuning;
-  label: string;
-  hint: string;
-  min: number;
-  max: number;
-  step: number;
-  unit: string;
-}[] = [
+export const SOUND_FIELDS: Required<Field<SoundTuning>>[] = [
   {
     key: "master",
     label: "Level",
@@ -324,6 +317,8 @@ const store = createTuningStore("sound-tuning", SOUND_DEFAULTS);
 export const setSoundTuning = store.set;
 export const resetSoundTuning = store.reset;
 export const getSoundTuning = store.get;
+/** The live tuning, re-rendering the caller on every change. */
+export const useSoundTuning: () => SoundTuning = store.useTuning;
 
 // ------------------------------------------------------------- the mute
 
@@ -344,9 +339,6 @@ function subscribeMuted(fn: () => void): () => void {
     muteListeners.delete(fn);
   };
 }
-
-/** The live tuning, re-rendering the caller on every change. */
-export const useSoundTuning: () => SoundTuning = store.useTuning;
 
 /** The mute switch, re-rendering the caller when it flips. */
 function useMuted(): boolean {
@@ -403,6 +395,9 @@ function makeTail(ac: AudioContext, seconds: number): AudioBuffer {
   return buffer;
 }
 
+/** How long the room rings. */
+const ROOM_SECONDS = 1.6;
+
 /** Creates the context. Made once; whether it runs is the browser's
  *  call (see `prime` and `unlock`). */
 function create(): Engine | null {
@@ -421,9 +416,6 @@ function create(): Engine | null {
   engine = { ac, master, noise: makeNoise(ac), room };
   return engine;
 }
-
-/** How long the room rings. */
-const ROOM_SECONDS = 1.6;
 
 function unlock() {
   const e = create();
@@ -466,26 +458,23 @@ function live(): Engine | null {
 
 const MASTER_RAMP = 0.15;
 
-function applyMaster() {
-  if (!engine) return;
-  const { ac, master } = engine;
-  const target = muted ? 0 : store.get().master;
-  master.gain.cancelScheduledValues(ac.currentTime);
-  master.gain.setTargetAtTime(target, ac.currentTime, MASTER_RAMP / 3);
+/** Ramps a live gain to `target` from wherever it is. */
+function aim(ac: AudioContext, gain: AudioParam, target: number) {
+  gain.cancelScheduledValues(ac.currentTime);
+  gain.setTargetAtTime(target, ac.currentTime, MASTER_RAMP / 3);
 }
 
-function applyRoom() {
+function applyMaster() {
   if (!engine) return;
-  const { ac, room } = engine;
-  room.gain.cancelScheduledValues(ac.currentTime);
-  room.gain.setTargetAtTime(store.get().room, ac.currentTime, MASTER_RAMP / 3);
+  aim(engine.ac, engine.master.gain, muted ? 0 : store.get().master);
 }
 
 // Every store change re-aims the live nodes: the master for level and
 // mute, the room's send for its slider.
 function reaim() {
+  if (!engine) return;
   applyMaster();
-  applyRoom();
+  aim(engine.ac, engine.room.gain, store.get().room);
 }
 store.subscribe(reaim);
 subscribeMuted(reaim);

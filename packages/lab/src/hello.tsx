@@ -53,7 +53,7 @@ export type HelloTuning = {
 
 // Julio's numbers off the bench, 2026-09-15: the sign a touch bigger
 // and lifted, the words closer in.
-export const HELLO_DEFAULTS: Readonly<HelloTuning> = Object.freeze({
+const HELLO_DEFAULTS: Readonly<HelloTuning> = Object.freeze({
   signHeight: 31.5,
   signX: 0,
   signY: -3.5,

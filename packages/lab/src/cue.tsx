@@ -49,6 +49,11 @@ const TOP_END = 16.2;
  *  the site's cursor hangs down from its fingertip, so the words above
  *  are never under the hand. */
 const OPEN = ROOM;
+/** The exit's two cuts, ms — the slot stays mounted this long after the
+ *  cue is told to go (see .cue-exit). */
+const CUE_EXIT_MS = 240;
+/** The open's and the close's three cuts, ms (see .cue-open, .cue-close). */
+const CUE_CLOSE_MS = 300;
 
 const CUE_CSS = `
 /* The scroll cue's slot on each screen. The pop entrance plays on the
@@ -65,7 +70,7 @@ const CUE_CSS = `
 .cue-pop { width: 100%; height: 100%; }
 /* Leaving: two held poses — half gone and a step along its arrow, then
    gone. Plays while the cue is still mounted. */
-.cue-exit { animation: cue-exit .24s steps(1, end) both; }
+.cue-exit { animation: cue-exit ${CUE_EXIT_MS}ms steps(1, end) both; }
 @keyframes cue-exit { 0% { opacity: 1; transform: translateX(-50%); } 50% { opacity: .5; transform: translate(-50%, var(--cue-way, 6px)); } 100% { opacity: 0; transform: translate(-50%, calc(var(--cue-way, 6px) * 2)); } }
 .cue.is-up { --cue-way: -6px; }
 .cue-glyph { position: relative; display: block; width: 100%; height: 100%; padding: 0; background: none; border: 0; color: #2562ff; }
@@ -91,17 +96,17 @@ const CUE_CSS = `
    arc is shut past closed; then at rest. Nothing fades: each pose is
    there or not. The classes come from the cue's state so nothing plays
    at mount; the idle nudge gives way to the jolts. */
-.cue-open .cue-ring-top { animation: cue-ring-open .3s steps(1, end) both; }
-.cue-open .cue-arrow { animation: cue-arrow-open .3s steps(1, end) both; }
+.cue-open .cue-ring-top { animation: cue-ring-open ${CUE_CLOSE_MS}ms steps(1, end) both; }
+.cue-open .cue-arrow { animation: cue-arrow-open ${CUE_CLOSE_MS}ms steps(1, end) both; }
 /* Once the words have popped and settled — a boil-wait after the pop —
    they boil: the label puts on the cue's boil filter (boil.tsx), whose
    noise then cycles for as long as the ring is open, the way a
    claymation hold never quite sits still. */
 .cue-open .cue-label { animation: sm-pop calc(var(--sm-duration) * .8) steps(1, end) both, cue-boil-on 1ms steps(1, end) forwards calc(var(--sm-duration) * .8 + var(--boil-wait)); }
 @keyframes cue-boil-on { 0%, 100% { filter: var(--boil-filter); } }
-.cue-close .cue-ring-top { animation: cue-ring-close .3s steps(1, end) both; }
-.cue-close .cue-arrow { animation: cue-arrow-close .3s steps(1, end) both; }
-.cue-close .cue-label { animation: cue-words-close .3s steps(1, end) both; }
+.cue-close .cue-ring-top { animation: cue-ring-close ${CUE_CLOSE_MS}ms steps(1, end) both; }
+.cue-close .cue-arrow { animation: cue-arrow-close ${CUE_CLOSE_MS}ms steps(1, end) both; }
+.cue-close .cue-label { animation: cue-words-close ${CUE_CLOSE_MS}ms steps(1, end) both; }
 @keyframes cue-ring-open { 0% { transform: translateY(${-(OPEN + 5)}px); } 33.3% { transform: translateY(${-(OPEN - 2)}px); } 66.7%, 100% { transform: translateY(${-OPEN}px); } }
 @keyframes cue-arrow-open { 0% { transform: translateY(3px); } 33.3% { transform: translateY(-1px); } 66.7%, 100% { transform: none; } }
 @keyframes cue-ring-close { 0% { transform: translateY(${-OPEN}px); } 33.3% { transform: translateY(2px); } 66.7%, 100% { transform: translateY(0); } }
@@ -151,12 +156,6 @@ function Glyph() {
     </svg>
   );
 }
-
-/** The exit's two cuts, ms — the slot stays mounted this long after the
- *  cue is told to go (see .cue-exit). */
-const CUE_EXIT_MS = 240;
-/** The close's three cuts, ms (see .cue-close). */
-const CUE_CLOSE_MS = 300;
 
 /**
  * The scroll cue in its slot. Mounts with the site's pop entrance after
