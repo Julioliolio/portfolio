@@ -2,7 +2,7 @@
 
 import { useEffect, useId, useRef, useState, type CSSProperties } from "react";
 import { BOIL_SEEDS, BoilFilter } from "./boil";
-import { Enter, useMotionTuning, type MotionTuning } from "./motion";
+import { Enter, cutPoses, useMotionTuning, type MotionTuning } from "./motion";
 import { getSoundTuning, play, useBed } from "./sound";
 import { createTuningStore } from "./tuning-store";
 
@@ -19,16 +19,12 @@ import { createTuningStore } from "./tuning-store";
  * in place, at a share falling off with distance,
  * with the site's stamp (motion.tsx, kind "stamp": in big and a little
  * tilted from up-left; pressed past size down-right; a hair over; rest,
- * on the motion tuning's clock and cuts), kept to `swing` of the
- * entrance's amplitude, and comes out of it tilted, with a hairline
- * stroked around it. Once the pointer has passed, the letter stamps
- * back in two held cuts of half the stamp's length to its plain self.
- *
- * A speech can ask for a highlight too (`highlight`; the bench does,
- * the landing does not): the lit letter's cell is painted the pale blue
- * of a text selection from the first cut, and since the lit cells
- * touch, the reach reads as one selection dragged across a few letters,
- * square while the glyphs inside it tilt.
+ * on the motion tuning's cuts), kept to a share of the entrance's
+ * amplitude — `lift` of its displacement, `grow` of its size change,
+ * `swing` of its tilt — on the motion's clock scaled by `beat`, and
+ * comes out of it tilted, with a hairline stroked around it. Once the
+ * pointer has passed, the letter stamps back in two held cuts, `back`
+ * of the stamp's length, to its plain self.
  *
  * A lit letter boils: while it is on or held its glyph wears a boil
  * filter (boil.tsx) whose noise cycles for as long as the speech is
@@ -87,35 +83,45 @@ export type GreetingTuning = {
   /** How far each letter's own lean strays from `tilt`: 0 and every
    *  letter leans the same way by the same amount; 1 and each leans
    *  anywhere from `tilt` one way to `tilt` the other, set once per
-   *  letter (see Letter's `way`). */
+   *  letter (see Word's `stray`). */
   scatter: number;
   /** The hairline stroked around a held letter, em of its size. */
   hair: number;
-  /** How much of the entrance stamp's swing — displacement, tilt either
-   *  way, size change — a letter under the pointer keeps. */
+  /** The hover's clock: the stamp's length as a share of the motion
+   *  tuning's beat, and the way back's as a share of the stamp. */
+  beat: number;
+  back: number;
+  /** How much of the entrance stamp a letter under the pointer keeps:
+   *  `lift` of its displacement, `grow` of its size change, `swing` of
+   *  its tilt either way. */
+  lift: number;
+  grow: number;
   swing: number;
-  /** The highlight's colour and opacity, 0..1. */
-  mark: string;
-  markAlpha: number;
-  /** How far the highlight reaches past each letter's cell, em: at the
-   *  ends of a run it is the selection's own slack past the glyphs;
-   *  between lit letters it only overlaps. */
-  markPad: number;
+  /** How far above and below the glyph a letter's cell reaches, em:
+   *  the hover catches a pointer that far off the line. */
+  catch: number;
+  /** The step a letter's share moves in, 0..1: coarser and the held
+   *  letters change in fewer, bigger jumps as the pointer moves. */
+  quantum: number;
 };
 
-// Julio's numbers off the bench, 2026-09-15: a big lean, spread a
-// little per letter, that the neighbours nearly share; the highlight
-// is the blue of a browser's text selection.
+// Julio's numbers off the bench, 2026-09-17: a big lean, spread a
+// little per letter, shared in full by every neighbour out to the edge
+// of a wider reach; a bigger jump in and more of the stamp's tilt
+// either way; a thicker hairline.
 export const GREETING_DEFAULTS: Readonly<GreetingTuning> = Object.freeze({
-  reach: 1.2,
-  falloff: 0.93,
+  reach: 1.4,
+  falloff: 1,
   tilt: 15,
-  scatter: 0.5,
-  hair: 0.02,
-  swing: 0.3,
-  mark: "#a9d1ff",
-  markAlpha: 1,
-  markPad: 0.04,
+  scatter: 0.6,
+  hair: 0.03,
+  beat: 1,
+  back: 0.5,
+  lift: 0.5,
+  grow: 0.3,
+  swing: 0.49,
+  catch: 0.12,
+  quantum: 0.1,
 });
 
 // ------------------------------------------------------------- the store
@@ -132,40 +138,27 @@ export const useGreetingTuning = store.useTuning;
 
 const n = (v: number, d = 3) => Number(v.toFixed(d)).toString();
 
-/** `#rrggbb` at an opacity, as rgba(). Anything else is passed through. */
-function tint(hex: string, alpha: number) {
-  const m = /^#([0-9a-f]{6})$/i.exec(hex.trim());
-  if (!m) return hex;
-  const v = parseInt(m[1] as string, 16);
-  return `rgba(${v >> 16}, ${(v >> 8) & 255}, ${v & 255}, ${n(alpha, 2)})`;
-}
-
 /** The static part: the cells, their reach and their states. */
 const BASE_CSS = `
 .greeting-line { display: block; }
 .greeting-word { display: inline-block; }
 .greeting-word + .greeting-word { margin-left: .26em; }
-/* The word is the stacking context, so every letter's highlight (z -1)
-   paints beneath every letter's glyph: a tilted glyph reaching into the
-   next cell is never cut by that cell's highlight. */
-.greeting-word-in { display: inline-block; isolation: isolate; }
+.greeting-word-in { display: inline-block; }
 /* Each letter is a cell around a glyph. The cell's hit area reaches
-   above and below the glyph (padding the margin takes back), so a sweep
-   along a line, or a little off it, catches every letter; the cell is
-   what the highlight paints (its ::before, square, reaching --mark-pad
-   past the cell's sides), and the glyph inside it is what stamps and
-   tilts. A letter is on while its stamp plays, then held: the same
+   above and below the glyph (padding the margin takes back, by the
+   tuning's catch), so a sweep along a line, or a little off it, catches
+   every letter; the glyph inside it is what stamps and tilts. A letter
+   is on while its stamp plays, then held: the same
    pose, set statically, so the browser paints the tilted glyph in
    place instead of resampling a layer it keeps for the animation —
    which is what made held letters soft. The classes come from the
    letter's state, so nothing plays at mount; --dip is the letter's
    share of the stamp's amplitude and of the tilt — 1 under the pointer,
-   less out toward the edge of the reach (see Speech) — and --way its own
-   lean, as a share of the tilt, set once per letter so no two lean
+   less out toward the edge of the reach (see Speech) — and --stray its
+   own number in -1..1, set once per letter, that the tuning's scatter
+   turns into --way, its lean as a share of the tilt, so no two lean
    quite alike. */
-.greeting-letter { position: relative; display: inline-block; padding: .16em 0; margin: -.16em 0; --dip: 1; }
-.greeting-letter::before { content: ""; position: absolute; z-index: -1; inset: 0 calc(-1 * var(--mark-pad, 0em)); opacity: 0; }
-.greeting-word-marked .greeting-letter-on::before, .greeting-word-marked .greeting-letter-held::before { opacity: 1; }
+.greeting-letter { position: relative; display: inline-block; --dip: 1; }
 .greeting-glyph { display: inline-block; transform-origin: 50% 50%; animation-fill-mode: both; animation-timing-function: steps(1, end); }
 /* The boil, and with it the hairline: a lit letter's cell wears one of
    the speech's four filters (--boil-1 to --boil-4, set on the speech),
@@ -188,59 +181,48 @@ const BASE_CSS = `
 `;
 
 /**
- * The generated part, from both tunings: the stamp's poses on the
- * motion tuning's clock, every displacement, tilt and size change at
- * `swing` and scaled by the letter's --dip; and the highlight's paint.
- * The hairline is the boil filter's (see BASE_CSS).
+ * The generated part, from both tunings: the stamp's poses — the
+ * motion tuning's "stamp" (see motion.tsx's poses), on its clock scaled
+ * by `beat` and at its cuts — every displacement at `lift`, tilt at
+ * `swing` and size change at `grow`, all scaled by the letter's --dip;
+ * each letter's lean from its --stray and `scatter`; and the cell's
+ * reach off the line. The hairline is the boil filter's (see BASE_CSS).
  */
 function greetingCss(m: MotionTuning, g: GreetingTuning): string {
   const d = m.distance;
   const over = m.overshoot - 1;
-  const sw = g.swing;
+  const { lift, grow, swing: sw } = g;
   const dip = (v: number, unit: string) => `calc(${n(v)}${unit} * var(--dip))`;
   const pose = (x: number, y: number, r: number, scale: number) =>
-    `transform: translate(${dip(x * sw, "px")}, ${dip(y * sw, "px")}) rotate(calc(${n(r * sw)}deg * var(--dip) - ${n(g.tilt)}deg * var(--way, 1) * var(--dip))) scale(calc(1 + ${dip((scale - 1) * sw, "")}));`;
-  const start = pose(-d * 0.17, -d * 0.25, -m.tilt * 0.3, 1 / m.startScale);
-  const land = pose(d * 0.04, d * 0.06, m.tilt * 0.15, 1 - over * 0.6);
-  const settle = pose(-d * 0.02, -d * 0.02, -m.tilt * 0.06, 1 + over * 0.25);
-  const land2 = pose(0, 0, 0, 1 - over * 0.2);
+    `transform: translate(${dip(x * lift, "px")}, ${dip(y * lift, "px")}) rotate(calc(${n(r * sw)}deg * var(--dip) - ${n(g.tilt)}deg * var(--way) * var(--dip))) scale(calc(1 + ${dip((scale - 1) * grow, "")}));`;
   const rest = pose(0, 0, 0, 1);
-  const c = Math.min(4, Math.max(1, Math.round(m.cuts)));
-  const middle =
-    c === 1
-      ? []
-      : c === 2
-        ? [land]
-        : c === 3
-          ? [land, settle]
-          : [land, settle, land2];
-  const steps = [start, ...middle, rest];
+  const steps = cutPoses(
+    [
+      pose(-d * 0.17, -d * 0.25, -m.tilt * 0.3, 1 / m.startScale),
+      pose(d * 0.04, d * 0.06, m.tilt * 0.15, 1 - over * 0.6),
+      pose(-d * 0.02, -d * 0.02, -m.tilt * 0.06, 1 + over * 0.25),
+      pose(0, 0, 0, 1 - over * 0.2),
+      rest,
+    ],
+    m.cuts,
+  );
   const total = steps.length - 1;
   const frames = steps
     .map((body, i) => `${n((i / total) * 100, 1)}% { ${body} }`)
     .join(" ");
-  const stampMs = n(m.duration * 1000, 0);
-  const backMs = n(m.duration * 500, 0);
+  const stampMs = m.duration * 1000 * g.beat;
   return `${BASE_CSS}
+.greeting-letter { --way: calc(${n(1 - g.scatter)} + ${n(g.scatter)} * var(--stray, 0)); padding: ${n(g.catch)}em 0; margin: -${n(g.catch)}em 0; }
 .greeting-letter-held .greeting-glyph { ${rest} }
-.greeting-letter { --mark-pad: ${n(g.markPad)}em; }
-.greeting-letter::before { background: ${tint(g.mark, g.markAlpha)}; }
-.greeting-letter-on .greeting-glyph { animation-duration: ${stampMs}ms; }
-.greeting-letter-off .greeting-glyph { animation-duration: ${backMs}ms; }
+.greeting-letter-on .greeting-glyph { animation-duration: ${n(stampMs, 0)}ms; }
+.greeting-letter-off .greeting-glyph { animation-duration: ${n(stampMs * g.back, 0)}ms; }
 @keyframes greeting-letter-stamp { ${frames} }
-@keyframes greeting-letter-back { 0% { transform: scale(calc(1 - ${dip(over * 0.5 * sw, "")})); } 50%, 100% { transform: none; } }
+@keyframes greeting-letter-back { 0% { transform: scale(calc(1 - ${dip(over * 0.5 * grow, "")})); } 50%, 100% { transform: none; } }
 @media (prefers-reduced-motion: reduce) {
   .greeting-letter-on .greeting-glyph, .greeting-letter-off .greeting-glyph { animation-duration: 1ms; }
 }
 `;
 }
-
-/** The speech's boil fields, by number: four filters, each a run of the
- *  seeds started a quarter round on from the last. */
-const BOIL_FIELDS = [0, 1, 2, 3] as const;
-
-/** ms the way back takes, for the tuning: the letter is at rest after. */
-const greetingBackMs = (m: MotionTuning) => m.duration * 500;
 
 /**
  * Keeps the greeting's stylesheet in the document, regenerated on every
@@ -258,20 +240,17 @@ export function GreetingStyles() {
 /**
  * One letter. Within the pointer's reach (`dip` > 0, its share of the
  * stamp) it stamps and holds; once the reach has moved off it stamps
- * back, staying in the off class until it is at rest.
+ * back, staying in the off class until the way back has played.
  */
 function Letter({
   ch,
   dip,
-  way,
-  cell,
+  stray,
 }: {
   ch: string;
   dip: number;
-  /** Its own lean, as a share of the tilt — see Word. */
-  way: number;
-  /** Where to hand its cell for the speech to measure. */
-  cell: (el: HTMLSpanElement | null) => void;
+  /** Its own number in -1..1, for its lean — see Word. */
+  stray: number;
 }) {
   const [pose, setPose] = useState<"rest" | "on" | "held" | "off">("rest");
   // Derived during render: the reach arriving starts the stamp, its
@@ -281,12 +260,6 @@ function Letter({
     setWasLit(dip > 0);
     setPose(dip > 0 ? "on" : pose === "on" || pose === "held" ? "off" : pose);
   }
-  const back = greetingBackMs(useMotionTuning());
-  useEffect(() => {
-    if (pose !== "off") return;
-    const t = window.setTimeout(() => setPose("rest"), back + 40);
-    return () => window.clearTimeout(t);
-  }, [pose, back]);
   return (
     <span
       className={[
@@ -297,58 +270,19 @@ function Letter({
       ]
         .filter(Boolean)
         .join(" ")}
-      style={{ "--dip": dip || 1, "--way": n(way) } as CSSProperties}
-      ref={cell}
+      style={{ "--dip": dip || 1, "--stray": n(stray) } as CSSProperties}
     >
       <span
         className="greeting-glyph"
         onAnimationEnd={(e) => {
           if (e.animationName === "greeting-letter-stamp")
             setPose((p) => (p === "on" ? "held" : p));
+          if (e.animationName === "greeting-letter-back")
+            setPose((p) => (p === "off" ? "rest" : p));
         }}
       >
         {ch}
       </span>
-    </span>
-  );
-}
-
-/**
- * One word, a run of letters, each with the share the speech gives it
- * (`dips`, from the word's first letter) and each handing its cell up
- * to be measured (`cell`, by the letter's number in the speech).
- */
-function Word({
-  text,
-  first,
-  dips,
-  cell,
-  highlight = false,
-}: {
-  text: string;
-  /** The word's first letter's number in the speech. */
-  first: number;
-  dips: readonly number[];
-  cell: (i: number, el: HTMLSpanElement | null) => void;
-  /** Paint the lit letters' cells (see the highlight knobs). */
-  highlight?: boolean;
-}) {
-  const { scatter } = useGreetingTuning();
-  return (
-    <span
-      className={
-        highlight ? "greeting-word-in greeting-word-marked" : "greeting-word-in"
-      }
-    >
-      {Array.from(text).map((ch, i) => (
-        <Letter
-          key={i}
-          ch={ch}
-          dip={dips[first + i] ?? 0}
-          way={1 - scatter + scatter * stray(ch, i)}
-          cell={(el) => cell(first + i, el)}
-        />
-      ))}
     </span>
   );
 }
@@ -360,10 +294,42 @@ function stray(ch: string, i: number) {
   return (seed / 233280) * 2 - 1;
 }
 
-/** A letter's share, 0..1, quantised so the pointer moving within one
- *  letter does not re-render the speech, and so held letters change in
- *  steps, not slides. */
-const QUANTUM = 0.1;
+/**
+ * One word, a run of letters, each with the share the speech gives it
+ * (`dips`, from the word's first letter's number in the speech).
+ */
+function Word({
+  text,
+  first,
+  dips,
+}: {
+  text: string;
+  first: number;
+  dips: readonly number[];
+}) {
+  return (
+    <span className="greeting-word-in">
+      {Array.from(text).map((ch, i) => (
+        <Letter
+          key={i}
+          ch={ch}
+          dip={dips[first + i] ?? 0}
+          stray={stray(ch, i)}
+        />
+      ))}
+    </span>
+  );
+}
+
+/** The speech's boil fields, by number: four filters, each a run of the
+ *  seeds started a quarter round on from the last. */
+const BOIL_FIELDS = [0, 1, 2, 3] as const;
+
+/** Seconds between the strikes of letters lit by one move. */
+const STRUM = 0.014;
+
+/** ms the bed keeps going after the pointer has left a speech. */
+const BED_LINGER = 1500;
 
 /**
  * Lines of words said one after another: word i stamps in `base + i *
@@ -390,41 +356,32 @@ export function Speech({
   base,
   step,
   className,
-  highlight = false,
   bed = true,
 }: {
   lines: readonly (readonly string[])[];
   base: number;
   step: number;
   className?: string;
-  /** Paint the lit letters' cells — off by default, on for the bench. */
-  highlight?: boolean;
   /** Bring the bed while hovered. */
   bed?: boolean;
 }) {
-  const { reach, falloff, hair } = useGreetingTuning();
-  const cells = useRef<(HTMLSpanElement | null)[]>([]);
-  // The boil, sized to the speech's em (measured once shown, and again
-  // on resize), cycling while the pointer is over the speech; the lit
-  // letters wear it (see BASE_CSS).
+  const { reach, falloff, hair, quantum } = useGreetingTuning();
   const root = useRef<HTMLSpanElement>(null);
   const [hovered, setHovered] = useState(false);
   // The bed's own hover: on with the pointer, off BED_LINGER after it.
   const [bedHover, setBedHover] = useState(false);
-  const bedOff = useRef<number | null>(null);
   useEffect(() => {
-    if (bedOff.current !== null) window.clearTimeout(bedOff.current);
     if (hovered) {
-      bedOff.current = null;
       setBedHover(true);
       return;
     }
-    bedOff.current = window.setTimeout(() => setBedHover(false), BED_LINGER);
-    return () => {
-      if (bedOff.current !== null) window.clearTimeout(bedOff.current);
-    };
+    const t = window.setTimeout(() => setBedHover(false), BED_LINGER);
+    return () => window.clearTimeout(t);
   }, [hovered]);
   useBed(bed && bedHover);
+  // The speech's em — one size, every letter is set at it — measured
+  // once shown and again on resize: the boil is sized to it, and the
+  // reach is in it.
   const [em, setEm] = useState(16);
   const boilId = useId();
   useEffect(() => {
@@ -436,53 +393,56 @@ export function Speech({
     addEventListener("resize", read);
     return () => removeEventListener("resize", read);
   }, []);
+  // Each letter's share, by its number in the speech: `dips` for the
+  // letters, `lit` the same as of the last move, for the strikes —
+  // empty before the first move and after a leave.
   const [dips, setDips] = useState<readonly number[]>([]);
-  const cell = (i: number, el: HTMLSpanElement | null) => {
-    cells.current[i] = el;
-  };
-  // Each letter's share as of the last move, for the strikes: a letter
-  // is struck when its share rises from nothing.
   const lit = useRef<readonly number[]>([]);
   /** When the last main note struck, for the gap, and which letter it
    *  was: the pointer resting on it strikes it once. */
   const lastMain = useRef(-Infinity);
   const onLetter = useRef(-1);
 
-  function wave(x: number, y: number, em: number) {
+  function wave(speech: HTMLSpanElement, x: number, y: number) {
+    // The shares. A letter's is quantised to `quantum`, so the pointer
+    // moving within one letter does not re-render the speech, and so
+    // held letters change in steps, not slides. Along the line only: a
+    // letter is in reach when the pointer is level with its cell, by
+    // how far it is along from the cell's nearest side; 0 on it.
+    const prev = lit.current;
     const next: number[] = [];
-    let any = false;
     // The letters lit on this move that were not on the last, with
     // their distance from the pointer.
-    const struck: { i: number; d: number }[] = [];
+    const struck: { i: number; d: number; dip: number }[] = [];
     let under = -1;
-    cells.current.forEach((el, i) => {
-      if (!el) return;
+    speech.querySelectorAll(".greeting-letter").forEach((el, i) => {
       const r = el.getBoundingClientRect();
-      // Along the line only: a letter is in reach when the pointer is
-      // level with its cell, by how far it is along from the cell's
-      // nearest side; 0 on it. Other lines are never reached.
-      if (y < r.top || y > r.bottom) return;
+      if (y < r.top || y > r.bottom) {
+        next[i] = 0;
+        return;
+      }
       const d = Math.max(r.left - x, 0, x - r.right);
       if (d === 0) under = i;
       const dip =
         d > reach * em
           ? 0
-          : Math.round(
-              Math.ceil(falloff ** (d / r.width) / QUANTUM) * QUANTUM * 100,
-            ) / 100;
-      next[i] = Math.min(1, dip);
-      if (dip > 0) {
-        any = true;
-        if (!(lit.current[i] ?? 0)) struck.push({ i, d });
-      }
+          : Math.min(
+              1,
+              Math.round(
+                Math.ceil(falloff ** (d / r.width) / quantum) * quantum * 100,
+              ) / 100,
+            );
+      next[i] = dip;
+      if (dip > 0 && !prev[i]) struck.push({ i, d, dip });
     });
-    lit.current = any ? next : [];
+    lit.current = next;
+
+    // The strikes. The main note: the pointer has come onto a letter it
+    // was not on, and the gap has passed. A letter it came onto inside
+    // the gap is not counted as visited, so the pointer settling on it
+    // still strikes it once the gap is up.
     const { gap, company } = getSoundTuning();
     const now = performance.now();
-    // The main note: the pointer has come onto a letter it was not on,
-    // and the gap has passed. A letter it came onto inside the gap is
-    // not counted as visited, so the pointer settling on it still
-    // strikes it once the gap is up.
     let lead = -1;
     if (under >= 0 && under !== onLetter.current) {
       if (now - lastMain.current >= gap) {
@@ -498,21 +458,18 @@ export function Speech({
     // nearest first.
     struck.sort((a, b) => a.d - b.d);
     let j = lead >= 0 ? 1 : 0;
-    for (const { i } of struck) {
+    for (const { i, dip } of struck) {
       if (i === lead) continue;
-      const level = company * (next[i] ?? 0);
+      const level = company * dip;
       if (level <= 0) continue;
       play("letter", level, { delay: j++ * STRUM, soft: true });
     }
-    setDips((prev) => {
-      if (!any && prev.length === 0) return prev;
-      const same =
-        prev.length === next.length && prev.every((v, i) => v === next[i]);
-      return same ? prev : any ? next : [];
-    });
+
+    if (next.some((v, i) => v !== (prev[i] ?? 0))) setDips(next);
   }
 
-  let i = 0;
+  let word = 0;
+  let letter = 0;
   return (
     <span
       ref={root}
@@ -526,10 +483,8 @@ export function Speech({
         if (e.pointerType !== "touch") setHovered(true);
       }}
       onPointerMove={(e) => {
-        if (e.pointerType === "touch") return;
-        // One size for the speech: every letter is set at it.
-        const em = parseFloat(getComputedStyle(e.currentTarget).fontSize) || 16;
-        wave(e.clientX, e.clientY, em);
+        if (e.pointerType !== "touch")
+          wave(e.currentTarget, e.clientX, e.clientY);
       }}
       onPointerLeave={() => {
         setDips([]);
@@ -557,8 +512,10 @@ export function Speech({
       </svg>
       {lines.map((line, l) => (
         <span key={l} className="greeting-line">
-          {line.map((word) => {
-            const idx = i++;
+          {line.map((text) => {
+            const idx = word++;
+            const first = letter;
+            letter += Array.from(text).length;
             return (
               <Enter
                 key={idx}
@@ -568,13 +525,7 @@ export function Speech({
                 delay={base + idx * step}
                 className="greeting-word"
               >
-                <Word
-                  text={word}
-                  first={firstOf(lines, idx)}
-                  dips={dips}
-                  cell={cell}
-                  highlight={highlight}
-                />
+                <Word text={text} first={first} dips={dips} />
               </Enter>
             );
           })}
@@ -583,25 +534,6 @@ export function Speech({
     </span>
   );
 }
-
-/** The number, in the speech, of word `idx`'s first letter. */
-function firstOf(lines: readonly (readonly string[])[], idx: number) {
-  let word = 0;
-  let letters = 0;
-  for (const line of lines)
-    for (const w of line) {
-      if (word === idx) return letters;
-      letters += Array.from(w).length;
-      word++;
-    }
-  return letters;
-}
-
-/** Seconds between the strikes of letters lit by one move. */
-const STRUM = 0.014;
-
-/** ms the bed keeps going after the pointer has left a speech. */
-const BED_LINGER = 1500;
 
 /** Words in a speech, for a caller's timers. */
 export const countWords = (lines: readonly (readonly string[])[]) =>

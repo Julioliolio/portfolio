@@ -75,7 +75,20 @@ export type SoundTuning = {
   bed: number;
   /** The bed's pace: the mean wait between its notes, s. */
   pace: number;
+  /** Where the one-shots play, each a level of its own on top of the
+   *  voice's — so the cue's tap and a sign's tap can differ. */
+  cue: number;
+  sign: number;
+  card: number;
+  word: number;
+  walk: number;
+  spin: number;
+  click: number;
 };
+
+/** A place a one-shot plays from, for its own level. */
+export type Place =
+  "cue" | "sign" | "card" | "word" | "walk" | "spin" | "click";
 
 // Julio's numbers off /lab/sound, 2026-09-17: the letters quiet under the
 // sign's ticks with their company barely there, and a good deal of room
@@ -95,6 +108,13 @@ const SOUND_DEFAULTS: Readonly<SoundTuning> = Object.freeze({
   room: 0.7,
   bed: 0.25,
   pace: 2,
+  cue: 1,
+  sign: 1,
+  card: 1,
+  word: 0.6,
+  walk: 1,
+  spin: 1,
+  click: 1,
 });
 
 /** One row per tuning key, for the pieces' bench panels. */
@@ -232,6 +252,69 @@ export const SOUND_FIELDS: {
     max: 6,
     step: 0.1,
     unit: "s",
+  },
+  {
+    key: "cue",
+    label: "Cue hover",
+    hint: "The scroll cue's tap as its ring opens under the pointer, and the softer one as it shuts.",
+    min: 0,
+    max: 1,
+    step: 0.05,
+    unit: "",
+  },
+  {
+    key: "sign",
+    label: "Sign hover",
+    hint: "The tap as the pointer lands on a road sign.",
+    min: 0,
+    max: 1,
+    step: 0.05,
+    unit: "",
+  },
+  {
+    key: "card",
+    label: "Card",
+    hint: "The paper slide as a project card comes out, and back.",
+    min: 0,
+    max: 1,
+    step: 0.05,
+    unit: "",
+  },
+  {
+    key: "word",
+    label: "Words landing",
+    hint: "The tap as each word of the greeting lands on its entrance.",
+    min: 0,
+    max: 1,
+    step: 0.05,
+    unit: "",
+  },
+  {
+    key: "walk",
+    label: "Cartel walk",
+    hint: "The tick on each photo cut as the sign turns toward the pointer.",
+    min: 0,
+    max: 1,
+    step: 0.05,
+    unit: "",
+  },
+  {
+    key: "spin",
+    label: "Spin",
+    hint: "The sign's click spin: the knock of the launch, the ticks in the air, the softer knock of the landing.",
+    min: 0,
+    max: 1,
+    step: 0.05,
+    unit: "",
+  },
+  {
+    key: "click",
+    label: "Clicks",
+    hint: "The knock on the clicks that go somewhere: the cue, a sign, a card.",
+    min: 0,
+    max: 1,
+    step: 0.05,
+    unit: "",
   },
 ];
 
@@ -413,11 +496,14 @@ export type SoundName =
   "cut" | "tap" | "knock" | "slide" | "slideOut" | "letter";
 
 /** Least ms between two plays of the same sound, so a fast walk doesn't
- *  pile ticks into a buzz. The letters have none: several stamp at once
- *  on first contact and the caller spaces them itself (see `delay`). */
+ *  pile ticks into a buzz. The tap's is short: the cue taps shut and
+ *  open again inside a few ms when the pointer skims its edge, and the
+ *  open must not be lost to the shut. The letters have none: several
+ *  stamp at once on first contact and the caller spaces them itself
+ *  (see `delay`). */
 const MIN_GAP: Record<SoundName, number> = {
   cut: 30,
-  tap: 60,
+  tap: 25,
   knock: 80,
   slide: 100,
   slideOut: 100,
@@ -749,6 +835,8 @@ function playLetter(e: Engine, t0: number, level: number, soft: boolean) {
 }
 
 export type PlayOptions = {
+  /** Where this play is from: its own level in the tuning goes on top. */
+  at?: Place;
   /** Seconds from now to strike, so a burst can be spaced by hand. */
   delay?: number;
   /** A letter's company: a harmony of the melody rather than a step
@@ -772,6 +860,7 @@ export function play(name: SoundName, level = 1, opts: PlayOptions = {}) {
   lastPlayed[name] = now;
   const t0 = e.ac.currentTime + (opts.delay ?? 0);
   const t = store.get();
+  if (opts.at) level *= t[opts.at];
   switch (name) {
     case "cut":
       playCut(e, t0, level * t.cut);

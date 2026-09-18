@@ -1398,7 +1398,7 @@ export default function Cartel({
       current = next;
       // The cut, plus its one-tick echo and axis-aligned smear stretch.
       setShown({ cur: keyOf(current), ghost: keyOf(prev) });
-      if (!walkSilent) play("cut");
+      if (!walkSilent) play("cut", 1, { at: "walk" });
       cutStretch = {
         x: current.col !== prev.col ? CUT_SMEAR * bobSmearRef.current : 0,
         y: current.row !== prev.row ? CUT_SMEAR * bobSmearRef.current : 0,
@@ -1585,7 +1585,7 @@ export default function Cartel({
       // re-checks the desired face, so a flip change mid-spin queues the
       // reverse instead of firing ~1.5s late and reading as a glitch.
       if (!revealed || spinPhase !== "none") return;
-      play("knock");
+      play("knock", 1, { at: "spin" });
       spinDone = onComplete ?? null;
       spinFromFace = face;
       spinToFace = toFace;
@@ -1721,12 +1721,12 @@ export default function Cartel({
       if (spinTookOver && key !== spinLastKey) {
         setShown({ cur: key, ghost: null });
         spinLastKey = key;
-        play("cut");
+        play("cut", 1, { at: "spin" });
       }
       // Touchdown: the first grounded exposure after the air is the
       // landing, a softer knock than the launch.
       const airborne = exposure.jumpY < -0.001;
-      if (spinAirborne && !airborne) play("knock", 0.6);
+      if (spinAirborne && !airborne) play("knock", 0.6, { at: "spin" });
       spinAirborne = airborne;
       spinScaleX = exposure.squashX;
       spinJumpY = exposure.jumpY;

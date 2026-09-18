@@ -202,26 +202,22 @@ function poses(kind: EnterKind, t: MotionTuning): string[] {
   }
 }
 
+/**
+ * The poses an entrance plays, of its five — start, land, settle, a
+ * second smaller landing, rest — at `cuts`: the start, the first
+ * `cuts - 1` of the middle three, and rest. The greeting's hover stamp
+ * is cut the same way.
+ */
+export function cutPoses<T>(all: readonly T[], cuts: number): T[] {
+  const c = Math.min(4, Math.max(1, Math.round(cuts)));
+  const [start, land, settle, land2, rest] = all as [T, T, T, T, T];
+  return [start, ...[land, settle, land2].slice(0, c - 1), rest];
+}
+
 /** One @keyframes block: the start pose, `cuts` held poses, evenly
  *  spaced, the last one being rest. */
 function keyframes(name: string, all: string[], cuts: number) {
-  const c = Math.min(4, Math.max(1, Math.round(cuts)));
-  const [start, land, settle, land2, rest] = all as [
-    string,
-    string,
-    string,
-    string,
-    string,
-  ];
-  const middle =
-    c === 1
-      ? []
-      : c === 2
-        ? [land]
-        : c === 3
-          ? [land, settle]
-          : [land, settle, land2];
-  const steps = [start, ...middle, rest];
+  const steps = cutPoses(all, cuts);
   const total = steps.length - 1;
   const body = steps
     .map((pose, i) => `  ${n((i / total) * 100, 1)}% { ${pose} }`)

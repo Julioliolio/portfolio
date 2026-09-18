@@ -680,7 +680,7 @@ function showProject(e: Engine, slug: string) {
   }
   const changed = r.active !== slug;
   // The card sliding out (or a fresh card swapping in): paper on wood.
-  if (changed || firstReveal) play("slide");
+  if (changed || firstReveal) play("slide", 1, { at: "card" });
   r.active = slug;
   card.classList.add("is-active");
   card.setAttribute("aria-hidden", "false");
@@ -710,7 +710,7 @@ function hideProject(e: Engine) {
   const r = e.rope;
   cancelHide(e);
   if (r.active === null) return;
-  play("slideOut");
+  play("slideOut", 1, { at: "card" });
   const card = r.cards.get(r.active);
   card?.classList.remove("is-active");
   card?.setAttribute("aria-hidden", "true");
@@ -1318,7 +1318,7 @@ export default function RoadSigns({
   // The site's title handlers, on the signs. The sign's own lift is still
   // React's `hovered`; these drive the card and rope.
   function onSignEnter(slug: string) {
-    play("tap");
+    play("tap", 1, { at: "sign" });
     setHovered(slug);
     const r = engine.rope;
     if (r.active === slug && !r.closing) {
@@ -1459,9 +1459,9 @@ export default function RoadSigns({
             className={entrance ? "rs-sign-enter" : undefined}
             onPointerEnter={() => onSignEnter(sign.slug)}
             onPointerLeave={onSignLeave}
-            onClick={() => play("knock")}
+            onClick={() => play("knock", 1, { at: "click" })}
             onFocus={() => {
-              play("tap");
+              play("tap", 1, { at: "sign" });
               setHovered(sign.slug);
               showProject(engine, sign.slug);
             }}
@@ -1537,7 +1537,7 @@ export default function RoadSigns({
           onPointerEnter={() => cancelHide(engine)}
           onPointerLeave={() => scheduleHide(engine, tuning.hideFromCard)}
           onPointerMove={(ev) => nudgeSag(engine, ev.currentTarget, ev.clientY)}
-          onClick={() => play("knock")}
+          onClick={() => play("knock", 1, { at: "click" })}
         >
           <CardPanel sign={sign} />
         </a>
@@ -1708,18 +1708,18 @@ export default function RoadSigns({
               />
             ))}
             <div style={{ display: "flex", gap: 6, flexWrap: "wrap" }}>
-              {(["cut", "tap", "knock", "slide", "slideOut", "letter"] as const).map(
-                (name) => (
-                  <button
-                    key={name}
-                    type="button"
-                    onClick={() => play(name)}
-                    style={btn}
-                  >
-                    ▶ {name}
-                  </button>
-                ),
-              )}
+              {(
+                ["cut", "tap", "knock", "slide", "slideOut", "letter"] as const
+              ).map((name) => (
+                <button
+                  key={name}
+                  type="button"
+                  onClick={() => play(name)}
+                  style={btn}
+                >
+                  ▶ {name}
+                </button>
+              ))}
               <button type="button" onClick={resetSoundTuning} style={btn}>
                 Reset sound
               </button>

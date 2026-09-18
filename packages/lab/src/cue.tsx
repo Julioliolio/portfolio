@@ -1,8 +1,9 @@
 "use client";
 
-import { useEffect, useId, useState } from "react";
+import { useEffect, useId, useRef, useState } from "react";
 import { BOIL_SEEDS, BoilFilter, useBoilTuning } from "./boil";
 import { Enter, useMotionTuning } from "./motion";
+import { play } from "./sound";
 
 /**
  * The landing's scroll cue: Julio's glyph — an open ring with an arrow
@@ -13,7 +14,9 @@ import { Enter, useMotionTuning } from "./motion";
  * settle, and then boil — their outlines wobbling through held frames
  * for as long as the ring is open; leaving closes it the same
  * way. The pointer rests on the arrow, so the site's cursor never
- * covers the words. See the CSS below for every beat.
+ * covers the words. The ring taps as it opens (the site's hover sound,
+ * see sound.tsx) and taps softer as it shuts; the click's knock is the
+ * caller's. See the CSS below for every beat.
  *
  * The boil's numbers are the boil tuning (boil.tsx), shared with the
  * hero's words; /lab/boil is its bench, and the cue reads it live. The
@@ -22,6 +25,8 @@ import { Enter, useMotionTuning } from "./motion";
 
 /** The glyph's height on the landing, vh. */
 export const CUE_VH = 6;
+/** ms the shut's tap waits for the pointer to come back (see `close`). */
+const CLOSE_TAP_MS = 40;
 
 /** The words' size, units per line. */
 const WORD = 20;
@@ -206,11 +211,51 @@ export function Cue({
   }, [leaving]);
   useEffect(() => {
     if (ring !== "closing") return;
-    const t = window.setTimeout(() => setRing("closed"), CUE_CLOSE_MS);
+    // Only a ring still closing is shut: the pointer can come back and
+    // re-open it before this effect's cleanup clears the timer.
+    const t = window.setTimeout(
+      () => setRing((r) => (r === "closing" ? "closed" : r)),
+      CUE_CLOSE_MS,
+    );
     return () => window.clearTimeout(t);
   }, [ring]);
-  const open = () => setRing("open");
-  const close = () => setRing((r) => (r === "open" ? "closing" : r));
+  // The taps read the ring through a ref kept in step at once, not the
+  // rendered state: a leave and a return inside one frame both fire
+  // before React renders between them, and the return has to know the
+  // ring shut. Nothing plays inside an updater.
+  const ringRef = useRef(ring);
+  useEffect(() => {
+    ringRef.current = ring;
+  }, [ring]);
+  // The shut's tap waits CLOSE_TAP_MS: a pointer that skims the edge
+  // and is back inside that is one open, not a shut and an open on top
+  // of each other, and the open is the tap that must not be lost.
+  const closeTap = useRef<number | null>(null);
+  useEffect(
+    () => () => {
+      if (closeTap.current !== null) window.clearTimeout(closeTap.current);
+    },
+    [],
+  );
+  const open = () => {
+    if (closeTap.current !== null) {
+      window.clearTimeout(closeTap.current);
+      closeTap.current = null;
+    }
+    if (ringRef.current !== "open") play("tap", 1, { at: "cue" });
+    ringRef.current = "open";
+    setRing("open");
+  };
+  const close = () => {
+    if (ringRef.current === "open") {
+      ringRef.current = "closing";
+      closeTap.current = window.setTimeout(() => {
+        closeTap.current = null;
+        play("tap", 0.5, { at: "cue" });
+      }, CLOSE_TAP_MS);
+    }
+    setRing((r) => (r === "open" ? "closing" : r));
+  };
 
   if (!shown && !leaving) return null;
   return (

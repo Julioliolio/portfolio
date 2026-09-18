@@ -28,30 +28,11 @@ import { useMotionTuning } from "../../motion";
  * <GreetingStyles> regenerates the stylesheet on every change, so what
  * you set here is what the home page does — in this browser, until
  * Reset. "Copy values" exports them for GREETING_DEFAULTS in
- * packages/lab/src/greeting.tsx. The stamp's own clock and poses are
- * the motion tuning's: /lab/motion. The highlight is shown here only:
- * the landing's speeches do not ask for it.
+ * packages/lab/src/greeting.tsx. The stamp's poses and cuts are the
+ * motion tuning's (/lab/motion); the hover keeps them at its own
+ * shares (Swing) and on its own clock (Clock). What is shown is exactly
+ * the home page's hover: nothing here is bench-only.
  */
-
-const HIGHLIGHT: Field<GreetingTuning>[] = [
-  {
-    key: "markAlpha",
-    label: "Opacity",
-    min: 0,
-    max: 1,
-    step: 0.01,
-    hint: "how solid the highlight is over the wall",
-  },
-  {
-    key: "markPad",
-    label: "Slack",
-    min: 0,
-    max: 0.2,
-    step: 0.005,
-    unit: "em",
-    hint: "how far the highlight reaches past the letters at the ends of a run",
-  },
-];
 
 const POSE: Field<GreetingTuning>[] = [
   {
@@ -80,14 +61,56 @@ const POSE: Field<GreetingTuning>[] = [
     unit: "em",
     hint: "the stroke around a held letter, in its own ink",
   },
+];
+
+const CLOCK: Field<GreetingTuning>[] = [
   {
-    key: "swing",
-    label: "Swing",
+    key: "beat",
+    label: "Beat",
+    min: 0.25,
+    max: 3,
+    step: 0.05,
+    unit: "×",
+    hint: "the hover stamp's length, as a share of the site's beat on /lab/motion — the entrance keeps its own",
+  },
+  {
+    key: "back",
+    label: "Back",
+    min: 0.1,
+    max: 2,
+    step: 0.05,
+    unit: "×",
+    hint: "the way back's length, as a share of the hover stamp's",
+  },
+];
+
+const SWING: Field<GreetingTuning>[] = [
+  {
+    key: "lift",
+    label: "Lift",
     min: 0,
     max: 1,
     step: 0.01,
     unit: "×",
-    hint: "how much of the entrance stamp's swing a letter keeps — its displacement, tilt and size change",
+    hint: "how much of the entrance stamp's jump a letter keeps — how far it comes in from",
+  },
+  {
+    key: "grow",
+    label: "Grow",
+    min: 0,
+    max: 1,
+    step: 0.01,
+    unit: "×",
+    hint: "how much of the entrance stamp's size change a letter keeps — how big it comes in and how hard it presses",
+  },
+  {
+    key: "swing",
+    label: "Lean swing",
+    min: 0,
+    max: 1,
+    step: 0.01,
+    unit: "×",
+    hint: "how much of the entrance stamp's tilt either way a letter keeps, on top of the held tilt",
   },
 ];
 
@@ -109,6 +132,23 @@ const WAVE: Field<GreetingTuning>[] = [
     step: 0.01,
     unit: "×",
     hint: "a letter's share falls to this for every letter-width it is from the pointer",
+  },
+  {
+    key: "catch",
+    label: "Catch",
+    min: 0,
+    max: 0.6,
+    step: 0.01,
+    unit: "em",
+    hint: "how far above and below the glyphs the hover still catches a letter",
+  },
+  {
+    key: "quantum",
+    label: "Step",
+    min: 0.05,
+    max: 0.5,
+    step: 0.05,
+    hint: "the step a letter's share moves in — coarser and the held letters change in fewer, bigger jumps",
   },
 ];
 
@@ -137,7 +177,7 @@ export default function GreetingBench() {
           ▶ Say it again
         </button>
         <span style={{ fontFamily: mono, fontSize: 12, opacity: 0.7 }}>
-          hover the letters · the stamp&apos;s clock is /lab/motion&apos;s
+          hover the letters · the stamp&apos;s poses are /lab/motion&apos;s
         </span>
       </div>
 
@@ -147,42 +187,30 @@ export default function GreetingBench() {
           base={motion.lead}
           step={motion.stagger}
           className="gb-words"
-          highlight
         />
         <Speech
           lines={GREETING_LINE}
           base={afterHello}
           step={motion.stagger}
           className="gb-words"
-          highlight
         />
       </div>
 
       <Group
-        title="Highlight (bench only)"
-        fields={HIGHLIGHT}
+        title="Held pose"
+        fields={POSE}
         values={values}
         set={setGreetingTuning}
       />
-      <label className="bench-row">
-        <span>Colour</span>
-        <input
-          type="color"
-          value={values.mark}
-          onChange={(e) => setGreetingTuning({ mark: e.target.value })}
-          style={{
-            width: 48,
-            height: 28,
-            padding: 0,
-            border: 0,
-            background: "none",
-          }}
-        />
-        <span className="bench-value">{values.mark}</span>
-      </label>
       <Group
-        title="Held pose"
-        fields={POSE}
+        title="Swing"
+        fields={SWING}
+        values={values}
+        set={setGreetingTuning}
+      />
+      <Group
+        title="Clock"
+        fields={CLOCK}
         values={values}
         set={setGreetingTuning}
       />
