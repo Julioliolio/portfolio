@@ -4,7 +4,7 @@ import { useEffect, useSyncExternalStore } from "react";
 
 /**
  * Per-page background switcher for lab pages: a few studio-wall presets
- * plus a free color picker, docked bottom-right. The choice is applied as
+ * plus a free color picker, docked bottom-center. The choice is applied as
  * inline styles on <body> — overriding both the site theme and the
  * server-rendered default-background <style> tag a piece may ship — and
  * persisted per page in localStorage. "Default" clears the override and

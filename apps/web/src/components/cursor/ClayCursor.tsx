@@ -12,9 +12,9 @@ import { useEffect, useRef } from "react";
  * Site-wide clay cursor. The tip is glued to the real pointer — position
  * is never animated, so it is exactly as responsive as the OS cursor. The
  * body leans a few degrees with pointer velocity (pivoting at the tip),
- * ramping in softly, and eases back upright with no bounce when the
- * pointer stops — the Tramuntana hover-card feel. Pressing squishes it
- * slightly.
+ * ramping in softly, and springs back upright when the pointer stops —
+ * the Tramuntana hover-card feel, with the touch of bounce the tuning
+ * gives it. Pressing squishes it slightly.
  *
  * Scope: the whole viewport, including the same-origin demo iframes.
  * The parent window receives no pointer events while the pointer is over
@@ -366,9 +366,9 @@ export function ClayCursor() {
         angle = 0;
         angleVel = 0;
       } else {
-        // Lean with velocity, pivoting at the tip; near-critical damping
-        // means it eases back upright with no bounce when the pointer
-        // stops — the weight reads from the ramp and glide, not wobble.
+        // Lean with velocity, pivoting at the tip; the damping decides how
+        // it comes back upright when the pointer stops (no bounce near
+        // critical) — the weight reads from the ramp and glide.
         const targetAngle = Math.max(
           -tuning.maxTilt,
           Math.min(tuning.maxTilt, vx * tuning.tiltPerVx),

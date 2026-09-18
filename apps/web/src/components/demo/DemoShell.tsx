@@ -11,8 +11,8 @@ type ShellState = "idle" | "loading" | "ready";
  * Embeds a demo app (static build served same-origin at /demos/<demo>/) in a
  * lazily-loaded iframe.
  *
- * - idle: poster/skeleton; loading starts on click, or automatically when the
- *   shell nears the viewport if `autoload` is set.
+ * - idle: the title and a play button; loading starts on click, or
+ *   automatically when the shell nears the viewport if `autoload` is set.
  * - loading: iframe mounts hidden underneath; we wait for the demo's
  *   DEMO_READY postMessage (with a timeout fallback for demos that don't
  *   emit it).

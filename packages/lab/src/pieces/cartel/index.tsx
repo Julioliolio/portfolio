@@ -1556,8 +1556,7 @@ export default function Cartel({
     let spinAirborne = false;
 
     // The face pair a running spin resolves its exposures against: the
-    // outgoing text before the swap point, the incoming after. Equal for
-    // the click flourish.
+    // outgoing text before the swap point, the incoming after.
     let face: Face = "julio";
     let spinFromFace: Face = "julio";
     let spinToFace: Face = "julio";

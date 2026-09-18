@@ -4,9 +4,10 @@ import { useEffect, useSyncExternalStore } from "react";
 
 /**
  * A set of live knobs with a bench behind it: the motion, greeting,
- * hello and sound tunings are all one of these.
+ * hello, sound, boil and window tunings are all one of these.
  *
- * The store is a mutable object every subscriber reads through `use()`.
+ * The store is a mutable object every subscriber reads through
+ * `useTuning()`.
  * `set()` lays a patch over it, keeps the result in localStorage under
  * `key`, and tells every subscriber; `reset()` clears both. Stored
  * values are read once, in an effect after hydration, so the server and

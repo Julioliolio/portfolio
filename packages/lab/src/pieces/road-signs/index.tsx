@@ -81,7 +81,7 @@ import {
  * back past rest and settles. Same walk as a hover (the growing overshoot
  * both ways, since nothing changes size), but at its own frame rate: by
  * default 60fps, a smooth tween, where the hover keeps its hard cuts
- * (Tuning.nudgeFps / nudgeSteps; 16 turns the poke into the same cuts).
+ * (Tuning.nudgeFps / nudgeSteps; 24 turns the poke into the same cuts).
  * The poke carries its own squeeze — compression along the shove in
  * proportion to how fast it is moving, so it lands narrow and tall and
  * re-forms as it slows — the cartel's smear along the axis of motion.
@@ -91,10 +91,10 @@ import {
  *
  * One frame loop drives every walk, and runs only while something is
  * unsettled. Each walk banks the elapsed time and cuts at its own fps —
- * a 16fps hover walk every fourth frame, a 60fps poke every frame — and a
- * freshly (re)started walk cuts on the very next frame so hover never
- * feels late. prefers-reduced-motion collapses each walk to a single cut
- * with no tilt and no squeeze.
+ * a 24fps hover walk every second or third frame, a 60fps poke every
+ * frame — and a freshly (re)started walk cuts on the very next frame so
+ * hover never feels late. prefers-reduced-motion collapses each walk to a
+ * single cut with no tilt and no squeeze.
  *
  * Transforms are written imperatively per frame — React renders only for
  * hover changes and slider edits; the walk engine is a plain object owned
@@ -258,7 +258,7 @@ export type RoadSignsTuning = {
    *  frame: moving 0.1 × height in a frame squashes it 0.1 × nudgeSqueeze
    *  narrower (and taller). 0 = none. */
   nudgeSqueeze: number;
-  /** The poke's own cut rate. 60 = a smooth tween; 16 = the same hard
+  /** The poke's own cut rate. 60 = a smooth tween; 24 = the same hard
    *  cuts as the hover walk. Everything else keeps tuning.fps. */
   nudgeFps: number;
   /** Cuts per leg of the poke (out, and back). With nudgeFps this sets
@@ -982,8 +982,8 @@ function stopFrames(e: Engine) {
 
 /** Keeps the frame loop alive while anything is unsettled. Each frame
  *  banks the elapsed time into every walk and lets it cut as many times
- *  as its own fps allows — a 16fps walk cuts every fourth frame, a 60fps
- *  poke every frame. Returns true when the loop was started fresh. */
+ *  as its own fps allows — a 24fps walk cuts every second or third
+ *  frame, a 60fps poke every frame. Returns true when the loop was started fresh. */
 function ensureFrames(e: Engine): boolean {
   if (e.frame !== null) return false;
   e.last = performance.now();

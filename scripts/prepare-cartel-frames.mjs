@@ -20,9 +20,7 @@
  *   e.g. node scripts/prepare-cartel-frames.mjs source-assets/cartel
  *
  * Sources are not committed (originals live in source-assets/cartel, gitignored);
- * outputs are. Frames are served with default public/ caching (ETag). If
- * frames are regenerated after the sign graduates to the homepage hero,
- * move to a versioned dir (/cartel/v2/) before adding immutable headers.
+ * outputs are. Frames are served with default public/ caching (ETag).
  */
 import { mkdirSync, statSync } from "node:fs";
 import { join, dirname } from "node:path";

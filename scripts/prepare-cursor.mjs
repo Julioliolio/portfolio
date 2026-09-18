@@ -91,8 +91,7 @@ for (const name of ["arrow", "arrow-pointer"]) {
         `${name}-*.webp  (placeholder — drop real PNGs in ${inputDir})`,
       );
     } else {
-      // No pointer asset yet: the component falls back to the arrow frames,
-      // so emit nothing rather than a wrong placeholder.
+      // No pointer source: emit nothing rather than a wrong placeholder.
       console.log(`${name}-*.webp  skipped (no source yet)`);
     }
     continue;

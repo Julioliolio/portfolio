@@ -18,8 +18,8 @@ The `.woff2` files are gitignored (the repo is public and the licence
 forbids redistribution), so a fresh clone has none and `next build` fails
 on `layout.tsx` until they are here. On another machine, either copy the
 seven files from a machine that has them, or regenerate them as below.
-The GitHub Pages deploy fails for the same reason until the fonts reach CI
-some private way.
+The GitHub Pages deploy gets them from a private repo, checked out with a
+deploy key (`.github/workflows/pages.yml`).
 
 Files here are woff2 conversions of the installed static cuts (Regular 400,
 Italic 400, Medium 500, SemiBold 600, Bold 700; Mono Regular 400 and Medium

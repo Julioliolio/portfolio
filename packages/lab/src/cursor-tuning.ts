@@ -9,9 +9,10 @@
  * Physics model (matched to the Tramuntana hover-card feel the user
  * referenced): the tip is glued to the real pointer — position is never
  * animated. The body leans a few degrees with pointer velocity, ramping in
- * softly, and when the pointer stops it EASES back upright with no bounce
- * (near-critical damping). The weight reads from the slow ramp and glide,
- * not from wobble.
+ * softly, and when the pointer stops it springs back upright: with no
+ * bounce at near-critical damping (the card feel), with a touch of it at
+ * the shipped defaults below. The weight reads from the slow ramp and
+ * glide, not from wobble.
  *
  * This lives in @portfolio/lab (not apps/web) so both the app cursor and
  * the lab piece can import the same module instance.
