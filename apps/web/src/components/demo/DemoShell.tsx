@@ -2,7 +2,7 @@
 
 import { isDemoReady } from "@portfolio/demo-protocol";
 import { asset } from "@portfolio/lab/asset";
-import { useEffect, useRef, useState, type ReactNode } from "react";
+import { useEffect, useRef, useState } from "react";
 import { DeviceFrame, type DeviceVariant } from "./DeviceFrame";
 
 type ShellState = "idle" | "loading" | "ready";
@@ -26,14 +26,12 @@ export function DemoShell({
   title,
   variant,
   autoload = false,
-  poster,
   query = "",
 }: {
   demo: string;
   title: string;
   variant: DeviceVariant;
   autoload?: boolean;
-  poster?: ReactNode;
   /** Optional query string passed to the demo, e.g. "?embed". */
   query?: string;
 }) {
@@ -83,22 +81,20 @@ export function DemoShell({
       <DeviceFrame variant={variant}>
         {state !== "ready" && (
           <div className="absolute inset-0 grid place-items-center">
-            {poster ?? (
-              <div className="text-center">
-                <p>{title}</p>
-                {state === "idle" ? (
-                  <button
-                    type="button"
-                    onClick={() => setState("loading")}
-                    className="mt-2 cursor-pointer rounded border px-4 py-2"
-                  >
-                    Press play to try
-                  </button>
-                ) : (
-                  <p className="mt-2 animate-pulse">Loading…</p>
-                )}
-              </div>
-            )}
+            <div className="text-center">
+              <p>{title}</p>
+              {state === "idle" ? (
+                <button
+                  type="button"
+                  onClick={() => setState("loading")}
+                  className="mt-2 cursor-pointer rounded border px-4 py-2"
+                >
+                  Press play to try
+                </button>
+              ) : (
+                <p className="mt-2 animate-pulse">Loading…</p>
+              )}
+            </div>
           </div>
         )}
         {state !== "idle" && (

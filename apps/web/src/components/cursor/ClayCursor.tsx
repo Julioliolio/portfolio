@@ -4,6 +4,7 @@ import { asset } from "@portfolio/lab/asset";
 import {
   clayCursorOverride as override,
   clayCursorTuning as tuning,
+  type ClayCursorVariant as Variant,
 } from "@portfolio/lab/cursor-tuning";
 import { useEffect, useRef } from "react";
 
@@ -70,8 +71,6 @@ const INTERACTIVE =
 const LABEL_CSS = `
 .clay-cursor-label { position: absolute; display: none; padding: 5px 9px; border: 1px solid #2b2722; border-radius: 999px; background: #faf9f6; color: #2b2722; font: 500 11px/1 var(--font-neue-montreal-mono), ui-monospace, Menlo, monospace; letter-spacing: .08em; text-transform: uppercase; white-space: nowrap; transform-origin: 0 50%; box-shadow: 0 2px 6px rgba(0, 0, 0, .12); }
 `;
-
-type Variant = "arrow" | "pointer";
 
 export function ClayCursor() {
   const rootRef = useRef<HTMLDivElement>(null);

@@ -7,7 +7,6 @@
     "dev": "next dev",
     "build": "node ../../scripts/build-demos.mjs && next build && node ../../scripts/check-budget.mjs",
     "budget": "node ../../scripts/check-budget.mjs --all",
-    "start": "next start",
     "analyze": "next experimental-analyze",
     "typecheck": "tsc --noEmit",
     "lint": "eslint"
