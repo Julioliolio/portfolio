@@ -9,18 +9,17 @@ import { createTuningStore } from "./tuning-store";
  * the field is cut between held frames — a different seed each — at a
  * few frames a second, so the letters wobble in place without ever
  * sliding. The run of seeds is long and shuffled, so no frame comes
- * round soon enough to be seen coming. The scroll cue's words boil once they have popped in; the
- * hero's words boil under the pointer.
+ * round soon enough to be seen coming. The hero's words boil under
+ * the pointer.
  *
  * One filter is one frame (`seeds` of one), or a cycle: given several
  * seeds it steps through them at `boilFps`, discretely, while `on`
  * (from `delay` ms after) — an SVG animation on the noise's seed, which
- * the browser re-renders through. The cue's words and the hero's both
- * wear one, and read the same tuning.
+ * the browser re-renders through.
  *
  * Sized in pixels from the words' em, so the same numbers give the same
  * feel at any size: the noise `boilWave` swells across a span of BOIL_EM
- * ems — the cue's wider word — a third more down, `boilGrain` octaves
+ * ems, a third more down, `boilGrain` octaves
  * deep, and the shove `boilShove` percent of that span, never under
  * `boilFloor` px. (The browser
  * reads these in pixels whatever units the filter declares, hence the
@@ -36,12 +35,9 @@ export type BoilTuning = {
   /** Boil frames a second: each frame is held for 1 / this. Claymation
    *  holds boil at about four to five. */
   boilFps: number;
-  /** ms after the cue's words have settled before their boil starts. */
-  boilWait: number;
   /** How far the outlines are shoved, percent of the span. */
   boilShove: number;
-  /** The least shove, px: small words (the cue's, at the landing's size)
-   *  would otherwise barely move. */
+  /** The least shove, px: small words would otherwise barely move. */
   boilFloor: number;
   /** How many swells of noise across the span: few and whole strokes
    *  bend, many and the edges fray. */
@@ -51,10 +47,9 @@ export type BoilTuning = {
 };
 
 // Julio's numbers off the bench, 2026-09-16: five frames a second, a
-// beat after the words land, a 2.5% shove of broad, smooth noise.
+// 2.5% shove of broad, smooth noise.
 const BOIL_DEFAULTS: Readonly<BoilTuning> = Object.freeze({
   boilFps: 5,
-  boilWait: 150,
   boilShove: 2.5,
   boilFloor: 3,
   boilWave: 1.5,
@@ -67,7 +62,8 @@ export const resetBoilTuning = store.reset;
 export const useBoilTuning = store.useTuning;
 
 /** The span the tuning's wave and shove are measured across, ems: the
- *  cue's wider word ("projects", Medium) is 71 of its 20-unit ems. */
+ *  width of the word the numbers were tuned on ("projects", Medium, 71
+ *  units at an em of 20). */
 const BOIL_EM = 71 / 20;
 
 /** The seeds of a cycle, sixteen in a shuffled order: at five frames a

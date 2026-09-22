@@ -6,84 +6,65 @@ import {
   useEffect,
   useRef,
   useState,
+  type CSSProperties,
   type ReactNode,
 } from "react";
-import { Enter, keyframes, squashed, useMotionTuning } from "./motion";
 import { createTuningStore } from "./tuning-store";
 
 /**
- * The project window: a case study opened over the landing rather than
- * navigated to. The mechanics are yichenxie.com's case modal (measured
- * 2026-09-17): a white card with a big soft shadow, centred over the
- * page, which stays behind it dimmed and blurred; a row of pills above
- * the card naming every project, the open one dark; an expand button
- * that takes the card edge to edge and a close button; Esc, the
- * backdrop and the close all shut it; on a phone it is always edge to
- * edge and the pills are gone.
+ * The project window: a case study opened beside the signs rather than
+ * navigated to. The mechanics are meganyap.me's (looked at 2026-09-21):
+ * the wall's left strip stays — the rail — and turns into the way home
+ * plus the open page's table of contents, while the project takes the
+ * rest of the screen. Here the rest is a sheet: full height, flush to
+ * the top, right and bottom, white, square, a hairline down its left
+ * edge, nothing dimmed behind it. The signs stay where they are in the
+ * rail, over the sheet's edge, and are the switcher; the window knows
+ * nothing about them — the caller keeps them above it (a z-index past
+ * the window's 80) and tells the window how wide the rail is.
  *
- * The motion is the site's, not the reference's: nothing eases. The
- * window stamps in — rises from below in `cuts` held poses on a `beat`,
- * landing a hair big and squashed, settling, resting — and the backdrop
- * snaps on a beat in. Closing is two cuts down and out. Expanding cuts
- * the card to full in the same number of poses (steps() transitions on
- * the sizes). The pills drop in one after another once the card has
- * landed, on the motion tuning's stagger. Switching pills swaps the
- * content in one cut, scrolled to the top, and the new page plays its
- * own entrances. `WindowTuning` is the set of knobs; /lab/window is its
- * bench, and <ProjectWindow> regenerates its stylesheet on every change.
+ * The rail holds "Home" and a slot the page inside fills with its
+ * contents (`useWindowRail()`); `foot` keeps both clear of whatever the
+ * caller parks at the rail's bottom. The empty rail, Home, Esc and the
+ * caller's own close all shut it. On a phone there is no rail:
+ * the sheet is edge to edge and the slot is never filled.
+ *
+ * The sheet is the one thing here that eases: it slides in from the
+ * right and out again, smoothly (Julio, 2026-09-21: in held cuts a
+ * surface this big read as lag, not as stop motion). A switch swaps the
+ * content at once, scrolled to the top, and the new page plays its own
+ * entrances. `WindowTuning` is the set of knobs;
+ * /lab/window is its bench, and <ProjectWindow> regenerates its
+ * stylesheet on every change.
  *
  * The window is only the chrome: the page inside is the caller's
- * (`children`), which can find the card's scroller through
- * `useWindowScroller()` for anything scroll-driven. Sizes come from the
- * reference: 1180 x 92vh at most, radius 28, pills 34 tall.
+ * (`children`), which can find the sheet's scroller through
+ * `useWindowScroller()` for anything scroll-driven.
  */
 
 export type WindowTuning = {
-  /** ms between held poses — the beat of the open, the close and the
-   *  expand. */
-  beat: number;
-  /** Held poses in the open after the start: 2 = land, rest; 3 adds a
-   *  settle; 4 a second, smaller landing. The expand cuts as many. */
-  cuts: number;
-  /** How far below its place the window starts, px. */
+  /** How long the slide in takes, ms; the slide out takes 0.7 of it. */
+  duration: number;
+  /** Where the sheet starts, to the right of its place, as a share of
+   *  its own width, %. */
   distance: number;
-  /** Scale in the start pose. */
-  startScale: number;
-  /** Scale on the landing, past rest. */
-  overshoot: number;
-  /** Squash on the landing: wide and short by this much. */
-  squash: number;
-  /** The card's width at most, px, and its height, vh. */
-  width: number;
-  height: number;
-  /** The card's corner radius, px. */
-  radius: number;
-  /** The card's shadow, 0 to 1. */
-  shadow: number;
-  /** How dark the page behind goes, 0 to 1, and its blur, px. */
-  dim: number;
-  blur: number;
+  /** The rail's width, vw, when the caller does not give one. */
+  rail: number;
+  /** The hairline on the sheet's left edge, 0 to 1. */
+  edge: number;
 };
 
-// The reference's sizes and darkness; the cuts on the site's beat.
 const WINDOW_DEFAULTS: Readonly<WindowTuning> = Object.freeze({
-  beat: 100,
-  cuts: 3,
-  distance: 56,
-  startScale: 0.94,
-  overshoot: 1.025,
-  squash: 0.03,
-  width: 1180,
-  height: 92,
-  radius: 28,
-  shadow: 0.34,
-  dim: 0.42,
-  blur: 6,
+  duration: 420,
+  distance: 100,
+  rail: 27,
+  edge: 0.16,
 });
 
 // ------------------------------------------------------------- the store
 
-const store = createTuningStore("window-tuning", WINDOW_DEFAULTS);
+// A key of its own: the centred window's stored values meant other things.
+const store = createTuningStore("sheet-tuning", WINDOW_DEFAULTS);
 
 /** Lays `patch` over the current values and tells every subscriber. */
 export const setWindowTuning = store.set;
@@ -93,93 +74,56 @@ export const useWindowTuning = store.useTuning;
 
 // -------------------------------------------------------- the stylesheet
 
-/** The site's ink, for the pills and the controls. */
+/** The site's ink, for the controls; the rail's resting text. */
+const MEDIUM = `var(--font-neue-montreal-extra), var(--font-neue-montreal), "Helvetica Neue", Arial, sans-serif`;
 const INK = "#2b2722";
-/** The pills' height and the breath under them. */
-const PILL = 34;
-const PILL_GAP = 14;
-/** The close's two cuts. */
-const EXIT_CUTS = 2;
+const FAINT = "#8a847c";
+/** The controls' size. */
+/** From this viewport width there is a rail; under it the sheet is the
+ *  whole screen. */
+const RAIL_FROM = 701;
 
 const n = (v: number, d = 3) => Number(v.toFixed(d)).toString();
 
-/** The open's held poses, 2 to 4, and how long they and the close's
- *  take, ms. */
-const openCuts = (t: WindowTuning) =>
-  Math.min(4, Math.max(2, Math.round(t.cuts)));
-const openMs = (t: WindowTuning) => openCuts(t) * t.beat;
-const exitMs = (t: WindowTuning) => EXIT_CUTS * t.beat;
-
-/** The open's five poses: start, land, settle, a second smaller
- *  landing, rest. */
-function openPoses(t: WindowTuning): string[] {
-  const d = t.distance;
-  const q = t.squash;
-  const over = t.overshoot - 1;
-  return [
-    `opacity: 0; transform: translateY(${n(d)}px) scale(${n(t.startScale)});`,
-    `opacity: 1; transform: translateY(${n(-d * 0.08)}px) ${squashed(t.overshoot, q)};`,
-    `opacity: 1; transform: translateY(${n(d * 0.03)}px) ${squashed(1 - over * 0.5, -q / 3)};`,
-    `opacity: 1; transform: translateY(${n(-d * 0.01)}px) scale(${n(1 + over * 0.3)});`,
-    `opacity: 1; transform: none;`,
-  ];
-}
+/** How long the slide out takes, ms. */
+const exitMs = (t: WindowTuning) => t.duration * 0.7;
 
 /** The whole stylesheet for a tuning. */
 function windowCss(t: WindowTuning): string {
-  const cuts = openCuts(t);
-  const open = openMs(t);
   const exit = exitMs(t);
-  const step = `${n(open, 0)}ms steps(${cuts}, end)`;
   const d = t.distance;
   return `
 /* the project window — generated by windowCss() from WindowTuning; edit on /lab/window */
-.pw { --pw-open: ${n(open, 0)}ms; position: fixed; inset: 0; z-index: 80; display: flex; align-items: center; justify-content: center; padding: clamp(12px, 3vw, 40px); transition: padding ${step}; }
-.pw-backdrop { position: absolute; inset: 0; background: rgba(28, 24, 20, ${n(t.dim)}); -webkit-backdrop-filter: blur(${n(t.blur)}px); backdrop-filter: blur(${n(t.blur)}px); animation: pw-dim ${n(t.beat, 0)}ms steps(1, end) both; }
-.pw-shell { position: relative; display: flex; flex-direction: column; width: min(${n(t.width, 0)}px, 100%); height: min(${n(t.height)}vh, 100%); animation: pw-open ${n(open, 0)}ms steps(1, end) both; transition: width ${step}, height ${step}; }
-.pw-tabs { display: flex; gap: 8px; flex: none; height: ${PILL}px; margin-bottom: ${PILL_GAP}px; overflow-x: auto; scrollbar-width: none; transition: height ${step}, margin-bottom ${step}, visibility 0s linear ${n(open, 0)}ms; }
-.pw-tabs::-webkit-scrollbar { display: none; }
-.pw-pill { flex: none; height: ${PILL}px; padding: 0 18px; border-radius: 999px; border: 1px solid rgba(43, 39, 34, 0.16); background: rgba(250, 249, 247, 0.92); box-shadow: 0 3px 10px rgba(28, 24, 20, 0.12); color: ${INK}; font-size: 15px; line-height: ${PILL - 2}px; letter-spacing: -0.01em; white-space: nowrap; text-decoration: none; }
-.pw-pill:hover { background: #fff; }
-.pw-pill[aria-current="true"] { background: ${INK}; color: #fff; border-color: transparent; }
-.pw-pill:focus-visible { outline: 2px solid #2f6df6; outline-offset: 2px; }
-.pw-card { position: relative; flex: 1; min-height: 0; background: #fff; border-radius: ${n(t.radius, 0)}px; border: 1px solid rgba(43, 39, 34, 0.18); box-shadow: 0 30px 90px rgba(30, 25, 20, ${n(t.shadow)}); overflow: hidden; transition: border-radius ${step}; }
-.pw-card:focus { outline: none; }
+.pw { --pw-rail: ${n(t.rail)}vw; --pw-inset: 24px; --pw-foot: 0px; position: fixed; inset: 0; z-index: 80; }
+.pw-sheet { position: absolute; top: 0; right: 0; bottom: 0; left: 0; background: #fff; animation: pw-open ${n(t.duration, 0)}ms cubic-bezier(.22, 1, .36, 1) both; }
+.pw-sheet:focus { outline: none; }
 .pw-scroll { position: absolute; inset: 0; overflow-y: auto; overscroll-behavior: contain; }
-.pw-controls { position: absolute; top: 12px; right: clamp(14px, 2vw, 22px); z-index: 2; display: flex; gap: 8px; }
-.pw-btn { display: grid; place-items: center; width: ${PILL}px; height: ${PILL}px; padding: 0; border: 0; border-radius: 999px; background: rgba(255, 255, 255, 0.72); -webkit-backdrop-filter: blur(8px); backdrop-filter: blur(8px); color: ${INK}; }
-.pw-btn:hover { background: rgba(67, 60, 52, 0.12); }
-.pw-btn:focus-visible { outline: 2px solid #2f6df6; outline-offset: 2px; }
-.pw-btn svg { display: block; width: 16px; height: 16px; }
-/* Expanded: the card takes the viewport in the open's cuts; the pills
-   go with the room above the card. */
-.pw.is-full { padding: 0; }
-.pw.is-full .pw-shell { width: 100%; height: 100%; }
-.pw.is-full .pw-tabs { height: 0; margin-bottom: 0; visibility: hidden; overflow: hidden; }
-.pw.is-full .pw-card { border-radius: 0; border-color: transparent; }
-/* A page of its own (/work/<slug>): the card is the page — no backdrop,
-   no entrance, nothing to expand. */
-.pw.is-page .pw-shell { animation: none; }
-.pw.is-page .pw-card { box-shadow: none; }
-/* Leaving: half gone and a step down, then gone; the backdrop lifts the
-   same way. Plays while the window is still mounted. */
-.pw.is-leaving .pw-shell { animation: pw-exit ${n(exit, 0)}ms steps(1, end) both; }
-.pw.is-leaving .pw-backdrop { animation: pw-undim ${n(exit, 0)}ms steps(1, end) both; }
-${keyframes("pw-open", openPoses(t), t.cuts)}
-@keyframes pw-exit { 0% { opacity: 0.5; transform: translateY(${n(d * 0.2)}px) scale(0.97); } 50%, 100% { opacity: 0; transform: translateY(${n(d * 0.45)}px) scale(0.94); } }
-@keyframes pw-dim { 0% { opacity: 0; } 100% { opacity: 1; } }
-@keyframes pw-undim { 0% { opacity: 0.5; } 50%, 100% { opacity: 0; } }
-/* A phone: edge to edge, no pills, nothing to expand. */
-@media (max-width: 700px) {
-  .pw { padding: 0; }
-  .pw-shell { width: 100%; height: 100%; }
-  .pw-tabs { display: none; }
-  .pw-card { border-radius: 0; border-color: transparent; }
-  .pw-expand { display: none; }
+/* The rail: the wall's left strip. Only what is in it takes the
+   pointer; the rest of it is the way out. */
+.pw-rail { display: none; }
+@media (min-width: ${RAIL_FROM}px) {
+  .pw-sheet { left: var(--pw-rail); border-left: 1px solid rgba(43, 39, 34, ${n(t.edge)}); }
+  .pw-rail { display: block; position: absolute; top: 0; bottom: 0; left: 0; width: var(--pw-rail); }
+  .pw-rail-in { position: absolute; top: 3.5vh; bottom: var(--pw-foot); left: var(--pw-inset); right: 20px; display: flex; flex-direction: column; align-items: flex-start; gap: 22px; overflow-y: auto; scrollbar-width: none; pointer-events: none; }
+  .pw-rail-in::-webkit-scrollbar { display: none; }
+  .pw-rail-in > * { flex: none; max-width: 100%; pointer-events: auto; }
+  .pw-rail-slot:empty { display: none; }
 }
+/* Home: the way back to the projects, in the page's own type. */
+.pw-home { display: inline-flex; align-items: center; gap: .5em; min-height: 24px; padding: 0; border: 0; background: none; color: ${FAINT}; font-family: ${MEDIUM}; font-weight: 500; font-size: 15px; line-height: 1; letter-spacing: -.01em; text-decoration: none; cursor: pointer; }
+.pw-home:hover { color: ${INK}; }
+.pw-home:focus-visible { outline: 2px solid #2f6df6; outline-offset: 4px; }
+.pw-home svg { display: block; width: .8em; height: .8em; }
+/* A page of its own (/work/<slug>): the sheet is simply there. */
+.pw.is-page .pw-sheet { animation: none; }
+/* Leaving: back out to the right; the rail empties at once. Plays
+   while the window is still mounted. */
+.pw.is-leaving .pw-sheet { animation: pw-exit ${n(exit, 0)}ms cubic-bezier(.55, 0, .8, .4) both; }
+.pw.is-leaving .pw-rail-in { visibility: hidden; }
+@keyframes pw-open { from { transform: translateX(${n(d)}%); } to { transform: none; } }
+@keyframes pw-exit { from { transform: none; } to { transform: translateX(${n(d)}%); } }
 @media (prefers-reduced-motion: reduce) {
-  .pw, .pw-shell, .pw-tabs, .pw-card { transition-duration: 1ms; }
-  .pw-shell, .pw-backdrop, .pw.is-leaving .pw-shell, .pw.is-leaving .pw-backdrop { animation-duration: 1ms; }
+  .pw-sheet, .pw.is-leaving .pw-sheet { animation-duration: 1ms; }
 }
 `;
 }
@@ -196,44 +140,30 @@ function click(name: "tap" | "knock") {
   void sounds().then((m) => m.play(name, 1, { at: "click" }));
 }
 
-// ---------------------------------------------------------- the scroller
+// ------------------------------------------- the scroller and the rail
 
 const ScrollerContext = createContext<HTMLElement | null>(null);
+const RailContext = createContext<HTMLElement | null>(null);
 
-/** The card's scroller, for the page inside the window — the root for
- *  anything that watches the scroll. Null before the card mounts. */
+/** The sheet's scroller, for the page inside the window — the root for
+ *  anything that watches the scroll. Null before the sheet mounts. */
 export function useWindowScroller(): HTMLElement | null {
   return useContext(ScrollerContext);
 }
 
+/** The rail's slot, under Home: the page inside portals its contents
+ *  into it. Null before the window mounts, and outside a window; on a
+ *  phone it is there but never shown. */
+export function useWindowRail(): HTMLElement | null {
+  return useContext(RailContext);
+}
+
 // ------------------------------------------------------------- the icons
 
-const EXPAND = (
-  <svg viewBox="0 0 16 16" fill="none" aria-hidden="true">
+const ARROW_LEFT = (
+  <svg viewBox="0 0 12 12" fill="none" aria-hidden="true">
     <path
-      d="M2 6V2h4M10 2h4v4M14 10v4h-4M6 14H2v-4"
-      stroke="currentColor"
-      strokeWidth="1.5"
-      strokeLinecap="square"
-    />
-  </svg>
-);
-
-const SHRINK = (
-  <svg viewBox="0 0 16 16" fill="none" aria-hidden="true">
-    <path
-      d="M6 2v4H2M10 2v4h4M14 10h-4v4M2 10h4v4"
-      stroke="currentColor"
-      strokeWidth="1.5"
-      strokeLinecap="square"
-    />
-  </svg>
-);
-
-const CLOSE = (
-  <svg viewBox="0 0 16 16" fill="none" aria-hidden="true">
-    <path
-      d="M3 3l10 10M13 3L3 13"
+      d="M7.5 1.5 3 6l4.5 4.5M3 6h8"
       stroke="currentColor"
       strokeWidth="1.5"
       strokeLinecap="square"
@@ -243,62 +173,63 @@ const CLOSE = (
 
 // --------------------------------------------------------- the component
 
-export type WindowTab = {
-  slug: string;
-  title: string;
-  /** Where the pill goes on a modified click (a new tab): the project's
-   *  own page. */
-  href: string;
+/** Where the rail's things go, as CSS lengths — the caller's, since
+ *  they follow what it keeps in the rail. */
+export type WindowLayout = {
+  /** The rail's width: where the sheet's left edge is. */
+  rail?: string;
+  /** The rail's content, from the screen's left edge. */
+  inset?: string;
+  /** Kept free at the rail's bottom. */
+  foot?: string;
 };
 
 type ProjectWindowProps = {
-  tabs: readonly WindowTab[];
-  /** The open project's slug. */
+  /** The open project's slug: a change starts the next page at its top. */
   active: string;
   /** Flip to false to close: the exit plays, then the window unmounts
    *  itself. */
   shown: boolean;
-  /** "modal" (default): over the page, with the backdrop, the entrance
-   *  and the expand. "page": the window is the page — edge to edge, no
-   *  backdrop, no entrance; the close is a link to `closeHref`. */
+  /** "modal" (default): over the page, with the entrance; Home and the
+   *  empty rail ask to close — on the landing, a step back in the
+   *  history, to the projects. "page": the window is the page — no
+   *  entrance; Home is a link to `closeHref`. */
   mode?: "modal" | "page";
   /** For the dialog's name: the open project's title. */
   label: string;
-  /** Page mode: where the close goes. */
+  layout?: WindowLayout;
+  /** Page mode: where Home goes — the projects. */
   closeHref?: string;
-  /** Modal mode: a pill was picked; the window asks to close. */
-  onSelect?: (slug: string) => void;
+  /** Modal mode: the window asks to close. */
   onClose?: () => void;
   children?: ReactNode;
 };
 
 /**
- * The window, its pills and its controls. The page inside is
- * `children`; on a switch it is up to the caller to render the next
- * page (keyed, so its entrances play) — the window scrolls back to the
- * top. Focus goes to the card on open and back where it was on close;
- * the page behind stops scrolling while the window is up.
+ * The sheet, the rail and the controls. The page inside is `children`;
+ * on a switch it is up to the caller to render the next page (keyed, so
+ * its entrances play) — the window scrolls back to the top. Focus goes
+ * to the sheet on open and back where it was on close; the page behind
+ * stops scrolling while the window is up.
  */
 export function ProjectWindow({
-  tabs,
   active,
   shown,
   mode = "modal",
   label,
+  layout,
   closeHref,
-  onSelect,
   onClose,
   children,
 }: ProjectWindowProps) {
   const t = useWindowTuning();
-  const motion = useMotionTuning();
   const page = mode === "page";
-  const [full, setFull] = useState(false);
   const [scroller, setScroller] = useState<HTMLElement | null>(null);
-  const card = useRef<HTMLDivElement>(null);
+  const [rail, setRail] = useState<HTMLElement | null>(null);
+  const sheet = useRef<HTMLDivElement>(null);
 
   // Derived during render, the cue's way: a flip to hidden starts the
-  // exit, which keeps the window mounted for its cuts.
+  // exit, which keeps the window mounted while it slides out.
   const [prevShown, setPrevShown] = useState(shown);
   const [leaving, setLeaving] = useState(false);
   if (shown !== prevShown) {
@@ -308,24 +239,21 @@ export function ProjectWindow({
   const exit = exitMs(t);
   useEffect(() => {
     if (!leaving) return;
-    const id = window.setTimeout(() => {
-      setLeaving(false);
-      setFull(false);
-    }, exit);
+    const id = window.setTimeout(() => setLeaving(false), exit);
     return () => window.clearTimeout(id);
   }, [leaving, exit]);
 
   const mounted = shown || leaving;
 
   // The page behind holds still, Esc closes, and focus is kept: on the
-  // card while the window is up, back where it was after.
+  // sheet while the window is up, back where it was after.
   useEffect(() => {
     if (!mounted || page) return;
     const root = document.documentElement;
     const was = root.style.overflow;
     root.style.overflow = "hidden";
     const before = document.activeElement as HTMLElement | null;
-    card.current?.focus({ preventScroll: true });
+    sheet.current?.focus({ preventScroll: true });
     return () => {
       root.style.overflow = was;
       before?.focus?.({ preventScroll: true });
@@ -353,114 +281,62 @@ export function ProjectWindow({
 
   if (!mounted) return null;
 
-  const landed = openMs(t);
+  const close = () => {
+    click("knock");
+    onClose?.();
+  };
+  const vars = {
+    ...(layout?.rail && { "--pw-rail": layout.rail }),
+    ...(layout?.inset && { "--pw-inset": layout.inset }),
+    ...(layout?.foot && { "--pw-foot": layout.foot }),
+  } as CSSProperties;
 
   return (
     <div
-      className={[
-        "pw",
-        (full || page) && "is-full",
-        page && "is-page",
-        leaving && "is-leaving",
-      ]
+      className={["pw", page && "is-page", leaving && "is-leaving"]
         .filter(Boolean)
         .join(" ")}
+      style={vars}
     >
       <style>{windowCss(t)}</style>
-      {!page && (
-        <div
-          className="pw-backdrop"
-          onClick={onClose}
-          data-cursor-label="close"
-        />
-      )}
-      <div className="pw-shell">
-        <nav className="pw-tabs" aria-label="Projects">
-          {tabs.map((tab, i) => (
-            <Enter
-              key={tab.slug}
-              kind="drop"
-              gate="mount"
-              delay={landed + motion.lead + i * motion.stagger}
+      <div
+        className="pw-rail"
+        data-cursor-label={page ? undefined : "close"}
+        onClick={(e) => {
+          if (!page && e.target === e.currentTarget) close();
+        }}
+      >
+        <div className="pw-rail-in">
+          {page && closeHref ? (
+            <a href={closeHref} className="pw-home" data-cursor-label="home">
+              {ARROW_LEFT}
+              Home
+            </a>
+          ) : (
+            <button
+              type="button"
+              className="pw-home"
+              data-cursor-label="home"
+              onClick={close}
             >
-              <a
-                href={tab.href}
-                className="pw-pill sm-press font-medium"
-                aria-current={tab.slug === active ? "true" : undefined}
-                tabIndex={full ? -1 : 0}
-                onClick={(e) => {
-                  if (
-                    e.button !== 0 ||
-                    e.metaKey ||
-                    e.ctrlKey ||
-                    e.shiftKey ||
-                    e.altKey
-                  )
-                    return;
-                  e.preventDefault();
-                  if (tab.slug === active) return;
-                  click("tap");
-                  onSelect?.(tab.slug);
-                }}
-              >
-                {tab.title}
-              </a>
-            </Enter>
-          ))}
-        </nav>
-        <div
-          ref={card}
-          className="pw-card"
-          role="dialog"
-          aria-modal={page ? undefined : "true"}
-          aria-label={label}
-          tabIndex={-1}
-        >
-          <div className="pw-controls">
-            {!page && (
-              <button
-                type="button"
-                className="pw-btn pw-expand sm-press"
-                aria-label={full ? "Shrink the window" : "Expand the window"}
-                aria-pressed={full}
-                data-cursor-label={full ? "shrink" : "expand"}
-                onClick={() => {
-                  click("tap");
-                  setFull((f) => !f);
-                }}
-              >
-                {full ? SHRINK : EXPAND}
-              </button>
-            )}
-            {page && closeHref ? (
-              <a
-                href={closeHref}
-                className="pw-btn sm-press"
-                aria-label="Back to the signs"
-                data-cursor-label="home"
-              >
-                {CLOSE}
-              </a>
-            ) : (
-              <button
-                type="button"
-                className="pw-btn sm-press"
-                aria-label="Close"
-                data-cursor-label="close"
-                onClick={() => {
-                  click("knock");
-                  onClose?.();
-                }}
-              >
-                {CLOSE}
-              </button>
-            )}
-          </div>
-          <div ref={setScroller} className="pw-scroll">
-            <ScrollerContext.Provider value={scroller}>
-              {children}
-            </ScrollerContext.Provider>
-          </div>
+              {ARROW_LEFT}
+              Home
+            </button>
+          )}
+          <div ref={setRail} className="pw-rail-slot" />
+        </div>
+      </div>
+      <div
+        ref={sheet}
+        className="pw-sheet"
+        role="dialog"
+        aria-label={label}
+        tabIndex={-1}
+      >
+        <div ref={setScroller} className="pw-scroll">
+          <ScrollerContext.Provider value={scroller}>
+            <RailContext.Provider value={rail}>{children}</RailContext.Provider>
+          </ScrollerContext.Provider>
         </div>
       </div>
     </div>

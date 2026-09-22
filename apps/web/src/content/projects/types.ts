@@ -35,7 +35,7 @@ export type Figure =
       poster?: `/${string}`;
       aspect: number;
       /** Autoplaying loops are muted and controls-free; a film has
-       *  controls and sound. */
+       *  sound and the site's player (components/work/FilmPlayer.tsx). */
       mode: "loop" | "film";
       caption?: string;
     }
@@ -82,11 +82,15 @@ export type Block =
 export type Section = {
   /** Anchor id, used by the table of contents. */
   id: string;
-  /** A word or two for the section's eyebrow and the rail: "Research",
-   *  "The problem". */
+  /** A word or two for the section's eyebrow and the contents:
+   *  "Research", "The problem". */
   label: string;
   /** Sentence-style, the way a heading reads in conversation. */
   heading: string;
+  /** Set on the section a chapter starts at: the contents then list the
+   *  chapters — a stop each, leading to this section — instead of every
+   *  section. For the long pages; without any, each section is a stop. */
+  chapter?: string;
   blocks: Block[];
 };
 

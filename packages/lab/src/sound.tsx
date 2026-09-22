@@ -249,7 +249,7 @@ export const SOUND_FIELDS: Required<Field<SoundTuning>>[] = [
   {
     key: "cue",
     label: "Cue hover",
-    hint: "The scroll cue's tap as its ring opens under the pointer, and the softer one as it shuts.",
+    hint: "The scroll cue's tap as its parens part under the pointer, and the softer one as it shuts.",
     min: 0,
     max: 1,
     step: 0.05,

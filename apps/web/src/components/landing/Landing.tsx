@@ -22,7 +22,9 @@ import {
   useState,
   type MouseEvent,
 } from "react";
+import { SIGNS_OPEN } from "@/components/work/sheetLayout";
 import { ProjectWindowMount, warmWindow } from "./ProjectWindowMount";
+import { signsTuning, useViewport } from "./signsTuning";
 
 /**
  * The landing: two screens on the wall, snapped.
@@ -57,12 +59,17 @@ import { ProjectWindowMount, warmWindow } from "./ProjectWindowMount";
  * load-time mount is its first play.
  *
  * A plain click on a sign (or its card) opens the project in the
- * window (@portfolio/lab/window) over this page rather than leaving it:
- * the click is caught on the projects screen, the slug goes into state
- * and /work/<slug>/ onto the history stack, so Back closes the window,
- * a reload lands on the project's own page, and a modified click still
- * opens it in a new tab. Switching pills swaps the slug and the URL in
- * place; closing goes back. See ProjectWindowMount for what loads when.
+ * window (@portfolio/lab/window) beside the signs rather than leaving
+ * the page: a sheet comes in from the right and the wall's left strip
+ * stays, with the signs in it, smaller and tucked into the corner, the
+ * open one over the sheet's edge (`is-open` lifts them past the window
+ * and steps them back). The click is caught on the projects screen,
+ * the slug goes into state and /work/<slug>/ onto the history stack, so
+ * Back closes the window, a reload lands on the project's own page, and
+ * a modified click still opens it in a new tab. The open sign holds its
+ * hover pose; a click on another swaps the slug and the URL in place,
+ * and a click on the open one closes, which goes back. See
+ * ProjectWindowMount for what loads when.
  *
  * Pieces come through the lab loaders like everywhere else — never
  * imported directly.
@@ -91,7 +98,7 @@ const LINE_WORDS = countWords(GREETING_LINE);
  * page keeps the mockup's proportions at any size:
  *
  *   hello screen     the row of words and sign — @portfolio/lab/hello;
- *                    glyph 6vh tall, its foot 3.5vh off the bottom
+ *                    cue 2.5vh tall (CUE_VH), its foot 3.5vh off the bottom
  *   projects screen  glyph at the top, 3.5vh down; the stack's left edge
  *                    at 7.2vw, its foot 9.5vh up; each sign 8.8vh tall
  *   the card         44vw wide, out to 89vw, up beside the stack —
@@ -109,6 +116,14 @@ const CSS = `
 /* The signs sit by their own edges (frame="signs"); the stage and its
    card hang off the box to the right and above. */
 .landing-projects { position: absolute; left: 7.2vw; bottom: 9.5vh; }
+/* A project is open: the signs sit over the window (z-index 80), its
+   sheet's edge included, and step back into the corner (SIGNS_OPEN) —
+   travelling with the sheet, on its slide (the window's 420ms and its
+   curve). Not on a phone, where the sheet is the whole screen (the
+   window's own 701px line). */
+.landing-projects { transform-origin: 0 100%; transition: transform 420ms cubic-bezier(.22, 1, .36, 1); }
+@media (min-width: 701px) { .landing-projects.is-open { z-index: 90; transform: ${SIGNS_OPEN}; } }
+@media (prefers-reduced-motion: reduce) { .landing-projects { transition: none; } }
 /* A screen that is away keeps its piece out of sight, so the piece is
    never seen at rest before its entrance replays. */
 .landing-screen.is-away .landing-piece { visibility: hidden; }
@@ -119,54 +134,6 @@ const CSS = `
 .landing-sound[aria-pressed="true"] { opacity: 0.45; }
 .landing-sound:focus-visible { outline: 2px solid currentColor; outline-offset: 4px; border-radius: 999px; }
 `;
-
-/** The mockup frame; what the server render and the first client
- *  render assume until the real viewport is measured. */
-const FRAME = { w: 1512, h: 982 };
-
-/** The viewport, in px, re-read on resize. */
-function useViewport() {
-  const [size, setSize] = useState(FRAME);
-  useEffect(() => {
-    const read = () => setSize({ w: innerWidth, h: innerHeight });
-    read();
-    addEventListener("resize", read);
-    return () => removeEventListener("resize", read);
-  }, []);
-  return size;
-}
-
-/**
- * The road signs tuned to the mockup: each sign 8.8vh tall, and every
- * pixel value of the defaults (which were tuned at 64px) scaled with it,
- * so the walk feels the same at any size. The card is 44vw wide, its
- * right edge lands at 89vw, and it sits with its middle 26.6vh above
- * the stack's — up beside the signs rather than level with them.
- */
-function signsTuning(vw: number, vh: number) {
-  const height = 0.088 * vh;
-  const k = height / 64;
-  const cardWide = 0.44 * vw;
-  // The stage runs from the stack's left edge to the card's right edge:
-  // 89vw - (7.2vw - padX), with padX = 0.6 * height. cardSpan is what the
-  // stage adds past the stack's padded box (widest sign * 3.563 + 2 padX).
-  const stackW = 3.563 * height + 1.2 * height;
-  const cardSpan = 0.818 * vw + 0.6 * height - stackW;
-  return {
-    height,
-    gap: 12 * k,
-    dimGap: 8 * k,
-    hoverNudge: 6 * k,
-    nudgePush: 16 * k,
-    cardWide,
-    cardTall: (cardWide * 300) / 640,
-    cardSpan,
-    cardY: -0.266 * vh,
-    ropeInset: 24 * k,
-    sagRest: 44 * k,
-    sagNudge: 8 * k,
-  };
-}
 
 /** Timers for a speech: a tap as each word lands, and `done` once the
  *  last has settled. */
@@ -281,15 +248,22 @@ export function Landing() {
   }, [signSaid]);
 
   // Always open on the sign: the browser's restored scroll position (a
-  // reload, back from a project, a bfcache return) is overridden, so the
-  // sequence above is what every arrival gets. The setting is the
-  // document's, so it is put back when the landing unmounts.
+  // reload, a bfcache return) is overridden, so the sequence above is
+  // what every arrival gets — unless the arrival asks for the projects
+  // (#projects: Home on a project's own page, and its foot), which
+  // opens on the signs instead. The setting is the document's, so it is
+  // put back when the landing unmounts.
   useEffect(() => {
     const restoration = history.scrollRestoration;
     history.scrollRestoration = "manual";
-    window.scrollTo(0, 0);
+    const land = () => {
+      if (location.hash === "#projects" && projectsScreen.current)
+        projectsScreen.current.scrollIntoView({ block: "start" });
+      else window.scrollTo(0, 0);
+    };
+    land();
     const onShow = (e: PageTransitionEvent) => {
-      if (e.persisted) window.scrollTo(0, 0);
+      if (e.persisted) land();
     };
     window.addEventListener("pageshow", onShow);
     return () => {
@@ -403,7 +377,9 @@ export function Landing() {
     const slug = a?.getAttribute("href")?.match(/\/work\/([^/?#]+)/)?.[1];
     if (!slug) return;
     e.preventDefault();
-    openProject(slug);
+    if (open === null) openProject(slug);
+    else if (slug === open) closeProject();
+    else switchProject(slug);
   }
 
   return (
@@ -482,7 +458,7 @@ export function Landing() {
           shown={said && screens.hello.held}
           delay={motion.stagger}
           label="Scroll to the projects"
-          text={["View", "projects"]}
+          text="View projects"
           onClick={() => {
             play("knock", 1, { at: "click" });
             scrollTo(projectsScreen);
@@ -492,6 +468,7 @@ export function Landing() {
 
       <section
         ref={projectsScreen}
+        id="projects"
         className={["landing-screen", screens.projects.away && "is-away"]
           .filter(Boolean)
           .join(" ")}
@@ -503,30 +480,35 @@ export function Landing() {
           shown={screens.projects.held}
           delay={afterDrop}
           label="Scroll back to the top"
-          text={["Back", "up"]}
+          text="Back up"
           onClick={() => {
             play("knock", 1, { at: "click" });
             scrollTo(helloScreen);
           }}
         />
-        <div className="landing-projects landing-piece">
+        <div
+          className={[
+            "landing-projects",
+            "landing-piece",
+            open !== null && "is-open",
+          ]
+            .filter(Boolean)
+            .join(" ")}
+        >
           <Suspense fallback={null}>
             <RoadSigns
               controls={false}
               frame="signs"
               tuning={tuning}
               replay={screens.projects.runs}
+              selected={open}
             />
           </Suspense>
         </div>
       </section>
 
-      {/* The project window, over everything, while a sign is open. */}
-      <ProjectWindowMount
-        open={open}
-        onSelect={switchProject}
-        onClose={closeProject}
-      />
+      {/* The project window, beside the signs, while one is open. */}
+      <ProjectWindowMount open={open} onClose={closeProject} />
 
       {/* Sound (see @portfolio/lab/sound): the pieces tick, strike and
           knock on their own; this is the switch that mutes all of it,

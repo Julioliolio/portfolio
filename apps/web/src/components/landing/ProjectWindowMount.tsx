@@ -1,7 +1,7 @@
 "use client";
 
-import { asset } from "@portfolio/lab/asset";
 import { Suspense, lazy, useState } from "react";
+import { SHEET_LAYOUT } from "@/components/work/sheetLayout";
 import { PROJECT_LIST } from "@/content/projects/list";
 
 /**
@@ -12,9 +12,10 @@ import { PROJECT_LIST } from "@/content/projects/list";
  * `warmWindow()`, which the landing calls as the projects screen
  * arrives so a click on a sign has nothing to wait for.
  *
- * The landing owns which project is open (and the URL); this only
- * maps that onto the window. The last open slug is kept through the
- * close so the exit plays with the page still in the card.
+ * The landing owns which project is open (and the URL), and the signs
+ * that switch it; this only maps that onto the window. The last open
+ * slug is kept through the close so the exit plays with the page still
+ * in the sheet.
  */
 
 const ProjectWindow = lazy(() =>
@@ -28,34 +29,26 @@ export function warmWindow() {
   void import("@/components/work/WindowPage");
 }
 
-const TABS = PROJECT_LIST.map((p) => ({
-  ...p,
-  href: asset(`/work/${p.slug}/`),
-}));
-
 export function ProjectWindowMount({
   open,
-  onSelect,
   onClose,
 }: {
   /** The open project's slug, or null for closed. */
   open: string | null;
-  onSelect: (slug: string) => void;
   onClose: () => void;
 }) {
   const [slug, setSlug] = useState(open);
   if (open !== null && open !== slug) setSlug(open);
   if (slug === null) return null;
-  const title = TABS.find((t) => t.slug === slug)?.title ?? slug;
+  const title = PROJECT_LIST.find((p) => p.slug === slug)?.title ?? slug;
 
   return (
     <Suspense fallback={null}>
       <ProjectWindow
-        tabs={TABS}
         active={slug}
         shown={open !== null}
         label={title}
-        onSelect={onSelect}
+        layout={SHEET_LAYOUT}
         onClose={onClose}
       >
         <Suspense fallback={null}>

@@ -11,95 +11,61 @@ import {
 } from "../../window";
 
 /**
- * The project window's bench: the window over a stand-in for the
- * landing, with the knobs floating beside it — the beat and poses of
- * the open, the card's size, radius and shadow, the backdrop's darkness
- * and blur. Open, close and expand it from the panel or its own
- * controls; the three pills switch between three stand-in pages, so the
- * swap can be watched too. Sliders write the window store and the
- * window regenerates its stylesheet on every change, so what you set
- * here is what the home page does — in this browser, until Reset.
- * "Copy values" exports them for WINDOW_DEFAULTS in
- * packages/lab/src/window.tsx.
+ * The project window's bench: the sheet over a stand-in for the
+ * landing's projects screen, with the knobs floating over it — the
+ * slide's length and start, the rail's width, the hairline on the
+ * sheet's edge. Open and close it from the panel, Home or the empty
+ * rail; the three stand-in signs switch between three stand-in pages
+ * (the open one closes), so the swap can be watched too. The rail's
+ * contents are the page's own (a case study portals them in), so here
+ * it only has Home.
+ * Sliders write the window store and the window regenerates its
+ * stylesheet on every change, so what you set here is what the home
+ * page does — in this browser, until Reset. "Copy values" exports them
+ * for WINDOW_DEFAULTS in packages/lab/src/window.tsx. (On the site the
+ * rail's width follows the signs — sheetLayout.ts — not the slider.)
  */
 
 const MOTION: Field<WindowTuning>[] = [
   {
-    key: "beat",
-    label: "Beat",
-    min: 40,
-    max: 240,
-    step: 5,
+    key: "duration",
+    label: "Duration",
+    min: 120,
+    max: 900,
+    step: 10,
     unit: "ms",
-    hint: "ms between held poses",
-  },
-  {
-    key: "cuts",
-    label: "Cuts",
-    min: 2,
-    max: 4,
-    step: 1,
-    hint: "held poses after the start: land, settle, a second landing",
+    hint: "the slide in; the slide out takes 0.7 of it",
   },
   {
     key: "distance",
-    label: "Rise",
+    label: "From",
     min: 0,
-    max: 160,
-    step: 2,
-    unit: "px",
-    hint: "how far below its place the window starts",
-  },
-  {
-    key: "startScale",
-    label: "Start scale",
-    min: 0.7,
-    max: 1,
-    step: 0.01,
-  },
-  {
-    key: "overshoot",
-    label: "Overshoot",
-    min: 1,
-    max: 1.12,
-    step: 0.005,
-    hint: "scale on the landing, past rest",
-  },
-  {
-    key: "squash",
-    label: "Squash",
-    min: 0,
-    max: 0.12,
-    step: 0.005,
-    hint: "wide and short on the landing",
+    max: 100,
+    step: 1,
+    unit: "%",
+    hint: "how far right of its place the sheet starts, of its width",
   },
 ];
 
-const CARD: Field<WindowTuning>[] = [
-  { key: "width", label: "Width", min: 600, max: 1600, step: 10, unit: "px" },
-  { key: "height", label: "Height", min: 50, max: 100, step: 1, unit: "vh" },
-  { key: "radius", label: "Radius", min: 0, max: 48, step: 1, unit: "px" },
-  { key: "shadow", label: "Shadow", min: 0, max: 0.8, step: 0.02 },
+const SHEET: Field<WindowTuning>[] = [
+  { key: "rail", label: "Rail", min: 12, max: 45, step: 0.5, unit: "vw" },
+  { key: "edge", label: "Hairline", min: 0, max: 0.6, step: 0.02 },
 ];
 
-const BEHIND: Field<WindowTuning>[] = [
-  { key: "dim", label: "Dim", min: 0, max: 0.9, step: 0.02 },
-  { key: "blur", label: "Blur", min: 0, max: 24, step: 1, unit: "px" },
-];
-
-const TABS = [
-  { slug: "one", title: "First project", href: "#one" },
-  { slug: "two", title: "Second", href: "#two" },
-  { slug: "three", title: "Third project", href: "#three" },
+/** The stand-in signs: the landing's places, over the window. */
+const SIGNS = [
+  { slug: "one", title: "First project", bottom: "31vh", width: "19vw" },
+  { slug: "two", title: "Second", bottom: "20.5vh", width: "21vw" },
+  { slug: "three", title: "Third project", bottom: "10vh", width: "18vw" },
 ];
 
 const CSS = `
 ${BENCH_CSS}
 .wb-wall { position: fixed; inset: 0; background: #faf9f6; }
 /* A stand-in for the landing's projects screen: three sign-sized
-   blocks bottom-left and a card-sized one beside them. */
-.wb-sign { position: absolute; left: 7vw; height: 8.8vh; background: #dcd8d0; border-radius: 6px; }
-.wb-card { position: absolute; right: 11vw; bottom: 30vh; width: 44vw; aspect-ratio: 640 / 300; background: #e6e2da; border-radius: 4px; }
+   blocks bottom-left, over the window; the open one grown. */
+.wb-sign { position: fixed; z-index: 85; left: 7vw; height: 8.8vh; padding: 0; border: 0; background: #dcd8d0; border-radius: 6px; transform-origin: 50% 50%; }
+.wb-sign[aria-pressed="true"] { background: #2f6df6; transform: scale(1.2) rotate(-1.5deg); }
 .wb-panel { position: fixed; right: 16px; bottom: 16px; z-index: 90; display: grid; gap: 10px; width: 320px; max-height: calc(100vh - 32px); overflow-y: auto; padding: 12px 14px 14px; border-radius: 14px; border: 1px solid rgba(128, 128, 128, 0.4); background: rgba(250, 249, 246, 0.92); color: #171717; font-size: 12px; backdrop-filter: blur(10px); }
 .wb-panel .bench-row { grid-template-columns: 6rem 1fr 4rem; }
 .wb-buttons { display: flex; flex-wrap: wrap; gap: 6px; }
@@ -126,19 +92,30 @@ export default function WindowBench() {
   return (
     <>
       <style>{CSS}</style>
-      <div className="wb-wall" aria-hidden="true">
-        <div className="wb-sign" style={{ bottom: "31vh", width: "24vw" }} />
-        <div className="wb-sign" style={{ bottom: "20.5vh", width: "20vw" }} />
-        <div className="wb-sign" style={{ bottom: "10vh", width: "28vw" }} />
-        <div className="wb-card" />
-      </div>
+      <div className="wb-wall" aria-hidden="true" />
+      {SIGNS.map((sign) => (
+        <button
+          key={sign.slug}
+          type="button"
+          className="wb-sign"
+          aria-label={sign.title}
+          aria-pressed={open && sign.slug === active}
+          style={{ bottom: sign.bottom, width: sign.width }}
+          onClick={() => {
+            if (open && sign.slug === active) setOpen(false);
+            else {
+              setActive(sign.slug);
+              setOpen(true);
+            }
+          }}
+        />
+      ))}
 
       <ProjectWindow
-        tabs={TABS}
         active={active}
         shown={open}
-        label={TABS.find((x) => x.slug === active)?.title ?? ""}
-        onSelect={setActive}
+        label={SIGNS.find((x) => x.slug === active)?.title ?? ""}
+        layout={{ inset: "7vw", foot: "45vh" }}
         onClose={() => setOpen(false)}
       >
         <div className="wb-page" key={active}>
@@ -171,7 +148,7 @@ export default function WindowBench() {
             style={btn}
             onClick={() => {
               setOpen(false);
-              window.setTimeout(() => setOpen(true), 2 * t.beat + 80);
+              window.setTimeout(() => setOpen(true), 0.7 * t.duration + 80);
             }}
           >
             Replay
@@ -182,20 +159,14 @@ export default function WindowBench() {
           <CopyValues values={t} />
         </div>
         <Group
-          title="The open"
+          title="The slide"
           fields={MOTION}
           values={t}
           set={setWindowTuning}
         />
         <Group
-          title="The card"
-          fields={CARD}
-          values={t}
-          set={setWindowTuning}
-        />
-        <Group
-          title="Behind"
-          fields={BEHIND}
+          title="The sheet"
+          fields={SHEET}
           values={t}
           set={setWindowTuning}
         />

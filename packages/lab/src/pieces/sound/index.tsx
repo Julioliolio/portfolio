@@ -64,7 +64,7 @@ const VOICES = pick(["cut", "tap", "knock", "slide"]);
 const EVERYTHING = pick(["master", "pitch"]);
 
 /** The cue's height on the bench, vh. */
-const CUE_SIZE = 9;
+const CUE_SIZE = 7;
 
 const PREVIEW_CSS = `
 .sb-section { display: grid; gap: 14px; padding-top: 22px; border-top: 1px solid rgba(23, 23, 23, .12); }
@@ -75,7 +75,7 @@ const PREVIEW_CSS = `
 .sb-wall { position: relative; display: grid; justify-items: center; align-items: center; background: #faf9f6; color: #171717; border: 1px solid rgba(23, 23, 23, .1); overflow: visible; }
 .sb-wall-words { gap: .3em; padding: 40px 24px; font-size: clamp(30px, 5vw, 52px); line-height: 1.1; letter-spacing: -.02em; }
 .sb-words { text-align: center; white-space: nowrap; }
-.sb-wall-cue { height: calc(${CUE_SIZE}vh + 14vh); }
+.sb-wall-cue { height: calc(${CUE_SIZE}vh + 7vh); }
 .sb-wall-cartel { padding: 28px 24px; }
 .sb-wall-signs { padding: 32px 24px; justify-items: start; }
 .sb-switch[aria-pressed="true"] { background: #171717; color: #fff; border-color: #171717; }
@@ -212,7 +212,7 @@ export default function SoundBench() {
 
       <Section
         title="The scroll cue"
-        what="Hover the ring for its tap, leave for the softer one; click for the knock."
+        what="Hover the cue for its tap, leave for the softer one; click for the knock."
       >
         <div className="sb-wall sb-wall-cue">
           <Cue
@@ -221,7 +221,7 @@ export default function SoundBench() {
             delay={motion.lead}
             size={CUE_SIZE}
             label="View projects"
-            text={["View", "projects"]}
+            text="View projects"
             onClick={() => play("knock", 1, { at: "click" })}
           />
         </div>

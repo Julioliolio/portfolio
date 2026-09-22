@@ -100,7 +100,28 @@ const pieces = [
     slug: "window",
     title: "Project window",
     description:
-      "The case study's window over the landing — the card's stamp-in, its size and shadow, the dim and blur behind it, the pills and the expand — tuned live.",
+      "The case study's window beside the signs — the sheet's cuts in from the right, the rail's width, the hairline on its edge — tuned live.",
+    background: "white",
+  },
+  {
+    slug: "ransom-note",
+    title: "Ransom note",
+    description:
+      "Type set in cut-out letters — every character a scrap off a seeded roll, landed in stop-motion cuts, pulled about by the pointer in held frames, boiling at rest. After Arlan's study; the chaos, the layout and the pointer, tuned live.",
+    background: "white",
+  },
+  {
+    slug: "type",
+    title: "Type",
+    description:
+      "The project pages' type, set on Camper's words at full size — the title as the image, labels and hairlines, big reading text, one blue. The title fitted to the width or at a fixed scale, to pick by eye.",
+    background: "white",
+  },
+  {
+    slug: "contents",
+    title: "Contents",
+    description:
+      "A page's contents as a column of stops on a capsule of the ink, the chapter being read broken out of it in blue — @drawsgood's gooey pill nav stood on end for the window's rail. The blue runs through the column as the page is read, or to the stop under the pointer; eased, not cut. The rows' proportions, the gap, the goo and the speeds, tuned live.",
     background: "white",
   },
 ] as const satisfies readonly LabPiece[];

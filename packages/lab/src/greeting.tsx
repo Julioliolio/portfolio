@@ -107,10 +107,10 @@ export type GreetingTuning = {
 
 // Julio's numbers off the bench, 2026-09-17: a big lean, spread a
 // little per letter, shared in full by every neighbour out to the edge
-// of a wider reach; a bigger jump in and more of the stamp's tilt
-// either way; a thicker hairline.
+// of a wider reach (wider again on 2026-09-18: 1.4 to 2); a bigger jump
+// in and more of the stamp's tilt either way; a thicker hairline.
 const GREETING_DEFAULTS: Readonly<GreetingTuning> = Object.freeze({
-  reach: 1.4,
+  reach: 2,
   falloff: 1,
   tilt: 15,
   scatter: 0.6,

@@ -37,6 +37,7 @@ export const localpal: Project = {
     {
       id: "overview",
       label: "Overview",
+      chapter: "Overview",
       heading: "Overview",
       blocks: [
         {
@@ -121,6 +122,7 @@ export const localpal: Project = {
     {
       id: "research",
       label: "Research",
+      chapter: "Research",
       heading: "Reddit first, then six long conversations",
       blocks: [
         {
@@ -228,6 +230,7 @@ export const localpal: Project = {
     {
       id: "requirements",
       label: "Requirements",
+      chapter: "Development",
       heading: "Five requirements, each with a reason attached",
       blocks: [
         {
@@ -373,6 +376,7 @@ export const localpal: Project = {
     {
       id: "prototype",
       label: "Prototype",
+      chapter: "Final screens",
       heading: "The map is the feed",
       blocks: [
         {
@@ -480,6 +484,7 @@ export const localpal: Project = {
     {
       id: "learnings",
       label: "Learnings",
+      chapter: "Post mortem",
       heading: "What I'd do differently, and what I'm keeping",
       blocks: [
         {

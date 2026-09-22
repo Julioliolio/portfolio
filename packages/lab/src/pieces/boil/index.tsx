@@ -15,23 +15,17 @@ import {
   useBoilTuning,
   type BoilTuning,
 } from "../../boil";
-import { CUE_VH, Cue, CueStyles } from "../../cue";
 import { GREETING_LINE, GreetingStyles, Speech } from "../../greeting";
 import { useMotionTuning } from "../../motion";
 
 /**
- * The boil bench: one set of knobs for every boil on the site. Both
- * things that boil are on the wall — the scroll cue, big, whose words
- * pop in and boil under the pointer; and the hero's line, whose lit
- * letters boil under it. Sliders write the boil store, which both read
- * live, so what you set here is what the home page does — in this
- * browser, until Reset. "Copy values" exports them for BOIL_DEFAULTS in
- * packages/lab/src/boil.tsx. The pops and stamps are the motion
- * tuning's: /lab/motion.
+ * The boil bench: the knobs for the site's boil. The hero's line is on
+ * the wall, its lit letters boiling under the pointer. Sliders write the
+ * boil store, which the line reads live, so what you set here is what
+ * the home page does — in this browser, until Reset. "Copy values"
+ * exports them for BOIL_DEFAULTS in packages/lab/src/boil.tsx. The
+ * stamps are the motion tuning's: /lab/motion.
  */
-
-/** The cue's height here, vh — the landing's, several times over. */
-const CUE_SIZE = CUE_VH * 5;
 
 const BOIL: Field<BoilTuning>[] = [
   {
@@ -42,15 +36,6 @@ const BOIL: Field<BoilTuning>[] = [
     step: 0.1,
     unit: "/s",
     hint: "boil frames a second; claymation holds boil at four to five",
-  },
-  {
-    key: "boilWait",
-    label: "Wait",
-    min: 0,
-    max: 800,
-    step: 10,
-    unit: "ms",
-    hint: "after the cue's words have popped, before their boil starts",
   },
   {
     key: "boilShove",
@@ -91,7 +76,6 @@ const BOIL: Field<BoilTuning>[] = [
 const STAGE_CSS = `
 .boil-wall { display: grid; gap: 24px; padding: 32px 24px 0; background: #faf9f6; color: #171717; border: 1px solid rgba(23, 23, 23, .1); }
 .boil-words { text-align: center; white-space: nowrap; font-size: clamp(34px, 6vw, 60px); line-height: 1.1; letter-spacing: -.02em; }
-.boil-cue { position: relative; height: ${CUE_SIZE * 2.2}vh; }
 `;
 
 export default function BoilBench() {
@@ -101,7 +85,6 @@ export default function BoilBench() {
   return (
     <div style={{ display: "grid", gap: 20, width: "min(720px, 100%)" }}>
       <style>{BENCH_CSS + STAGE_CSS}</style>
-      <CueStyles />
       <GreetingStyles />
 
       <div
@@ -111,7 +94,7 @@ export default function BoilBench() {
           ▶ Say it again
         </button>
         <span style={{ fontFamily: mono, fontSize: 12, opacity: 0.7 }}>
-          hover the words and the cue
+          hover the words
         </span>
       </div>
 
@@ -122,17 +105,6 @@ export default function BoilBench() {
           step={motion.stagger}
           className="boil-words"
         />
-        <div className="boil-cue">
-          <Cue
-            dir="down"
-            shown
-            delay={motion.lead + 3 * motion.stagger}
-            size={CUE_SIZE}
-            label="The scroll cue"
-            text={["View", "projects"]}
-            onClick={() => {}}
-          />
-        </div>
       </div>
 
       <Group title="Boil" fields={BOIL} values={values} set={setBoilTuning} />

@@ -167,7 +167,10 @@ const SIGNS: Sign[] = [
     aspect: 3.563,
     card: {
       media: "wide",
-      ...PLACEHOLDER_WIDE,
+      // The full sixty-second film, the same file the case study's hero
+      // plays — so opening the page from the card finds it cached.
+      src: asset("/media/camper.mp4"),
+      aspect: 16 / 9,
       blurb:
         "A proposal film for Camper, made end to end with generative AI: everyone is equal in their feet. Concept, storyboard, every shot.",
       tags: ["Film", "Generative AI", "Concept"],
@@ -188,6 +191,14 @@ const SIGNS: Sign[] = [
     },
   },
 ];
+
+/** Card width, px, under which a card re-stacks: the blurb takes the full
+ *  width with the pills under it, and a tall card's clip goes on top. A
+ *  row needs the pills (about 270) plus a blurb worth reading beside
+ *  them. Shared by the stylesheet's @container and geometry(). */
+const CARD_STACK_BELOW = 620;
+/** A stacked tall card's clip, as a share of the card's width (cqi). */
+const TALL_STACKED_CQI = 56;
 
 /** The site's ink: card text. */
 const INK = "#2b2722";
@@ -272,10 +283,11 @@ export type RoadSignsTuning = {
   cardSpan: number;
   /** Card centre, px below the stack's middle (negative = above). */
   cardY: number;
-  /** Width of a wide card, px: its media and the copy row under it. */
+  /** Width of every card, px. A wide card's media fills it, with the copy
+   *  row underneath; under CARD_STACK_BELOW the copy stacks instead. */
   cardWide: number;
-  /** Width of a tall card's media, px; the copy column beside it is the
-   *  same width again. */
+  /** Width of a tall card's media, px; the copy column beside it takes
+   *  the rest of the card. */
   cardTall: number;
   /** Air between the sign's edge and the rope's first dot, and between
    *  the last dot and the card, px. Falls back to 8 when they'd touch. */
@@ -785,16 +797,23 @@ function geometry(t: RoadSignsTuning) {
   const signsH = SIGNS.length * H + (SIGNS.length - 1) * t.gap;
   const stackW = maxSignW + 2 * padX;
   const stackH = signsH + 2 * padY;
-  // A tall card is media plus the same width of copy beside it.
-  const cardW = Math.max(t.cardWide, t.cardTall * 2 + 26);
-  // Wide: the media plus the copy row. Tall: the media. Each clip's own
-  // shape sets the height, so take the tallest.
+  // Every card is cardWide across, whatever its media.
+  const cardW = t.cardWide;
+  // Each clip's own shape sets the height, so take the tallest. Roomy: a
+  // wide card is its media plus the copy row, a tall one just its media.
+  // Stacked (see CARD_STACK_BELOW): either is its media plus the blurb
+  // and the pills under it. The copy heights are estimates — the stage
+  // only needs to be roomy enough, the rope measures the real card.
+  const stacked = cardW < CARD_STACK_BELOW;
   const cardH = Math.max(
-    ...SIGNS.map((s) =>
-      s.card.media === "wide"
-        ? t.cardWide / s.card.aspect + 100
-        : t.cardTall / s.card.aspect,
-    ),
+    ...SIGNS.map((s) => {
+      if (s.card.media === "wide") {
+        return cardW / s.card.aspect + (stacked ? 170 : 110);
+      }
+      if (!stacked) return t.cardTall / s.card.aspect;
+      const mediaW = Math.max(t.cardTall, (cardW * TALL_STACKED_CQI) / 100);
+      return Math.min(mediaW, cardW) / s.card.aspect + 170;
+    }),
   );
   const room = 48;
   const stageW = Math.max(stackW + t.cardSpan, stackW + cardW + room);
@@ -1157,8 +1176,19 @@ export default function RoadSigns({
   entrance = true,
   frame = "stage",
   replay = 0,
+  selected = null,
 }: {
   controls?: boolean;
+  /**
+   * The project that is open beside the stack (the landing's project
+   * window), or null. Its sign holds the hot pose and the others the
+   * cold one; a hover still takes the hot pose for itself, so the rest
+   * can be looked over and clicked straight to. While one is open no
+   * card or rope comes out — the window has that room — and only the
+   * signs themselves take the pointer, so the page can put the stack
+   * over the window's edge without the stage covering it.
+   */
+  selected?: string | null;
   /**
    * What the piece's root box is sized to. "stage" (default): the whole
    * stage — the stack plus the room the card and rope need — for pages
@@ -1215,7 +1245,7 @@ export default function RoadSigns({
   // is over the card, the way the site keeps the title highlighted.
   const [cardActive, setCardActive] = useState<string | null>(null);
   const [copied, setCopied] = useState(false);
-  const active = pinned ?? hovered ?? cardActive;
+  const active = pinned ?? hovered ?? selected ?? cardActive;
 
   // The engine is state so it's created exactly once per instance; it is
   // mutated in place and never set again.
@@ -1271,6 +1301,13 @@ export default function RoadSigns({
     if (replay === 0 || !entrance) return;
     for (const w of engine.walks.values()) replayClass(w.el, "rs-sign-enter");
   }, [engine, entrance, replay]);
+
+  // A project opening puts the card away, and any on its way.
+  useEffect(() => {
+    if (selected === null) return;
+    cancelShow(engine);
+    hideProject(engine);
+  }, [engine, selected]);
 
   // Bench pin: holds the card up too, no hover needed.
   useEffect(() => {
@@ -1329,6 +1366,7 @@ export default function RoadSigns({
   function onSignEnter(slug: string) {
     play("tap", 1, { at: "sign" });
     setHovered(slug);
+    if (selected !== null) return;
     const r = engine.rope;
     if (r.active === slug && !r.closing) {
       cancelHide(engine);
@@ -1427,6 +1465,7 @@ export default function RoadSigns({
         top: signsBox ? -(geo.stackAt.y + geo.padY) : undefined,
         width: geo.stage.w,
         height: geo.stage.h,
+        pointerEvents: selected !== null ? "none" : undefined,
         ...stageVars,
       }}
     >
@@ -1465,6 +1504,9 @@ export default function RoadSigns({
             ref={(el) => register(sign.slug, el)}
             href={sign.href}
             aria-label={sign.title}
+            aria-current={selected === sign.slug ? "page" : undefined}
+            // The clay cursor reads this: the open sign is its own close.
+            data-cursor-label={selected === sign.slug ? "close" : undefined}
             className={entrance ? "rs-sign-enter" : undefined}
             onPointerEnter={() => onSignEnter(sign.slug)}
             onPointerLeave={onSignLeave}
@@ -1472,7 +1514,7 @@ export default function RoadSigns({
             onFocus={() => {
               play("tap", 1, { at: "sign" });
               setHovered(sign.slug);
-              showProject(engine, sign.slug);
+              if (selected === null) showProject(engine, sign.slug);
             }}
             onBlur={() => {
               setHovered((h) => (h === sign.slug ? null : h));
@@ -1481,6 +1523,7 @@ export default function RoadSigns({
             style={{
               display: "block",
               position: "relative",
+              pointerEvents: "auto",
               zIndex: active === sign.slug ? 1 : 0,
               height: tuning.height,
               width: tuning.height * sign.aspect,
@@ -1981,9 +2024,9 @@ const CARD_FIELDS: Field[] = [
   },
   {
     key: "cardWide",
-    label: "Wide card",
-    hint: "Width of a wide card: the media with the blurb and pills in a row underneath.",
-    min: 480,
+    label: "Card width",
+    hint: "Width of every card. Under 620 the blurb takes the full width and the pills drop below it.",
+    min: 280,
     max: 800,
     step: 5,
     unit: "px",
@@ -1991,8 +2034,8 @@ const CARD_FIELDS: Field[] = [
   {
     key: "cardTall",
     label: "Tall media",
-    hint: "Width of a tall card's media. The copy beside it gets the same width.",
-    min: 200,
+    hint: "Width of a tall card's media. The copy beside it takes the rest of the card.",
+    min: 130,
     max: 400,
     step: 5,
     unit: "px",
@@ -2145,8 +2188,14 @@ const CARD_CSS = `
 .rs-bridge.is-live polygon { pointer-events: fill; }
 .rs-card { position: absolute; right: 0; z-index: 3; display: flex; opacity: 0; visibility: hidden; pointer-events: none; transform: translateY(-46%) scale(.965) rotate(.35deg); transform-origin: 8% 50%; transition: opacity var(--rs-fade, .18s), visibility linear calc(var(--rs-fade, .18s) + .06s), transform var(--rs-pop, .58s) cubic-bezier(.16, 1.08, .28, 1); will-change: transform, opacity; color: ${INK}; text-decoration: none; font-family: inherit; }
 .rs-card.is-active { opacity: 1; visibility: visible; pointer-events: auto; transform: translateY(-50%) scale(1) rotate(0deg); transition-delay: 0s; }
-.rs-card.is-wide { width: var(--rs-wide, 640px); flex-direction: column; gap: 26px; }
-.rs-card.is-tall { flex-direction: row; align-items: flex-end; gap: 26px; }
+/* Every card is the same width, and is the container its layout answers
+   to: the gaps and the type are in cqi, so a card is the same picture at
+   any size, and under CARD_STACK_BELOW it re-stacks (see the @container
+   block below). */
+.rs-card { width: var(--rs-wide, 640px); container-type: inline-size; }
+.rs-panel { display: flex; width: 100%; gap: clamp(14px, 4cqi, 26px); }
+.is-wide .rs-panel { flex-direction: column; }
+.is-tall .rs-panel { flex-direction: row; align-items: flex-end; }
 /* The media: the clip edge to edge in the clip's own shape (aspect-ratio
    set inline per card). A hairline in the rope's blue keeps a white clip
    from reading as floating on the wall; light grey while it loads. No
@@ -2158,13 +2207,27 @@ const CARD_CSS = `
 .rs-media video { display: block; width: 100%; height: 100%; object-fit: cover; }
 @media (prefers-reduced-motion: reduce) { .rs-media { transition: none; } }
 .is-wide .rs-media { width: 100%; }
-.is-tall .rs-media { width: var(--rs-tall, 300px); }
+.is-tall .rs-media { width: var(--rs-tall, 300px); max-width: 100%; }
+/* The copy. Roomy: a wide card sets the blurb and the pills in one row
+   under the media, a tall card in a column beside it, on its foot. */
 .rs-copy { min-width: 0; display: flex; }
 .is-wide .rs-copy { flex-direction: row; justify-content: space-between; align-items: flex-start; gap: 24px; }
-.is-tall .rs-copy { flex-direction: column; gap: 22px; width: var(--rs-tall, 300px); padding-bottom: 2px; }
-.rs-desc { margin: 0; max-width: 340px; color: #57514a; font-weight: 400; font-size: 17px; line-height: 1.38; letter-spacing: -.012em; }
+.is-tall .rs-copy { flex: 1 1 0; flex-direction: column; gap: clamp(14px, 3.4cqi, 22px); padding-bottom: 2px; }
+.rs-desc { margin: 0; min-width: 0; color: #57514a; font-weight: 400; font-size: clamp(17px, 13.5px + .85cqi, 22px); line-height: 1.36; letter-spacing: -.014em; text-wrap: pretty; }
+.is-wide .rs-desc { flex: 1 1 0; max-width: 21em; }
 .rs-tags { display: flex; flex-wrap: wrap; gap: 6px; }
-.is-wide .rs-tags { flex: 0 0 auto; flex-wrap: nowrap; padding-top: 3px; }
+.is-wide .rs-tags { flex: 0 0 auto; flex-wrap: nowrap; padding-top: .3em; }
+/* Tight: no room for a row (or a column beside a phone clip) without
+   squeezing the blurb into a ribbon, so the blurb takes the card's full
+   width and the pills sit under it. A tall card's clip moves on top and
+   grows to a little over half the card, so it isn't a stamp in a corner. */
+@container (width < ${CARD_STACK_BELOW}px) {
+  .is-tall .rs-panel { flex-direction: column; align-items: flex-start; }
+  .is-tall .rs-media { width: max(var(--rs-tall, 300px), ${TALL_STACKED_CQI}cqi); }
+  .is-wide .rs-copy, .is-tall .rs-copy { flex: 0 0 auto; flex-direction: column; justify-content: flex-start; gap: clamp(12px, 3.4cqi, 18px); width: 100%; padding-bottom: 0; }
+  .is-wide .rs-desc { flex: 0 0 auto; max-width: none; }
+  .is-wide .rs-tags { flex-wrap: wrap; padding-top: 0; }
+}
 .rs-tag { display: inline-flex; align-items: center; justify-content: center; min-height: 24px; padding: 4px 9px; border: 1px solid color-mix(in srgb, ${INK} 52%, transparent); border-radius: 999px; background: transparent; color: ${INK}; font-weight: 400; font-size: 11.5px; line-height: 1; letter-spacing: .01em; white-space: nowrap; }
 /* The mount entrance, one sign after another (the delay is inline, per
    sign): the site's sm-drop keyframes and --sm-duration, generated from
@@ -2191,12 +2254,14 @@ const CARD_CSS = `
 /**
  * One project's card: the media block (a muted looping clip, sized to its
  * own aspect), then the copy — the blurb and the tag pills. The
- * stylesheet decides whether the copy sits under or beside the media.
+ * stylesheet decides whether the copy sits under or beside the media,
+ * and re-stacks it when the card is narrow; rs-panel is the box that
+ * lays them out, since the card itself is the queried container.
  */
 function CardPanel({ sign }: { sign: Sign }) {
   const c = sign.card;
   return (
-    <>
+    <div className="rs-panel">
       <div className="rs-media" style={{ aspectRatio: c.aspect }}>
         <video
           src={c.src}
@@ -2217,7 +2282,7 @@ function CardPanel({ sign }: { sign: Sign }) {
           ))}
         </div>
       </div>
-    </>
+    </div>
   );
 }
 

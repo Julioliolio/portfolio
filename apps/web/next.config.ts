@@ -1,4 +1,5 @@
 import type { NextConfig } from "next";
+import { PHASE_DEVELOPMENT_SERVER } from "next/constants";
 import { BASE_PATH } from "../../scripts/base-path.mjs";
 
 // The site is fully static (every route is prerendered; lab slugs come from
@@ -22,4 +23,20 @@ const nextConfig: NextConfig = {
   transpilePackages: ["@portfolio/lab", "@portfolio/demo-protocol"],
 };
 
-export default nextConfig;
+// Under a basePath the bare origin is a 404, which is where every
+// "open localhost:3000" lands. Dev only: a static export has no server to
+// redirect with, and on Pages the root belongs to another site anyway.
+const devConfig: NextConfig = {
+  ...nextConfig,
+  redirects: async () => [
+    {
+      source: "/",
+      destination: `${BASE_PATH}/`,
+      basePath: false,
+      permanent: false,
+    },
+  ],
+};
+
+export default (phase: string): NextConfig =>
+  phase === PHASE_DEVELOPMENT_SERVER && BASE_PATH ? devConfig : nextConfig;

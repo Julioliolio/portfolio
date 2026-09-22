@@ -5,6 +5,7 @@
   "type": "module",
   "exports": {
     "./asset": "./src/asset.ts",
+    "./contents": "./src/contents.tsx",
     "./registry": "./src/registry.ts",
     "./loaders": "./src/loaders.ts",
     "./cursor-tuning": "./src/cursor-tuning.ts",
@@ -12,7 +13,9 @@
     "./cue": "./src/cue.tsx",
     "./greeting": "./src/greeting.tsx",
     "./hello": "./src/hello.tsx",
+    "./ransom": "./src/ransom.tsx",
     "./sound": "./src/sound.tsx",
+    "./type": "./src/type.tsx",
     "./window": "./src/window.tsx"
   },
   "scripts": {
