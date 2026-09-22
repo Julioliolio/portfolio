@@ -74,13 +74,28 @@ const BLUR = [
   [6, 72, 100],
 ] as const;
 
+/**
+ * The type's stylesheet. The notes are here rather than in the CSS,
+ * where they would ship to every project page:
+ *
+ * - The link reset is weightless (:where), so a link set in one of the
+ *   classes keeps the class's colour.
+ * - Grounds: a band carries its own colours, and the type on it follows.
+ * - The title is pulled left by the capital's side bearing, so the ink
+ *   starts on the margin the text starts on; the padding is room for the
+ *   descenders the tight line height leaves hanging.
+ * - The way on (.ty-next) is set as big as the title it leads to.
+ * - Arriving: waiting is only invisible; in is one soft fade and rise.
+ * - The foot of the scroller (.ty-blur): layers of blur, each masked to
+ *   start lower than the last, so focus falls away instead of stopping
+ *   at a line. Stuck to the bottom of whatever scrolls; it has no height
+ *   of its own.
+ */
 export const TYPE_CSS = `
 .ty { --ty-blue: #2f6df6; --ty-u: clamp(20px, 2.5cqw, 28px); --ty-fg: #2b2722; --ty-dim: #77716a; --ty-bg: #fff; container-type: inline-size; color: var(--ty-fg); background: var(--ty-bg); }
-/* Weightless, so a link set in one of the classes keeps the class's colour. */
 :where(.ty a) { color: inherit; text-decoration: none; }
 :where(.ty p, .ty h1, .ty h2, .ty dl, .ty dd, .ty figure) { margin: 0; }
 
-/* Grounds: a band carries its own colours, and the type on it follows. */
 .ty-ground { padding: calc(2 * var(--ty-u)) calc(1.5 * var(--ty-u)); color: var(--ty-fg); background: var(--ty-bg); }
 .ty-ground[data-ground="blue"] { --ty-bg: var(--ty-blue); --ty-fg: #fff; --ty-dim: rgba(255, 255, 255, .64); }
 .ty-ground[data-ground="ink"] { --ty-bg: #171513; --ty-fg: #fff; --ty-dim: rgba(255, 255, 255, .56); }
@@ -90,9 +105,6 @@ export const TYPE_CSS = `
 .ty-gap-4 { margin-top: calc(4 * var(--ty-u)); }
 .ty-gap-8 { margin-top: calc(8 * var(--ty-u)); }
 
-/* Pulled left by the capital's side bearing, so the ink starts on the
-   margin the text starts on; the padding is room for the descenders the
-   tight line height leaves hanging. */
 .ty-title { padding-bottom: .1em; text-indent: -${BEARING}em; font-family: ${MEDIUM}; font-weight: 500; font-size: clamp(64px, 12cqw, 168px); line-height: .86; letter-spacing: -.055em; }
 .ty-title.is-fit { font-size: 20cqw; white-space: nowrap; }
 .ty-title.is-fit > span { display: inline-block; text-indent: 0; }
@@ -109,21 +121,16 @@ export const TYPE_CSS = `
 .ty-num { font-family: ${MONO}; font-variant-numeric: tabular-nums; letter-spacing: 0; }
 
 .ty-arrow { flex: none; width: .74em; height: .74em; overflow: visible; }
-/* The way on, set as big as the title it leads to. */
 .ty-next { display: flex; align-items: baseline; gap: .12em; }
 .ty-next .ty-arrow { align-self: center; width: .62em; height: .62em; transition: transform .16s steps(2, end); }
 .ty-next:hover .ty-arrow { transform: translateX(.08em); }
 @media (prefers-reduced-motion: reduce) { .ty-next .ty-arrow { transition: none; } }
 
-/* Arriving: waiting is only invisible; in is one soft fade and rise. */
 .ty-wait { opacity: 0; }
 .ty-in { animation: ty-in .8s cubic-bezier(.2, .65, .2, 1) var(--ty-delay, 0ms) both; }
 @keyframes ty-in { from { opacity: 0; transform: translateY(12px); } }
 @media (prefers-reduced-motion: reduce) { .ty-in { animation: none; } }
 
-/* The foot of the scroller: layers of blur, each masked to start lower
-   than the last, so focus falls away instead of stopping at a line.
-   Stuck to the bottom of whatever scrolls; it has no height of its own. */
 .ty-blur { position: sticky; bottom: 0; z-index: 5; height: 0; pointer-events: none; }
 .ty-blur > i { position: absolute; left: 0; right: 0; bottom: 0; height: calc(4 * var(--ty-u)); }
 ${BLUR.map(

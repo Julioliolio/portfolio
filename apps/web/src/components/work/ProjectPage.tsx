@@ -29,12 +29,13 @@ const RoadSigns = lazy(loaders["road-signs"]);
 /** The landing, opened on its projects screen (see Landing.tsx). */
 const PROJECTS = asset("/#projects");
 
+// .pp-signs is the landing's place for the signs, stepped back as they
+// are there while a project is open (SIGNS_OPEN), over the window
+// (z-index 80); none on a phone, where the sheet is the whole screen.
+// Said here rather than in the CSS, which ships.
 const CSS = `
 html { background: #faf9f6; }
 body { background: #faf9f6; color: #2b2722; }
-/* The landing's place for the signs, stepped back as they are there
-   while a project is open (SIGNS_OPEN), over the window (z-index 80);
-   none on a phone, where the sheet is the whole screen. */
 .pp-signs { display: none; }
 @media (min-width: 701px) { .pp-signs { display: block; position: fixed; left: 7.2vw; bottom: 9.5vh; z-index: 90; transform-origin: 0 100%; transform: ${SIGNS_OPEN}; } }
 `;

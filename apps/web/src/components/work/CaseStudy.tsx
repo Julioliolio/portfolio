@@ -23,13 +23,8 @@ import {
 import { createPortal } from "react-dom";
 import { DemoShell } from "@/components/demo/DemoShell";
 import { OPENINGS } from "./openings";
-import {
-  projectAfter,
-  type Block,
-  type Figure,
-  type Project,
-  type Section,
-} from "@/content/projects";
+import type { Block, Figure, Project, Section } from "@/content/projects";
+import { projectAfter } from "@/content/projects/list";
 
 /**
  * The case-study page: one template for every project, fed by a content
@@ -86,13 +81,33 @@ const MONO = "var(--font-neue-montreal-mono), ui-monospace, Menlo, monospace";
 /** ms between neighbours arriving together. */
 const BEAT = 70;
 
+/**
+ * The template's stylesheet, over the type's. The notes are here rather
+ * than in the CSS, where they would ship to every work page:
+ *
+ * - --cs-gutter: the openings bleed by it, and the grounds carry the
+ *   page's padding now, so there is none to bleed past.
+ * - The header. As the first screen it is as tall as what the window
+ *   shows (--cs-vh), and its foot clears the blur.
+ * - The way home, on a phone (.cs-bar); with a rail (the window's 701px
+ *   line) Home is there, and so are the contents.
+ * - Sections: the note on the sheet's edge, everything else on the
+ *   text's. The text keeps a column free on its right; media takes it.
+ * - One weight: a list's title is told by its ink. (globals.css hands
+ *   <b> the Medium family.)
+ * - Media: square and frameless, each with its caption under it, the
+ *   captions numbered down the page.
+ * - The grey box (.cs-ph): what goes here, said in the box. Dashed so it
+ *   never passes for a finished frame.
+ * - The timeline: months across the top, a bar per phase.
+ * - The carousel: a row wider than the text, out to the sheet's edge,
+ *   dragged through. Each figure sits in its entrance wrapper, which is
+ *   the row's item.
+ * - The foot: the way on, and the way home.
+ */
 const CSS = `
-/* --cs-gutter: the openings bleed by it, and the grounds carry the
-   page's padding now, so there is none to bleed past. */
 .cs { --cs-gutter: 0px; --cs-pad: calc(1.5 * var(--ty-u)); counter-reset: cs-fig; }
 
-/* The header. As the first screen it is as tall as what the window
-   shows (--cs-vh), and its foot clears the blur. */
 .cs-head { display: flex; flex-direction: column; justify-content: space-between; gap: calc(4 * var(--ty-u)); padding-top: var(--cs-pad); }
 .cs-head.is-screen { min-height: var(--cs-vh, 100dvh); padding-bottom: calc(5 * var(--ty-u)); }
 .cs-head:not([data-ground]) .ty-title { color: var(--ty-blue); }
@@ -100,8 +115,6 @@ const CSS = `
 .cs-intro p + p { text-indent: 0; }
 .cs-facts { grid-column: 9 / -1; align-self: end; }
 .cs-facts a { text-decoration: underline; text-decoration-thickness: 1px; text-underline-offset: .15em; }
-/* The way home, on a phone; with a rail (the window's 701px line) Home
-   is there, and so are the contents. */
 .cs-bar { display: inline-flex; align-items: center; gap: .5em; margin-bottom: calc(2 * var(--ty-u)); }
 @media (min-width: 701px) { .cs-bar, .cs-toc { display: none; } }
 .cs-toc { margin-top: calc(2 * var(--ty-u)); }
@@ -111,8 +124,6 @@ const CSS = `
 .cs-hero.is-framed figcaption { padding: 0; }
 .cs-opening-hold { height: min(var(--cs-vh, 100dvh), 75cqw); background: #000; }
 
-/* Sections: the note on the sheet's edge, everything else on the
-   text's. The text keeps a column free on its right; media takes it. */
 .cs-body { padding-bottom: calc(8 * var(--ty-u)); }
 .cs-section { margin-top: calc(8 * var(--ty-u)); scroll-margin-top: calc(2 * var(--ty-u)); }
 .cs-section:first-of-type { margin-top: calc(4 * var(--ty-u)); }
@@ -129,8 +140,6 @@ const CSS = `
 .cs-list.is-numbered li { counter-increment: cs-li; }
 .cs-list.is-numbered li::before { content: counter(cs-li, decimal-leading-zero); }
 .cs-list.is-bulleted li::before { content: "—"; }
-/* One weight: a list's title is told by its ink. (globals.css hands
-   <b> the Medium family.) */
 .cs-list b { font-family: inherit; font-weight: inherit; color: var(--ty-fg); }
 .cs-quote { margin: var(--ty-u) 0; padding-left: 2.2em; }
 .cs-quote cite { display: block; margin-top: calc(.5 * var(--ty-u)); font-style: normal; }
@@ -141,8 +150,6 @@ const CSS = `
   .cs-text { width: auto; }
 }
 
-/* Media: square and frameless, each with its caption under it, the
-   captions numbered down the page. */
 .cs-figs { display: grid; grid-template-columns: repeat(auto-fit, minmax(min(100%, 220px), 1fr)); gap: var(--ty-u); align-items: start; }
 .cs-figs.is-tall { grid-template-columns: repeat(auto-fit, minmax(min(100%, 160px), 1fr)); }
 .cs-media { position: relative; width: 100%; overflow: hidden; background: ${GREY}; }
@@ -150,11 +157,8 @@ const CSS = `
 .cs-media video { background: #000; }
 .cs-cap { margin-top: calc(.5 * var(--ty-u)); }
 .cs-cap::before { counter-increment: cs-fig; content: counter(cs-fig, decimal-leading-zero) "\\2002"; font-family: ${MONO}; }
-/* The grey box: what goes here, said in the box. Dashed so it never
-   passes for a finished frame. */
 .cs-ph { display: grid; align-content: end; padding: calc(.75 * var(--ty-u)); outline: 1px dashed rgba(43, 39, 34, .28); outline-offset: -1px; }
 
-/* The timeline: months across the top, a bar per phase. */
 .cs-tl-months, .cs-tl-row { display: grid; grid-template-columns: minmax(96px, 1fr) 3fr; column-gap: var(--ty-u); align-items: center; }
 .cs-tl-months { margin-bottom: calc(.5 * var(--ty-u)); }
 .cs-tl-scale { display: grid; grid-auto-flow: column; grid-auto-columns: 1fr; font-family: ${MONO}; font-size: 11px; }
@@ -163,17 +167,13 @@ const CSS = `
 .cs-tl-bar { position: absolute; top: 0; bottom: 0; background: var(--ty-blue); }
 .cs-tl-note { margin-top: var(--ty-u); }
 
-/* The carousel: a row wider than the text, out to the sheet's edge,
-   dragged through. */
 .cs-carousel-row { display: flex; gap: var(--ty-u); align-items: flex-start; width: calc(100% + var(--cs-pad)); padding-right: var(--cs-pad); overflow-x: auto; scroll-snap-type: x proximity; scrollbar-width: none; cursor: grab; touch-action: pan-y; }
 .cs-carousel-row::-webkit-scrollbar { display: none; }
 .cs-carousel-row.is-dragging { cursor: grabbing; scroll-snap-type: none; }
 .cs-carousel-row.is-dragging * { pointer-events: none; }
-/* Each figure sits in its entrance wrapper, which is the row's item. */
 .cs-carousel-row > * { flex: none; width: min(360px, 78%); scroll-snap-align: start; }
 .cs-carousel-hint { display: flex; align-items: center; gap: .5em; margin-top: calc(.5 * var(--ty-u)); }
 
-/* The foot: the way on, and the way home. */
 .cs-foot { padding-bottom: calc(6 * var(--ty-u)); }
 .cs-home { display: inline-flex; align-items: center; gap: .5em; margin-top: calc(4 * var(--ty-u)); }
 `;

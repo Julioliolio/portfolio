@@ -12,15 +12,10 @@ const bySlug: Record<string, Project> = { localpal, camper, convertr };
 
 /**
  * The three case studies, in the order the road signs stack them (the
- * list's). Each page links to the next one here, wrapping around.
+ * list's).
  */
 export const projects: readonly Project[] = PROJECT_LIST.map((p) => {
   const project = bySlug[p.slug];
   if (!project) throw new Error(`No case study for ${p.slug}`);
   return project;
 });
-
-export function projectAfter(slug: string): Project {
-  const i = projects.findIndex((p) => p.slug === slug);
-  return projects[(i + 1) % projects.length] ?? projects[0]!;
-}
