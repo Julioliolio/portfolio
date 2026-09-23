@@ -14,7 +14,7 @@ import { useEffect, useSyncExternalStore } from "react";
  * the first client render agree on the defaults; a stored value is only
  * taken when it has the default's type and, for a number, is finite.
  */
-export type TuningStore<T> = {
+type TuningStore<T> = {
   get: () => T;
   set: (patch: Partial<T>) => void;
   reset: () => void;

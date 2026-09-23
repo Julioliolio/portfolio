@@ -32,11 +32,8 @@ body {
    browser substitutes the nearest preloaded cut. */
 b,
 strong,
-.font-medium,
-.font-bold,
 i,
-em,
-.italic {
+em {
   font-family:
     var(--font-neue-montreal-extra), var(--font-sans), "Helvetica Neue", Arial,
     sans-serif;

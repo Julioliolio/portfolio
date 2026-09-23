@@ -1,58 +1,131 @@
 "use client";
 
-import { useEffect, useRef, useState } from "react";
+import {
+  useEffect,
+  useLayoutEffect,
+  useRef,
+  useState,
+  type CSSProperties,
+} from "react";
 import { Enter } from "./motion";
 import { play } from "./sound";
+import { springEasing } from "./spring";
+import { INK, MEDIUM, SETTLE_EASE } from "./style";
+import { createTuningStore } from "./tuning-store";
 
 /**
  * The landing's scroll cue: Julio's glyph — his arrow between a pair of
  * parens — at the foot of the first screen and, its arrow flipped, the
  * head of the second. It nudges its arrow while it waits; under the
- * pointer the parens jump apart in held cuts and the words ("View
+ * pointer the parens jump apart in held cuts and the words ("Browse
  * projects", "Back up") pop into the room after the arrow, on one line
- * with it and near enough its height and weight, with the site's pop
- * entrance, and hold; leaving shuts them the same way. Open or shut,
- * the whole of it sits on the middle of
- * the screen: the near paren and the arrow step one way as the far
- * paren steps the other. The parens tap as they part (the site's hover
- * sound, see sound.tsx) and tap softer as they shut; the click's knock is the caller's. See the
- * CSS below for every beat.
+ * with it, with the site's pop entrance, and hold; leaving shuts them
+ * the same way. Parens, arrow and words are all one weight: the body
+ * copy's stem (the tuning's line). Open or shut, the whole of it sits on
+ * the middle of the screen: the near paren and the arrow step one way
+ * as the far paren steps the other. The parens tap as they part (the
+ * site's hover sound, see sound.tsx) and tap softer as they shut; the
+ * click's knock is the caller's. See the CSS below for every beat.
  *
- * The cue's numbers are the constants below.
+ * The cue's numbers are a `CueTuning`; /lab/cue is its bench, and the
+ * stylesheet is regenerated from the live values, so what is set there
+ * is what the landing does — in that browser, until Reset. Lock a feel
+ * in by pasting the bench's values into CUE_DEFAULTS.
  */
 
-/** The glyph's height on the landing, vh — a quiet mark at the foot of
- *  the screen rather than a button, its words the size of a caption. */
-export const CUE_VH = 2.5;
-/** The glyph's height never falls under this, px, so the words stay
- *  readable on a short window. */
-const CUE_MIN_PX = 16;
+export type CueTuning = {
+  /** The glyph's height on the landing, vh. */
+  size: number;
+  /** The least the glyph's height goes to, px, on a short window. */
+  minPx: number;
+  /** How far off the screen's foot (or head) it sits, vh. */
+  foot: number;
+
+  /** The weight. The one line the parens and the arrow are drawn with,
+   *  glyph units (the glyph is GLYPH_H = 38 tall); 2.72 is the body
+   *  copy's stem at a word of 34 — Neue Montreal Regular's l is 0.08em. */
+  line: number;
+  /** The words' cut: the body copy's Regular or the site's Medium. */
+  cutOf: "regular" | "medium";
+  /** A hairline drawn round every letter of the words, units — 0 is the
+   *  cut as it is; more thickens it past what the cut alone gives. */
+  wordStroke: number;
+  /** The ink's strength, 0 to 1: the whole cue, parens, arrow and words. */
+  ink: number;
+
+  /** A paren's width, units. */
+  parenW: number;
+  /** The air between the parens and the arrow while shut, units. */
+  restGap: number;
+  /** The words' size, units. */
+  word: number;
+  /** The air before the words (after the arrow) and after them (before
+   *  the far paren), units. */
+  wordGap: number;
+  wordPad: number;
+  /** The words' letter-spacing, em. */
+  tracking: number;
+
+  /** How the parens part: in held cuts (the site's stop motion) or
+   *  smooth — the room opening on a spring, the words fading in. */
+  motion: "cuts" | "smooth";
+  /** The open and the close, ms: the three cuts together; or, smooth,
+   *  the spring's period (how long one swing takes — it settles a little
+   *  after) and the close's ease. */
+  cut: number;
+  /** Smooth only — the spring's bounce, 0 to 0.8: 0 settles without
+   *  passing its place, more runs the far paren past it and back. */
+  bounce: number;
+  /** Cuts only — the open's first cut: how far past its place each side
+   *  jumps, units; its second: how far short of it. */
+  spread: number;
+  back: number;
+
+  /** What the arrow does while it waits: nothing, a nudge (a quick dip
+   *  and back, then a long hold), or a bob (down and up, all the time).
+   *  Held or smooth as `motion` is. */
+  idle: "off" | "nudge" | "bob";
+  /** The idle's period, s, and how deep it goes, the arrow's units. */
+  nudge: number;
+  dip: number;
+};
+
+// Julio's picks off /lab/cue, 2026-09-23.
+const CUE_DEFAULTS: Readonly<CueTuning> = Object.freeze({
+  size: 2.5,
+  minPx: 16,
+  foot: 3.5,
+  line: 3.26,
+  cutOf: "medium",
+  wordStroke: 0.3,
+  ink: 1,
+  parenW: 14,
+  restGap: 1.5,
+  word: 27,
+  wordGap: 11.5,
+  wordPad: 8,
+  tracking: 0.03,
+  motion: "smooth",
+  cut: 210,
+  bounce: 0.3,
+  spread: 3,
+  back: 2,
+  idle: "nudge",
+  nudge: 2,
+  dip: 4,
+});
+
+const store = createTuningStore("portfolio.cue", CUE_DEFAULTS);
+export const setCueTuning = store.set;
+export const resetCueTuning = store.reset;
+export const useCueTuning = store.useTuning;
+
 /** ms the shut's tap waits for the pointer to come back (see `close`). */
 const CLOSE_TAP_MS = 40;
-
-/** The glyph at rest, in its own units: a paren, a gap, the arrow's
- *  box (the arrow is 13.5 x 27 in the middle of it), a gap, a paren. */
+/** The glyph's height in its own units, and the arrow's box in it (the
+ *  arrow is 13.5 x 27 in the middle of it). */
 const GLYPH_H = 38;
-const PAREN_W = 14;
 const ARROW_W = 14;
-const REST_GAP = 6;
-const GLYPH_W = 2 * (PAREN_W + REST_GAP) + ARROW_W;
-/** The parens' line: the arrow's shaft, with the hairline it is drawn
- *  with. */
-const PAREN_STROKE = 4;
-
-/** The words' size, units: capitals of 0.7em = 24, a touch under the
- *  arrow's 27. */
-const WORD = 34;
-/** A hairline drawn around the words. The site's Medium has stems of
- *  0.09em = 3.1 units at WORD; this brings them to 3.6, a touch under
- *  the arrow's shaft and the parens' line (4) — text matched stem for
- *  stem to a line looks heavier than the line. */
-const WORD_STROKE = 0.5;
-/** The air around the words, units: between them and the arrow's box,
- *  and between them and their paren. */
-const WORD_GAP = 8;
-const WORD_PAD = 8;
 /** How far past the glyph's edges the pointer counts as on it, in glyph
  *  units — about a fifth of the glyph's width each side — and never
  *  under HIT_MIN_PX, so the small mark still catches the pointer and
@@ -62,20 +135,26 @@ const HIT_MIN_PX = 14;
 /** The exit's two cuts, ms — the slot stays mounted this long after the
  *  cue is told to go (see .cue-exit). */
 const CUE_EXIT_MS = 240;
-/** The open's and the close's three cuts, ms (see .cue-open, .cue-close). */
-const CUE_CLOSE_MS = 300;
 
-const CUE_CSS = `
+const n = (v: number, d = 3) => Number(v.toFixed(d)).toString();
+
+/** The ink as rgb, for the tuning's strength to go on. */
+const INK_RGB = INK.slice(1)
+  .match(/../g)!
+  .map((c) => parseInt(c, 16))
+  .join(", ");
+
+const cueCss = (t: CueTuning) => `
 /* The scroll cue's slot on each screen. The pop entrance plays on the
    element inside it, the parting inside that, the exit on the slot
    itself — each on its own element so no transform fights another.
-   --u is one unit of the glyph's ${GLYPH_W} x ${GLYPH_H} box, so the words are laid
-   out and weighted in the glyph's own units. --cue-size is the glyph's
-   height (CUE_VH on the landing, never under CUE_MIN_PX; a bench sets
-   its own), set on the slot by <Cue>. */
-.cue { --cue-size: max(${CUE_VH}vh, ${CUE_MIN_PX}px); --u: calc(var(--cue-size) / ${GLYPH_H}); position: absolute; left: 50%; width: max-content; height: var(--cue-size); transform: translateX(-50%); }
-.cue.is-down { bottom: 3.5vh; }
-.cue.is-up { top: 3.5vh; }
+   --u is one unit of the glyph's height (${GLYPH_H} of them), so the
+   words are laid out in the glyph's own units. --cue-size is the
+   glyph's height (the tuning's size, never under its minPx; a caller
+   may pass its own). */
+.cue { --cue-size: max(${n(t.size)}vh, ${n(t.minPx)}px); --u: calc(var(--cue-size) / ${GLYPH_H}); position: absolute; left: 50%; width: max-content; height: var(--cue-size); transform: translateX(-50%); }
+.cue.is-down { bottom: ${n(t.foot)}vh; }
+.cue.is-up { top: ${n(t.foot)}vh; }
 .cue-pop { height: 100%; }
 /* Leaving: two held poses — half gone and a step along its arrow, then
    gone. Plays while the cue is still mounted. */
@@ -85,110 +164,163 @@ const CUE_CSS = `
 /* The glyph is a row — paren, arrow, the words' room, paren — as wide
    as what is in it, and the slot is centred on its own middle. So when
    the room opens the row grows both ways from the middle of the screen,
-   as far as the words need, and nothing is measured. */
-/* Set in the page's ink, the greeting's words' own. */
-.cue-glyph { position: relative; display: flex; align-items: center; height: 100%; padding: 0; background: none; border: 0; color: #171717; }
+   as far as the words need, and nothing is measured. Set in the site's
+   ink at the tuning's strength. */
+.cue-glyph { position: relative; display: flex; align-items: center; height: 100%; padding: 0; background: none; border: 0; color: rgba(${INK_RGB}, ${n(t.ink)}); }
 /* The hit area: HIT units of the glyph's own past every edge, unseen, so
    the pointer parts it before it is quite on the glyph. Part of the
    button, so it opens, holds and clicks like the glyph itself. */
 .cue-glyph::before { content: ""; position: absolute; inset: calc(-1 * max(var(--u) * ${HIT}, ${HIT_MIN_PX}px)); }
 .cue-glyph svg { display: block; flex: none; height: 100%; overflow: visible; }
 /* The arrow. The up cue's is the down cue's flipped, so
-   its nudge and its jolts follow its way. */
-.cue-arrow-box { width: calc(var(--u) * ${ARROW_W}); margin-left: calc(var(--u) * ${REST_GAP}); transform: var(--flip, none); }
+   its idle and its jolts follow its way. */
+.cue-arrow-box { width: calc(var(--u) * ${ARROW_W}); margin-left: calc(var(--u) * ${n(t.restGap)}); transform: var(--flip, none); }
 .is-up .cue-arrow-box { --flip: scaleY(-1); }
-/* The idle nudge: every 3s the arrow alone dips a step along its way
-   and snaps back, in held poses; the parens hold still. Its steps, and
-   the jolts' below, are px inside the arrow's viewBox — the glyph's own
-   units — so a small glyph moves as little as it is. */
-.cue-arrow { animation: cue-nudge 3s steps(1, end) infinite; }
-@keyframes cue-nudge { 0%, 84% { transform: none; } 87.5% { transform: translateY(2px); } 91% { transform: translateY(3.5px); } 94% { transform: translateY(1px); } 100% { transform: none; } }
-.cue-paren { width: calc(var(--u) * ${PAREN_W}); }
+${idleCss(t)}
+.cue-paren { width: calc(var(--u) * ${n(t.parenW)}); }
 /* The near side — the paren before the arrow, and the arrow — and the
    far paren each step along their --way in the open's and the close's
    cuts. */
 .cue-near { --way: -1; display: flex; flex: none; height: 100%; }
 .cue-far { --way: 1; }
-/* The words' room, between the arrow and the far paren: the rest gap
-   wide while shut, the words lying unseen across it, and as wide as the
-   words and their air (${WORD_GAP} units before, ${WORD_PAD} after) while open. */
-.cue-room { display: flex; flex: none; align-items: center; width: calc(var(--u) * ${REST_GAP}); min-width: 0; }
-.cue-open .cue-room { width: auto; }
-/* Hover parts the parens, in held cuts 100ms apart. Opening, three:
-   the room is there at once and each side jumps out to its place (5
-   units past it, 2 short of it, rest), the words pop into it with
-   the site's own pop entrance (sm-pop, from @portfolio/lab/motion: big,
-   a hair small, rest), and the arrow takes the jolt — a step down its
-   way, a step back past its place, rest. Closing, three: the arrow dips
-   again with the words still there and the parens held; then the words
-   are gone and the parens are shut past closed; then at rest. Nothing
-   fades: each pose is there or not. The classes come from the cue's
-   state so nothing plays at mount; the idle nudge gives way to the
-   jolts. */
-.cue-open .cue-near, .cue-open .cue-far { animation: cue-side-open ${CUE_CLOSE_MS}ms steps(1, end) both; }
-.cue-open .cue-arrow { animation: cue-arrow-open ${CUE_CLOSE_MS}ms steps(1, end) both; }
-/* The words pop in and then hold still. */
-.cue-open .cue-label { animation: sm-pop calc(var(--sm-duration) * .8) steps(1, end) both; }
-.cue-close .cue-near, .cue-close .cue-far { animation: cue-side-close ${CUE_CLOSE_MS}ms steps(1, end) both; }
-.cue-close .cue-room { animation: cue-room-close ${CUE_CLOSE_MS}ms steps(1, end) both; }
-.cue-close .cue-arrow { animation: cue-arrow-close ${CUE_CLOSE_MS}ms steps(1, end) both; }
-.cue-close .cue-label { animation: cue-words-close ${CUE_CLOSE_MS}ms steps(1, end) both; }
-@keyframes cue-side-open { 0% { transform: translateX(calc(var(--way) * var(--u) * 5)); } 33.3% { transform: translateX(calc(var(--way) * var(--u) * -2)); } 66.7%, 100% { transform: none; } }
-@keyframes cue-arrow-open { 0% { transform: translateY(3px); } 33.3% { transform: translateY(-1px); } 66.7%, 100% { transform: none; } }
-@keyframes cue-side-close { 0% { transform: none; } 33.3% { transform: translateX(calc(var(--way) * var(--u) * -2)); } 66.7%, 100% { transform: none; } }
-@keyframes cue-room-close { 0% { width: auto; } 33.3%, 100% { width: calc(var(--u) * ${REST_GAP}); } }
-@keyframes cue-arrow-close { 0% { transform: translateY(2px); } 33.3%, 100% { transform: none; } }
-@keyframes cue-words-close { 0% { opacity: 1; } 33.3%, 100% { opacity: 0; } }
-/* The words: one line, ${WORD} units, level with the arrow. Set in the
-   site's Medium with a hairline around every letter (WORD_STROKE), so
-   they carry the parens' weight. */
-.cue-label { flex: none; margin: 0 calc(var(--u) * ${WORD_PAD}) 0 calc(var(--u) * ${WORD_GAP}); opacity: 0; pointer-events: none; white-space: nowrap; font-size: calc(var(--u) * ${WORD}); line-height: 1; letter-spacing: -.01em; -webkit-text-stroke: calc(var(--u) * ${WORD_STROKE}) currentColor; }
+/* The words' room, between the arrow and the far paren: at least the
+   rest gap wide, and inside it a clip as wide as the words and their
+   air (--cue-w, measured by <Cue>) times --cue-p — 0 shut, 1 open. The
+   cuts snap --cue-p; the smooth mode springs it, past 1 and back, so
+   the far paren runs past its place and settles. The words sit still
+   in the clip, uncovered as it grows, never squeezed. */
+@property --cue-p { syntax: "<number>"; inherits: false; initial-value: 0; }
+.cue-room { display: flex; flex: none; align-items: center; min-width: calc(var(--u) * ${n(t.restGap)}); }
+.cue-clip { --cue-p: 0; display: block; flex: none; width: calc(var(--cue-p) * var(--cue-w, 0px)); overflow-x: clip; }
+.cue-open .cue-clip { --cue-p: 1; }
+/* The words: one line, level with the arrow, in the tuning's cut, with
+   its hairline if it has one. */
+.cue-label { display: block; width: max-content; padding: 0 calc(var(--u) * ${n(t.wordPad)}) 0 calc(var(--u) * ${n(t.wordGap)}); opacity: 0; pointer-events: none; white-space: nowrap; font-size: calc(var(--u) * ${n(t.word)}); line-height: 1; letter-spacing: ${n(t.tracking)}em;${t.cutOf === "medium" ? ` font-family: ${MEDIUM}; font-weight: 500;` : ""}${t.wordStroke > 0 ? ` -webkit-text-stroke: calc(var(--u) * ${n(t.wordStroke)}) currentColor;` : ""} }
+${t.motion === "cuts" ? cutsCss(t) : smoothCss(t)}
 .cue-glyph:focus-visible { outline: 2px solid currentColor; outline-offset: 4px; border-radius: 999px; }
 @media (prefers-reduced-motion: reduce) {
   .cue-arrow { animation: none; }
+  .cue-clip { transition: none !important; }
   .cue-exit, .cue-open *, .cue-close * { animation-duration: 1ms; }
-  .cue-open .cue-label { animation: sm-pop 1ms steps(1, end) both; }
 }
 `;
 
-/** Julio's arrow, where his ring glyph had it: the middle of the
- *  ARROW_W x GLYPH_H box at ARROW_BOX. */
-const ARROW =
-  "M24.6436 36.0039C24.5367 35.9356 24.3904 35.9094 24.2744 35.8955C24.146 35.8801 23.9991 35.8747 23.8564 35.873C23.7129 35.8714 23.5662 35.8741 23.4395 35.876C23.3269 35.8776 23.2337 35.8776 23.165 35.876C23.1635 35.8756 23.1622 35.8752 23.1611 35.875C23.1411 35.8703 23.1202 35.8668 23.1016 35.8643C23.0637 35.8591 23.0167 35.8559 22.9658 35.8525C22.8632 35.8457 22.7264 35.8398 22.5684 35.8359C22.251 35.8281 21.8369 35.8249 21.417 35.8242C20.7942 35.8232 20.1476 35.8287 19.7832 35.8311C19.8276 34.8226 19.798 33.5895 19.7979 32.6211L19.7959 19.6816L19.7959 19.6807L19.7842 17.5029C19.784 17.3633 19.7899 17.206 19.7959 17.041C19.8018 16.8802 19.8072 16.7117 19.8008 16.5645L19.7939 16.4199L19.665 16.3535C19.6227 16.3317 19.5872 16.3133 19.5488 16.2979L19.5176 16.2031L19.4063 16.1602C19.3385 16.1343 19.2518 16.1236 19.1797 16.1172C19.0992 16.11 19.0028 16.1058 18.8984 16.1035C18.6894 16.099 18.4329 16.1016 18.1758 16.1055C17.9164 16.1093 17.6556 16.1148 17.4326 16.1152C17.2047 16.1157 17.0354 16.1114 16.9492 16.0996L16.9023 16.0928L16.8574 16.1035C16.8499 16.1053 16.8406 16.107 16.8174 16.1113C16.7982 16.1149 16.7708 16.1202 16.7422 16.1279C16.7008 16.1391 16.5791 16.1737 16.5078 16.2891L16.5068 16.29C16.482 16.3307 16.4743 16.3708 16.4736 16.374C16.4708 16.3871 16.4689 16.3994 16.4678 16.4082C16.4654 16.4266 16.4634 16.4475 16.4619 16.4687C16.4588 16.5122 16.4556 16.5711 16.4531 16.6426C16.4481 16.7866 16.4443 16.9917 16.4404 17.248C16.4326 17.7614 16.4269 18.487 16.4229 19.3564C16.4147 21.0955 16.4123 23.4145 16.4141 25.7744C16.4172 30.1231 16.4326 34.6129 16.4375 35.876L13.3652 35.874L13.3643 35.874C13.1662 35.8746 12.8206 35.8718 12.4893 35.875C12.161 35.8782 11.8168 35.8869 11.6133 35.917L11.4863 35.9365L11.4277 36.0508L11.4014 36.1016L11.3408 36.2187L11.4033 36.335C11.424 36.3734 11.4472 36.4171 11.4756 36.4561C11.5087 36.5016 11.5435 36.5348 11.5811 36.5664L11.584 36.5684L11.6035 36.584C13.6998 38.6797 15.7838 40.7886 17.8555 42.9092L18.0088 43.0664L18.1846 42.9346C18.555 42.6562 18.9294 42.2224 19.2256 41.9268C20.1146 41.0395 21.0005 40.1427 21.8857 39.2471C22.7693 38.3532 23.6532 37.4608 24.5391 36.5781C24.5567 36.5629 24.5707 36.5511 24.585 36.54C24.5967 36.531 24.6248 36.5096 24.6494 36.4844C24.723 36.4089 24.7431 36.3242 24.7549 36.2588L24.7842 36.0947L24.6436 36.0039Z";
+/* Hover parts the parens, in held cuts a third of `cut` apart. Opening,
+   three: the room is there at once and each side jumps out to its place
+   (spread units past it, back short of it, rest), the words pop into it
+   with the site's own pop entrance (sm-pop, from @portfolio/lab/motion:
+   big, a hair small, rest), and the arrow takes the jolt — a step down
+   its way, a step back past its place, rest. Closing, three: the arrow
+   dips again with the words still there and the parens held; then the
+   words are gone and the parens are shut past closed; then at rest.
+   Nothing fades: each pose is there or not. The classes come from the
+   cue's state so nothing plays at mount; the idle gives way to the
+   jolts. */
+const cutsCss = (t: CueTuning) => {
+  const ms = `${n(t.cut, 0)}ms steps(1, end) both`;
+  return `
+.cue-open .cue-near, .cue-open .cue-far { animation: cue-side-open ${ms}; }
+.cue-open .cue-arrow { animation: cue-arrow-open ${ms}; }
+.cue-open .cue-label { animation: sm-pop calc(var(--sm-duration) * .8) steps(1, end) both; }
+.cue-close .cue-near, .cue-close .cue-far { animation: cue-side-close ${ms}; }
+.cue-close .cue-clip { animation: cue-room-close ${ms}; }
+.cue-close .cue-arrow { animation: cue-arrow-close ${ms}; }
+.cue-close .cue-label { animation: cue-words-close ${ms}; }
+@keyframes cue-side-open { 0% { transform: translateX(calc(var(--way) * var(--u) * ${n(t.spread)})); } 33.3% { transform: translateX(calc(var(--way) * var(--u) * -${n(t.back)})); } 66.7%, 100% { transform: none; } }
+@keyframes cue-arrow-open { 0% { transform: translateY(3px); } 33.3% { transform: translateY(-1px); } 66.7%, 100% { transform: none; } }
+@keyframes cue-side-close { 0% { transform: none; } 33.3% { transform: translateX(calc(var(--way) * var(--u) * -${n(t.back)})); } 66.7%, 100% { transform: none; } }
+@keyframes cue-room-close { 0% { --cue-p: 1; } 33.3%, 100% { --cue-p: 0; } }
+@keyframes cue-arrow-close { 0% { transform: translateY(2px); } 33.3%, 100% { transform: none; } }
+@keyframes cue-words-close { 0% { opacity: 1; } 33.3%, 100% { opacity: 0; } }
+@media (prefers-reduced-motion: reduce) { .cue-open .cue-label { animation: sm-pop 1ms steps(1, end) both; } }`;
+};
+
+/* Smooth: the room opens on the spring — the far paren carried out past
+   its place by the bounce and back — and shuts on the ease, the words
+   fading and rising in as it opens and fading out first as it shuts;
+   the arrow's jolt is eased. Spread and back are the cuts' and play no
+   part. (A browser without linear() keeps the ease both ways.) */
+const smoothCss = (t: CueTuning) => {
+  const ms = n(t.cut, 0);
+  const { easing, settle } = springEasing(t.cut, t.bounce);
+  return `
+.cue-clip { transition: --cue-p ${ms}ms ${SETTLE_EASE}; }
+.cue-open .cue-clip { transition: --cue-p ${n(settle, 0)}ms ${SETTLE_EASE}; transition: --cue-p ${n(settle, 0)}ms ${easing}; }
+.cue-open .cue-arrow { animation: cue-arrow-open ${ms}ms ${SETTLE_EASE} both; }
+.cue-open .cue-label { animation: cue-words-in ${ms}ms ${SETTLE_EASE} both; }
+.cue-close .cue-label { animation: cue-words-out ${n(t.cut * 0.5, 0)}ms ease-out both; }
+@keyframes cue-arrow-open { 0% { transform: none; } 35% { transform: translateY(2.5px); } 100% { transform: none; } }
+@keyframes cue-words-in { 0% { opacity: 0; transform: translateY(calc(var(--u) * 4)); } 100% { opacity: 1; transform: none; } }
+@keyframes cue-words-out { 0% { opacity: 1; } 100% { opacity: 0; } }`;
+};
+
+/* The idle, while the parens are shut: every `nudge` seconds the arrow
+   alone dips `dip` along its way and comes back — quickly, then a long
+   hold (nudge) — or goes down and up the whole period (bob). Held poses
+   or eased, as the motion is. Its steps are px inside the arrow's
+   viewBox — the glyph's own units — so a small glyph moves as little
+   as it is. */
+const idleCss = (t: CueTuning) => {
+  if (t.idle === "off") return "";
+  const timing = t.motion === "cuts" ? "steps(1, end)" : "ease-in-out";
+  const d = (k: number) => `translateY(${n(t.dip * k)}px)`;
+  const frames =
+    t.idle === "nudge"
+      ? `0%, 84% { transform: none; } 87.5% { transform: ${d(0.57)}; } 91% { transform: ${d(1)}; } 94% { transform: ${d(0.29)}; } 100% { transform: none; }`
+      : `0%, 100% { transform: none; } 25% { transform: ${d(0.5)}; } 50% { transform: ${d(1)}; } 75% { transform: ${d(0.5)}; }`;
+  return `.cue-arrow { animation: cue-idle ${n(t.nudge)}s ${timing} infinite; }
+@keyframes cue-idle { ${frames} }`;
+};
+
+/** Julio's arrow as one line of the tuning's `line`: its shaft and the two arms of
+ *  its head, on the geometry of his drawing (the shaft up the middle of
+ *  x 18.12 from y 16.1, the head's arms out to x 12.4 and 23.84 at
+ *  y 36.8, the tip at 42.3), in the middle of the ARROW_W x GLYPH_H
+ *  box at ARROW_BOX. His filled drawing could not be made lighter, so
+ *  it is drawn again as a stroke, the parens' own. */
+const ARROW = "M18.12 16.1V40.6M12.4 36.8L18.12 42.3L23.84 36.8";
 const ARROW_BOX = `${18.06 - ARROW_W / 2} ${29.58 - GLYPH_H / 2} ${ARROW_W} ${GLYPH_H}`;
 /** The paren before the arrow: half an ellipse, the glyph's height and
- *  PAREN_W wide to the outside of its line, open towards the arrow.
- *  The one after is its mirror. */
-const PAREN = `M${PAREN_W} ${PAREN_STROKE / 2}A${PAREN_W - PAREN_STROKE / 2} ${(GLYPH_H - PAREN_STROKE) / 2} 0 0 0 ${PAREN_W} ${GLYPH_H - PAREN_STROKE / 2}`;
+ *  `w` wide to the outside of its line of `line`, open towards the
+ *  arrow. The one after is its mirror. */
+const parenPath = (w: number, line: number) =>
+  `M${w} ${line / 2}A${w - line / 2} ${(GLYPH_H - line) / 2} 0 0 0 ${w} ${GLYPH_H - line / 2}`;
 
-function Paren({ side }: { side: "before" | "after" }) {
+function Paren({
+  side,
+  w,
+  line,
+}: {
+  side: "before" | "after";
+  w: number;
+  line: number;
+}) {
   return (
     <svg
       className={side === "after" ? "cue-paren cue-far" : "cue-paren"}
-      viewBox={`0 0 ${PAREN_W} ${GLYPH_H}`}
+      viewBox={`0 0 ${w} ${GLYPH_H}`}
       fill="none"
       stroke="currentColor"
-      strokeWidth={PAREN_STROKE}
+      strokeWidth={line}
       aria-hidden="true"
     >
       <path
-        d={PAREN}
-        transform={
-          side === "after" ? `translate(${PAREN_W}) scale(-1 1)` : undefined
-        }
+        d={parenPath(w, line)}
+        transform={side === "after" ? `translate(${w}) scale(-1 1)` : undefined}
       />
     </svg>
   );
 }
 
-function Arrow() {
+function Arrow({ line }: { line: number }) {
   return (
     <svg
       className="cue-arrow-box"
       viewBox={ARROW_BOX}
-      fill="currentColor"
+      fill="none"
       stroke="currentColor"
-      strokeWidth={0.5}
+      strokeWidth={line}
+      strokeLinejoin="round"
       aria-hidden="true"
     >
       <path className="cue-arrow" d={ARROW} />
@@ -209,7 +341,8 @@ export function Cue({
   delay,
   label,
   text,
-  size = CUE_VH,
+  size,
+  holdOpen = false,
   onClick,
 }: {
   dir: "down" | "up";
@@ -219,11 +352,15 @@ export function Cue({
   label: string;
   /** The words the parted parens hold, after the arrow. */
   text: string;
-  /** The glyph's height, vh (never under CUE_MIN_PX) — CUE_VH on the
-   *  landing; the benches are big. */
+  /** The glyph's height, vh (never under the tuning's minPx) — the
+   *  tuning's size unless given; a bench may go bigger. */
   size?: number;
+  /** Keeps the parens apart whatever the pointer does — a bench's
+   *  "hold open", to tune the open pose. */
+  holdOpen?: boolean;
   onClick: () => void;
 }) {
+  const t = useCueTuning();
   // Derived during render: a flip to hidden starts the exit; a flip to
   // shown re-keys the pop so it replays from the first pose.
   const [prevShown, setPrevShown] = useState(shown);
@@ -241,23 +378,38 @@ export function Cue({
   }
   useEffect(() => {
     if (!leaving) return;
-    const t = window.setTimeout(() => setLeaving(false), CUE_EXIT_MS);
-    return () => window.clearTimeout(t);
+    const timer = window.setTimeout(() => setLeaving(false), CUE_EXIT_MS);
+    return () => window.clearTimeout(timer);
   }, [leaving]);
   useEffect(() => {
     if (parens !== "closing") return;
     // Only parens still closing are shut: the pointer can come back and
     // re-open it before this effect's cleanup clears the timer.
-    const t = window.setTimeout(
+    const timer = window.setTimeout(
       () => setParens((r) => (r === "closing" ? "closed" : r)),
-      CUE_CLOSE_MS,
+      t.cut,
     );
-    return () => window.clearTimeout(t);
-  }, [parens]);
+    return () => window.clearTimeout(timer);
+  }, [parens, t.cut]);
   // The taps read the parens through a ref kept in step at once, not the
   // rendered state: a leave and a return inside one frame both fire
   // before React renders between them, and the return has to know the
   // parens shut. Nothing plays inside an updater.
+  // The words' width with their air, measured and kept on the clip as
+  // --cue-w, re-measured whenever it changes (the font arriving, the
+  // tuning, the text): the room's open width, which the spring scales.
+  const clipRef = useRef<HTMLSpanElement>(null);
+  useLayoutEffect(() => {
+    const clip = clipRef.current;
+    const label = clip?.firstElementChild as HTMLElement | null;
+    if (!clip || !label) return;
+    const measure = () =>
+      clip.style.setProperty("--cue-w", `${label.offsetWidth}px`);
+    measure();
+    const ro = new ResizeObserver(measure);
+    ro.observe(label);
+    return () => ro.disconnect();
+  }, [shows]);
   const parensRef = useRef(parens);
   useEffect(() => {
     parensRef.current = parens;
@@ -299,9 +451,11 @@ export function Cue({
         .filter(Boolean)
         .join(" ")}
       style={
-        {
-          "--cue-size": `max(${size}vh, ${CUE_MIN_PX}px)`,
-        } as React.CSSProperties
+        size === undefined
+          ? undefined
+          : ({
+              "--cue-size": `max(${size}vh, ${t.minPx}px)`,
+            } as CSSProperties)
       }
     >
       <Enter
@@ -316,8 +470,8 @@ export function Cue({
           className={[
             "cue-glyph",
             "sm-press",
-            parens === "open" && "cue-open",
-            parens === "closing" && "cue-close",
+            (holdOpen || parens === "open") && "cue-open",
+            !holdOpen && parens === "closing" && "cue-close",
           ]
             .filter(Boolean)
             .join(" ")}
@@ -336,20 +490,24 @@ export function Cue({
           tabIndex={shown ? 0 : -1}
         >
           <span className="cue-near">
-            <Paren side="before" />
-            <Arrow />
+            <Paren side="before" w={t.parenW} line={t.line} />
+            <Arrow line={t.line} />
           </span>
           <span className="cue-room">
-            <span className="cue-label font-medium">{text}</span>
+            <span className="cue-clip" ref={clipRef}>
+              <span className="cue-label">{text}</span>
+            </span>
           </span>
-          <Paren side="after" />
+          <Paren side="after" w={t.parenW} line={t.line} />
         </button>
       </Enter>
     </div>
   );
 }
 
-/** The cue's stylesheet, once per page. */
+/** The cue's stylesheet, once per page, regenerated from the live
+ *  tuning. */
 export function CueStyles() {
-  return <style>{CUE_CSS}</style>;
+  const t = useCueTuning();
+  return <style>{cueCss(t)}</style>;
 }

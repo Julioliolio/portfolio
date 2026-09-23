@@ -9,8 +9,6 @@ import type { Project } from "./types";
 export const camper: Project = {
   slug: "camper",
   title: "Camper",
-  kicker: "Proposal film · 2894 Studio · 2026",
-  accent: "#d94f2b",
   tagline: "Everyone is equal in their feet.",
   summary:
     "A sixty-second proposal film for Camper, made end to end with generative AI at 2894 Studio: concept, storyboard, every still and every shot.",

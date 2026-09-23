@@ -206,7 +206,7 @@ const INK = "#2b2722";
  *  the site's ink. */
 const ROPE = "#2f6df6";
 
-export type RoadSignsTuning = {
+type RoadSignsTuning = {
   /** Rendered sign height, px. Widths follow each photo's aspect. */
   height: number;
   /** Visible gap between two signs at rest, px. Also the layout gap. */
@@ -333,7 +333,7 @@ export type RoadSignsTuning = {
 // deep 0.8x step back, walked in seven cuts on a 24fps beat; light squeeze
 // both ways; the cold signs fan outward (top tilts left, bottom right)
 // while each hot sign hangs at its own angle.
-export const ROAD_SIGNS_DEFAULTS: Readonly<RoadSignsTuning> = Object.freeze({
+const ROAD_SIGNS_DEFAULTS: Readonly<RoadSignsTuning> = Object.freeze({
   height: 64,
   gap: 12,
   dimGap: 8,
@@ -1173,7 +1173,6 @@ function cancelNudge(e: Engine) {
 export default function RoadSigns({
   controls = true,
   tuning: override,
-  entrance = true,
   frame = "stage",
   replay = 0,
   selected = null,
@@ -1199,20 +1198,16 @@ export default function RoadSigns({
    */
   frame?: "stage" | "signs";
   /**
-   * Play the mount entrance: the signs drop in one after another in hard
-   * cuts — the site's shared `sm-drop` keyframes (packages/lab/src/motion),
-   * staggered by the motion tuning's lead and stagger, so /lab/motion
-   * tunes this too. The walk engine keeps writing its transforms
-   * underneath; the animation wins while it runs and releases on its last
-   * cut (fill backwards), so a hover mid-entrance takes over the moment
-   * it ends.
-   */
-  entrance?: boolean;
-  /**
-   * Bump to play the entrance again in place: each sign's drop restarts
-   * from its first pose, on the same stagger, with the stack otherwise
-   * untouched — no teardown, so a page that brings the signs back into
-   * view replays them with no dead frames.
+   * Bump to play the mount entrance again in place. The entrance: the
+   * signs drop in one after another in hard cuts — the site's shared
+   * `sm-drop` keyframes (packages/lab/src/motion), staggered by the
+   * motion tuning's lead and stagger, so /lab/motion tunes this too. The
+   * walk engine keeps writing its transforms underneath; the animation
+   * wins while it runs and releases on its last cut (fill backwards), so
+   * a hover mid-entrance takes over the moment it ends. Each sign's drop
+   * restarts from its first pose, on the same stagger, with the stack
+   * otherwise untouched — no teardown, so a page that brings the signs
+   * back into view replays them with no dead frames.
    */
   replay?: number;
   /**
@@ -1298,9 +1293,9 @@ export default function RoadSigns({
   // A replay restarts every sign's entrance in place, on the same
   // stagger (the delays are still on the elements).
   useEffect(() => {
-    if (replay === 0 || !entrance) return;
+    if (replay === 0) return;
     for (const w of engine.walks.values()) replayClass(w.el, "rs-sign-enter");
-  }, [engine, entrance, replay]);
+  }, [engine, replay]);
 
   // A project opening puts the card away, and any on its way.
   useEffect(() => {
@@ -1457,7 +1452,12 @@ export default function RoadSigns({
       ref={(el) => {
         engine.rope.stage = el;
       }}
-      className={tuning.cardFps > 0 ? "is-cut" : undefined}
+      className={[
+        tuning.cardFps > 0 && "is-cut",
+        selected !== null && "is-open",
+      ]
+        .filter(Boolean)
+        .join(" ")}
       onPointerLeave={() => scheduleHide(engine, tuning.hideFromStage)}
       style={{
         position: signsBox ? "absolute" : "relative",
@@ -1507,7 +1507,7 @@ export default function RoadSigns({
             aria-current={selected === sign.slug ? "page" : undefined}
             // The clay cursor reads this: the open sign is its own close.
             data-cursor-label={selected === sign.slug ? "close" : undefined}
-            className={entrance ? "rs-sign-enter" : undefined}
+            className="rs-sign-enter"
             onPointerEnter={() => onSignEnter(sign.slug)}
             onPointerLeave={onSignLeave}
             onClick={() => play("knock", 1, { at: "click" })}
@@ -1577,7 +1577,15 @@ export default function RoadSigns({
         <a
           key={sign.slug}
           ref={(el) => registerCard(sign.slug, el)}
-          className={`rs-card is-${sign.card.media}`}
+          className={[
+            `rs-card is-${sign.card.media}`,
+            selected === sign.slug && "is-handed",
+          ]
+            .filter(Boolean)
+            .join(" ")}
+          // The landing finds the card's clip by this: the project
+          // window grows out of it.
+          data-slug={sign.slug}
           href={sign.href}
           // The clay cursor reads this: a small "open" tag rides beside
           // the hand while the pointer is over the card.
@@ -2204,6 +2212,15 @@ const CARD_CSS = `
    edge — the rope's end. */
 .rs-media { position: relative; flex: 0 0 auto; overflow: hidden; background: #ecebe8; outline: 1px solid ${ROPE}; outline-offset: -1px; transform-origin: 0 50%; transition: transform .17s steps(2); }
 .rs-card:hover .rs-media { transform: scale(1.03); }
+/* Handed over: the project window has taken this card's clip as its
+   own box, to the pixel, so the clip goes at once — no fade, or two of
+   it would show — and the copy fades with the card, on the window's
+   fade (--rs-hand, set by the caller; a plain fade even in stop-motion
+   mode, since it is the box's move the copy leaves on, not a cut of
+   the card's own), and so does the rope. */
+.rs-card.is-handed .rs-media { visibility: hidden; transition: none; }
+.rs-card.is-handed, .is-cut .rs-card.is-handed { transition: opacity var(--rs-hand, .25s) ease, visibility linear var(--rs-hand, .25s), transform var(--rs-hand, .25s) ease; }
+.is-open .rs-rope, .is-cut.is-open .rs-rope { transition: opacity var(--rs-hand, .25s) ease; }
 .rs-media video { display: block; width: 100%; height: 100%; object-fit: cover; }
 @media (prefers-reduced-motion: reduce) { .rs-media { transition: none; } }
 .is-wide .rs-media { width: 100%; }

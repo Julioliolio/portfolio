@@ -23,7 +23,7 @@ import type { ComponentType } from "react";
  *   heavy lands in the shared bundle.
  */
 
-export type LabPiece = {
+type LabPiece = {
   slug: string;
   title: string;
   description?: string;
@@ -80,7 +80,7 @@ const pieces = [
     slug: "boil",
     title: "Boil",
     description:
-      "Every boil on the site under one set of knobs — the scroll cue's words and the hero's lit letters, wobbling in held frames: rate, wait, shove, wave and grain, tuned live.",
+      "The boil under one set of knobs — the hero's lit letters wobbling in held frames: rate, shove, wave and grain, tuned live.",
   },
   {
     slug: "sound",
@@ -100,7 +100,7 @@ const pieces = [
     slug: "window",
     title: "Project window",
     description:
-      "The case study's window beside the signs — the sheet's cuts in from the right, the rail's width, the hairline on its edge — tuned live.",
+      "The case study's window beside the signs — the box growing out of a card's clip, the margin round it, the hairline on its edge — tuned live.",
     background: "white",
   },
   {
@@ -121,8 +121,14 @@ const pieces = [
     slug: "contents",
     title: "Contents",
     description:
-      "A page's contents as a column of stops on a capsule of the ink, the chapter being read broken out of it in blue — @drawsgood's gooey pill nav stood on end for the window's rail. The blue runs through the column as the page is read, or to the stop under the pointer; eased, not cut. The rows' proportions, the gap, the goo and the speeds, tuned live.",
+      "A page's contents as a text selection, after Julio's Framer site: the chapters as words on the paper, the ones read so far selected — a blue box sweeping across each word, ragged and overlapping like lines dragged over — and the row under the pointer selected on its own, a little askew. The selection's shape, the sweep and its spring, tuned live; Column brings back the goo column it replaced, @drawsgood's pill nav stood on end.",
     background: "white",
+  },
+  {
+    slug: "cue",
+    title: "Scroll cue",
+    description:
+      "The landing's scroll cue — the arrow between its parens, parting for the words under the pointer. At size on stand-in screens and three times over; the glyph, the words and the held cuts, tuned live. A switch at the top flips to the pill sketch — the arrow in a squircle that turns blue and opens on a spring — with its own knobs.",
   },
 ] as const satisfies readonly LabPiece[];
 

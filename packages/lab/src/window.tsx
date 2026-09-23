@@ -4,152 +4,161 @@ import {
   createContext,
   useContext,
   useEffect,
+  useLayoutEffect,
   useRef,
   useState,
   type CSSProperties,
+  type MouseEvent,
   type ReactNode,
 } from "react";
-import { createTuningStore } from "./tuning-store";
+import { loadSounds, playLater } from "./play-later";
+import { BLUE, INK, MEDIUM } from "./style";
+import {
+  WINDOW_EASE,
+  moveMs,
+  useWindowTuning,
+  type WindowTuning,
+} from "./window-tuning";
 
 /**
  * The project window: a case study opened beside the signs rather than
- * navigated to. The mechanics are meganyap.me's (looked at 2026-09-21):
- * the wall's left strip stays — the rail — and turns into the way home
- * plus the open page's table of contents, while the project takes the
- * rest of the screen. Here the rest is a sheet: full height, flush to
- * the top, right and bottom, white, square, a hairline down its left
- * edge, nothing dimmed behind it. The signs stay where they are in the
- * rail, over the sheet's edge, and are the switcher; the window knows
- * nothing about them — the caller keeps them above it (a z-index past
- * the window's 80) and tells the window how wide the rail is.
+ * navigated to. The wall's left strip stays — the rail — and turns into
+ * the way home plus the open page's table of contents, while the
+ * project takes the rest of the screen as one big box: white, square,
+ * set in from the wall's top, right and bottom by a margin so the wall
+ * shows around it (Julio, 2026-09-22: no sheet, only the container;
+ * square, not a squircle — his reference). The whole case study lives
+ * inside it and scrolls there.
+ * The signs stay where they are in the rail, over the box's edge, and
+ * are the switcher; the window knows nothing about them — the caller
+ * keeps them above it (a z-index past the window's 80) and tells the
+ * window how wide the rail is.
+ *
+ * The box IS the sign's hover card's clip, grown up: the caller hands
+ * it the clip (`from`, see clipPreview(): where it is on the wall, what
+ * it plays, the frame it is on and a snapshot of that frame), the box
+ * starts as that clip to the pixel — same frame, same blue hairline —
+ * and grows to its place the way Convertr's bounding box moves (Julio,
+ * 2026-09-22: "feel like Convertr"): one axis, then the other, on
+ * Convertr's own curve, with the clip still playing inside; once it
+ * has landed the page fades in over the clip. Closing runs it
+ * backwards: the page fades, the box shrinks back to the clip's place
+ * axis by axis, and it is gone. Without a clip to come from (a Back
+ * that reopens, a page of its own) the box is simply there, or fades.
+ * Big surfaces ease; they don't cut.
  *
  * The rail holds "Home" and a slot the page inside fills with its
  * contents (`useWindowRail()`); `foot` keeps both clear of whatever the
- * caller parks at the rail's bottom. The empty rail, Home, Esc and the
- * caller's own close all shut it. On a phone there is no rail:
- * the sheet is edge to edge and the slot is never filled.
+ * caller parks at the rail's bottom. The empty rail, the margins, Home,
+ * Esc and the caller's own close all shut it. On a phone there is no
+ * rail and no margin: the box is edge to edge and the slot is never
+ * filled.
  *
- * The sheet is the one thing here that eases: it slides in from the
- * right and out again, smoothly (Julio, 2026-09-21: in held cuts a
- * surface this big read as lag, not as stop motion). A switch swaps the
- * content at once, scrolled to the top, and the new page plays its own
- * entrances. `WindowTuning` is the set of knobs;
- * /lab/window is its bench, and <ProjectWindow> regenerates its
- * stylesheet on every change.
- *
- * The window is only the chrome: the page inside is the caller's
- * (`children`), which can find the sheet's scroller through
+ * `WindowTuning` (window-tuning.ts, shared with the landing so the
+ * signs move on the same clock) is the set of knobs; /lab/window is
+ * its bench, and <ProjectWindow> regenerates its stylesheet on every
+ * change. The window is only the chrome: the page inside is the
+ * caller's (`children`), which can find the box's scroller through
  * `useWindowScroller()` for anything scroll-driven.
  */
 
-export type WindowTuning = {
-  /** How long the slide in takes, ms; the slide out takes 0.7 of it. */
-  duration: number;
-  /** Where the sheet starts, to the right of its place, as a share of
-   *  its own width, %. */
-  distance: number;
-  /** The rail's width, vw, when the caller does not give one. */
-  rail: number;
-  /** The hairline on the sheet's left edge, 0 to 1. */
-  edge: number;
-};
-
-const WINDOW_DEFAULTS: Readonly<WindowTuning> = Object.freeze({
-  duration: 420,
-  distance: 100,
-  rail: 27,
-  edge: 0.16,
-});
-
-// ------------------------------------------------------------- the store
-
-// A key of its own: the centred window's stored values meant other things.
-const store = createTuningStore("sheet-tuning", WINDOW_DEFAULTS);
-
-/** Lays `patch` over the current values and tells every subscriber. */
-export const setWindowTuning = store.set;
-export const resetWindowTuning = store.reset;
-/** The live tuning, re-rendering the caller on every change. */
-export const useWindowTuning = store.useTuning;
-
 // -------------------------------------------------------- the stylesheet
 
-/** The site's ink, for the controls; the rail's resting text. */
-const MEDIUM = `var(--font-neue-montreal-extra), var(--font-neue-montreal), "Helvetica Neue", Arial, sans-serif`;
-const INK = "#2b2722";
+/** The rail's resting text. */
 const FAINT = "#8a847c";
-/** The controls' size. */
-/** From this viewport width there is a rail; under it the sheet is the
- *  whole screen. */
+/** From this viewport width there is a rail and a margin; under it the
+ *  box is the whole screen. */
 const RAIL_FROM = 701;
+/** The hover card's hairline round its clip: the box starts with it. */
+const CLIP_EDGE = `inset 0 0 0 1px ${BLUE}`;
 
 const n = (v: number, d = 3) => Number(v.toFixed(d)).toString();
-
-/** How long the slide out takes, ms. */
-const exitMs = (t: WindowTuning) => t.duration * 0.7;
 
 /**
  * The whole stylesheet for a tuning. The notes are here rather than in
  * the CSS, where they would ship to every page with the window:
  *
- * - The rail: the wall's left strip. Only what is in it takes the
- *   pointer; the rest of it is the way out.
+ * - The window: the whole screen, nothing painted; only what is in the
+ *   rail takes the pointer, and the rest of it is the way out.
+ * - The box: at its place (--pw-x/y/w/h), clipped to its corners. The
+ *   grow and the shrink animate its edges from the clip's rect, by
+ *   script (see move()), so nothing here moves it. Its hairline is a
+ *   shadow, which the move can animate from the clip's blue one.
+ * - The scroller: sized to the box's landed size, not the box, so the
+ *   page lays out once, at full size, while the box grows round it.
+ *   Hidden under the clip until the box has landed, then dissolved in
+ *   over `reveal`; out again on the quick `fade`. No scrollbar (Julio,
+ *   2026-09-22); it still scrolls.
+ * - The page's entrances (type.tsx's <Reveal>, `.ty-in`) are held on
+ *   their first frame until the box has landed, so the title and the
+ *   intro rise as the page dissolves in rather than having played,
+ *   unseen, under the clip.
+ * - The clip: the card's video, filling the box; under the page once
+ *   it is in. It softens and eases forward a touch as the page covers
+ *   it, so the two read as one move, not a swap.
+ * - The box's left edge: the rail, less the overhang — the open sign
+ *   reaches a little over it (the signs sit above the window).
+ * - The rail's things fade in with the page and out with it, on the
+ *   same fade; nothing pops.
  * - Home: the way back to the projects, in the page's own type.
- * - A page of its own (/work/<slug>): the sheet is simply there.
- * - Leaving: back out to the right; the rail empties at once. Plays
- *   while the window is still mounted.
+ * - A page of its own (/work/<slug>): the box is simply there.
+ * - Leaving: the page and the rail fade out, then the box shrinks
+ *   (script). Plays while the window is still mounted.
  */
 function windowCss(t: WindowTuning): string {
-  const exit = exitMs(t);
-  const d = t.distance;
+  const fade = n(t.fade, 0);
+  const reveal = n(t.reveal, 0);
   return `
-.pw { --pw-rail: ${n(t.rail)}vw; --pw-inset: 24px; --pw-foot: 0px; position: fixed; inset: 0; z-index: 80; }
-.pw-sheet { position: absolute; top: 0; right: 0; bottom: 0; left: 0; background: #fff; animation: pw-open ${n(t.duration, 0)}ms cubic-bezier(.22, 1, .36, 1) both; }
-.pw-sheet:focus { outline: none; }
-.pw-scroll { position: absolute; inset: 0; overflow-y: auto; overscroll-behavior: contain; }
+.pw { --pw-rail: ${n(t.rail)}vw; --pw-inset: 24px; --pw-foot: 0px; --pw-margin: 0px; --pw-over: 0px; --pw-corner: 0px; --pw-x: 0px; --pw-y: 0px; --pw-w: 100vw; --pw-h: 100dvh; position: fixed; inset: 0; z-index: 80; }
+.pw-box { position: absolute; left: var(--pw-x); top: var(--pw-y); width: var(--pw-w); height: var(--pw-h); overflow: hidden; border-radius: var(--pw-corner); background: #fff; box-shadow: 0 0 0 1px rgba(43, 39, 34, ${n(t.edge)}); }
+.pw-box:focus { outline: none; }
+.pw-scroll { position: absolute; top: 0; left: 0; z-index: 1; width: var(--pw-w); height: var(--pw-h); overflow-y: auto; overscroll-behavior: contain; scrollbar-width: none; background: #fff; opacity: 0; transition: opacity ${fade}ms ease; }
+.pw-scroll::-webkit-scrollbar { display: none; }
+.pw.is-in .pw-scroll { opacity: 1; transition: opacity ${reveal}ms cubic-bezier(.4, 0, .2, 1); }
+.pw.is-page .pw-scroll { transition: none; }
+.pw:not(.is-in) .pw-scroll .ty-in { animation-play-state: paused; }
+.pw-clip { position: absolute; inset: 0; z-index: 0; display: block; width: 100%; height: 100%; object-fit: cover; background: #ecebe8; transition: filter ${fade}ms ease, transform ${fade}ms ease; }
+.pw.is-in .pw-clip { filter: blur(8px); transform: scale(1.03); transition: filter ${reveal}ms cubic-bezier(.4, 0, .2, 1), transform ${reveal}ms cubic-bezier(.4, 0, .2, 1); }
 .pw-rail { display: none; }
 @media (min-width: ${RAIL_FROM}px) {
-  .pw-sheet { left: var(--pw-rail); border-left: 1px solid rgba(43, 39, 34, ${n(t.edge)}); }
+  .pw { --pw-margin: ${n(t.margin, 0)}px; --pw-over: ${n(t.overhang, 2)}vh; --pw-corner: ${n(t.corner, 0)}px; --pw-x: calc(var(--pw-rail) - var(--pw-over)); --pw-y: var(--pw-margin); --pw-w: calc(100vw - var(--pw-x) - var(--pw-margin)); --pw-h: calc(100dvh - 2 * var(--pw-margin)); }
   .pw-rail { display: block; position: absolute; top: 0; bottom: 0; left: 0; width: var(--pw-rail); }
-  .pw-rail-in { position: absolute; top: 3.5vh; bottom: var(--pw-foot); left: var(--pw-inset); right: 20px; display: flex; flex-direction: column; align-items: flex-start; gap: 22px; overflow-y: auto; scrollbar-width: none; pointer-events: none; }
+  .pw-rail-in { position: absolute; top: 3.5vh; bottom: var(--pw-foot); left: var(--pw-inset); right: calc(20px + var(--pw-over)); display: flex; flex-direction: column; align-items: flex-start; gap: 22px; overflow-y: auto; scrollbar-width: none; pointer-events: none; opacity: 0; transition: opacity ${fade}ms ease; }
+  .pw.is-in .pw-rail-in { opacity: 1; }
+  .pw.is-page .pw-rail-in { transition: none; }
+  .pw.is-leaving .pw-rail-in { opacity: 0; }
   .pw-rail-in::-webkit-scrollbar { display: none; }
   .pw-rail-in > * { flex: none; max-width: 100%; pointer-events: auto; }
   .pw-rail-slot:empty { display: none; }
 }
 .pw-home { display: inline-flex; align-items: center; gap: .5em; min-height: 24px; padding: 0; border: 0; background: none; color: ${FAINT}; font-family: ${MEDIUM}; font-weight: 500; font-size: 15px; line-height: 1; letter-spacing: -.01em; text-decoration: none; cursor: pointer; }
 .pw-home:hover { color: ${INK}; }
-.pw-home:focus-visible { outline: 2px solid #2f6df6; outline-offset: 4px; }
+.pw-home:focus-visible { outline: 2px solid ${BLUE}; outline-offset: 4px; }
 .pw-home svg { display: block; width: .8em; height: .8em; }
-.pw.is-page .pw-sheet { animation: none; }
-.pw.is-leaving .pw-sheet { animation: pw-exit ${n(exit, 0)}ms cubic-bezier(.55, 0, .8, .4) both; }
-.pw.is-leaving .pw-rail-in { visibility: hidden; }
-@keyframes pw-open { from { transform: translateX(${n(d)}%); } to { transform: none; } }
-@keyframes pw-exit { from { transform: none; } to { transform: translateX(${n(d)}%); } }
+.pw.is-leaving .pw-scroll { opacity: 0; }
+.pw.is-leaving .pw-rail-in { pointer-events: none; }
 @media (prefers-reduced-motion: reduce) {
-  .pw-sheet, .pw.is-leaving .pw-sheet { animation-duration: 1ms; }
+  .pw-scroll, .pw.is-in .pw-scroll, .pw.is-leaving .pw-scroll, .pw-rail-in, .pw-clip, .pw.is-in .pw-clip { transition-duration: 1ms; }
 }
 `;
-}
-
-// ------------------------------------------------------------- the sounds
-
-/** The site's sounds, fetched on demand: the landing has them already,
- *  and a project page of its own (/work/<slug>) is at the first-load
- *  budget without the synth — it warms them on mount and plays the
- *  first click from the cache. */
-const sounds = () => import("./sound");
-
-function click(name: "tap" | "knock") {
-  void sounds().then((m) => m.play(name, 1, { at: "click" }));
 }
 
 // ------------------------------------------- the scroller and the rail
 
 const ScrollerContext = createContext<HTMLElement | null>(null);
 const RailContext = createContext<HTMLElement | null>(null);
+const PreviewContext = createContext<WindowPreview | null>(null);
 
-/** The sheet's scroller, for the page inside the window — the root for
- *  anything that watches the scroll. Null before the sheet mounts. */
+/** The clip the box grew out of, for the page inside: a page whose
+ *  opening plays the same file (Camper's film) starts it at the clip's
+ *  time, so the dissolve from one to the other shows no jump. Null
+ *  when the box didn't grow out of a clip. */
+export function useWindowPreview(): WindowPreview | null {
+  return useContext(PreviewContext);
+}
+
+/** The box's scroller, for the page inside the window — the root for
+ *  anything that watches the scroll. Null before the box mounts. */
 export function useWindowScroller(): HTMLElement | null {
   return useContext(ScrollerContext);
 }
@@ -174,12 +183,157 @@ const ARROW_LEFT = (
   </svg>
 );
 
+// ---------------------------------------------------- the grow and shrink
+
+/** A rectangle on the screen, in px. */
+type WindowRect = { x: number; y: number; w: number; h: number };
+
+/** The clip the box grows out of and shrinks back into: the hover
+ *  card's media, where it is on the wall and what it plays. */
+export type WindowPreview = {
+  rect: WindowRect;
+  /** The clip's src; the box plays it, muted, while it moves. */
+  src: string;
+  /** Where the clip was, s: the box's copy starts there, so the frame
+   *  never jumps. */
+  time?: number;
+  /** That frame, as a data URL: shown until the box's copy has it. */
+  poster?: string;
+  /** When `time` was read, performance.now() ms: anything that picks
+   *  the clip up later adds what has played since (see clipTimeNow). */
+  at?: number;
+  /** The card's own video: on the way out the box hands its progress
+   *  back, so the next hover carries on from there. */
+  video?: HTMLVideoElement;
+};
+
+/** Where a clip that kept playing since `preview` was taken is now, s. */
+export function clipTimeNow(preview: WindowPreview): number {
+  const since = preview.at ? (performance.now() - preview.at) / 1000 : 0;
+  return (preview.time ?? 0) + since;
+}
+
+/**
+ * A card's clip as the window wants it: its rect on the wall (the
+ * caller's, which may have to undo a transform), the file, the frame
+ * it is on, and a snapshot of that frame so the box shows the very
+ * same picture from its first paint while its own copy seeks there.
+ */
+export function clipPreview(
+  video: HTMLVideoElement,
+  rect: WindowRect,
+): WindowPreview {
+  let poster: string | undefined;
+  if (video.videoWidth > 0 && video.readyState >= 2) {
+    try {
+      const c = document.createElement("canvas");
+      c.width = video.videoWidth;
+      c.height = video.videoHeight;
+      c.getContext("2d")?.drawImage(video, 0, 0);
+      poster = c.toDataURL("image/jpeg", 0.85);
+    } catch {
+      poster = undefined;
+    }
+  }
+  return {
+    rect,
+    src: video.currentSrc || video.src,
+    time: video.currentTime,
+    poster,
+    at: performance.now(),
+    video,
+  };
+}
+
+const reduced = () =>
+  typeof window !== "undefined" &&
+  window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+
+const place = (el: HTMLElement): WindowRect => {
+  const r = el.getBoundingClientRect();
+  return { x: r.left, y: r.top, w: r.width, h: r.height };
+};
+
+/** A few animations run as one: the way to cancel them together. */
+const together = (list: Animation[]) => () => list.forEach((a) => a.cancel());
+
+/**
+ * Moves the box between the clip's rect and its own place: `to` the
+ * box's place (the grow) or from it (the shrink). Convertr's move —
+ * the box is landscape, so the width goes first and the height follows
+ * after `lag`; the shrink is the mirror, height first, at the same
+ * pace, so the signs' way back is the same as their way out — each
+ * axis on Convertr's curve for `axis` ms. The hairline goes from the
+ * clip's blue to the box's own with the width, and the corners with it.
+ * The box's place is read off its CSS before the animations lay over
+ * it, so the keyframes follow whatever the tuning and the viewport say.
+ * Without a clip the box fades and settles instead. Returns the way to
+ * cancel it.
+ */
+function move(
+  box: HTMLElement,
+  from: WindowPreview | null,
+  to: "open" | "shut",
+  axis: number,
+  lag: number,
+): () => void {
+  const still = reduced();
+  const dur = still ? 1 : axis;
+  const wait = still ? 0 : lag;
+  const open = to === "open";
+  const fill = open ? "backwards" : "forwards";
+  if (!from) {
+    const at = { opacity: 1, transform: "none" };
+    const away = { opacity: 0, transform: "scale(.97)" };
+    return together([
+      box.animate(open ? [away, at] : [at, away], {
+        duration: dur + wait,
+        easing: WINDOW_EASE,
+        fill,
+      }),
+    ]);
+  }
+  const cs = getComputedStyle(box);
+  const own = place(box);
+  const r = from.rect;
+  // Each axis as [at the clip, at the box's place]; the skin rides on
+  // the width.
+  const x: Keyframe[] = [
+    {
+      left: `${r.x}px`,
+      width: `${r.w}px`,
+      borderRadius: "0px",
+      boxShadow: CLIP_EDGE,
+    },
+    {
+      left: `${own.x}px`,
+      width: `${own.w}px`,
+      borderRadius: cs.borderRadius,
+      boxShadow: cs.boxShadow,
+    },
+  ];
+  const y: Keyframe[] = [
+    { top: `${r.y}px`, height: `${r.h}px` },
+    { top: `${own.y}px`, height: `${own.h}px` },
+  ];
+  const run = (frames: Keyframe[], delay: number) =>
+    box.animate(open ? frames : [...frames].reverse(), {
+      duration: dur,
+      delay,
+      easing: WINDOW_EASE,
+      fill,
+    });
+  return open
+    ? together([run(x, 0), run(y, wait)])
+    : together([run(y, 0), run(x, wait)]);
+}
+
 // --------------------------------------------------------- the component
 
 /** Where the rail's things go, as CSS lengths — the caller's, since
  *  they follow what it keeps in the rail. */
 export type WindowLayout = {
-  /** The rail's width: where the sheet's left edge is. */
+  /** The rail's width: where the box's left edge is. */
   rail?: string;
   /** The rail's content, from the screen's left edge. */
   inset?: string;
@@ -198,6 +352,10 @@ type ProjectWindowProps = {
    *  history, to the projects. "page": the window is the page — no
    *  entrance; Home is a link to `closeHref`. */
   mode?: "modal" | "page";
+  /** Modal mode: the clip the box grows out of on mount, and shrinks
+   *  back into on close — read at close time, so the caller can keep
+   *  it pointed at the open project's card. Null: fade instead. */
+  from?: WindowPreview | null;
   /** For the dialog's name: the open project's title. */
   label: string;
   layout?: WindowLayout;
@@ -209,16 +367,17 @@ type ProjectWindowProps = {
 };
 
 /**
- * The sheet, the rail and the controls. The page inside is `children`;
+ * The box, the rail and the controls. The page inside is `children`;
  * on a switch it is up to the caller to render the next page (keyed, so
  * its entrances play) — the window scrolls back to the top. Focus goes
- * to the sheet on open and back where it was on close; the page behind
+ * to the box on open and back where it was on close; the page behind
  * stops scrolling while the window is up.
  */
 export function ProjectWindow({
   active,
   shown,
   mode = "modal",
+  from = null,
   label,
   layout,
   closeHref,
@@ -229,34 +388,116 @@ export function ProjectWindow({
   const page = mode === "page";
   const [scroller, setScroller] = useState<HTMLElement | null>(null);
   const [rail, setRail] = useState<HTMLElement | null>(null);
-  const sheet = useRef<HTMLDivElement>(null);
+  const box = useRef<HTMLDivElement>(null);
+  const clip = useRef<HTMLVideoElement>(null);
+  /** When the clip was paused under the page, performance.now() ms. */
+  const pausedAt = useRef<number | null>(null);
+  // What the caller says now: the box shrinks back into this.
+  const latest = useRef(from);
+  latest.current = from;
 
   // Derived during render, the cue's way: a flip to hidden starts the
-  // exit, which keeps the window mounted while it slides out.
+  // exit, which keeps the window mounted while it plays; a flip to
+  // shown starts over — the box grows out of the clip of that moment
+  // and the page waits for it to land.
   const [prevShown, setPrevShown] = useState(shown);
   const [leaving, setLeaving] = useState(false);
+  /** The clip the box grew out of. */
+  const [opened, setOpened] = useState(from);
+  /** The box has landed: the page fades in over the clip. */
+  const [landed, setLanded] = useState(page);
   if (shown !== prevShown) {
     setPrevShown(shown);
     setLeaving(!shown);
+    if (shown) {
+      setOpened(from);
+      setLanded(page);
+    }
   }
-  const exit = exitMs(t);
-  useEffect(() => {
-    if (!leaving) return;
-    const id = window.setTimeout(() => setLeaving(false), exit);
-    return () => window.clearTimeout(id);
-  }, [leaving, exit]);
 
   const mounted = shown || leaving;
+  const still = reduced();
+  // The grow and the shrink take the same, the whole move.
+  const grow = still ? 1 : moveMs(t);
+  const fade = still ? 1 : t.fade;
+  const reveal = still ? 1 : t.reveal;
+
+  // The entrance, each time the box is put up: it grows out of the
+  // clip, then the page comes in and the clip stops.
+  useLayoutEffect(() => {
+    const el = box.current;
+    if (!mounted || page || !el) return;
+    // Asked to play, not left to autoplay: React sets `muted` as a
+    // property, which the autoplay policy doesn't always see.
+    void clip.current?.play().catch(() => {});
+    const cancel = move(el, latest.current, "open", t.duration, t.lag);
+    const land = window.setTimeout(() => setLanded(true), grow);
+    const hold = window.setTimeout(() => {
+      clip.current?.pause();
+      pausedAt.current = performance.now();
+    }, grow + reveal);
+    return () => {
+      cancel();
+      window.clearTimeout(land);
+      window.clearTimeout(hold);
+    };
+    // Plays once per mount of the box; the tuning is read then.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [mounted, page]);
+
+  // The exit: the page fades out over the clip, the box shrinks back
+  // into it, then the window is gone. The clip carries on from where
+  // the project got to — the page's own copy of the same film if it
+  // has one (Camper, scrubbed or not), else as if it had never paused
+  // — and hands that back to the card, so the next hover carries on
+  // too.
+  useEffect(() => {
+    if (!leaving) return;
+    const el = box.current;
+    const v = clip.current;
+    if (v) {
+      const same = [...(scroller?.querySelectorAll("video") ?? [])].find(
+        (f) => f.currentSrc && f.currentSrc === v.currentSrc,
+      );
+      if (same) v.currentTime = same.currentTime;
+      else if (v.paused && pausedAt.current !== null) {
+        const since = (performance.now() - pausedAt.current) / 1000;
+        const d = v.duration;
+        v.currentTime =
+          d > 0 && Number.isFinite(d)
+            ? (v.currentTime + since) % d
+            : v.currentTime + since;
+      }
+      pausedAt.current = null;
+      void v.play().catch(() => {});
+    }
+    let cancel: (() => void) | undefined;
+    const go = window.setTimeout(() => {
+      if (el) cancel = move(el, latest.current, "shut", t.duration, t.lag);
+    }, fade);
+    const done = window.setTimeout(() => {
+      const card = latest.current?.video;
+      if (card && clip.current) card.currentTime = clip.current.currentTime;
+      setLeaving(false);
+    }, fade + grow);
+    return () => {
+      cancel?.();
+      window.clearTimeout(go);
+      window.clearTimeout(done);
+    };
+    // The scroller is read at the start of the exit only.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [leaving, fade, grow, t.duration, t.lag]);
 
   // The page behind holds still, Esc closes, and focus is kept: on the
-  // sheet while the window is up, back where it was after.
+  // box while the window is up, back where it was after.
   useEffect(() => {
     if (!mounted || page) return;
     const root = document.documentElement;
     const was = root.style.overflow;
     root.style.overflow = "hidden";
     const before = document.activeElement as HTMLElement | null;
-    sheet.current?.focus({ preventScroll: true });
+    box.current?.focus({ preventScroll: true });
     return () => {
       root.style.overflow = was;
       before?.focus?.({ preventScroll: true });
@@ -278,14 +519,16 @@ export function ProjectWindow({
   useEffect(() => {
     if (scroller) scroller.scrollTop = 0;
   }, [active, scroller]);
+  // A page of its own (/work/<slug>) has no synth yet: fetched on mount,
+  // so the first click plays from the cache.
   useEffect(() => {
-    void sounds();
+    void loadSounds();
   }, []);
 
   if (!mounted) return null;
 
   const close = () => {
-    click("knock");
+    playLater("knock", 1, "click");
     onClose?.();
   };
   const vars = {
@@ -293,21 +536,33 @@ export function ProjectWindow({
     ...(layout?.inset && { "--pw-inset": layout.inset }),
     ...(layout?.foot && { "--pw-foot": layout.foot }),
   } as CSSProperties;
+  // The margins are the rail's kind of empty: a click on them closes.
+  const onEmpty = (e: MouseEvent) => {
+    if (!page && e.target === e.currentTarget) close();
+  };
+  // The clip in the box: the one it grew out of, or, on the way out,
+  // the open project's — the caller keeps `from` pointed at it.
+  const preview = leaving ? (from ?? opened) : opened;
 
   return (
     <div
-      className={["pw", page && "is-page", leaving && "is-leaving"]
+      className={[
+        "pw",
+        page && "is-page",
+        landed && "is-in",
+        leaving && "is-leaving",
+      ]
         .filter(Boolean)
         .join(" ")}
       style={vars}
+      data-cursor-label={page ? undefined : "close"}
+      onClick={onEmpty}
     >
       <style>{windowCss(t)}</style>
       <div
         className="pw-rail"
         data-cursor-label={page ? undefined : "close"}
-        onClick={(e) => {
-          if (!page && e.target === e.currentTarget) close();
-        }}
+        onClick={onEmpty}
       >
         <div className="pw-rail-in">
           {page && closeHref ? (
@@ -330,15 +585,44 @@ export function ProjectWindow({
         </div>
       </div>
       <div
-        ref={sheet}
-        className="pw-sheet"
+        ref={box}
+        className="pw-box"
         role="dialog"
         aria-label={label}
         tabIndex={-1}
+        // No tag over the box: the window's own is for the empty wall.
+        data-cursor-label=""
       >
+        {preview && (
+          <video
+            key={preview.src}
+            ref={(el) => {
+              clip.current = el;
+              // Picks up where the card's copy is now; set before the
+              // file is in, which the browser keeps as the start.
+              if (el && preview.time !== undefined && !el.dataset.started) {
+                el.dataset.started = "1";
+                el.currentTime = clipTimeNow(preview);
+              }
+            }}
+            className="pw-clip"
+            src={preview.src}
+            poster={preview.poster}
+            preload="auto"
+            autoPlay
+            muted
+            loop
+            playsInline
+            aria-hidden
+          />
+        )}
         <div ref={setScroller} className="pw-scroll">
           <ScrollerContext.Provider value={scroller}>
-            <RailContext.Provider value={rail}>{children}</RailContext.Provider>
+            <RailContext.Provider value={rail}>
+              <PreviewContext.Provider value={page ? null : opened}>
+                {children}
+              </PreviewContext.Provider>
+            </RailContext.Provider>
           </ScrollerContext.Provider>
         </div>
       </div>

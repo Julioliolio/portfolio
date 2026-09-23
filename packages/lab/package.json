@@ -10,13 +10,15 @@
     "./loaders": "./src/loaders.ts",
     "./cursor-tuning": "./src/cursor-tuning.ts",
     "./motion": "./src/motion.tsx",
+    "./play-later": "./src/play-later.ts",
     "./cue": "./src/cue.tsx",
     "./greeting": "./src/greeting.tsx",
     "./hello": "./src/hello.tsx",
-    "./ransom": "./src/ransom.tsx",
     "./sound": "./src/sound.tsx",
+    "./style": "./src/style.ts",
     "./type": "./src/type.tsx",
-    "./window": "./src/window.tsx"
+    "./window": "./src/window.tsx",
+    "./window-tuning": "./src/window-tuning.ts"
   },
   "scripts": {
     "typecheck": "tsc --noEmit"

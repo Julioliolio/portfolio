@@ -2,44 +2,63 @@
 
 import {
   useEffect,
-  useId,
   useRef,
   useState,
   type CSSProperties,
   type MouseEvent,
 } from "react";
 import { Enter, MOTION_DEFAULTS } from "./motion";
+import { playLater } from "./play-later";
+import { springEasing } from "./spring";
+import { BLUE, INK, MEDIUM, SETTLE_EASE } from "./style";
 import { createTuningStore } from "./tuning-store";
 
 /**
- * A page's contents as a column of stops — Overview, Research,
- * Development… in white Medium type, each on a tall squircle of the ink
- * — with the stop being read on a squircle of the blue, pushed apart
- * from its neighbours. It is the pill nav @drawsgood posted
- * (are.na/block/35111734, 158 frames read 2026-09-22) stood on end for
- * the project window's rail: there the items sit in a row, the black
- * ones flush so they read as one bar, the hovered one blue and held off
- * from the rest by a wide gap; here the stops stack, and the blue holds
- * the chapter being read.
+ * A page's contents as a text selection — Overview, Research,
+ * Development… a list of words in the ink, on the paper, with the
+ * chapters read so far selected the way a drag selects lines: a flat
+ * blue box hugging each word's line, the words white inside it. It is
+ * the language of Julio's Framer site (extended-cues-365152.framer.app),
+ * where everything that moves looks like text being selected, brought
+ * to the project window's rail (2026-09-23; the goo column it replaces
+ * lives on as the bench's other column, pieces/contents/goo.tsx).
  *
- * It moves as that one does — sticky. The squircles are one layer
- * under an SVG goo filter (a blur and a hard alpha ramp), so the flush
- * ones fuse into one bar, and when the blue moves the gap closes and
- * opens with a neck of ink drawing between neighbours; on the stop the
- * blue leaves, the ink grows back inside it as it fades. Eased, not cut
- * — the contents are the one place on the site that tweens, by Julio's
- * choice. Pointing at a stop takes the blue there for a look; leaving
- * the column sends it back to where the page is read.
+ * A chapter is selected as a drag would select it: the blue sweeps
+ * across it from its left edge and stops at the last letter, the
+ * letters turning white as it passes; let go, it collapses back to the
+ * left. Each row's blue is as wide as its own word, so a run of them is
+ * ragged, and each box reaches a little past its line (`overlap`), so
+ * the run overlaps, each box over the one above, the blue a little
+ * see-through (`alpha`) so the overlaps show — both as on that site.
  *
- * The shapes lay themselves out: the goo layer is a column of blocks of
- * the rows' own height and margins, so it follows the rows through
- * every transition with nothing measured. `pinned` is the column in the
- * flow of a page (a phone, where the window has no rail): one bar,
- * following nothing.
+ * What the blue means is a knob: `range`, the selection runs from the
+ * first chapter down to the one being read — reading extends it a line
+ * at a time, each line sweeping `stagger` ms after the one above, and
+ * shrinking runs back up in the same steps; `line`, only the chapter
+ * being read is selected, and it moves down the list as the page is
+ * read. Pointing at a row selects that row on its own, over whatever
+ * is read, and tilts it a little — by a lean drawn at random each
+ * time, up to `tilt`, either way, so no two hovers sit alike; leaving
+ * lets it go, straight. The read selection never moves for the pointer.
+ * A click glides the page to the chapter, eased in and out.
  *
- * `ContentsTuning` is the set of knobs — the rows' proportions, the gap,
- * the goo, the two speeds; /lab/contents is its bench, and <Contents>
- * regenerates its stylesheet on every change.
+ * Moves are on the site's spring by Julio's choice (the contents are
+ * the one place on the site that tweens rather than cuts): the arrival
+ * bounces, the way back is the same spring with no bounce, so a blue
+ * that has gone doesn't swing back in as a sliver before it settles.
+ *
+ * `pinned` is the list in the flow of a page (a phone, where the window
+ * has no rail): the words, selecting nothing.
+ *
+ * `ContentsTuning` is the set of knobs; /lab/contents is its bench, and
+ * <Contents> regenerates its stylesheet on every change.
+ *
+ * It sounds twice, in the site's own voices (sound.tsx, the `contents`
+ * place, tuned on /lab/sound): the cardboard tap as a row under the
+ * pointer takes the blue, and the knock of a click that goes somewhere
+ * as the glide starts. Reading is silent. The sounds are fetched on
+ * demand (play-later.ts), so nothing of the synth lands in a work
+ * page's first load.
  */
 
 export type ContentsStop = {
@@ -49,35 +68,57 @@ export type ContentsStop = {
 };
 
 export type ContentsTuning = {
-  /** The type, px. Everything below is in its em. */
+  /** The type, px. The ems below are its. */
   size: number;
-  /** A row's height. */
-  row: number;
-  /** The room beside the words. */
+  /** What the blue is: read so far, or the line being read. */
+  blue: "range" | "line";
+  /** The ink block behind the column: none (words on the paper) or on. */
+  bar: "off" | "on";
+  /** A row's height, em: the line box the selection fills. */
+  line: number;
+  /** The room beside the words, em: the selection's reach past them. */
   side: number;
-  /** The squircles' corners. */
-  corner: number;
-  /** What holds the blue off its neighbours, each side. */
-  gap: number;
-  /** The goo's blur, px: how far two shapes reach for each other. */
-  blur: number;
-  /** The neighbours' slide, ms. */
-  slide: number;
-  /** The blue's arrival and the ink's return, ms. */
+  /** In a range, the ms between one line's sweep and the next's. */
+  stagger: number;
+  /** How far a row's blue reaches past its line, em, up and down: the
+   *  boxes of neighbouring rows overlap by twice this, the lower one on
+   *  top. */
+  overlap: number;
+  /** How far the row under the pointer may tilt, degrees: each hover
+   *  takes its own lean, between two fifths of this and all of it, to
+   *  either side. */
+  tilt: number;
+  /** The blue's strength, 0 to 1: under 1, the overlaps and the words
+   *  behind show through. */
+  alpha: number;
+  /** A sweep, ms — on the spring, its swing — and how the column moves:
+   *  on the site's ease, or on the spring the scroll cue's sketches
+   *  move on (spring.ts), `bounce` how far it runs past. */
   swap: number;
+  motion: "ease" | "spring";
+  bounce: number;
+  /** The ink and the blue — "" is the site's blue (or the page's tint). */
+  ink: string;
+  tint: string;
 };
 
-// The reference's proportions, tuned by Julio on the bench
-// (2026-09-22): a tighter gap, less goo, quicker moves.
+// Julio's values off the bench (2026-09-23): the pane's own store the
+// day the selection replaced the goo column.
 const CONTENTS_DEFAULTS: Readonly<ContentsTuning> = Object.freeze({
-  size: 16,
-  row: 2.5,
-  side: 1.4,
-  corner: 1.1,
-  gap: 0.5,
-  blur: 2.5,
-  slide: 250,
-  swap: 250,
+  size: 18,
+  blue: "range",
+  bar: "off",
+  line: 1.5,
+  side: 0.25,
+  stagger: 120,
+  overlap: 0.15,
+  tilt: 2,
+  alpha: 0.85,
+  swap: 180,
+  motion: "spring",
+  bounce: 0.39,
+  ink: INK,
+  tint: "",
 });
 
 const store = createTuningStore("contents-tuning", CONTENTS_DEFAULTS);
@@ -88,15 +129,10 @@ export const resetContentsTuning = store.reset;
 /** The live tuning, re-rendering the caller on every change. */
 export const useContentsTuning = store.useTuning;
 
-const MEDIUM = `var(--font-neue-montreal-extra), var(--font-neue-montreal), "Helvetica Neue", Arial, sans-serif`;
-const INK = "#2b2722";
-const TINT = "var(--ct-tint, #2f6df6)";
-const EASE = "cubic-bezier(.22, 1, .36, 1)";
-
 const n = (v: number, d = 3) => Number(v.toFixed(d)).toString();
 
 /** How often the scroll is read, ms. */
-const BEAT = 100;
+export const BEAT = 100;
 /** A jump's glide, ms: the shortest, the longest, and how much longer
  *  per screenful travelled. */
 const GLIDE_MIN = 450;
@@ -107,41 +143,50 @@ const GLIDE_PER_SCREEN = 180;
  *  whatever margin the page gives its sections. */
 const SLACK = 8;
 
+/** A move's timing: `ms` on the site's ease, or on the spring — as long
+ *  as the spring takes to settle, on its own curve. */
+export function timing(t: ContentsTuning, ms: number, bounce = t.bounce) {
+  if (t.motion !== "spring") return `${n(ms, 0)}ms ${SETTLE_EASE}`;
+  const { easing, settle } = springEasing(ms, bounce);
+  return `${n(settle, 0)}ms ${easing}`;
+}
+
 /**
  * The whole stylesheet for a tuning. The notes are here rather than in
  * the CSS, where they would ship to every work page:
  *
- * - The rows and, under them, their shapes are two columns of the same
- *   blocks, so the shapes follow the rows through every transition. The
- *   row being read is held off from the others by the gap.
- * - Each block carries its ink squircle and, over it, its blue one, off
- *   until the block is the one being read. Leaving, the blue fades
- *   faster than the ink grows back, so the ink is seen inside it for a
- *   moment. An ink squircle reaches a corner's worth into any flush
- *   neighbour, so a run of them is one straight-sided bar rather than a
- *   string of beads; the reach eases in and out with the gap.
+ * - Each row carries its words in the ink and, over them, the same
+ *   words in white on the blue, clipped to nothing from the right;
+ *   selected, the clip opens across the row, so the blue and the white
+ *   letters arrive together, left to right. `--d` is a row's turn in a
+ *   range's sweep, `--lean` the hovered row's tilt.
+ * - The rows stack in order, so a row's box lies over the one above's;
+ *   the tilted row comes to the top of both its neighbours.
+ * - The arrival (`.is-on`, `.is-tilt`) is on the tuning's spring; the
+ *   base rules, which the way back falls to, are the same spring with
+ *   no bounce.
  */
 function contentsCss(t: ContentsTuning): string {
-  const slide = `${n(t.slide, 0)}ms ${EASE}`;
-  const swap = `${n(t.swap, 0)}ms ${EASE}`;
+  const sweep = timing(t, t.swap);
+  const back = timing(t, t.swap, 0);
+  const ink = t.ink || INK;
+  const tint = t.tint || BLUE;
+  const blue =
+    t.alpha < 1
+      ? `color-mix(in srgb, ${tint} ${n(t.alpha * 100, 1)}%, transparent)`
+      : tint;
+  const onBar = t.bar === "on";
   return `
-.ct { position: relative; display: block; width: max-content; max-width: 100%; color: #fff; font-family: ${MEDIUM}; font-weight: 500; font-size: ${n(t.size)}px; line-height: 1; letter-spacing: -.01em; }
-.ct ol, .ct-goo { display: flex; flex-direction: column; margin: 0; padding: 0; list-style: none; }
-.ct ol { position: relative; }
-.ct-goo { position: absolute; inset: 0; pointer-events: none; }
-.ct li, .ct-goo i { display: block; flex: none; height: ${n(t.row)}em; transition: margin ${slide}; }
-.ct li.is-here, .ct-goo i.is-here { margin: ${n(t.gap)}em 0; }
-.ct-goo i { position: relative; }
-.ct-goo i::before, .ct-goo i::after { content: ""; position: absolute; inset: 0; border-radius: ${n(t.corner)}em; corner-shape: squircle; transition: transform ${swap}, opacity ${n(t.swap / 2, 0)}ms; }
-.ct-goo i::before { background: ${INK}; transition: transform ${swap}, top ${slide}, bottom ${slide}; }
-.ct-goo i:not(:first-child):not(.is-here):not(.is-here + i)::before { top: -${n(t.corner)}em; }
-.ct-goo i:not(.is-here):has(+ i:not(.is-here))::before { bottom: -${n(t.corner)}em; }
-.ct-goo i::after { background: ${TINT}; transform: scale(.7); opacity: 0; }
-.ct-goo i.is-here::before { transform: scale(.82); }
-.ct-goo i.is-here::after { transform: none; opacity: 1; }
-.ct a { display: flex; align-items: center; height: 100%; padding: 0 ${n(t.side)}em; white-space: nowrap; color: #fff; text-decoration: none; outline: none; }
+.ct { position: relative; display: block; width: max-content; max-width: 100%; color: ${onBar ? "#fff" : ink}; font-family: ${MEDIUM}; font-weight: 500; font-size: ${n(t.size)}px; line-height: 1; letter-spacing: -.01em; }
+.ct ol { position: relative; display: flex; flex-direction: column; align-items: stretch; margin: 0; padding: 0; list-style: none; ${onBar ? `background: ${ink};` : ""} }
+.ct li { position: relative; display: flex; }
+.ct li.is-tilt { z-index: 1; }
+.ct a { position: relative; display: flex; align-items: center; width: max-content; height: ${n(t.line)}em; padding: 0 ${n(t.side)}em; white-space: nowrap; color: inherit; text-decoration: none; outline: none; transition: transform ${back}; }
+.ct li.is-tilt a { transform: rotate(var(--lean, 0deg)); transition: transform ${sweep}; }
 .ct a:focus-visible { text-decoration: underline; text-underline-offset: .2em; }
-@media (prefers-reduced-motion: reduce) { .ct li, .ct-goo i, .ct-goo i::before, .ct-goo i::after { transition: none !important; } }
+.ct-hi { position: absolute; inset: -${n(t.overlap)}em 0; display: flex; align-items: center; padding: 0 ${n(t.side)}em; background: ${blue}; color: #fff; clip-path: inset(0 100% 0 0); transition: clip-path ${back} var(--d, 0ms); }
+.is-on .ct-hi { clip-path: inset(0 0 0 0); transition: clip-path ${sweep} var(--d, 0ms); }
+@media (prefers-reduced-motion: reduce) { .ct a, .ct-hi { transition: none !important; } }
 `;
 }
 
@@ -149,31 +194,32 @@ export function Contents({
   stops,
   scroller,
   pinned = false,
-  tint,
-  label = "Contents",
 }: {
   stops: ContentsStop[];
   /** What scrolls the page: an element, or null for the window. */
   scroller: HTMLElement | null;
-  /** In the flow of a page: one capsule, following nothing. */
+  /** In the flow of a page: the words, selecting nothing. */
   pinned?: boolean;
-  /** The blue; the site's without one. */
-  tint?: string;
-  label?: string;
 }) {
   const at = useReadingPosition(
     stops.map((s) => s.id),
     scroller,
     !pinned,
   );
-  const goo = useId();
   const t = useContentsTuning();
-  // The stop the pointer (or focus) is on, if any: the blue goes there
-  // for as long as it stays.
+  // The stop the pointer (or focus) is on, if any, and the lean it
+  // drew as it landed.
   const [hover, setHover] = useState<number | null>(null);
-  // The stop a click is gliding to: the blue waits there, as the hover
-  // showed it, while the page travels past the stops between — and is
-  // let go when the glide lands (or the reader takes the scroll back).
+  const [lean, setLean] = useState(0);
+  function point(i: number) {
+    setHover(i);
+    setLean(
+      (Math.random() < 0.5 ? -1 : 1) * t.tilt * (0.4 + 0.6 * Math.random()),
+    );
+  }
+  // The stop a click is gliding to: the selection waits there while the
+  // page travels past the stops between — and is let go when the glide
+  // lands (or the reader takes the scroll back).
   const [going, setGoing] = useState<number | null>(null);
   const glide = useRef<() => void>(null);
   useEffect(() => () => glide.current?.(), []);
@@ -182,6 +228,7 @@ export function Contents({
     const el = document.getElementById(id);
     if (!el) return;
     e.preventDefault();
+    playLater("knock", 1, "contents");
     // A glide already under way lets go first, so its landing doesn't
     // undo this one's hold.
     glide.current?.();
@@ -189,18 +236,47 @@ export function Contents({
     glide.current = glideTo(el, scroller, () => {
       glide.current = null;
       // Let go a beat after landing: the reading position is read on
-      // that beat, and the blue should pass straight to it.
+      // that beat, and the selection should pass straight to it.
       window.setTimeout(() => setGoing((g) => (g === i ? null : g)), 2 * BEAT);
     });
     // A pointer's click leaves its focus behind, which would hold the
-    // blue on the row after the pointer has gone. `going` holds it
-    // meanwhile, so letting go of the hover changes nothing.
+    // row after the pointer has gone.
     if (e.detail > 0) e.currentTarget.blur();
   }
 
-  // The stop that is blue: the one under the pointer, else the one a
-  // click is going to, else the one being read; none when pinned.
-  const here = pinned ? -1 : (hover ?? going ?? at.index);
+  // The selection's end: where a click is going, else where the page is
+  // read; nowhere when pinned. The pointer doesn't move it — the row
+  // under the pointer is selected on its own, over whatever is read.
+  const end = pinned ? -1 : (going ?? at);
+  const here = pinned ? -1 : (hover ?? end);
+
+  // Where the end was on the last render: a range that grows sweeps its
+  // new lines in turn from the top, one that shrinks lets go from the
+  // bottom up.
+  const prev = useRef(end);
+  const from = prev.current;
+  useEffect(() => {
+    prev.current = end;
+  }, [end]);
+  const delay = (i: number) => {
+    if (t.blue !== "range" || from === end || i === hover) return 0;
+    if (end > from && i > from && i <= end) return (i - from - 1) * t.stagger;
+    if (end < from && i > end && i <= from) return (from - i) * t.stagger;
+    return 0;
+  };
+  const on = (i: number) =>
+    i === hover || (t.blue === "range" ? i <= end : i === end);
+
+  // The tap belongs to the blue moving under the pointer, not to the
+  // pointer arriving: none when the pointer lands on a row already
+  // selected, none while reading.
+  const was = useRef(here);
+  useEffect(() => {
+    const before = was.current;
+    was.current = here;
+    if (before !== here && hover !== null && hover === here)
+      playLater("tap", 0.5, "contents");
+  }, [here, hover]);
 
   return (
     <Enter
@@ -210,48 +286,42 @@ export function Contents({
     >
       <nav
         className={pinned ? "ct is-pinned" : "ct"}
-        aria-label={label}
-        style={tint ? ({ "--ct-tint": tint } as CSSProperties) : undefined}
+        aria-label="Contents"
         onPointerLeave={() => setHover(null)}
       >
         <style>{contentsCss(t)}</style>
-        <svg
-          width="0"
-          height="0"
-          aria-hidden="true"
-          style={{ position: "absolute" }}
-        >
-          <filter id={goo} x="-25%" y="-15%" width="150%" height="130%">
-            <feGaussianBlur
-              in="SourceGraphic"
-              stdDeviation={t.blur}
-              result="b"
-            />
-            <feColorMatrix
-              in="b"
-              values="1 0 0 0 0  0 1 0 0 0  0 0 1 0 0  0 0 0 20 -10"
-            />
-          </filter>
-        </svg>
-        <div className="ct-goo" style={{ filter: `url(#${goo})` }}>
-          {stops.map((s, i) => (
-            <i key={s.id} className={i === here ? "is-here" : undefined} />
-          ))}
-        </div>
         <ol>
           {stops.map((s, i) => {
-            const read = !pinned && i === at.index;
+            const read = !pinned && i === at;
+            const d = delay(i);
+            const cls = [on(i) && "is-on", i === hover && "is-tilt"]
+              .filter(Boolean)
+              .join(" ");
+            const style: Record<string, string> = {};
+            if (d) style["--d"] = `${d}ms`;
+            if (i === hover) style["--lean"] = `${n(lean, 2)}deg`;
             return (
-              <li key={s.id} className={i === here ? "is-here" : undefined}>
+              <li
+                key={s.id}
+                className={cls || undefined}
+                style={
+                  Object.keys(style).length
+                    ? (style as CSSProperties)
+                    : undefined
+                }
+                onPointerEnter={() => point(i)}
+              >
                 <a
                   href={`#${s.id}`}
                   aria-current={read ? "location" : undefined}
-                  onPointerEnter={() => setHover(i)}
-                  onFocus={() => setHover(i)}
+                  onFocus={() => point(i)}
                   onBlur={() => setHover((h) => (h === i ? null : h))}
                   onClick={(e) => jump(e, s.id, i)}
                 >
                   {s.label}
+                  <span className="ct-hi" aria-hidden="true">
+                    {s.label}
+                  </span>
                 </a>
               </li>
             );
@@ -269,7 +339,7 @@ export function Contents({
  * trips take a little longer. A wheel, a touch or a key from the reader
  * lets go at once. Returns the way to stop it; `done` runs either way.
  */
-function glideTo(
+export function glideTo(
   el: HTMLElement,
   scroller: HTMLElement | null,
   done: () => void,
@@ -328,20 +398,20 @@ function glideTo(
 }
 
 /**
- * Where the reader is: which stop.
+ * Where the reader is: the index of the stop being read.
  *
  * The reading line sits just past where a jump lands each section (its
  * own scroll margin, under the view's top edge) — so a stop is current
- * from the moment it is arrived at. A line fixed there would never reach a last stop shorter
- * than the view, so over the page's last screenful of scroll it sweeps
- * down to the view's foot.
+ * from the moment it is arrived at. A line fixed there would never
+ * reach a last stop shorter than the view, so over the page's last
+ * screenful of scroll it sweeps down to the view's foot.
  */
-function useReadingPosition(
+export function useReadingPosition(
   ids: string[],
   scroller: HTMLElement | null,
   live: boolean,
-) {
-  const [at, setAt] = useState({ index: 0 });
+): number {
+  const [at, setAt] = useState(0);
   const key = ids.join("|");
   useEffect(() => {
     if (!live) return;
@@ -364,7 +434,7 @@ function useReadingPosition(
         const line = edge + lead + (height - lead) * sweep;
         if (el.getBoundingClientRect().top <= line) index = k;
       });
-      setAt((was) => (was.index === index ? was : { index }));
+      setAt(index);
     };
     const onScroll = () => {
       if (!timer) timer = window.setTimeout(read, BEAT);

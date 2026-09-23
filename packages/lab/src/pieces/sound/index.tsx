@@ -221,7 +221,7 @@ export default function SoundBench() {
             delay={motion.lead}
             size={CUE_SIZE}
             label="View projects"
-            text="View projects"
+            text="Browse projects"
             onClick={() => play("knock", 1, { at: "click" })}
           />
         </div>

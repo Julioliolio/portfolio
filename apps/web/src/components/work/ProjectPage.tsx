@@ -7,7 +7,7 @@ import { Suspense, lazy, type MouseEvent } from "react";
 import { signsTuning, useViewport } from "@/components/landing/signsTuning";
 import type { Project } from "@/content/projects";
 import { CaseStudy } from "./CaseStudy";
-import { SHEET_LAYOUT, SIGNS_OPEN } from "./sheetLayout";
+import { WINDOW_LAYOUT, SIGNS_OPEN } from "./windowLayout";
 
 /**
  * /work/<slug> as a page of its own — a direct link, a reload, a
@@ -31,7 +31,8 @@ const PROJECTS = asset("/#projects");
 
 // .pp-signs is the landing's place for the signs, stepped back as they
 // are there while a project is open (SIGNS_OPEN), over the window
-// (z-index 80); none on a phone, where the sheet is the whole screen.
+// (z-index 80) and clear of its box; none on a phone, where the box is
+// the whole screen.
 // Said here rather than in the CSS, which ships.
 const CSS = `
 html { background: #faf9f6; }
@@ -62,7 +63,7 @@ export function ProjectPage({ project }: { project: Project }) {
         active={project.slug}
         shown
         label={project.title}
-        layout={SHEET_LAYOUT}
+        layout={WINDOW_LAYOUT}
         closeHref={PROJECTS}
       >
         <CaseStudy project={project} home />

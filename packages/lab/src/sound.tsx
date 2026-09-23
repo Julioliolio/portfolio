@@ -85,11 +85,12 @@ export type SoundTuning = {
   walk: number;
   spin: number;
   click: number;
+  contents: number;
 };
 
 /** A place a one-shot plays from, for its own level. */
 export type Place =
-  "cue" | "sign" | "card" | "word" | "walk" | "spin" | "click";
+  "cue" | "sign" | "card" | "word" | "walk" | "spin" | "click" | "contents";
 
 // Julio's numbers off /lab/sound, 2026-09-17: the letters quiet under the
 // sign's ticks with their company barely there, and a good deal of room
@@ -116,6 +117,7 @@ const SOUND_DEFAULTS: Readonly<SoundTuning> = Object.freeze({
   walk: 1,
   spin: 1,
   click: 1,
+  contents: 0.5,
 });
 
 /** One row per tuning key, for the pieces' bench panels. */
@@ -304,6 +306,15 @@ export const SOUND_FIELDS: Required<Field<SoundTuning>>[] = [
     key: "click",
     label: "Clicks",
     hint: "The knock on the clicks that go somewhere: the cue, a sign, a card.",
+    min: 0,
+    max: 1,
+    step: 0.05,
+    unit: "",
+  },
+  {
+    key: "contents",
+    label: "Contents",
+    hint: "The case study's contents: the tap as the blue takes the chapter under the pointer, and the knock on the chapter clicked.",
     min: 0,
     max: 1,
     step: 0.05,
@@ -823,7 +834,7 @@ function playLetter(e: Engine, t0: number, level: number, soft: boolean) {
   }
 }
 
-export type PlayOptions = {
+type PlayOptions = {
   /** Where this play is from: its own level in the tuning goes on top. */
   at?: Place;
   /** Seconds from now to strike, so a burst can be spaced by hand. */

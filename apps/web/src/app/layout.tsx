@@ -14,8 +14,8 @@ import "./globals.css";
 // ahead of the largest paint on a throttled connection. Medium, Bold and
 // Italic sit in a second family that is not preloaded and is only fetched
 // when a page actually sets that weight or style: globals.css maps
-// <b>/<strong>/<i>/<em> and the font-medium / font-bold / italic utilities
-// onto it. Mono is lab-only and likewise fetched on demand.
+// <b>/<strong>/<i>/<em> onto it, and the pieces name it (MEDIUM in
+// @portfolio/lab/style). Mono is lab-only and likewise fetched on demand.
 const neueMontreal = localFont({
   src: [
     {

@@ -24,4 +24,5 @@ export const loaders = {
   "ransom-note": () => import("./pieces/ransom-note"),
   type: () => import("./pieces/type"),
   contents: () => import("./pieces/contents"),
+  cue: () => import("./pieces/cue"),
 } satisfies Record<LabSlug, () => Promise<LabPieceModule>>;

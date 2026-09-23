@@ -38,5 +38,7 @@ const devConfig: NextConfig = {
   ],
 };
 
-export default (phase: string): NextConfig =>
+const config = (phase: string): NextConfig =>
   phase === PHASE_DEVELOPMENT_SERVER && BASE_PATH ? devConfig : nextConfig;
+
+export default config;

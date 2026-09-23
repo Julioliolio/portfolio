@@ -13,18 +13,21 @@ import type { WindowLayout } from "@portfolio/lab/window";
  * corner. Everything below follows from those numbers, as CSS, and
  * needs no measuring:
  *
- *   rail   the sheet's left edge, 21.4vh along the stack (its widest
- *          sign is 0.72 x 3.563 x 8.8 = 22.6vh): every dimmed sign
- *          (0.8x) stays inside the rail and the open one (1.2x) hangs
- *          over the sheet's edge, by a fifth of itself at most
+ *   rail   where the signs end: 25.6vh along the stack — the widest
+ *          sign is 0.72 x 3.563 x 8.8 = 22.6vh, and the open one grows
+ *          to 1.2x about its middle (+2.3vh past its end) and nudges
+ *          right a little. The box starts the window's `overhang`
+ *          back from here, so the open sign reaches slightly over its
+ *          edge and the dimmed ones stay clear (Julio's reference,
+ *          2026-09-22)
  *   inset  the rail's text starts on the signs' left edge
  *   foot   the stack with the open sign grown: 4 + 0.72 x (3 x 8.8 +
  *          two gaps + the growth), vh
  */
 export const SIGNS_OPEN = "translate(-4.8vw, 5.5vh) scale(0.72)";
 
-export const SHEET_LAYOUT: WindowLayout = {
-  rail: "calc(2.4vw + 21.4vh)",
+export const WINDOW_LAYOUT: WindowLayout = {
+  rail: "calc(2.4vw + 25.6vh)",
   inset: "2.4vw",
   foot: "31vh",
 };

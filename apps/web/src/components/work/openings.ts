@@ -4,10 +4,10 @@ import type { Project } from "@/content/projects";
 /**
  * A project's opening: its own first screen, in place of the template's
  * hero figure. The case studies share a hand — the window, the type, the
- * numbered sections, the cuts — and differ where a project can be told
- * apart at a glance: how it opens, its colour (`accent`, worn as the
- * page's tint), and what its media is staged in. Camper is a film, so it
- * opens as cinema; a project with no opening here keeps the hero figure.
+ * sections, the fades — and differ where a project can be told apart at
+ * a glance: how it opens, and what its media is staged in. Camper is a
+ * film, so it opens as cinema; a project with no opening here keeps the
+ * hero figure.
  *
  * An opening fills the window's first screen (the template gives it
  * --cs-vh, the window's visible height) and the rest of the case study

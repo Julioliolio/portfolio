@@ -9,6 +9,7 @@ import {
   type ElementType,
   type ReactNode,
 } from "react";
+import { BLUE, INK, MEDIUM, MONO } from "./style";
 
 /**
  * The project pages' type: one family, very few moves. The rules are
@@ -51,14 +52,8 @@ import {
  * 2026-09-21: a page full of them was too heavy); that stays the
  * landing's. After estrellagracia.com/work: things fade up once, softly,
  * and the page blurs away progressively at the bottom edge.
- *
- * Medium is a family of its own (--font-neue-montreal-extra; see
- * globals.css in the web app): anything at 500 has to name it, or the
- * browser fakes the weight from Regular.
  */
 
-const MEDIUM = `var(--font-neue-montreal-extra), var(--font-neue-montreal), "Helvetica Neue", Arial, sans-serif`;
-const MONO = `var(--font-neue-montreal-mono), ui-monospace, Menlo, monospace`;
 /** How far the title is pulled left, in em: a capital's side bearing. */
 const BEARING = 0.04;
 /** How far the last letter's ink stands past the measured line, in em:
@@ -92,7 +87,7 @@ const BLUR = [
  *   of its own.
  */
 export const TYPE_CSS = `
-.ty { --ty-blue: #2f6df6; --ty-u: clamp(20px, 2.5cqw, 28px); --ty-fg: #2b2722; --ty-dim: #77716a; --ty-bg: #fff; container-type: inline-size; color: var(--ty-fg); background: var(--ty-bg); }
+.ty { --ty-blue: ${BLUE}; --ty-u: clamp(20px, 2.5cqw, 28px); --ty-fg: ${INK}; --ty-dim: #77716a; --ty-bg: #fff; container-type: inline-size; color: var(--ty-fg); background: var(--ty-bg); }
 :where(.ty a) { color: inherit; text-decoration: none; }
 :where(.ty p, .ty h1, .ty h2, .ty dl, .ty dd, .ty figure) { margin: 0; }
 
@@ -154,9 +149,6 @@ type RevealProps = {
   className?: string;
   style?: CSSProperties;
   children?: ReactNode;
-  /** Taken and ignored, so a page built on motion.tsx's <Enter> moves
-   *  over by changing its import. */
-  kind?: string;
 };
 
 /**

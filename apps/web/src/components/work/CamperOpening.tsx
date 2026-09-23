@@ -1,6 +1,10 @@
 "use client";
 
-import { useWindowScroller } from "@portfolio/lab/window";
+import {
+  clipTimeNow,
+  useWindowPreview,
+  useWindowScroller,
+} from "@portfolio/lab/window";
 import { useEffect, useRef, useState } from "react";
 import FilmPlayer from "./FilmPlayer";
 import type { OpeningProps } from "./openings";
@@ -32,6 +36,9 @@ const CSS = `
 
 export default function CamperOpening({ project }: OpeningProps) {
   const scroller = useWindowScroller();
+  // The project window grew out of the hover card's clip of this very
+  // film: start where it was, so the hand-off shows no jump.
+  const preview = useWindowPreview();
   const film = useRef<HTMLDivElement>(null);
   /** The film is mostly scrolled out of sight. */
   const [away, setAway] = useState(false);
@@ -63,6 +70,12 @@ export default function CamperOpening({ project }: OpeningProps) {
 
   const hero = project.hero;
   if (hero.kind !== "video") return null;
+  // Where the clip is now, not where it was at the click: this page
+  // may have taken a moment to load while the box grew.
+  const startAt =
+    preview && preview.src.endsWith(hero.src)
+      ? clipTimeNow(preview)
+      : undefined;
 
   return (
     <div ref={film} className="co">
@@ -73,6 +86,7 @@ export default function CamperOpening({ project }: OpeningProps) {
         aspect={hero.aspect}
         cinema
         away={away}
+        startAt={startAt}
       >
         <button
           type="button"

@@ -9,8 +9,6 @@ import type { Project } from "./types";
 export const convertr: Project = {
   slug: "convertr",
   title: "Convertr",
-  kicker: "Side project · Desktop app · 2026",
-  accent: "#ff3d8f",
   tagline: "A video converter where the box is the whole interface.",
   summary:
     "A desktop app that turns any video into a GIF, MP4, WebM, MOV, AVI, MKV or MP3 — drop it, trim it, drag the result out. Designed and built solo; the real UI runs live on this page.",

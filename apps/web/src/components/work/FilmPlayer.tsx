@@ -1,6 +1,8 @@
 "use client";
 
 import { asset } from "@portfolio/lab/asset";
+import { playLater } from "@portfolio/lab/play-later";
+import { BLUE, INK } from "@portfolio/lab/style";
 import {
   useEffect,
   useRef,
@@ -18,7 +20,7 @@ import {
  * "it's just complementary, it shouldn't take much attention").
  *
  * A hairline along the film's foot is the seek bar: the part played in
- * the page's tint, press and drag (or click) anywhere along it to scrub,
+ * the site's blue, press and drag (or click) anywhere along it to scrub,
  * the film following the pointer and carrying on afterwards if it was
  * playing. Over it, small white icons: play, mute, fullscreen. A click
  * on the picture plays and pauses. While the film plays and the pointer
@@ -31,10 +33,6 @@ import {
  */
 
 const PAPER = "#faf9f6";
-const INK = "#2b2722";
-/** The project's own colour inside a case study; the rope's blue
- *  anywhere else. */
-const TINT = "var(--cs-tint, #2f6df6)";
 /** The line's beat while the film plays, cuts per second. */
 const BEAT = 12;
 /** ms the icons stay up after the pointer last moved, while playing. */
@@ -45,7 +43,7 @@ const STEP = 5;
 const CSS = `
 /* The picture is one big button under the controls. */
 .fp-stage { position: absolute; inset: 0; display: grid; place-items: center; width: 100%; padding: 0; border: 0; background: none; color: inherit; }
-.fp-stage:focus-visible { outline: 2px solid ${TINT}; outline-offset: -4px; }
+.fp-stage:focus-visible { outline: 2px solid ${BLUE}; outline-offset: -4px; }
 .fp-mark { display: grid; place-items: center; width: 64px; height: 64px; border-radius: 999px; background: ${PAPER}; color: ${INK}; transition: transform .16s steps(2, end); }
 .fp-mark svg { width: 20px; height: 20px; margin-left: 3px; }
 .fp-stage:hover .fp-mark { transform: scale(1.08); }
@@ -68,7 +66,7 @@ const CSS = `
 .fp-seek { position: absolute; left: 0; right: 0; bottom: 0; height: 14px; touch-action: none; user-select: none; -webkit-user-select: none; }
 .fp-seek::before, .fp-seek::after { content: ""; position: absolute; left: 0; bottom: 0; height: 3px; }
 .fp-seek::before { right: 0; background: rgba(255, 255, 255, .3); }
-.fp-seek::after { width: calc(var(--fp-at) * 100%); background: ${TINT}; }
+.fp-seek::after { width: calc(var(--fp-at) * 100%); background: ${BLUE}; }
 .fp-seek:hover::before, .fp-seek:hover::after, .fp-seek.is-dragging::before, .fp-seek.is-dragging::after { height: 5px; }
 .fp-seek:focus-visible { outline: 2px solid #fff; outline-offset: -2px; }
 .fp.is-idle .fp-seek { opacity: .5; }
@@ -131,14 +129,6 @@ const EXPAND = (
   </svg>
 );
 
-/** The synth is its own chunk (as in @portfolio/lab/window): the work
- *  pages sit close to the JS budget, and a film that is never played
- *  never needs it. */
-const sounds = () => import("@portfolio/lab/sound");
-function click(name: "tap" | "knock") {
-  void sounds().then((m) => m.play(name, 1, { at: "click" }));
-}
-
 /** 83 -> "1:23", for the line's spoken value. */
 function clock(seconds: number) {
   const s = Math.max(0, Math.floor(seconds));
@@ -158,6 +148,9 @@ type Props = {
   /** The film has been scrolled out of sight: it holds, and carries on
    *  when it is back if this is what stopped it. */
   away?: boolean;
+  /** Cinema: where to start, s — the frame the project window's clip
+   *  was on, so the hand-off to the page shows no jump. */
+  startAt?: number;
   /** Laid over the picture, above the controls. */
   children?: ReactNode;
 };
@@ -168,6 +161,7 @@ export default function FilmPlayer({
   aspect,
   cinema = false,
   away = false,
+  startAt,
   children,
 }: Props) {
   const root = useRef<HTMLDivElement>(null);
@@ -207,16 +201,20 @@ export default function FilmPlayer({
     if (v && v.readyState >= 1) setDuration(v.duration);
   }, []);
 
-  // Cinema starts itself: with sound, or failing that without.
+  // Cinema starts itself — where it was asked to, and with sound, or
+  // failing that without.
   useEffect(() => {
     const v = video.current;
     if (!cinema || !v) return;
+    if (startAt) v.currentTime = startAt;
     if (window.matchMedia("(prefers-reduced-motion: reduce)").matches) return;
     v.muted = false;
     v.play().catch(() => {
       v.muted = true;
       v.play().catch(() => {});
     });
+    // Starts once: a later startAt must not seek a film already playing.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [cinema]);
 
   useEffect(() => {
@@ -251,7 +249,7 @@ export default function FilmPlayer({
   function toggle() {
     const v = video.current;
     if (!v) return;
-    click("knock");
+    playLater("knock", 1, "click");
     held.current = false;
     if (v.paused) void v.play().catch(() => {});
     else v.pause();
@@ -260,7 +258,7 @@ export default function FilmPlayer({
   function toggleMute() {
     const v = video.current;
     if (!v) return;
-    click("tap");
+    playLater("tap", 1, "click");
     v.muted = !v.muted;
   }
 
@@ -268,7 +266,7 @@ export default function FilmPlayer({
     const el = root.current;
     const v = video.current as
       (HTMLVideoElement & { webkitEnterFullscreen?: () => void }) | null;
-    click("tap");
+    playLater("tap", 1, "click");
     if (document.fullscreenElement) void document.exitFullscreen();
     else if (el?.requestFullscreen) void el.requestFullscreen().catch(() => {});
     // iPhone Safari has no element fullscreen, only the video's own.
@@ -370,7 +368,6 @@ export default function FilmPlayer({
           if (!drag.current) setPlaying(false);
         }}
         onEnded={() => setPlaying(false)}
-        onLoadedMetadata={(e) => setDuration(e.currentTarget.duration)}
         onDurationChange={(e) => setDuration(e.currentTarget.duration)}
         onVolumeChange={(e) => setMuted(e.currentTarget.muted)}
         onSeeked={seeked}

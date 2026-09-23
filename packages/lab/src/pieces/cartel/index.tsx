@@ -69,11 +69,12 @@ import {
  * SpinCurveEditor).
  *
  * The sign has two faces: "julio" (Julio Romero, the full angle grid) and
- * "about" (About me, front + one returning angle). The click flourish is
- * the flip between them: the swap happens mid-spin while the back frames
- * show — no text is visible there, so the turn starts reading one name
- * and lands reading the other. Landed on About, the sign holds front with
- * the idle bob (pointer tracking gated off) for ABOUT_HOLD_MS, then flips
+ * "about" (is open to work!!!, front + one returning angle). The click
+ * flourish is the flip between them: the swap happens mid-spin while the
+ * back frames show — no text is visible there, so the turn starts
+ * reading one name and lands reading the other. Landed on About, the
+ * sign holds front with the idle bob (pointer tracking gated off) for
+ * ABOUT_HOLD_MS, then flips
  * back to Julio the same way. A click during the hold brings it back
  * early; clicks during a spin are ignored, not stacked. Any spin landing
  * on the julio face comes out already IN the pointer-tracked pose (see
@@ -149,8 +150,8 @@ const POINTER_RADIUS = 2;
 const RADIUS_EXIT = 1.12;
 
 // How long the sign rests on the About face after a click before it flips
-// back to Julio — long enough to read "About me", short enough that the
-// sign doesn't feel stuck.
+// back to Julio — long enough to read "is open to work!!!", short enough
+// that the sign doesn't feel stuck.
 const ABOUT_HOLD_MS = 1500;
 
 // Both axes quantize to 5 levels: |n| below B0 is 0, between B0 and B1 a

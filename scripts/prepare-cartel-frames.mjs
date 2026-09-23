@@ -4,8 +4,8 @@
  * Input: a directory with two subdirs of source PNGs (transparent,
  * arbitrary sizes), one per sign face:
  *   julio/ — the full angle grid + spin exposures (Julio Romero text)
- *   about/ — the "About me" face: front + return (the ~325° returning
- *            angle shown while a transition spin lands)
+ *   about/ — the "is open to work!!!" face: front + return (the ~325°
+ *            returning angle shown while a transition spin lands)
  * Output: apps/web/public/cartel/{julio,about}/<name>.webp — each frame
  * trimmed to its alpha bounding box, scaled to a common height, and
  * centered on ONE shared transparent canvas across both faces, so the
@@ -56,10 +56,10 @@ const JULIO_FRAMES = [
   "spin-c", // face returning, ~310 deg
 ];
 
-// The About me face only needs the poses a transition spin can land
-// through: the sign holds front (with the idle bob) while hovered, so
-// there is no About angle grid. The back/edge spin frames are shared with
-// the julio set — the text isn't visible there.
+// The About face ("is open to work!!!") only needs the poses a transition
+// spin can land through: the sign holds front (with the idle bob) while
+// hovered, so there is no About angle grid. The back/edge spin frames are
+// shared with the julio set — the text isn't visible there.
 const ABOUT_FRAMES = [
   "front", // resting pose while hovered
   "return", // face returning, ~325 deg — covers the spin-c and left stops

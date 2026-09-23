@@ -9,8 +9,6 @@ import type { Project } from "./types";
 export const localpal: Project = {
   slug: "localpal",
   title: "LocalPal",
-  kicker: "Master’s thesis · UDIT · 2025–2026",
-  accent: "#3121ff",
   tagline: "Finding and organising the plans a city doesn't show you.",
   summary:
     "A map-first app where young adults in European cities discover the niche things to do and find the people to do them with. Master's thesis: research, service concept, brand, design system and a working prototype.",

@@ -2,6 +2,7 @@
 
 import { asset } from "@portfolio/lab/asset";
 import { Contents } from "@portfolio/lab/contents";
+import { MONO } from "@portfolio/lab/style";
 import {
   Arrow,
   BottomBlur,
@@ -11,6 +12,7 @@ import {
 } from "@portfolio/lab/type";
 import { useWindowRail, useWindowScroller } from "@portfolio/lab/window";
 import {
+  Fragment,
   Suspense,
   lazy,
   useLayoutEffect,
@@ -18,7 +20,6 @@ import {
   useState,
   type CSSProperties,
   type PointerEvent as ReactPointerEvent,
-  type ReactNode,
 } from "react";
 import { createPortal } from "react-dom";
 import { DemoShell } from "@/components/demo/DemoShell";
@@ -77,7 +78,6 @@ const FilmPlayer = lazy(() => import("./FilmPlayer"));
 
 /** A placeholder's grey, and a picture's before it loads. */
 const GREY = "#ecebe8";
-const MONO = "var(--font-neue-montreal-mono), ui-monospace, Menlo, monospace";
 /** ms between neighbours arriving together. */
 const BEAT = 70;
 
@@ -267,20 +267,23 @@ export function CaseStudy({
             className="ty-small ty-facts cs-facts"
           >
             {project.meta.map((m) => (
-              <FactRow key={m.label} label={m.label}>
-                {m.href ? (
-                  <a
-                    href={m.href}
-                    target="_blank"
-                    rel="noreferrer"
-                    data-cursor-label="open"
-                  >
-                    {m.value}
-                  </a>
-                ) : (
-                  m.value
-                )}
-              </FactRow>
+              <Fragment key={m.label}>
+                <dt>{m.label}</dt>
+                <dd>
+                  {m.href ? (
+                    <a
+                      href={m.href}
+                      target="_blank"
+                      rel="noreferrer"
+                      data-cursor-label="open"
+                    >
+                      {m.value}
+                    </a>
+                  ) : (
+                    m.value
+                  )}
+                </dd>
+              </Fragment>
             ))}
           </Reveal>
         </div>
@@ -345,15 +348,6 @@ function contentsStops(sections: Section[]) {
     id: s.id,
     label: s.chapter ?? s.label,
   }));
-}
-
-function FactRow({ label, children }: { label: string; children: ReactNode }) {
-  return (
-    <>
-      <dt>{label}</dt>
-      <dd>{children}</dd>
-    </>
-  );
 }
 
 /**
