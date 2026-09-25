@@ -63,7 +63,6 @@ export function previewOf(
   // the centre back there.
   let cx = r.left + r.width / 2;
   let cy = r.top + r.height / 2;
-  let k = 1;
   if (cs.transform !== "none") {
     const [ox = 0, oy = 0] = cs.transformOrigin.split(" ").map(parseFloat);
     const m = new DOMMatrix()
@@ -77,17 +76,16 @@ export function previewOf(
     const p = m.inverse().transformPoint({ x: cx - restX, y: cy - restY });
     cx = restX + p.x;
     cy = restY + p.y;
-    k = 1 / m.a;
   }
   // The print's own size, and its frame, from layout — untouched by
-  // any transform — scaled to the screen by the stack's rest scale.
-  const w = print.offsetWidth * k;
-  const h = print.offsetHeight * k;
+  // any transform, and the stack at rest has none.
+  const w = print.offsetWidth;
+  const h = print.offsetHeight;
   const inset = {
-    top: media.offsetTop * k,
-    left: media.offsetLeft * k,
-    right: (print.offsetWidth - media.offsetLeft - media.offsetWidth) * k,
-    bottom: (print.offsetHeight - media.offsetTop - media.offsetHeight) * k,
+    top: media.offsetTop,
+    left: media.offsetLeft,
+    right: print.offsetWidth - media.offsetLeft - media.offsetWidth,
+    bottom: print.offsetHeight - media.offsetTop - media.offsetHeight,
   };
   const tilt =
     parseFloat(getComputedStyle(print).getPropertyValue("--rs-tilt")) || 0;

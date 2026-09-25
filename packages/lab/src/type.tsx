@@ -87,7 +87,7 @@ const BLUR = [
  *   of its own.
  */
 export const TYPE_CSS = `
-.ty { --ty-blue: ${BLUE}; --ty-u: clamp(20px, 2.5cqw, 28px); --ty-fg: ${INK}; --ty-dim: #77716a; --ty-bg: #fff; container-type: inline-size; color: var(--ty-fg); background: var(--ty-bg); }
+.ty { --ty-blue: ${BLUE}; --ty-u: clamp(20px, 2.5cqw, 28px); --ty-fg: ${INK}; --ty-dim: #77716a; --ty-bg: transparent; container-type: inline-size; color: var(--ty-fg); background: var(--ty-bg); }
 :where(.ty a) { color: inherit; text-decoration: none; }
 :where(.ty p, .ty h1, .ty h2, .ty dl, .ty dd, .ty figure) { margin: 0; }
 

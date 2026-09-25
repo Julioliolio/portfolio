@@ -11,12 +11,23 @@ import {
   type MouseEvent,
   type ReactNode,
 } from "react";
+import { asset } from "./asset";
 import { loadSounds, playLater } from "./play-later";
-import { BLUE, INK, MEDIUM } from "./style";
 import {
+  BLUE,
+  INK,
+  MEDIUM,
+  PAPER_BASE,
+  PAPER_TILE,
+  PAPER_TILE_SIZE,
+  PRINT_SHADOW,
+} from "./style";
+import {
+  LIFT_EASE,
   WINDOW_EASE,
   moveMs,
   useWindowTuning,
+  windowEase,
   type WindowTuning,
 } from "./window-tuning";
 
@@ -24,28 +35,31 @@ import {
  * The project window: a case study opened beside the signs rather than
  * navigated to. The wall's left strip stays — the rail — and turns into
  * the way home plus the open page's table of contents, while the
- * project takes the rest of the screen as one big box: white, square,
- * set in from the wall's top, right and bottom by a margin so the wall
- * shows around it (Julio, 2026-09-22: no sheet, only the container;
- * square, not a squircle — his reference). The whole case study lives
- * inside it and scrolls there.
+ * project takes the rest of the screen as one big box: a sheet of
+ * paper (Julio's scan, `sheet`), square, set in from the mat's top,
+ * right and bottom by a margin so the mat shows around it. The whole
+ * case study lives inside it — printed on it, in one of three looks
+ * (`media`) — and scrolls there.
  * The signs stay where they are in the rail, over the box's edge, and
  * are the switcher; the window knows nothing about them — the caller
  * keeps them above it (a z-index past the window's 80) and tells the
  * window how wide the rail is.
  *
- * The box IS the sign's hover card's clip, grown up: the caller hands
- * it the clip (`from`, see clipPreview(): where it is on the wall, what
- * it plays, the frame it is on and a snapshot of that frame), the box
- * starts as that clip to the pixel — same frame, same blue hairline —
- * and grows to its place the way Convertr's bounding box moves (Julio,
- * 2026-09-22: "feel like Convertr"): one axis, then the other, on
- * Convertr's own curve, with the clip still playing inside; once it
- * has landed the page fades in over the clip. Closing runs it
- * backwards: the page fades, the box shrinks back to the clip's place
- * axis by axis, and it is gone. Without a clip to come from (a Back
- * that reopens, a page of its own) the box is simply there, or fades.
- * Big surfaces ease; they don't cut.
+ * The box IS the print, picked up: the caller hands it the print
+ * (`from`, see clipPreview(): where it is on the mat, its lean, the
+ * frame round its picture, what it plays, the frame it is on and a
+ * snapshot of that frame), the box starts as that print to the pixel —
+ * the same paper, the clip inset by the same frame, turned by the same
+ * lean, under the same shadow — and in one eased move (`lift`) grows to
+ * its place while the lean straightens, the frame closes round the
+ * clip and the shadow lifts and settles (Julio, 2026-09-25: "picked up
+ * and brought close"); once it has landed the page prints in over the
+ * clip. Closing runs it backwards: the page fades, the box shrinks and
+ * leans back onto the print, and it is gone. (`move: "grow"` keeps the
+ * earlier way, Convertr's bounding box: one axis, then the other, on
+ * Convertr's curve.) Without a print to come from (a Back that
+ * reopens, a page of its own) the box is simply there, or fades. Big
+ * surfaces ease; they don't cut.
  *
  * The rail holds "Home" and a slot the page inside fills with its
  * contents (`useWindowRail()`); `foot` keeps both clear of whatever the
@@ -64,13 +78,23 @@ import {
 
 // -------------------------------------------------------- the stylesheet
 
-/** The rail's resting text. */
-const FAINT = "#8a847c";
+/** The rail's resting text: white, a little back, on the mat. */
+const FAINT = "rgba(255, 255, 255, .72)";
 /** From this viewport width there is a rail and a margin; under it the
  *  box is the whole screen. */
 const RAIL_FROM = 701;
-/** The hover card's hairline round its clip: the box starts with it. */
+/** The hover card's hairline round its clip: the box starts with it
+ *  (grow). */
 const CLIP_EDGE = `inset 0 0 0 1px ${BLUE}`;
+/** The sheet in the air, mid-lift: a wide soft shadow, the same three
+ *  layers as the print's and the sheet's at rest. */
+const LIFT_SHADOW =
+  "0 0 0 1px rgba(43, 39, 34, .08), 0 14px 28px rgba(0, 0, 0, .14), 0 64px 120px rgba(0, 0, 0, .3)";
+/** The sheet's shadow at rest on the mat, for a hairline strength. */
+const sheetShadow = (edge: number) =>
+  `0 0 0 1px rgba(43, 39, 34, ${n(edge)}), 0 2px 6px rgba(0, 0, 0, .08), 0 24px 60px rgba(0, 0, 0, .18)`;
+/** The box's own inset for the clip: none. */
+const CLIP_FULL = { left: "0px", top: "0px", width: "100%", height: "100%" };
 
 const n = (v: number, d = 3) => Number(v.toFixed(d)).toString();
 
@@ -80,22 +104,32 @@ const n = (v: number, d = 3) => Number(v.toFixed(d)).toString();
  *
  * - The window: the whole screen, nothing painted; only what is in the
  *   rail takes the pointer, and the rest of it is the way out.
- * - The box: at its place (--pw-x/y/w/h), clipped to its corners. The
- *   grow and the shrink animate its edges from the clip's rect, by
- *   script (see move()), so nothing here moves it. Its hairline is a
- *   shadow, which the move can animate from the clip's blue one.
+ * - The box: at its place (--pw-x/y/w/h), clipped to its corners, the
+ *   sheet of paper (its scan, covering it; the print's tile is the
+ *   same paper at the same scale, so the pick-up keeps its grain). The
+ *   move animates its edges, lean and shadow from the print's, by
+ *   script (see move()), so nothing here moves it. Its hairline is in
+ *   its shadow, which the move animates from the print's.
  * - The scroller: sized to the box's landed size, not the box, so the
  *   page lays out once, at full size, while the box grows round it.
- *   Hidden under the clip until the box has landed, then dissolved in
- *   over `reveal`; out again on the quick `fade`. No scrollbar (Julio,
- *   2026-09-22); it still scrolls.
+ *   Nothing behind the page but the paper (transparent), so the page
+ *   is printed on the sheet. Hidden until the box has landed, then
+ *   dissolved in over `reveal` as the clip dissolves out (it would
+ *   show through otherwise); out again on the quick `fade`. No
+ *   scrollbar (Julio, 2026-09-22); it still scrolls.
+ * - The looks (`media`): the grain over everything is a layer of the
+ *   paper's tile laid over the scroller, multiplied in, that comes with
+ *   the page; the whole page multiplied is the scroller itself blended
+ *   into the box.
  * - The page's entrances (type.tsx's <Reveal>, `.ty-in`) are held on
  *   their first frame until the box has landed, so the title and the
  *   intro rise as the page dissolves in rather than having played,
  *   unseen, under the clip.
- * - The clip: the card's video, filling the box; under the page once
- *   it is in. It softens and eases forward a touch as the page covers
- *   it, so the two read as one move, not a swap.
+ * - The clip: the print's video, filling the box (the lift starts it
+ *   inset by the print's frame, by script); under the page once it is
+ *   in. It softens, eases forward a touch and goes as the page covers
+ *   it, so the two read as one move, not a swap — and comes back sharp
+ *   on the page's fade out, so the box shrinks onto a clear print.
  * - The box's left edge: the rail, less the overhang — the open sign
  *   reaches a little over it (the signs sit above the window).
  * - The rail's things fade in with the page and out with it, on the
@@ -110,15 +144,21 @@ function windowCss(t: WindowTuning): string {
   const reveal = n(t.reveal, 0);
   return `
 .pw { --pw-rail: ${n(t.rail)}vw; --pw-inset: 24px; --pw-foot: 0px; --pw-margin: 0px; --pw-over: 0px; --pw-corner: 0px; --pw-x: 0px; --pw-y: 0px; --pw-w: 100vw; --pw-h: 100dvh; position: fixed; inset: 0; z-index: 80; }
-.pw-box { position: absolute; left: var(--pw-x); top: var(--pw-y); width: var(--pw-w); height: var(--pw-h); overflow: hidden; border-radius: var(--pw-corner); background: #fff; box-shadow: 0 0 0 1px rgba(43, 39, 34, ${n(t.edge)}); }
+.pw-box { position: absolute; left: var(--pw-x); top: var(--pw-y); width: var(--pw-w); height: var(--pw-h); overflow: hidden; border-radius: var(--pw-corner); background: ${PAPER_BASE} url(${asset(`/paper/${t.sheet}.webp`)}) center / cover; box-shadow: ${sheetShadow(t.edge)}; transform-origin: 50% 50%; }
 .pw-box:focus { outline: none; }
-.pw-scroll { position: absolute; top: 0; left: 0; z-index: 1; width: var(--pw-w); height: var(--pw-h); overflow-y: auto; overscroll-behavior: contain; scrollbar-width: none; background: #fff; opacity: 0; transition: opacity ${fade}ms ease; }
+.pw-scroll { position: absolute; top: 0; left: 0; z-index: 1; width: var(--pw-w); height: var(--pw-h); overflow-y: auto; overscroll-behavior: contain; scrollbar-width: none; background: transparent; opacity: 0; transition: opacity ${fade}ms ease; }
 .pw-scroll::-webkit-scrollbar { display: none; }
 .pw.is-in .pw-scroll { opacity: 1; transition: opacity ${reveal}ms cubic-bezier(.4, 0, .2, 1); }
 .pw.is-page .pw-scroll { transition: none; }
+.pw.is-multiply .pw-scroll { mix-blend-mode: multiply; }
+.pw-grain { position: absolute; inset: 0; z-index: 2; pointer-events: none; background: url(${asset(PAPER_TILE)}) 0 0 / ${PAPER_TILE_SIZE} repeat; mix-blend-mode: multiply; opacity: 0; transition: opacity ${fade}ms ease; }
+.pw.is-in .pw-grain { opacity: 1; transition: opacity ${reveal}ms cubic-bezier(.4, 0, .2, 1); }
+.pw.is-page .pw-grain { transition: none; }
+.pw.is-leaving .pw-grain { opacity: 0; }
 .pw:not(.is-in) .pw-scroll .ty-in { animation-play-state: paused; }
-.pw-clip { position: absolute; inset: 0; z-index: 0; display: block; width: 100%; height: 100%; object-fit: cover; background: #ecebe8; transition: filter ${fade}ms ease, transform ${fade}ms ease; }
-.pw.is-in .pw-clip { filter: blur(8px); transform: scale(1.03); transition: filter ${reveal}ms cubic-bezier(.4, 0, .2, 1), transform ${reveal}ms cubic-bezier(.4, 0, .2, 1); }
+.pw-clip { position: absolute; inset: 0; z-index: 0; display: block; width: 100%; height: 100%; object-fit: cover; background: #ecebe8; transition: filter ${fade}ms ease, transform ${fade}ms ease, opacity ${fade}ms ease; }
+.pw.is-in .pw-clip { filter: blur(8px); transform: scale(1.03); opacity: 0; transition: filter ${reveal}ms cubic-bezier(.4, 0, .2, 1), transform ${reveal}ms cubic-bezier(.4, 0, .2, 1), opacity ${reveal}ms cubic-bezier(.4, 0, .2, 1); }
+.pw.is-leaving .pw-clip { filter: none; transform: none; opacity: 1; transition: filter ${fade}ms ease, transform ${fade}ms ease, opacity ${fade}ms ease; }
 .pw-rail { display: none; }
 @media (min-width: ${RAIL_FROM}px) {
   .pw { --pw-margin: ${n(t.margin, 0)}px; --pw-over: ${n(t.overhang, 2)}vh; --pw-corner: ${n(t.corner, 0)}px; --pw-x: calc(var(--pw-rail) - var(--pw-over)); --pw-y: var(--pw-margin); --pw-w: calc(100vw - var(--pw-x) - var(--pw-margin)); --pw-h: calc(100dvh - 2 * var(--pw-margin)); }
@@ -132,13 +172,13 @@ function windowCss(t: WindowTuning): string {
   .pw-rail-slot:empty { display: none; }
 }
 .pw-home { display: inline-flex; align-items: center; gap: .5em; min-height: 24px; padding: 0; border: 0; background: none; color: ${FAINT}; font-family: ${MEDIUM}; font-weight: 500; font-size: 15px; line-height: 1; letter-spacing: -.01em; text-decoration: none; cursor: pointer; }
-.pw-home:hover { color: ${INK}; }
+.pw-home:hover { color: #fff; }
 .pw-home:focus-visible { outline: 2px solid ${BLUE}; outline-offset: 4px; }
 .pw-home svg { display: block; width: .8em; height: .8em; }
 .pw.is-leaving .pw-scroll { opacity: 0; }
 .pw.is-leaving .pw-rail-in { pointer-events: none; }
 @media (prefers-reduced-motion: reduce) {
-  .pw-scroll, .pw.is-in .pw-scroll, .pw.is-leaving .pw-scroll, .pw-rail-in, .pw-clip, .pw.is-in .pw-clip { transition-duration: 1ms; }
+  .pw-scroll, .pw.is-in .pw-scroll, .pw.is-leaving .pw-scroll, .pw-rail-in, .pw-clip, .pw.is-in .pw-clip, .pw.is-leaving .pw-clip, .pw-grain, .pw.is-in .pw-grain { transition-duration: 1ms; }
 }
 `;
 }
@@ -268,28 +308,40 @@ const place = (el: HTMLElement): WindowRect => {
 const together = (list: Animation[]) => () => list.forEach((a) => a.cancel());
 
 /**
- * Moves the box between the clip's rect and its own place: `to` the
- * box's place (the grow) or from it (the shrink). Convertr's move —
- * the box is landscape, so the width goes first and the height follows
- * after `lag`; the shrink is the mirror, height first, at the same
- * pace, so the signs' way back is the same as their way out — each
- * axis on Convertr's curve for `axis` ms. The hairline goes from the
- * clip's blue to the box's own with the width, and the corners with it.
+ * Moves the box between the print's rect and its own place: `to` the
+ * box's place (the pick-up) or from it (the way back).
+ *
+ * The lift: the box starts as the print — its rect, its lean (a
+ * rotation about the centre, which is what the caller measured), its
+ * shadow, the clip inset by its frame — and everything goes to the
+ * box's own in one move on the lift's curve: the edges, the lean to 0,
+ * the shadow through the lifted one at mid-way, and the clip's inset
+ * to none (a second animation, on the clip). The way back is the same
+ * frames reversed, a settle onto the print.
+ *
+ * The grow (Convertr's move): the box is landscape, so the width goes
+ * first and the height follows after `lag`; the shrink is the mirror,
+ * height first, at the same pace, so the signs' way back is the same
+ * as their way out — each axis on Convertr's curve for `duration` ms.
+ * The hairline goes from the clip's blue to the box's own with the
+ * width, and the corners with it.
+ *
  * The box's place is read off its CSS before the animations lay over
  * it, so the keyframes follow whatever the tuning and the viewport say.
- * Without a clip the box fades and settles instead. Returns the way to
- * cancel it.
+ * Without a print the box fades and settles instead. Returns the way
+ * to cancel it.
  */
 function move(
   box: HTMLElement,
+  clip: HTMLElement | null,
   from: WindowPreview | null,
   to: "open" | "shut",
-  axis: number,
-  lag: number,
+  t: WindowTuning,
 ): () => void {
   const still = reduced();
-  const dur = still ? 1 : axis;
-  const wait = still ? 0 : lag;
+  const lift = t.move === "lift";
+  const dur = still ? 1 : lift ? t.lift : t.duration;
+  const wait = still || lift ? 0 : t.lag;
   const open = to === "open";
   const fill = open ? "backwards" : "forwards";
   if (!from) {
@@ -298,7 +350,7 @@ function move(
     return together([
       box.animate(open ? [away, at] : [at, away], {
         duration: dur + wait,
-        easing: WINDOW_EASE,
+        easing: windowEase(t),
         fill,
       }),
     ]);
@@ -306,6 +358,48 @@ function move(
   const cs = getComputedStyle(box);
   const own = place(box);
   const r = from.rect;
+  if (lift) {
+    const inset = from.inset ?? { top: 0, right: 0, bottom: 0, left: 0 };
+    const start: Keyframe = {
+      left: `${r.x}px`,
+      top: `${r.y}px`,
+      width: `${r.w}px`,
+      height: `${r.h}px`,
+      transform: `rotate(${from.tilt ?? 0}deg)`,
+      borderRadius: "0px",
+      boxShadow: PRINT_SHADOW,
+    };
+    const mid: Keyframe = { offset: 0.45, boxShadow: LIFT_SHADOW };
+    const end: Keyframe = {
+      left: `${own.x}px`,
+      top: `${own.y}px`,
+      width: `${own.w}px`,
+      height: `${own.h}px`,
+      transform: "rotate(0deg)",
+      borderRadius: cs.borderRadius,
+      boxShadow: cs.boxShadow,
+    };
+    const options: KeyframeAnimationOptions = {
+      duration: dur,
+      easing: LIFT_EASE,
+      fill,
+    };
+    const list = [
+      box.animate(open ? [start, mid, end] : [end, mid, start], options),
+    ];
+    if (clip) {
+      const framed: Keyframe = {
+        left: `${inset.left}px`,
+        top: `${inset.top}px`,
+        width: `calc(100% - ${inset.left + inset.right}px)`,
+        height: `calc(100% - ${inset.top + inset.bottom}px)`,
+      };
+      list.push(
+        clip.animate(open ? [framed, CLIP_FULL] : [CLIP_FULL, framed], options),
+      );
+    }
+    return together(list);
+  }
   // Each axis as [at the clip, at the box's place]; the skin rides on
   // the width.
   const x: Keyframe[] = [
@@ -440,7 +534,7 @@ export function ProjectWindow({
     // Asked to play, not left to autoplay: React sets `muted` as a
     // property, which the autoplay policy doesn't always see.
     void clip.current?.play().catch(() => {});
-    const cancel = move(el, latest.current, "open", t.duration, t.lag);
+    const cancel = move(el, clip.current, latest.current, "open", t);
     const land = window.setTimeout(() => setLanded(true), grow);
     const hold = window.setTimeout(() => {
       clip.current?.pause();
@@ -483,7 +577,7 @@ export function ProjectWindow({
     }
     let cancel: (() => void) | undefined;
     const go = window.setTimeout(() => {
-      if (el) cancel = move(el, latest.current, "shut", t.duration, t.lag);
+      if (el) cancel = move(el, clip.current, latest.current, "shut", t);
     }, fade);
     const done = window.setTimeout(() => {
       const card = latest.current?.video;
@@ -497,7 +591,7 @@ export function ProjectWindow({
     };
     // The scroller is read at the start of the exit only.
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [leaving, fade, grow, t.duration, t.lag]);
+  }, [leaving, fade, grow, t]);
 
   // The page behind holds still, Esc closes, and focus is kept: on the
   // box while the window is up, back where it was after.
@@ -561,6 +655,7 @@ export function ProjectWindow({
         page && "is-page",
         landed && "is-in",
         leaving && "is-leaving",
+        t.media === "multiply" && "is-multiply",
       ]
         .filter(Boolean)
         .join(" ")}
@@ -635,6 +730,7 @@ export function ProjectWindow({
             </RailContext.Provider>
           </ScrollerContext.Provider>
         </div>
+        {t.media === "overlay" && <div className="pw-grain" aria-hidden />}
       </div>
     </div>
   );

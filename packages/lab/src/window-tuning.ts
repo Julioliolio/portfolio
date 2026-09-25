@@ -8,6 +8,13 @@ import { createTuningStore } from "./tuning-store";
  * (/lab/window) share this store; the bench's sliders write it.
  */
 export type WindowTuning = {
+  /** How the box comes to its place. "lift": picked up — the print
+   *  grows to the sheet in one eased move, its lean straightening, its
+   *  frame closing, its shadow lifting and settling (Julio,
+   *  2026-09-25). "grow": Convertr's box — one axis, then the other. */
+  move: "lift" | "grow";
+  /** The lift, ms: the whole move, and the whole way back. */
+  lift: number;
   /** One axis's move, ms (Convertr's box: 350). The shrink's axes take
    *  the same. */
   duration: number;
@@ -35,9 +42,21 @@ export type WindowTuning = {
   edge: number;
   /** The rail's width, vw, when the caller does not give one. */
   rail: number;
+  /** The sheet's paper: which of Julio's scans (public/paper/) the box
+   *  is. plain, or one of the two with a crease. */
+  sheet: "plain" | "crease-1" | "crease-2";
+  /** How the page reads on the paper. "clean": as printed on a white
+   *  page — the type on the paper, pictures and demos crisp. "overlay":
+   *  the paper's grain laid over everything, once, as one blended layer
+   *  the page scrolls under. "multiply": the whole page multiplied into
+   *  the paper — every picture printed — re-blended as it scrolls, the
+   *  costly one. */
+  media: "clean" | "overlay" | "multiply";
 };
 
 export const WINDOW_DEFAULTS: Readonly<WindowTuning> = Object.freeze({
+  move: "lift",
+  lift: 520,
   duration: 300,
   lag: 180,
   reveal: 520,
@@ -47,14 +66,23 @@ export const WINDOW_DEFAULTS: Readonly<WindowTuning> = Object.freeze({
   corner: 0,
   edge: 0.14,
   rail: 27,
+  sheet: "plain",
+  media: "overlay",
 });
 
 /** Convertr's curve for its box: a wind-up, then past the mark and
- *  back. The box, the signs and the shrink all move on it. */
+ *  back. The box, the signs and the shrink all move on it (grow). */
 export const WINDOW_EASE = "cubic-bezier(1, -.35, .22, 1.15)";
+/** The lift's curve: quick off the mat, a long settle. */
+export const LIFT_EASE = "cubic-bezier(.22, 1, .36, 1)";
 
-/** The whole move, first axis to the second's end, ms. */
-export const moveMs = (t: WindowTuning) => t.lag + t.duration;
+/** The whole move, ms: the lift, or the first axis to the second's
+ *  end. */
+export const moveMs = (t: WindowTuning) =>
+  t.move === "lift" ? t.lift : t.lag + t.duration;
+/** The move's curve, for whatever moves with the box. */
+export const windowEase = (t: WindowTuning) =>
+  t.move === "lift" ? LIFT_EASE : WINDOW_EASE;
 
 // A key of its own: the values stored under the earlier "sheet" key
 // meant other things.

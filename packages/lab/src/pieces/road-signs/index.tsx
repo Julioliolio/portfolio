@@ -1186,8 +1186,14 @@ export default function RoadSigns({
   // A project opening fades the column in place, and any on its way;
   // the project closing brings its print back for the window to land
   // on, and the ordinary timers take it from there.
+  // The open project's prints are handed over (the box is the print):
+  // set here, not through the Print's props — a re-render would write
+  // the class list over the engine's own marks on the print.
   const wasSelected = useRef<string | null>(null);
   useEffect(() => {
+    for (const [i, el] of engine.column.items.entries()) {
+      el?.classList.toggle("is-handed", TRACK[i]?.slug === selected);
+    }
     if (selected !== null) {
       cancelShow(engine);
       hideProject(engine, "fade");
@@ -1486,7 +1492,6 @@ export default function RoadSigns({
               key={i}
               spec={spec}
               index={i}
-              handed={selected === spec.slug}
               refCallback={(el) => registerPrint(i, el)}
               onClick={(ev) => onPrintClick(ev, i, spec.slug)}
             />

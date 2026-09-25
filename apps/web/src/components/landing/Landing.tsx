@@ -24,9 +24,9 @@ import {
 } from "react";
 import type { WindowPreview } from "@portfolio/lab/window";
 import {
-  WINDOW_EASE,
   moveMs,
   useWindowTuning,
+  windowEase,
 } from "@portfolio/lab/window-tuning";
 import { SIGNS_OPEN } from "@/components/work/windowLayout";
 import {
@@ -516,7 +516,7 @@ export function Landing() {
           style={
             {
               "--signs-move": `${moveMs(wt)}ms`,
-              "--signs-ease": WINDOW_EASE,
+              "--signs-ease": windowEase(wt),
               "--signs-wait": `${open === null ? wt.fade : 0}ms`,
               "--rs-hand": `${wt.fade}ms`,
             } as CSSProperties
@@ -526,7 +526,9 @@ export function Landing() {
             <RoadSigns
               controls={false}
               frame="signs"
-              tuning={tuning}
+              // The print stays under the box for the window's whole way
+              // back (the page's fade, then the shrink), then goes.
+              tuning={{ ...tuning, returnDelay: wt.fade + moveMs(wt) }}
               replay={screens.projects.runs}
               selected={open}
             />
