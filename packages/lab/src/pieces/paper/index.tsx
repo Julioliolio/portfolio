@@ -209,7 +209,7 @@ const SHEET: Field<WindowTuning>[] = [
 ];
 
 const SOUNDS = SOUND_FIELDS.filter((f) =>
-  ["master", "slide", "knock", "card", "click"].includes(f.key),
+  ["master", "slide", "lift", "knock", "card", "click"].includes(f.key),
 );
 
 const CSS = `

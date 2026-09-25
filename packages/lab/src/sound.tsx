@@ -13,8 +13,9 @@ import { createTuningStore } from "./tuning-store";
  * The site's sounds — every one synthesized in Web Audio, no files. The
  * language is physical, to match the stop motion: a wooden tick on each
  * photo cut, a cardboard tap when the pointer lands on a sign, a paper
- * slide when a card comes out, a solid knock on the clicks that go
- * somewhere. And, apart from those, a felt piano: every letter of the
+ * slide when the prints' column comes onto the mat, a lift when a
+ * print is picked up into the sheet (and set back down), a solid knock
+ * on the clicks that go somewhere. And, apart from those, a felt piano: every letter of the
  * greeting is a note of it as it stamps under the pointer, and a bed of
  * it plays under the pointer on its own slow clock (`useBed`) — the
  * greeting asks for it while hovered, and lets go when the pointer
@@ -53,8 +54,11 @@ export type SoundTuning = {
   tap: number;
   /** The wooden knock: spin launch and landing, clicks that navigate. */
   knock: number;
-  /** The paper slide when a project card comes out or goes back. */
+  /** The paper slide when the prints' column comes onto the mat or
+   *  goes back off it. */
   slide: number;
+  /** The lift of a print into the sheet, and its way back down. */
+  lift: number;
   /** The greeting's letters, one piano note each as they stamp under
    *  the pointer. */
   letter: number;
@@ -102,6 +106,7 @@ const SOUND_DEFAULTS: Readonly<SoundTuning> = Object.freeze({
   tap: 0.4,
   knock: 0.6,
   slide: 0.5,
+  lift: 0.5,
   letter: 0.15,
   ring: 1,
   gap: 120,
@@ -170,7 +175,16 @@ export const SOUND_FIELDS: Required<Field<SoundTuning>>[] = [
   {
     key: "slide",
     label: "Slide",
-    hint: "The paper slide of a project card coming out or going back.",
+    hint: "The paper slide of the prints' column coming onto the mat or going back.",
+    min: 0,
+    max: 1,
+    step: 0.05,
+    unit: "",
+  },
+  {
+    key: "lift",
+    label: "Lift",
+    hint: "A print picked up into the sheet, and set back down.",
     min: 0,
     max: 1,
     step: 0.05,
@@ -493,7 +507,14 @@ subscribeMuted(reaim);
 // ---------------------------------------------------------- the one-shots
 
 export type SoundName =
-  "cut" | "tap" | "knock" | "slide" | "slideOut" | "letter";
+  | "cut"
+  | "tap"
+  | "knock"
+  | "slide"
+  | "slideOut"
+  | "lift"
+  | "liftBack"
+  | "letter";
 
 /** Least ms between two plays of the same sound, so a fast walk doesn't
  *  pile ticks into a buzz. The tap's is short: the cue taps shut and
@@ -507,6 +528,8 @@ const MIN_GAP: Record<SoundName, number> = {
   knock: 80,
   slide: 100,
   slideOut: 100,
+  lift: 200,
+  liftBack: 200,
   letter: 0,
 };
 
@@ -650,17 +673,43 @@ function playKnock(e: Engine, t0: number, level: number) {
   );
 }
 
-// Paper sliding out: a swept noise whose center climbs as it goes, and a
-// tap where it stops. `out` sweeps back down, quieter, no landing.
+// Paper sliding over the mat: a swept noise, soft and a little long —
+// a sheet dragged across a surface rather than a card flicked off wood
+// — whose centre climbs as it comes, and a soft tap where it stops.
+// `out` sweeps back down, quieter, no landing.
 function playSlide(e: Engine, t0: number, level: number, out: boolean) {
   const p = store.get().pitch;
-  const dur = out ? 0.12 : 0.14;
-  const sweep = envelope(e, t0, level * (out ? 0.3 : 0.5), 0.06, dur - 0.04);
-  const band = filter(e, "bandpass", (out ? 2200 : 700) * p, 1);
-  band.frequency.setValueAtTime((out ? 2200 : 700) * p, t0);
-  band.frequency.exponentialRampToValueAtTime((out ? 600 : 2600) * p, t0 + dur);
+  const dur = out ? 0.2 : 0.28;
+  const sweep = envelope(e, t0, level * (out ? 0.22 : 0.32), 0.08, dur - 0.06);
+  const band = filter(e, "bandpass", (out ? 1600 : 500) * p, 0.8);
+  band.frequency.setValueAtTime((out ? 1600 : 500) * p, t0);
+  band.frequency.exponentialRampToValueAtTime((out ? 450 : 1800) * p, t0 + dur);
   noiseBurst(e, t0, sweep.end, band, sweep.gain);
-  if (!out) playTap(e, t0 + dur - 0.01, level * 0.8);
+  if (!out) playTap(e, t0 + dur - 0.02, level * 0.5);
+}
+
+// A print picked up off the mat: a rising breath of paper, longer than
+// the slide, that thins as the sheet comes close, and a soft settle at
+// the end. `back` is the way down: the breath falls, and the sheet
+// lands with a fuller tap.
+function playLift(e: Engine, t0: number, level: number, back: boolean) {
+  const p = store.get().pitch;
+  const dur = back ? 0.34 : 0.4;
+  const breath = envelope(
+    e,
+    t0,
+    level * (back ? 0.26 : 0.3),
+    back ? 0.06 : 0.12,
+    dur - 0.08,
+  );
+  const band = filter(e, "bandpass", (back ? 2000 : 400) * p, 0.7);
+  band.frequency.setValueAtTime((back ? 2000 : 400) * p, t0);
+  band.frequency.exponentialRampToValueAtTime(
+    (back ? 380 : 2400) * p,
+    t0 + dur,
+  );
+  noiseBurst(e, t0, breath.end, band, breath.gain);
+  playTap(e, t0 + dur - 0.03, level * (back ? 0.7 : 0.4));
 }
 
 // ------------------------------------------------------------ the letters
@@ -876,6 +925,12 @@ export function play(name: SoundName, level = 1, opts: PlayOptions = {}) {
       break;
     case "slideOut":
       playSlide(e, t0, level * t.slide, true);
+      break;
+    case "lift":
+      playLift(e, t0, level * t.lift, false);
+      break;
+    case "liftBack":
+      playLift(e, t0, level * t.lift, true);
       break;
     case "letter":
       playLetter(e, t0, level * t.letter, !!opts.soft);

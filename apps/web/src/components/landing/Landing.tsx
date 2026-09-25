@@ -28,12 +28,13 @@ import {
   useWindowTuning,
   windowEase,
 } from "@portfolio/lab/window-tuning";
-import { printPreview } from "@portfolio/lab/prints";
+import { PRINTS, printPreview } from "@portfolio/lab/prints";
 import {
   SIGNS_OPEN,
   signsTuning,
   useViewport,
 } from "@portfolio/lab/signs-layout";
+import { PHONE_PRINTS_CSS, PhoneProject, phoneScreenId } from "./PhonePrints";
 import { ProjectWindowMount, warmWindow } from "./ProjectWindowMount";
 
 /**
@@ -42,8 +43,10 @@ import { ProjectWindowMount, warmWindow } from "./ProjectWindowMount";
  *   1. The greeting, said to the viewer: "Hola! I’m" — the sign that
  *      watches the pointer, stamped in as the name — "A Product Designer
  *      Finding Charm In The Unexpected". One row, centred, word by word.
- *   2. The road signs, parked bottom-left — the projects stack, with its
- *      card popping out to the right on hover.
+ *   2. The road signs, parked bottom-left — the projects stack, with the
+ *      prints' column sliding in from the right on hover. On a phone,
+ *      where nothing hovers, the prints themselves, one to a screen,
+ *      snapped through (PhonePrints).
  *
  * Scrolling locks screen to screen (scroll-snap on the root, set by the
  * page). A glyph at the foot of the first screen and the head of the
@@ -68,16 +71,16 @@ import { ProjectWindowMount, warmWindow } from "./ProjectWindowMount";
  * it is landing by the time the scroll settles. The first screen's
  * load-time mount is its first play.
  *
- * A plain click on a sign (or its card) opens the project in the
+ * A plain click on a sign (or its print) opens the project in the
  * window (@portfolio/lab/window) beside the signs rather than leaving
- * the page: the card's clip grows into a box that takes the rest of
- * the wall, and the wall's left strip stays, with the signs in it,
- * smaller and tucked into the corner, the open one over the box's edge
- * (`is-open` lifts them past the window and steps them back). The
+ * the page: the print is picked up into the sheet that takes the rest
+ * of the mat, and the mat's left strip stays, with the signs in it,
+ * smaller and tucked into the corner, the open one over the sheet's
+ * edge (`is-open` lifts them past the window and steps them back). The
  * print is measured for the window as the click lands (printPreview, at
  * rest or through the stepped-back pose) and again on a switch, so
- * the box always shrinks back to the open project's card. The click is
- * caught on the projects screen,
+ * the sheet always shrinks back onto the open project's print. The
+ * click is caught on the projects screens,
  * the slug goes into state and /work/<slug>/ onto the history stack, so
  * Back closes the window, a reload lands on the project's own page, and
  * a modified click still opens it in a new tab. The open sign holds its
@@ -190,8 +193,12 @@ export function Landing() {
     hello: { away: false, held: true, runs: 0 },
     projects: { away: true, held: false, runs: 0 },
   });
-  const { w, h } = useViewport();
+  const { w, h, measured } = useViewport();
   const tuning = signsTuning(w, h);
+  // Under the window's rail line there is no pointer to speak of: the
+  // prints take the screens instead of the signs. Decided once the
+  // viewport is measured; until then neither is mounted.
+  const phone = measured && w < 701;
   const motion = useMotionTuning();
   const hello = useHelloTuning();
 
@@ -355,13 +362,16 @@ export function Landing() {
   // The window's clock: the signs step back and return on it, and the
   // card's copy fades on its fade.
   const wt = useWindowTuning();
-  // The open project's card clip, for the window to grow out of and
-  // shrink back into; measured off the signs' stack.
+  // The open project's print, for the window to pick up and put back;
+  // measured off the signs' stack, or off the phone's screens.
   const stack = useRef<HTMLDivElement>(null);
+  const screensWrap = useRef<HTMLDivElement>(null);
   const [from, setFrom] = useState<WindowPreview | null>(null);
+  const measure = (slug: string) =>
+    printPreview(phone ? screensWrap.current : stack.current, slug);
   // The first open is a step in the history; a switch stays on it.
   function showProject(slug: string) {
-    setFrom(printPreview(stack.current, slug));
+    setFrom(measure(slug));
     setOpen(slug);
     history[open === null ? "pushState" : "replaceState"](
       { ...history.state, pw: slug },
@@ -371,7 +381,7 @@ export function Landing() {
   }
   function closeProject() {
     // Measured again on the way out: the viewport may have changed.
-    setFrom((f) => (open ? (printPreview(stack.current, open) ?? f) : f));
+    setFrom((f) => (open ? (measure(open) ?? f) : f));
     if (history.state?.pw) history.back();
     else setOpen(null);
   }
@@ -484,57 +494,76 @@ export function Landing() {
         />
       </section>
 
-      <section
-        ref={projectsScreen}
-        id="projects"
-        className={["landing-screen", screens.projects.away && "is-away"]
-          .filter(Boolean)
-          .join(" ")}
-        aria-label="Projects"
-        onClick={onProjectsClick}
-      >
-        <Cue
-          dir="up"
-          shown={screens.projects.held}
-          delay={afterDrop}
-          label="Scroll back to the top"
-          text="Back up"
-          onClick={() => {
-            play("knock", 1, { at: "click" });
-            scrollTo(helloScreen);
-          }}
-        />
-        <div
-          ref={stack}
-          className={[
-            "landing-projects",
-            "landing-piece",
-            open !== null && "is-open",
-          ]
+      {/* The projects: one screen with the signs, or, on a phone, a
+          screen per print. A click on a print or a sign anywhere in
+          here opens the project. */}
+      <div ref={screensWrap} onClick={onProjectsClick}>
+        <section
+          ref={projectsScreen}
+          id="projects"
+          className={["landing-screen", screens.projects.away && "is-away"]
             .filter(Boolean)
             .join(" ")}
-          style={
-            {
-              "--signs-move": `${moveMs(wt)}ms`,
-              "--signs-ease": windowEase(wt),
-              "--signs-wait": `${open === null ? wt.fade : 0}ms`,
-              "--rs-hand": `${wt.fade}ms`,
-            } as CSSProperties
-          }
+          aria-label="Projects"
         >
-          <Suspense fallback={null}>
-            <RoadSigns
-              controls={false}
-              frame="signs"
-              // The print stays under the box for the window's whole way
-              // back (the page's fade, then the shrink), then goes.
-              tuning={{ ...tuning, returnDelay: wt.fade + moveMs(wt) }}
-              replay={screens.projects.runs}
-              selected={open}
-            />
-          </Suspense>
-        </div>
-      </section>
+          {phone && <style>{PHONE_PRINTS_CSS}</style>}
+          <Cue
+            dir="up"
+            shown={screens.projects.held}
+            delay={afterDrop}
+            label="Scroll back to the top"
+            text="Back up"
+            onClick={() => {
+              play("knock", 1, { at: "click" });
+              scrollTo(helloScreen);
+            }}
+          />
+          {phone && <PhoneProject spec={PRINTS[0]!} index={0} />}
+          <div
+            ref={stack}
+            className={[
+              "landing-projects",
+              "landing-piece",
+              open !== null && "is-open",
+            ]
+              .filter(Boolean)
+              .join(" ")}
+            style={
+              {
+                "--signs-move": `${moveMs(wt)}ms`,
+                "--signs-ease": windowEase(wt),
+                "--signs-wait": `${open === null ? wt.fade : 0}ms`,
+                "--rs-hand": `${wt.fade}ms`,
+              } as CSSProperties
+            }
+          >
+            {measured && !phone && (
+              <Suspense fallback={null}>
+                <RoadSigns
+                  controls={false}
+                  frame="signs"
+                  // The print stays under the box for the window's whole
+                  // way back (the page's fade, then the shrink), then goes.
+                  tuning={{ ...tuning, returnDelay: wt.fade + moveMs(wt) }}
+                  replay={screens.projects.runs}
+                  selected={open}
+                />
+              </Suspense>
+            )}
+          </div>
+        </section>
+        {phone &&
+          PRINTS.slice(1).map((spec, i) => (
+            <section
+              key={spec.slug}
+              id={phoneScreenId(i + 1)}
+              className="landing-screen"
+              aria-label={spec.title}
+            >
+              <PhoneProject spec={spec} index={i + 1} />
+            </section>
+          ))}
+      </div>
 
       {/* The project window, beside the signs, while one is open. */}
       <ProjectWindowMount open={open} from={from} onClose={closeProject} />

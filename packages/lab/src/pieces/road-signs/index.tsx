@@ -1662,7 +1662,16 @@ export default function RoadSigns({
             ))}
             <div style={{ display: "flex", gap: 6, flexWrap: "wrap" }}>
               {(
-                ["cut", "tap", "knock", "slide", "slideOut", "letter"] as const
+                [
+                  "cut",
+                  "tap",
+                  "knock",
+                  "slide",
+                  "slideOut",
+                  "lift",
+                  "liftBack",
+                  "letter",
+                ] as const
               ).map((name) => (
                 <button
                   key={name}

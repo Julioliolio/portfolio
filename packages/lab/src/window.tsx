@@ -536,6 +536,8 @@ export function ProjectWindow({
     // Asked to play, not left to autoplay: React sets `muted` as a
     // property, which the autoplay policy doesn't always see.
     void clip.current?.play().catch(() => {});
+    // Picked up: the paper's breath, with the move.
+    if (latest.current) playLater("lift", 1, "card");
     const cancel = move(el, clip.current, latest.current, "open", t);
     const land = window.setTimeout(() => setLanded(true), grow);
     const hold = window.setTimeout(() => {
@@ -579,6 +581,8 @@ export function ProjectWindow({
     }
     let cancel: (() => void) | undefined;
     const go = window.setTimeout(() => {
+      // Set back down: the breath falls, the sheet lands.
+      if (latest.current) playLater("liftBack", 1, "card");
       if (el) cancel = move(el, clip.current, latest.current, "shut", t);
     }, fade);
     const done = window.setTimeout(() => {
