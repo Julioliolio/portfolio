@@ -16,14 +16,11 @@ export default async function LabPiecePage({
   const piece = registry.find((entry) => entry.slug === slug);
   if (!piece) notFound();
 
-  const white = piece.background === "white";
-
   return (
     <main className="mx-auto grid min-h-screen w-full max-w-2xl content-center justify-items-center gap-6 p-8">
-      {/* Pieces that ask for the white studio wall get it at the body level
-          (color too, so headings inherit something readable), overriding
-          the site theme so dark can't show on overscroll. */}
-      {white && <style>{`body { background: #fff; color: #171717; }`}</style>}
+      {/* The wall is the mat (root layout); the title reads white on it.
+          A piece that paints its own wall covers this. */}
+      <style>{`body { color: #fff; }`}</style>
       <h1 className="text-xl font-semibold">{piece.title}</h1>
       <LabStage slug={slug} />
       <LabBackdrop pageKey={slug} />

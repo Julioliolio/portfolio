@@ -9,13 +9,12 @@ import { Landing } from "@/components/landing/Landing";
 export default function Home() {
   return (
     <main className="w-full">
-      {/* The wall — the warm off-white of the mockup, set on the root so
-          nothing dark shows on overscroll or first paint regardless of
-          the site theme. Scroll-snap lives on the root too: the viewport
-          is the scroller, and each screen is a snap point. */}
+      {/* Scroll-snap lives on the root: the viewport is the scroller, and
+          each screen is a snap point. The wall is the mat, from the root
+          layout; the words on it are white. */}
       <style>{`
-        html { background: #faf9f6; scroll-snap-type: y mandatory; }
-        body { background: #faf9f6; color: #171717; }
+        html { scroll-snap-type: y mandatory; }
+        body { color: #fff; }
       `}</style>
       <Landing />
     </main>

@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import localFont from "next/font/local";
 import { ClayCursorMount } from "@/components/cursor/ClayCursorMount";
+import { asset } from "@portfolio/lab/asset";
 import { MotionStyles } from "@portfolio/lab/motion";
 import "./globals.css";
 
@@ -79,6 +80,17 @@ export const metadata: Metadata = {
   description: "Design engineering portfolio",
 };
 
+// The wall, on every page: Julio's cutting mat (scripts/prepare-paper.mjs),
+// as wide as the viewport and tiling downward with the page. The file
+// tiles without a seam, so a page of any height is covered; the mat's
+// own green paints first, before the file is in. Three widths, picked by
+// viewport width so a big monitor is not upscaling the small one.
+const MAT = `
+html { background: #3e9d73 url(${asset("/mat/mat-1600.webp")}) top center / 100% auto repeat-y; }
+@media (min-width: 1601px) { html { background-image: url(${asset("/mat/mat-2400.webp")}); } }
+@media (min-width: 2401px) { html { background-image: url(${asset("/mat/mat-3200.webp")}); } }
+`;
+
 export default function RootLayout({ children }: LayoutProps<"/">) {
   return (
     <html
@@ -86,6 +98,7 @@ export default function RootLayout({ children }: LayoutProps<"/">) {
       className={`${neueMontreal.variable} ${neueMontrealExtra.variable} ${neueMontrealMono.variable} h-full antialiased`}
     >
       <body className="flex min-h-full flex-col">
+        <style>{MAT}</style>
         {/* Nothing animation-related mounts here on purpose: anything in the
             root layout is on every page's first load. Pieces that need the
             Motion runtime wrap themselves; scripts/check-budget.mjs flags a

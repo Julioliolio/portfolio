@@ -166,7 +166,7 @@ const cueCss = (t: CueTuning) => `
    the room opens the row grows both ways from the middle of the screen,
    as far as the words need, and nothing is measured. Set in the site's
    ink at the tuning's strength. */
-.cue-glyph { position: relative; display: flex; align-items: center; height: 100%; padding: 0; background: none; border: 0; color: rgba(${INK_RGB}, ${n(t.ink)}); }
+.cue-glyph { position: relative; display: flex; align-items: center; height: 100%; padding: 0; background: none; border: 0; color: var(--cue-ink, rgba(${INK_RGB}, ${n(t.ink)})); }
 /* The hit area: HIT units of the glyph's own past every edge, unseen, so
    the pointer parts it before it is quite on the glyph. Part of the
    button, so it opens, holds and clicks like the glyph itself. */

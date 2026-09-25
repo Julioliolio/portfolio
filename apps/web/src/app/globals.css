@@ -19,8 +19,9 @@
   }
 }
 
+/* The mat is the wall (the root layout puts it on html); the body paints
+   nothing over it. */
 body {
-  background: var(--background);
   color: var(--foreground);
   font-family: var(--font-sans), "Helvetica Neue", Arial, sans-serif;
 }

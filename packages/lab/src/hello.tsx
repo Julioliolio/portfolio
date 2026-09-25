@@ -96,7 +96,7 @@ function helloCss(t: HelloTuning): string {
   // The slot's width, vh: its height by the frames' aspect.
   const w = (t.signHeight * SIGN_FRAME.w) / SIGN_FRAME.h;
   return `
-.hello-row { display: flex; align-items: flex-start; justify-content: center; gap: ${n(t.gap)}vw; font-size: min(${n(t.wordSize)}vh, ${n(t.wordCap)}vw); line-height: 1.1; letter-spacing: -.02em; color: #171717; transform: translate(${n(t.rowX)}vw, ${n(t.rowY)}vh); }
+.hello-row { display: flex; align-items: flex-start; justify-content: center; gap: ${n(t.gap)}vw; font-size: min(${n(t.wordSize)}vh, ${n(t.wordCap)}vw); line-height: 1.1; letter-spacing: -.02em; color: #fff; transform: translate(${n(t.rowX)}vw, ${n(t.rowY)}vh); }
 .hello-words { text-align: right; padding-top: ${n(t.wordsTop)}vh; white-space: nowrap; }
 .hello-sign { flex: none; height: ${n(t.signHeight)}vh; aspect-ratio: ${SIGN_FRAME.w} / ${SIGN_FRAME.h}; margin: 0 ${n(-SIGN_INSET.right * w)}vh 0 ${n(-SIGN_INSET.left * w)}vh; transform: translate(${n(t.signX)}vw, ${n(t.signY)}vh); }
 .hello-sign.is-waiting, .hello-line-slot.is-waiting { visibility: hidden; }

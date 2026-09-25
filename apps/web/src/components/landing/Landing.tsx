@@ -122,7 +122,7 @@ const LINE_WORDS = countWords(GREETING_LINE);
  * settles the scroll, it never hijacks it.
  */
 const CSS = `
-.landing-screen { position: relative; height: 100dvh; scroll-snap-align: start; overflow: hidden; }
+.landing-screen { --cue-ink: #fff; position: relative; height: 100dvh; scroll-snap-align: start; overflow: hidden; }
 .landing-hello { display: grid; place-items: center; }
 /* The row of the greeting — the words, the sign, the line — and its
    sizes live in @portfolio/lab/hello (tuned on /lab/hello); this file
@@ -143,9 +143,9 @@ const CSS = `
 /* A screen that is away keeps its piece out of sight, so the piece is
    never seen at rest before its entrance replays. */
 .landing-screen.is-away .landing-piece { visibility: hidden; }
-/* The mute switch: the glyph's blue, in the corner the card never
-   reaches (its right edge stops at 89vw), level with the glyph's foot. */
-.landing-sound { position: fixed; right: 2.4vw; bottom: 3.5vh; z-index: 2; display: grid; place-items: center; width: 3.2vh; height: 3.2vh; min-width: 24px; min-height: 24px; padding: 0; background: none; border: 0; color: #2562ff; }
+/* The mute switch: white on the mat, bottom right, level with the
+   glyph's foot; over the prints' column (z-index 3), under the window. */
+.landing-sound { position: fixed; right: 2.4vw; bottom: 3.5vh; z-index: 4; display: grid; place-items: center; width: 3.2vh; height: 3.2vh; min-width: 24px; min-height: 24px; padding: 0; background: none; border: 0; color: #fff; }
 .landing-sound svg { display: block; width: 100%; height: 100%; }
 .landing-sound[aria-pressed="true"] { opacity: 0.45; }
 .landing-sound:focus-visible { outline: 2px solid currentColor; outline-offset: 4px; border-radius: 999px; }

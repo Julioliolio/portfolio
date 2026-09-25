@@ -35,8 +35,7 @@ const PROJECTS = asset("/#projects");
 // the whole screen.
 // Said here rather than in the CSS, which ships.
 const CSS = `
-html { background: #faf9f6; }
-body { background: #faf9f6; color: #2b2722; }
+body { color: #2b2722; }
 .pp-signs { display: none; }
 @media (min-width: 701px) { .pp-signs { display: block; position: fixed; left: 7.2vw; bottom: 9.5vh; z-index: 90; transform-origin: 0 100%; transform: ${SIGNS_OPEN}; } }
 `;
@@ -56,7 +55,6 @@ export function ProjectPage({ project }: { project: Project }) {
 
   return (
     <main>
-      {/* The wall, on the root so nothing dark shows on overscroll. */}
       <style>{CSS}</style>
       <ProjectWindow
         mode="page"
