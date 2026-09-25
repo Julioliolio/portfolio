@@ -4,10 +4,14 @@ import { asset } from "@portfolio/lab/asset";
 import { loaders } from "@portfolio/lab/loaders";
 import { ProjectWindow } from "@portfolio/lab/window";
 import { Suspense, lazy, type MouseEvent } from "react";
-import { signsTuning, useViewport } from "@/components/landing/signsTuning";
+import {
+  SIGNS_OPEN,
+  WINDOW_LAYOUT,
+  signsTuning,
+  useViewport,
+} from "@portfolio/lab/signs-layout";
 import type { Project } from "@/content/projects";
 import { CaseStudy } from "./CaseStudy";
-import { WINDOW_LAYOUT, SIGNS_OPEN } from "./windowLayout";
 
 /**
  * /work/<slug> as a page of its own — a direct link, a reload, a

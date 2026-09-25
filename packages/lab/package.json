@@ -17,6 +17,8 @@
     "./sound": "./src/sound.tsx",
     "./style": "./src/style.ts",
     "./type": "./src/type.tsx",
+    "./prints": "./src/prints.tsx",
+    "./signs-layout": "./src/signs-layout.ts",
     "./window": "./src/window.tsx",
     "./window-tuning": "./src/window-tuning.ts"
   },

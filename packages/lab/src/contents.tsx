@@ -177,7 +177,7 @@ function contentsCss(t: ContentsTuning): string {
       : tint;
   const onBar = t.bar === "on";
   return `
-.ct { position: relative; display: block; width: max-content; max-width: 100%; color: ${onBar ? "#fff" : ink}; font-family: ${MEDIUM}; font-weight: 500; font-size: ${n(t.size)}px; line-height: 1; letter-spacing: -.01em; }
+.ct { position: relative; display: block; width: max-content; max-width: 100%; color: ${onBar ? "#fff" : `var(--ct-ink, ${ink})`}; font-family: ${MEDIUM}; font-weight: 500; font-size: ${n(t.size)}px; line-height: 1; letter-spacing: -.01em; }
 .ct ol { position: relative; display: flex; flex-direction: column; align-items: stretch; margin: 0; padding: 0; list-style: none; ${onBar ? `background: ${ink};` : ""} }
 .ct li { position: relative; display: flex; }
 .ct li.is-tilt { z-index: 1; }

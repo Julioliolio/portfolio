@@ -169,6 +169,8 @@ function windowCss(t: WindowTuning): string {
   .pw.is-leaving .pw-rail-in { opacity: 0; }
   .pw-rail-in::-webkit-scrollbar { display: none; }
   .pw-rail-in > * { flex: none; max-width: 100%; pointer-events: auto; }
+  /* The contents stand on the mat: white, like the rail's Home. */
+  .pw-rail-slot { --ct-ink: #fff; }
   .pw-rail-slot:empty { display: none; }
 }
 .pw-home { display: inline-flex; align-items: center; gap: .5em; min-height: 24px; padding: 0; border: 0; background: none; color: ${FAINT}; font-family: ${MEDIUM}; font-weight: 500; font-size: 15px; line-height: 1; letter-spacing: -.01em; text-decoration: none; cursor: pointer; }

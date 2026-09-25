@@ -28,13 +28,13 @@ import {
   useWindowTuning,
   windowEase,
 } from "@portfolio/lab/window-tuning";
-import { SIGNS_OPEN } from "@/components/work/windowLayout";
+import { printPreview } from "@portfolio/lab/prints";
 import {
-  ProjectWindowMount,
-  previewOf,
-  warmWindow,
-} from "./ProjectWindowMount";
-import { signsTuning, useViewport } from "./signsTuning";
+  SIGNS_OPEN,
+  signsTuning,
+  useViewport,
+} from "@portfolio/lab/signs-layout";
+import { ProjectWindowMount, warmWindow } from "./ProjectWindowMount";
 
 /**
  * The landing: two screens on the wall, snapped.
@@ -74,7 +74,7 @@ import { signsTuning, useViewport } from "./signsTuning";
  * the wall, and the wall's left strip stays, with the signs in it,
  * smaller and tucked into the corner, the open one over the box's edge
  * (`is-open` lifts them past the window and steps them back). The
- * clip is measured for the window as the click lands (previewOf, at
+ * print is measured for the window as the click lands (printPreview, at
  * rest or through the stepped-back pose) and again on a switch, so
  * the box always shrinks back to the open project's card. The click is
  * caught on the projects screen,
@@ -361,7 +361,7 @@ export function Landing() {
   const [from, setFrom] = useState<WindowPreview | null>(null);
   // The first open is a step in the history; a switch stays on it.
   function showProject(slug: string) {
-    setFrom(previewOf(stack.current, slug));
+    setFrom(printPreview(stack.current, slug));
     setOpen(slug);
     history[open === null ? "pushState" : "replaceState"](
       { ...history.state, pw: slug },
@@ -371,7 +371,7 @@ export function Landing() {
   }
   function closeProject() {
     // Measured again on the way out: the viewport may have changed.
-    setFrom((f) => (open ? (previewOf(stack.current, open) ?? f) : f));
+    setFrom((f) => (open ? (printPreview(stack.current, open) ?? f) : f));
     if (history.state?.pw) history.back();
     else setOpen(null);
   }

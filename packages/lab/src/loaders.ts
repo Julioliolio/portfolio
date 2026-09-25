@@ -20,6 +20,7 @@ export const loaders = {
   boil: () => import("./pieces/boil"),
   sound: () => import("./pieces/sound"),
   "road-signs": () => import("./pieces/road-signs"),
+  paper: () => import("./pieces/paper"),
   window: () => import("./pieces/window"),
   "ransom-note": () => import("./pieces/ransom-note"),
   type: () => import("./pieces/type"),

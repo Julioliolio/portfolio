@@ -88,6 +88,12 @@ const pieces = [
       "The projects stack — three photographed road signs. Hovering one lifts it and steps the others back, cut at 12fps.",
   },
   {
+    slug: "paper",
+    title: "Paper",
+    description:
+      "The projects screen on the mat, whole: the signs, the prints' column they bring out, and the sheet a print is picked up into — the move, the paper, the page's look on it, the column's sizes and clocks, tuned live.",
+  },
+  {
     slug: "window",
     title: "Project window",
     description:
