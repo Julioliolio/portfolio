@@ -32,8 +32,8 @@ import { Suspense, lazy, useEffect, useState, type ReactNode } from "react";
 type Beat = "current" | "sparse";
 
 // Road signs: the hover walk in three cuts on a 10-beat, lands well past
-// its pose and squeezes hard; the poke, the rope and the card cut on the
-// same beat instead of tweening.
+// its pose and squeezes hard; the poke cuts on the same beat instead of
+// tweening. (The prints' column eases either way: big surfaces do.)
 const ROAD_SIGNS_SPARSE = {
   fps: 10,
   steps: 3,
@@ -368,13 +368,13 @@ export function StopMotionTrial() {
 
       <Section
         title="Road signs"
-        sub="the hover walk, the poke, the rope and the card"
+        sub="the hover walk and the poke"
         beat={signs}
         onBeat={setSigns}
         notes={[
           "On mount the signs drop in one after another in hard cuts — the piece's own entrance, on by default. Replay re-mounts it.",
-          "Current: seven cuts at 24fps, the poke a 60fps tween, the rope a spring drawn every frame, the card on a CSS overshoot curve with a fade.",
-          "Sparse: three cuts at 10fps with overshoot 1.6 / 1.4 and squeeze 0.9; the poke in three cuts on the same beat; the rope's droop drawn on the beat; the card a three-cut stamp, nothing fading.",
+          "Current: seven cuts at 24fps, the poke a 60fps tween.",
+          "Sparse: three cuts at 10fps with overshoot 1.6 / 1.4 and squeeze 0.9; the poke in three cuts on the same beat. The prints' column slides on its settle curve either way.",
         ]}
       >
         <div className="smt-head" style={{ marginBottom: 6 }}>

@@ -36,8 +36,8 @@ const CSS = `
 
 export default function CamperOpening({ project }: OpeningProps) {
   const scroller = useWindowScroller();
-  // The project window grew out of the hover card's clip of this very
-  // film: start where it was, so the hand-off shows no jump.
+  // The project window picked up the print with this very film in it:
+  // start where the print's clip was, so the hand-off shows no jump.
   const preview = useWindowPreview();
   const film = useRef<HTMLDivElement>(null);
   /** The film is mostly scrolled out of sight. */

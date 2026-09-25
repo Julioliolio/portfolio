@@ -118,8 +118,9 @@ const LINE_WORDS = countWords(GREETING_LINE);
  *                    the cue — its size and foot are the cue tuning's (/lab/cue)
  *   projects screen  glyph at the top, 3.5vh down; the stack's left edge
  *                    at 7.2vw, its foot 9.5vh up; each sign 8.8vh tall
- *   the card         44vw wide, out to 89vw, up beside the stack —
- *                    signsTuning()
+ *   the prints       a wide print 62vw across, the column's edge 2.6vw
+ *                    in from the screen's, its centre line up beside
+ *                    the stack — signsTuning()
  *
  * scroll-snap-stop stays "normal" (the yichenxie.com feel): the snap
  * settles the scroll, it never hijacks it.
@@ -137,8 +138,8 @@ const CSS = `
    step back into the corner (SIGNS_OPEN), on the box's own clock and
    curve (--signs-move / --signs-ease, from the window's tuning) so the
    two move as one; on the way back they wait for the page's fade, as
-   the box does (--signs-wait). The hover card's copy and rope leave on
-   the same fade (--rs-hand). Not on a phone, where the box is the
+   the box does (--signs-wait). The prints' column fades out on the
+   same fade (--rs-hand). Not on a phone, where the box is the
    whole screen (the window's own 701px line). */
 .landing-projects { transform-origin: 0 100%; transition: transform var(--signs-move, 420ms) var(--signs-ease, ease) var(--signs-wait, 0ms); }
 @media (min-width: 701px) { .landing-projects.is-open { z-index: 90; transform: ${SIGNS_OPEN}; } }

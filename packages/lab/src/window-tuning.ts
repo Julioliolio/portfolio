@@ -26,8 +26,8 @@ export type WindowTuning = {
    *  over the clip and its entrances (title, intro, facts) rise on it,
    *  held until now so they are seen arriving. */
   reveal: number;
-  /** The quick fades, ms: the page and the rail out before the shrink,
-   *  the rail in, and the hover card's copy leaving as the box grows. */
+  /** The quick fades, ms: the page and the rail out before the way
+   *  back, the rail in, and the prints' column leaving as the box lifts. */
   fade: number;
   /** The wall around the box: its top, right and bottom margin, px. */
   margin: number;
