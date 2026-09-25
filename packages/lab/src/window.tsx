@@ -205,6 +205,14 @@ export type WindowPreview = {
   /** The card's own video: on the way out the box hands its progress
    *  back, so the next hover carries on from there. */
   video?: HTMLVideoElement;
+  /** A print's lean on the mat, degrees: the box starts turned by it and
+   *  straightens as it lifts. 0 for a clip with no frame. */
+  tilt?: number;
+  /** A print's frame round its picture, px — the paper above, right of,
+   *  below (the band) and left of the clip. The box starts as the whole
+   *  print with the clip inset by this, and the inset closes as it
+   *  grows. All 0 for a bare clip. */
+  inset?: { top: number; right: number; bottom: number; left: number };
 };
 
 /** Where a clip that kept playing since `preview` was taken is now, s. */
@@ -222,6 +230,7 @@ export function clipTimeNow(preview: WindowPreview): number {
 export function clipPreview(
   video: HTMLVideoElement,
   rect: WindowRect,
+  extra: Pick<WindowPreview, "tilt" | "inset"> = {},
 ): WindowPreview {
   let poster: string | undefined;
   if (video.videoWidth > 0 && video.readyState >= 2) {
@@ -242,6 +251,7 @@ export function clipPreview(
     poster,
     at: performance.now(),
     video,
+    ...extra,
   };
 }
 

@@ -31,54 +31,71 @@ export function warmWindow() {
 }
 
 /**
- * The clip the window grows out of: a project's hover card, found in
- * the signs' stack by its slug — its rect, file, frame and a snapshot
- * (clipPreview). The card is measured where it sits
- * with the stack at rest — while a project is open the stack is
- * stepped back (SIGNS_OPEN, a transform on `stack`), so the rect is
- * taken through the inverse of whatever transform is on it, which is
- * where the card will be once the stack has eased home. Null when
- * there is no card (a phone, the signs not yet in).
+ * The print the window picks up: the project's, found in the signs'
+ * column by its slug — the one that is up (or, before any is, its own
+ * place in the track) — its rect, lean and frame, its clip, the frame
+ * the clip is on and a snapshot (clipPreview). The print is measured
+ * where it sits with the stack at rest — while a project is open the
+ * stack is stepped back (SIGNS_OPEN, a transform on `stack`), so the
+ * rect is taken through the inverse of whatever transform is on it,
+ * which is where the print will be once the stack has eased home. A
+ * print leans (a rotation about its centre): its bounding box is taken
+ * for the centre alone, and its size is its own; the window turns by
+ * the same lean, so the two meet to the pixel. Null when there is no
+ * print (the signs not yet in).
  */
 export function previewOf(
   stack: HTMLElement | null,
   slug: string,
 ): WindowPreview | null {
-  const media = stack?.querySelector<HTMLElement>(
-    `.rs-card[data-slug="${slug}"] .rs-media`,
-  );
+  const print =
+    stack?.querySelector<HTMLElement>(
+      `.rs-print[data-slug="${slug}"].is-active`,
+    ) ?? stack?.querySelector<HTMLElement>(`.rs-print[data-slug="${slug}"]`);
+  const media = print?.querySelector<HTMLElement>(".rs-media");
   const video = media?.querySelector("video");
-  if (!stack || !media || !video) return null;
-  const r = media.getBoundingClientRect();
+  if (!stack || !print || !media || !video) return null;
+  const r = print.getBoundingClientRect();
   const cs = getComputedStyle(stack);
-  if (cs.transform === "none") {
-    return clipPreview(video, {
-      x: r.left,
-      y: r.top,
-      w: r.width,
-      h: r.height,
-    });
+  // The bounding box's centre through the stack's transform, if any:
+  // the transform, about its origin, in its own box — the point that
+  // stays put tells where the box is at rest, and the inverse takes
+  // the centre back there.
+  let cx = r.left + r.width / 2;
+  let cy = r.top + r.height / 2;
+  let k = 1;
+  if (cs.transform !== "none") {
+    const [ox = 0, oy = 0] = cs.transformOrigin.split(" ").map(parseFloat);
+    const m = new DOMMatrix()
+      .translate(ox, oy)
+      .multiply(new DOMMatrix(cs.transform))
+      .translate(-ox, -oy);
+    const now = stack.getBoundingClientRect();
+    const shift = m.transformPoint({ x: 0, y: 0 });
+    const restX = now.left - shift.x;
+    const restY = now.top - shift.y;
+    const p = m.inverse().transformPoint({ x: cx - restX, y: cy - restY });
+    cx = restX + p.x;
+    cy = restY + p.y;
+    k = 1 / m.a;
   }
-  // The stack's transform, about its origin, in its own box: the point
-  // that stays put tells where the box is at rest, and the inverse
-  // takes the card's corners back there.
-  const [ox = 0, oy = 0] = cs.transformOrigin.split(" ").map(parseFloat);
-  const m = new DOMMatrix()
-    .translate(ox, oy)
-    .multiply(new DOMMatrix(cs.transform))
-    .translate(-ox, -oy);
-  const now = stack.getBoundingClientRect();
-  const shift = m.transformPoint({ x: 0, y: 0 });
-  const restX = now.left - shift.x;
-  const restY = now.top - shift.y;
-  const inv = m.inverse();
-  const back = (x: number, y: number) => {
-    const p = inv.transformPoint({ x: x - restX, y: y - restY });
-    return { x: restX + p.x, y: restY + p.y };
+  // The print's own size, and its frame, from layout — untouched by
+  // any transform — scaled to the screen by the stack's rest scale.
+  const w = print.offsetWidth * k;
+  const h = print.offsetHeight * k;
+  const inset = {
+    top: media.offsetTop * k,
+    left: media.offsetLeft * k,
+    right: (print.offsetWidth - media.offsetLeft - media.offsetWidth) * k,
+    bottom: (print.offsetHeight - media.offsetTop - media.offsetHeight) * k,
   };
-  const a = back(r.left, r.top);
-  const b = back(r.right, r.bottom);
-  return clipPreview(video, { x: a.x, y: a.y, w: b.x - a.x, h: b.y - a.y });
+  const tilt =
+    parseFloat(getComputedStyle(print).getPropertyValue("--rs-tilt")) || 0;
+  return clipPreview(
+    video,
+    { x: cx - w / 2, y: cy - h / 2, w, h },
+    { tilt, inset },
+  );
 }
 
 export function ProjectWindowMount({

@@ -2,14 +2,18 @@
 
 import {
   useEffect,
+  useRef,
   useState,
   type CSSProperties,
+  type MouseEvent as ReactMouseEvent,
   type PointerEvent as ReactPointerEvent,
   type ReactNode,
 } from "react";
 import { asset } from "../../asset";
 import type { Field as BenchField, NumericKey } from "../../bench";
 import { replayClass, useMotionTuning } from "../../motion";
+import { PRINTS, PRINT_CSS, Print, printSize } from "../../prints";
+import { INK, SETTLE_EASE } from "../../style";
 import {
   SOUND_FIELDS,
   play,
@@ -27,28 +31,24 @@ import {
  * stack settles everything to rest. Each sign is a link to its project
  * page.
  *
- * The rope and card mechanics are a copy of yichenxie.com's project list
- * (lifted from its script and stylesheet on 2026-09-06); the card's
- * design is Julio's mockup of 2026-09-06: no container, just the
- * project's media (a still or a video, never the live demo) with the
- * blurb and the tag pills beside it on the bare wall. Wide media gets the
- * copy in a row underneath (blurb left, pills right); tall media gets the
- * copy to its right, sat on the media's bottom edge. The card is pinned
- * to the stage's right edge and springs in by CSS (0.58s overshooting
- * curve from a slight offset, 0.965 scale and a 0.35° tilt) while a 2px
- * ink rope with a dot at each end fades in between the sign's edge and
- * the media's. The rope's droop is a
- * real spring (stiffness 118, damping 15.5) that sags from flat to 44px on
- * first reveal and is nudged ±8px by the pointer's height over the card.
- * The card is a link and stays up while the pointer travels to it
- * (leaving the sign toward the card — its right half — waits 240ms,
- * elsewhere 70ms; leaving the card 140ms; leaving the stage 100ms), and
- * its sign stays lifted meanwhile. An invisible wedge (see drawBridge)
- * fans out from the hot sign's middle to the card's left edge while the
- * card is up: the pointer can cross the wall along any straight-ish line
- * between the two without the card dropping, and the wedge sits under the
- * signs and the card so it never steals a hover from them. Hiding pulls
- * the sag back to flat and fades both out. See RopeState / showProject /
+ * Hovering a sign also brings out its print (see ../../prints): the
+ * column at the stage's right edge — the three prints, one under the
+ * other, with the hovered one centred and the others peeking above and
+ * below — slides in from off the screen's edge onto the mat (Julio,
+ * 2026-09-25: "like sliding into the mat") and settles. Hovering another
+ * sign steps the column to its print; so does a click on a peeking
+ * print. The column is cyclic: the last print peeks above the first and
+ * the first below the last (TRACK keeps clones for that). The pointer
+ * can leave a sign for its print: an invisible wedge (see drawBridge)
+ * fans out from the hot sign's middle to the column's left edge while a
+ * print is up, so the pointer can cross the mat along any straight-ish
+ * line between the two without the column going, and the wedge sits
+ * under the signs and the prints so it never steals a hover from them.
+ * Leaving all of it (the sign toward the column waits 240ms, elsewhere
+ * 70ms; the column 140ms; the stage 100ms) slides the column back out.
+ * The centred print's sign stays lifted meanwhile, and a click on the
+ * centred print opens the project (the landing picks the print up into
+ * the project window). See ColumnState / showProject / hideProject.
  * hideProject / animateRope.
  *
  * Motion is stop-motion, not tweened: every pose change is walked in a
@@ -107,32 +107,6 @@ import {
  * drop shadows read.
  */
 
-/** The project card a sign's rope leads to: media plus a caption, no
- *  container. The media is a muted looping video (placeholder clips from
- *  apps/web/public/media/ until each project's own lands). */
-type CardSpec = {
-  /** wide: copy row underneath. tall (phone projects): copy to its
-   *  right. */
-  media: "wide" | "tall";
-  /** The clip, under apps/web/public/. */
-  src: string;
-  /** The clip's width / height — the media box takes this shape rather
-   *  than cropping. */
-  aspect: number;
-  blurb: string;
-  tags: string[];
-};
-
-/** Placeholder clips, until each project has its own. */
-const PLACEHOLDER_WIDE = {
-  src: asset("/media/placeholder-wide.mp4"),
-  aspect: 1056 / 720,
-};
-const PLACEHOLDER_TALL = {
-  src: asset("/media/placeholder-tall.mp4"),
-  aspect: 720 / 826,
-};
-
 type Sign = {
   slug: string;
   title: string;
@@ -141,9 +115,9 @@ type Sign = {
   /** width / height, printed by prepare-signs.mjs — sizes the box before
    *  the photo decodes. */
   aspect: number;
-  card: CardSpec;
 };
 
+/** The three signs, in the prints' order (PRINTS). */
 const SIGNS: Sign[] = [
   {
     slug: "localpal",
@@ -151,13 +125,6 @@ const SIGNS: Sign[] = [
     src: asset("/signs/localpal.webp"),
     href: asset("/work/localpal"),
     aspect: 3.31,
-    card: {
-      media: "tall",
-      ...PLACEHOLDER_TALL,
-      blurb:
-        "A phone-first companion for meeting people nearby — plans, venues and friends on one live map. Designed and built end-to-end.",
-      tags: ["iOS", "Design System", "End-to-end"],
-    },
   },
   {
     slug: "camper",
@@ -165,16 +132,6 @@ const SIGNS: Sign[] = [
     src: asset("/signs/camper.webp"),
     href: asset("/work/camper"),
     aspect: 3.563,
-    card: {
-      media: "wide",
-      // The full sixty-second film, the same file the case study's hero
-      // plays — so opening the page from the card finds it cached.
-      src: asset("/media/camper.mp4"),
-      aspect: 16 / 9,
-      blurb:
-        "A proposal film for Camper, made end to end with generative AI: everyone is equal in their feet. Concept, storyboard, every shot.",
-      tags: ["Film", "Generative AI", "Concept"],
-    },
   },
   {
     slug: "convertr",
@@ -182,29 +139,11 @@ const SIGNS: Sign[] = [
     src: asset("/signs/convertr.webp"),
     href: asset("/work/convertr"),
     aspect: 3.303,
-    card: {
-      media: "wide",
-      ...PLACEHOLDER_WIDE,
-      blurb:
-        "A desktop video converter where one bounding box is the whole interface — drop a video, trim it, drag the result out. Runs live inside the portfolio.",
-      tags: ["Desktop", "Product Design", "Live demo"],
-    },
   },
 ];
 
-/** Card width, px, under which a card re-stacks: the blurb takes the full
- *  width with the pills under it, and a tall card's clip goes on top. A
- *  row needs the pills (about 270) plus a blurb worth reading beside
- *  them. Shared by the stylesheet's @container and geometry(). */
-const CARD_STACK_BELOW = 620;
-/** A stacked tall card's clip, as a share of the card's width (cqi). */
-const TALL_STACKED_CQI = 56;
-
-/** The site's ink: card text. */
-const INK = "#2b2722";
-/** The rope and its dots — the accent blue from Julio's mockup rather than
- *  the site's ink. */
-const ROPE = "#2f6df6";
+/** Room in the column past a print's width, px, for its tilt. */
+const COLUMN_ROOM = 48;
 
 type RoadSignsTuning = {
   /** Rendered sign height, px. Widths follow each photo's aspect. */
@@ -276,57 +215,43 @@ type RoadSignsTuning = {
    *  the leg's length: 20 at 60fps = a third of a second. */
   nudgeSteps: number;
 
-  // ---- the card and the rope (defaults are the site's values)
-  /** Width of the card region to the right of the stack, px. The card's
-   *  right edge is pinned to the stage's right edge, so this sets how far
-   *  the rope has to travel. */
+  // ---- the prints' column and its timing (defaults are the site's values)
+  /** Width of the column region right of the stack, px: the stage
+   *  reaches this far past the stack, and the column sits at its far
+   *  edge. On the landing it is what puts the stage's edge on the
+   *  screen's, so the column can come in from off it. */
   cardSpan: number;
-  /** Card centre, px below the stack's middle (negative = above). */
+  /** The column's centre line, px below the stack's middle (negative =
+   *  above). */
   cardY: number;
-  /** Width of every card, px. A wide card's media fills it, with the copy
-   *  row underneath; under CARD_STACK_BELOW the copy stacks instead. */
-  cardWide: number;
-  /** Width of a tall card's media, px; the copy column beside it takes
-   *  the rest of the card. */
-  cardTall: number;
-  /** Air between the sign's edge and the rope's first dot, and between
-   *  the last dot and the card, px. Falls back to 8 when they'd touch. */
-  ropeInset: number;
-  /** The rope's resting droop, px, once the card is up. */
-  sagRest: number;
-  /** Spring on the droop: stiffness and damping, per second. */
-  sagStiffness: number;
-  sagDamping: number;
-  /** How far the pointer's height over the card pulls the droop, ±px. */
-  sagNudge: number;
-  /** ms the pointer must rest on a sign before its card shows. */
+  /** A wide print's width, px; a tall one is TALL_SHARE of it. */
+  printW: number;
+  /** Air between the column and the stage's right edge, px. */
+  columnRight: number;
+  /** Air between a print and the ones peeking above and below it, px. */
+  peekGap: number;
+  /** The column's slide in from the edge, and back out, ms. */
+  slideDuration: number;
+  /** The column's step to the next print, ms. */
+  moveDuration: number;
+  /** ms the pointer must rest on a sign before its print shows. */
   showDelay: number;
-  /** ms after leaving a sign (not toward its card) before hiding. */
+  /** ms after leaving a sign (not toward its print) before hiding. */
   hideDelay: number;
-  /** ms after leaving a sign toward the card before hiding — the grace
-   *  for the pointer to reach it. */
+  /** ms after leaving a sign toward the column before hiding — the
+   *  grace for the pointer to reach it. */
   hideTowardCard: number;
-  /** ms after leaving the card before hiding. */
+  /** ms after leaving the column before hiding. */
   hideFromCard: number;
   /** ms after leaving the whole stage before hiding. */
   hideFromStage: number;
-  /** The card's CSS pop, s. */
-  popDuration: number;
-  /** The card's and rope's CSS fade, s. */
+  /** The column's fade, s: out in place when a project opens, and back
+   *  in when it closes. */
   fadeDuration: number;
-  /**
-   * Stop-motion beat for the rope's droop, cuts per second. 0 = the
-   * smooth spring above. Above 0 the spring still runs, but the rope is
-   * only redrawn on the beat, so it drops in a few held poses.
-   */
-  ropeFps: number;
-  /**
-   * Stop-motion beat for the card's pop, cuts per second. 0 = the site's
-   * CSS overshoot curve. Above 0 the card stamps in through three hard
-   * cuts (3 / cardFps seconds), and both card and rope snap rather than
-   * fade.
-   */
-  cardFps: number;
+  /** ms after a project closes before the column goes back out (unless
+   *  the pointer is on the stage): the window's way back, so its box
+   *  lands on the print before the print leaves. */
+  returnDelay: number;
 };
 
 // Hand-tuned by Julio on the bench (2026-09-05): a 1.2x pop against a
@@ -358,22 +283,18 @@ const ROAD_SIGNS_DEFAULTS: Readonly<RoadSignsTuning> = Object.freeze({
   nudgeSteps: 24,
   cardSpan: 900,
   cardY: 0,
-  cardWide: 640,
-  cardTall: 300,
-  ropeInset: 24,
-  sagRest: 44,
-  sagStiffness: 118,
-  sagDamping: 15.5,
-  sagNudge: 8,
+  printW: 640,
+  columnRight: 24,
+  peekGap: 28,
+  slideDuration: 520,
+  moveDuration: 460,
   showDelay: 50,
   hideDelay: 70,
   hideTowardCard: 240,
   hideFromCard: 140,
   hideFromStage: 100,
-  popDuration: 0.58,
   fadeDuration: 0.18,
-  ropeFps: 0,
-  cardFps: 0,
+  returnDelay: 800,
 });
 
 type Pose = { scale: number; tilt: number; opacity: number; x: number };
@@ -435,88 +356,83 @@ function backOut(p: number, c: number): number {
   return 1 + (c + 1) * q * q * q + c * q * q;
 }
 
-// ------------------------------------------------------------ rope & card
+// ---------------------------------------------------------- the column
 
-type RopeDom = {
-  svg: SVGSVGElement;
-  path: SVGPathElement;
-  start: SVGCircleElement;
-  end: SVGCircleElement;
+type ColumnDom = {
   /** The safe wedge's own svg (under the signs) and its polygon. */
   bridgeSvg: SVGSVGElement;
   bridge: SVGPolygonElement;
+  /** The column at the stage's right edge, and the track in it that
+   *  moves to centre a print. */
+  column: HTMLDivElement;
+  track: HTMLDivElement;
 };
 
 /**
- * The rope and card machine — the site's script, transplanted. Cards are
- * shown and hidden by toggling a class the injected stylesheet
- * transitions; the rope is redrawn every frame its sag spring is moving
- * (and every frame the hot sign walks, see tick), from live rects like
- * the original.
+ * The track's prints: the three, with two clones before and two after,
+ * so whatever is centred has a neighbour peeking above and below — the
+ * last above the first, the first below the last. FIRST..LAST are the
+ * prints themselves; a step that lands on a clone jumps, unseen, to the
+ * original (see showProject's settle).
  */
-type RopeState = {
-  dom: Partial<RopeDom>;
-  /** One card per project, keyed by slug. */
-  cards: Map<string, HTMLAnchorElement>;
+const TRACK = Array.from(
+  { length: PRINTS.length + 4 },
+  (_, i) => PRINTS[(i + PRINTS.length - 2) % PRINTS.length]!,
+);
+const FIRST = 2;
+const LAST = FIRST + PRINTS.length - 1;
+const canonical = (slug: string) =>
+  FIRST + PRINTS.findIndex((p) => p.slug === slug);
+
+/**
+ * The column machine. Prints are shown and hidden by toggling classes
+ * the stylesheet transitions (the column's slide, the track's step);
+ * the wedge is redrawn from layout whenever the hot sign walks (see
+ * tick), and the timers are the site's grace periods.
+ */
+type ColumnState = {
+  dom: Partial<ColumnDom>;
+  /** The track's prints, by index into TRACK. */
+  items: (HTMLAnchorElement | undefined)[];
+  /** The track index centred, or on its way to the centre. */
+  index: number;
+  /** The last step has settled (and any clone was swapped out). */
+  settled: boolean;
   stage: HTMLDivElement | null;
   /** Where the stack sits in the stage, so sign edges can be placed. */
   stackAt: { x: number; y: number };
-  /** Project whose card is up (or on its way out while closing). */
+  /** Project whose print is up (or on its way out while closing). */
   active: string | null;
   closing: boolean;
-  /** The droop's spring: current, velocity, target (px). */
-  sag: number;
-  sagVelocity: number;
-  sagTarget: number;
-  /** The droop the rope is drawn with. Tracks `sag` every frame when
-   *  ropeFps is 0; otherwise samples it on the beat (see animateRope). */
-  sagShown: number;
-  /** Seconds banked toward the next rope cut. */
-  beatAcc: number;
-  raf: number | null;
-  last: number;
   hideTimer: number | null;
   showTimer: number | null;
-  /** Tells React which card is up, so its sign stays lifted. */
+  settleTimer: number | null;
+  /** Tells React which print is up, so its sign stays lifted. */
   onActive: (slug: string | null) => void;
 };
 
-function createRope(): RopeState {
+function createColumn(): ColumnState {
   return {
     dom: {},
-    cards: new Map(),
+    items: [],
+    index: FIRST,
+    settled: true,
     stage: null,
     stackAt: { x: 0, y: 0 },
     active: null,
     closing: false,
-    sag: 0,
-    sagVelocity: 0,
-    sagTarget: 0,
-    sagShown: 0,
-    beatAcc: 0,
-    raf: null,
-    last: 0,
     hideTimer: null,
     showTimer: null,
+    settleTimer: null,
     onActive: () => {},
   };
 }
 
-/** Where a sign's right edge currently is, in stage space: its layout box
- *  plus the walk's transform. The rope starts just off it. */
-function signEdge(g: SignGeom): { x: number; y: number } {
-  const rad = (g.tilt * Math.PI) / 180;
-  return {
-    x: g.cx + g.halfW * Math.cos(rad),
-    y: g.cy + g.halfW * Math.sin(rad),
-  };
-}
-
-/** A sign's current centre and half extents in stage space: its layout
- *  box plus the walk's transform (scale, squeeze, nudge, re-tuck). */
 /** The stack's padding around its signs, off the sign height. */
 const stackPad = (H: number) => ({ padX: H * 0.6, padY: H * 0.2 });
 
+/** A sign's current centre and half extents in stage space: its layout
+ *  box plus the walk's transform (scale, squeeze, nudge, re-tuck). */
 type SignGeom = {
   cx: number;
   cy: number;
@@ -537,8 +453,8 @@ function signGeom(e: Engine, slug: string): SignGeom | null {
   const pose = w?.cur ?? REST;
   const q = 1 + (w?.squash ?? 0);
   return {
-    cx: e.rope.stackAt.x + padX + bw / 2 + pose.x,
-    cy: e.rope.stackAt.y + padY + i * (H + t.gap) + H / 2 + (w?.y ?? 0),
+    cx: e.column.stackAt.x + padX + bw / 2 + pose.x,
+    cy: e.column.stackAt.y + padY + i * (H + t.gap) + H / 2 + (w?.y ?? 0),
     halfW: (bw / 2) * pose.scale * q,
     halfH: (H / 2) * (pose.scale / q),
     tilt: pose.tilt,
@@ -546,212 +462,200 @@ function signGeom(e: Engine, slug: string): SignGeom | null {
 }
 
 function cancelHide(e: Engine) {
-  if (e.rope.hideTimer !== null) window.clearTimeout(e.rope.hideTimer);
-  e.rope.hideTimer = null;
+  if (e.column.hideTimer !== null) window.clearTimeout(e.column.hideTimer);
+  e.column.hideTimer = null;
 }
 
 function cancelShow(e: Engine) {
-  if (e.rope.showTimer !== null) window.clearTimeout(e.rope.showTimer);
-  e.rope.showTimer = null;
+  if (e.column.showTimer !== null) window.clearTimeout(e.column.showTimer);
+  e.column.showTimer = null;
 }
 
-/** The hot sign and its card's box, in stage space — what the rope and
- *  the wedge are drawn from. Measured live, once a draw, since the card
- *  is mid-transition while it pops. */
-type RopeSpan = {
-  sign: SignGeom;
-  card: { left: number; top: number; bottom: number; height: number };
-};
-
-function ropeSpan(e: Engine): RopeSpan | null {
-  const r = e.rope;
-  if (!r.active || !r.stage) return null;
-  const card = r.cards.get(r.active);
-  const sign = signGeom(e, r.active);
-  if (!card || !sign) return null;
-  const sr = r.stage.getBoundingClientRect();
-  const cr = card.getBoundingClientRect();
-  return {
-    sign,
-    card: {
-      left: cr.left - sr.left,
-      top: cr.top - sr.top,
-      bottom: cr.bottom - sr.top,
-      height: cr.height,
+/** Runs `done` once the column's move has settled (at once under
+ *  reduced motion); a new move replaces a pending settle. */
+function armSettle(e: Engine, ms: number, done: () => void) {
+  const r = e.column;
+  if (r.settleTimer !== null) window.clearTimeout(r.settleTimer);
+  r.settleTimer = window.setTimeout(
+    () => {
+      r.settleTimer = null;
+      done();
     },
-  };
-}
-
-/** The rope's ends: just off the sign's edge, and just short of the
- *  card's left edge at its vertical middle. */
-function ropePoints(e: Engine, { sign, card }: RopeSpan) {
-  const t = e.tuning;
-  const edge = signEdge(sign);
-  let sx = edge.x + t.ropeInset;
-  let ex = card.left - t.ropeInset;
-  if (ex < sx + 30) {
-    sx = edge.x + 8;
-    ex = card.left - 8;
-  }
-  return { sx, sy: edge.y, ex, ey: card.top + card.height * 0.5 };
-}
-
-/** Writes the rope: a cubic with handles at 34% and 69% of the way
- *  across, both dropped by the sag, and a dot on each end. */
-function drawRope(e: Engine) {
-  const { path, start, end } = e.rope.dom;
-  if (!path || !start || !end) return;
-  const span = ropeSpan(e);
-  if (!span) return;
-  const p = ropePoints(e, span);
-  const sag = e.rope.sagShown;
-  const dx = p.ex - p.sx;
-  const c1x = p.sx + dx * 0.34;
-  const c2x = p.sx + dx * 0.69;
-  path.setAttribute(
-    "d",
-    `M ${p.sx.toFixed(2)} ${p.sy.toFixed(2)} C ${c1x.toFixed(2)} ${(p.sy + sag).toFixed(2)}, ${c2x.toFixed(2)} ${(p.ey + sag).toFixed(2)}, ${p.ex.toFixed(2)} ${p.ey.toFixed(2)}`,
+    e.reduced ? 0 : ms,
   );
-  start.setAttribute("cx", p.sx.toFixed(2));
-  start.setAttribute("cy", p.sy.toFixed(2));
-  end.setAttribute("cx", p.ex.toFixed(2));
-  end.setAttribute("cy", p.ey.toFixed(2));
-  drawBridge(e, span);
 }
 
 /**
  * Writes the safe wedge: a quad from the hot sign's vertical midline
  * (its full height plus a little slack, so a tilted sign's corners are
- * inside it) to the card's left edge, top to bottom, overlapping the card
- * by a few px so there is no seam. Anything inside it counts as "still on
- * the way to the card". It is drawn under the signs and the card, so
- * wherever they overlap it, they win the hover.
+ * inside it) to the column's left edge, the height of the centred print,
+ * overlapping the column by a few px so there is no seam. Anything
+ * inside it counts as "still on the way to the print". Drawn from
+ * layout — where the print is once the track has stepped — so it is
+ * right during the slide with no redraw per frame. It is drawn under the
+ * signs and the column, so wherever they overlap it, they win the hover.
  */
-function drawBridge(e: Engine, { sign: g, card }: RopeSpan) {
-  const { bridge } = e.rope.dom;
-  if (!bridge) return;
+function drawBridge(e: Engine) {
+  const r = e.column;
+  const { bridge, column, track } = r.dom;
+  if (!bridge || !column || !track || r.active === null) return;
+  const g = signGeom(e, r.active);
+  const el = r.items[r.index];
+  if (!g || !el) return;
   const slack = g.halfH * 0.35;
   const sx = g.cx;
   const top = g.cy - g.halfH - slack;
   const bottom = g.cy + g.halfH + slack;
-  const ex = card.left + 8;
-  const ct = card.top;
-  const cb = card.bottom;
+  const ex = column.offsetLeft + 8;
+  const half = el.offsetHeight / 2;
+  const ct = track.offsetTop - half;
+  const cb = track.offsetTop + half;
   bridge.setAttribute(
     "points",
     `${sx.toFixed(1)},${top.toFixed(1)} ${sx.toFixed(1)},${bottom.toFixed(1)} ${ex.toFixed(1)},${cb.toFixed(1)} ${ex.toFixed(1)},${ct.toFixed(1)}`,
   );
 }
 
-/** One frame of the sag spring. Runs until it settles; a settle while
- *  closing is what finally clears the active project. */
-function animateRope(e: Engine, now: number) {
-  const r = e.rope;
-  const t = e.tuning;
-  r.raf = null;
-  const dt = Math.min(0.032, Math.max(0.001, (now - r.last) / 1000));
-  r.last = now;
-  if (e.reduced) {
-    r.sag = r.closing ? 0 : r.sagTarget;
-    r.sagVelocity = 0;
-  } else {
-    const acceleration =
-      (r.sagTarget - r.sag) * t.sagStiffness - r.sagVelocity * t.sagDamping;
-    r.sagVelocity += acceleration * dt;
-    r.sag += r.sagVelocity * dt;
-  }
-  const settled =
-    Math.abs(r.sagTarget - r.sag) < 0.08 && Math.abs(r.sagVelocity) < 0.08;
-  // Stop-motion rope: the spring keeps integrating every frame, but the
-  // drawn droop only catches up on the beat, so it drops in held poses.
-  // The settle always lands the true value, so nothing hangs mid-cut.
-  if (t.ropeFps <= 0 || e.reduced || settled) {
-    r.sagShown = r.sag;
-    r.beatAcc = 0;
-  } else {
-    r.beatAcc += dt;
-    const hold = 1 / t.ropeFps;
-    if (r.beatAcc >= hold) {
-      r.beatAcc %= hold;
-      r.sagShown = r.sag;
-    }
-  }
-  drawRope(e);
-  if (!settled) {
-    r.raf = window.requestAnimationFrame((n) => animateRope(e, n));
-  } else if (r.closing) {
-    r.active = null;
-    r.closing = false;
+/** Moves the track so the print at `k` sits on the column's centre line
+ *  (the track's own top): eased by the stylesheet, or at once. */
+function placeTrack(r: ColumnState, k: number, eased: boolean) {
+  const track = r.dom.track;
+  const el = r.items[k];
+  if (!track || !el) return;
+  const y = el.offsetTop + el.offsetHeight / 2;
+  if (!eased) track.style.transition = "none";
+  track.style.transform = `translateY(${(-y).toFixed(1)}px)`;
+  if (!eased) {
+    void track.offsetHeight;
+    track.style.transition = "";
   }
 }
 
-function ensureRope(e: Engine) {
-  if (e.rope.raf === null) {
-    e.rope.last = performance.now();
-    e.rope.raf = window.requestAnimationFrame((n) => animateRope(e, n));
-  }
-}
-
-/** Puts a card up or takes it down: shown, reachable, and its clip
- *  running only while it is up (autoplay would also let the browser
- *  pause it as "offscreen" while the card is hidden). */
-function setCardUp(card: HTMLElement | undefined, up: boolean) {
-  if (!card) return;
-  card.classList.toggle("is-active", up);
-  card.setAttribute("aria-hidden", String(!up));
-  card.tabIndex = up ? 0 : -1;
-  const video = card.querySelector("video");
+/** Makes a print the one that is up — reachable, the pointer's "open",
+ *  its clip running only while it is up (autoplay would also let the
+ *  browser pause it as "offscreen" while hidden) — or takes it down. */
+function setPrintUp(el: HTMLElement | undefined, up: boolean) {
+  if (!el) return;
+  el.classList.toggle("is-active", up);
+  el.setAttribute("aria-hidden", String(!up));
+  el.tabIndex = up ? 0 : -1;
+  if (up) el.setAttribute("data-cursor-label", "open");
+  else el.removeAttribute("data-cursor-label");
+  const video = el.querySelector("video");
   if (up) video?.play().catch(() => {});
   else video?.pause();
 }
 
+/** The peeking prints tell the cursor what a click does. */
+function labelPeeks(r: ColumnState) {
+  r.items.forEach((el, i) => {
+    if (!el || i === r.index) return;
+    if (i === r.index - 1) el.setAttribute("data-cursor-label", "previous");
+    else if (i === r.index + 1) el.setAttribute("data-cursor-label", "next");
+    else el.removeAttribute("data-cursor-label");
+  });
+}
+
 function showProject(e: Engine, slug: string) {
-  const r = e.rope;
+  const r = e.column;
+  const t = e.tuning;
   cancelHide(e);
-  const card = r.cards.get(slug);
-  if (!card) return;
+  const { column, track, bridgeSvg } = r.dom;
+  if (!column || !track) return;
   const firstReveal = r.active === null || r.closing;
-  if (r.active !== null && r.active !== slug) {
-    setCardUp(r.cards.get(r.active), false);
-  }
   const changed = r.active !== slug;
-  // The card sliding out (or a fresh card swapping in): paper on wood.
-  if (changed || firstReveal) play("slide", 1, { at: "card" });
-  r.active = slug;
-  setCardUp(card, true);
-  r.closing = false;
-  r.sagTarget = e.tuning.sagRest;
-  if (changed && firstReveal) {
-    r.sag = 0;
-    r.sagVelocity = 0;
-    r.sagShown = 0;
-    r.beatAcc = 0;
+  if (!changed && !firstReveal) return;
+  // Where to go: the same print stays where it is (a hover while it
+  // was leaving); another goes to the neighbour when it is next door,
+  // so the column steps one the way the peek promised, else to its own
+  // place — the column comes in already centred on it.
+  let k = changed ? canonical(slug) : r.index;
+  if (changed && !firstReveal) {
+    for (const j of [r.index - 1, r.index + 1]) {
+      if (TRACK[j]?.slug === slug) k = j;
+    }
   }
-  r.dom.svg?.classList.add("is-visible");
-  r.dom.bridgeSvg?.classList.add("is-live");
-  drawRope(e);
-  ensureRope(e);
+  if (r.index !== k) setPrintUp(r.items[r.index], false);
+  // Paper over the mat.
+  play("slide", 1, { at: "card" });
+  r.active = slug;
+  r.closing = false;
+  r.settled = false;
+  r.index = k;
+  placeTrack(r, k, !firstReveal);
+  column.classList.add("is-in");
+  column.classList.remove("is-off");
+  setPrintUp(r.items[k], true);
+  labelPeeks(r);
+  bridgeSvg?.classList.add("is-live");
+  drawBridge(e);
+  armSettle(e, firstReveal ? t.slideDuration : t.moveDuration, () => {
+    r.settled = true;
+    if (r.index < FIRST || r.index > LAST) {
+      // Landed on a clone: the original takes over in place, its clip
+      // where the clone's was — the view is the same to the pixel.
+      const from = r.items[r.index];
+      const to = canonical(slug);
+      const at = from?.querySelector("video")?.currentTime ?? 0;
+      setPrintUp(from, false);
+      r.index = to;
+      placeTrack(r, to, false);
+      const el = r.items[to];
+      const video = el?.querySelector("video");
+      if (video) video.currentTime = at;
+      setPrintUp(el, true);
+      labelPeeks(r);
+    }
+  });
   r.onActive(slug);
 }
 
-function hideProject(e: Engine) {
-  const r = e.rope;
+/**
+ * Takes the column away: a slide back out past the edge (the pointer
+ * has left), or a fade in place (a project opened — the print stays
+ * where it is, still marked up, so the window's box can shrink back
+ * onto it; see restoreProject).
+ */
+function hideProject(e: Engine, how: "slide" | "fade" = "slide") {
+  const r = e.column;
+  const t = e.tuning;
   cancelHide(e);
   if (r.active === null) return;
-  play("slideOut", 1, { at: "card" });
-  setCardUp(r.cards.get(r.active), false);
-  r.dom.svg?.classList.remove("is-visible");
-  r.dom.bridgeSvg?.classList.remove("is-live");
-  r.sagTarget = 0;
+  const { column, bridgeSvg } = r.dom;
+  bridgeSvg?.classList.remove("is-live");
+  if (how === "slide") {
+    play("slideOut", 1, { at: "card" });
+    setPrintUp(r.items[r.index], false);
+    column?.classList.remove("is-in");
+  } else {
+    r.items[r.index]?.querySelector("video")?.pause();
+    column?.classList.add("is-off");
+  }
   r.closing = true;
-  ensureRope(e);
+  armSettle(
+    e,
+    how === "slide" ? t.slideDuration : t.fadeDuration * 1000,
+    () => {
+      r.active = null;
+      r.closing = false;
+    },
+  );
   r.onActive(null);
+}
+
+/** A project has closed: its print comes back in place (the window's box
+ *  shrinks onto it), and goes out again after the window's way back
+ *  unless the pointer is on the stage. */
+function restoreProject(e: Engine, slug: string) {
+  const r = e.column;
+  showProject(e, slug);
+  if (!r.stage?.matches(":hover")) scheduleHide(e, e.tuning.returnDelay);
 }
 
 function scheduleHide(e: Engine, ms: number) {
   cancelHide(e);
-  e.rope.hideTimer = window.setTimeout(() => {
-    e.rope.hideTimer = null;
+  e.column.hideTimer = window.setTimeout(() => {
+    e.column.hideTimer = null;
     hideProject(e);
   }, ms);
 }
@@ -760,35 +664,25 @@ function scheduleHide(e: Engine, ms: number) {
 function scheduleShow(e: Engine, slug: string, ms: number) {
   cancelShow(e);
   cancelHide(e);
-  e.rope.showTimer = window.setTimeout(() => {
-    e.rope.showTimer = null;
+  e.column.showTimer = window.setTimeout(() => {
+    e.column.showTimer = null;
     const el = e.walks.get(slug)?.el;
     if (el?.matches(":hover")) showProject(e, slug);
   }, ms);
 }
 
-/** The pointer's height over the card tugs the rope's droop a little. */
-function nudgeSag(e: Engine, card: HTMLElement, clientY: number) {
-  const t = e.tuning;
-  const rect = card.getBoundingClientRect();
-  const pull = (clientY - (rect.top + rect.height / 2)) * 0.06;
-  e.rope.sagTarget =
-    t.sagRest + Math.max(-t.sagNudge, Math.min(t.sagNudge, pull));
-  ensureRope(e);
-}
-
-function ropeCleanup(e: Engine) {
+function columnCleanup(e: Engine) {
   cancelHide(e);
   cancelShow(e);
-  if (e.rope.raf !== null) window.cancelAnimationFrame(e.rope.raf);
-  e.rope.raf = null;
+  if (e.column.settleTimer !== null) window.clearTimeout(e.column.settleTimer);
+  e.column.settleTimer = null;
 }
 
 /**
  * Stage geometry from the tuning: the stack's box at the stage's left,
- * the card region to its right (cards pin to the stage's right edge), and
- * a stage tall enough for the stack and the tallest card. Pure, so the
- * component and the engine agree.
+ * the column region to its right (the column sits at the stage's right
+ * edge), and a stage tall enough for the stack and the tallest print.
+ * Pure, so the component and the engine agree.
  */
 function geometry(t: RoadSignsTuning) {
   const H = t.height;
@@ -797,26 +691,16 @@ function geometry(t: RoadSignsTuning) {
   const signsH = SIGNS.length * H + (SIGNS.length - 1) * t.gap;
   const stackW = maxSignW + 2 * padX;
   const stackH = signsH + 2 * padY;
-  // Every card is cardWide across, whatever its media.
-  const cardW = t.cardWide;
-  // Each clip's own shape sets the height, so take the tallest. Roomy: a
-  // wide card is its media plus the copy row, a tall one just its media.
-  // Stacked (see CARD_STACK_BELOW): either is its media plus the blurb
-  // and the pills under it. The copy heights are estimates — the stage
-  // only needs to be roomy enough, the rope measures the real card.
-  const stacked = cardW < CARD_STACK_BELOW;
-  const cardH = Math.max(
-    ...SIGNS.map((s) => {
-      if (s.card.media === "wide") {
-        return cardW / s.card.aspect + (stacked ? 170 : 110);
-      }
-      if (!stacked) return t.cardTall / s.card.aspect;
-      const mediaW = Math.max(t.cardTall, (cardW * TALL_STACKED_CQI) / 100);
-      return Math.min(mediaW, cardW) / s.card.aspect + 170;
-    }),
-  );
+  // The column is a wide print plus room for its tilt; the tallest
+  // print sets the height (an estimate — the band grows with its blurb;
+  // the stage only needs to be roomy enough, the column measures itself).
+  const cardW = t.printW + COLUMN_ROOM;
+  const cardH = Math.max(...PRINTS.map((p) => printSize(p, t.printW).h));
   const room = 48;
-  const stageW = Math.max(stackW + t.cardSpan, stackW + cardW + room);
+  // The reach sets the stage's width (on the site, out to the screen's
+  // edge); a column wider than the reach is allowed to overlap the
+  // stack's room rather than push the stage past the screen.
+  const stageW = Math.max(stackW + t.cardSpan, cardW + room);
   const ay = stackH / 2 + t.cardY;
   const minY = Math.min(0, ay - cardH / 2 - room);
   const maxY = Math.max(stackH, ay + cardH / 2 + room);
@@ -947,7 +831,7 @@ type Engine = {
      *  soon as the stack settles (checked per frame). */
     pending: boolean;
   };
-  rope: RopeState;
+  column: ColumnState;
 };
 
 function createEngine(tuning: RoadSignsTuning): Engine {
@@ -959,7 +843,7 @@ function createEngine(tuning: RoadSignsTuning): Engine {
     frame: null,
     last: 0,
     nudge: { slug: null, phase: null, idx: 0, timer: null, pending: false },
-    rope: createRope(),
+    column: createColumn(),
   };
 }
 
@@ -1078,9 +962,9 @@ function tick(e: Engine, dt: number): boolean {
   // One pass writes every sign: a cut on one sign moves its neighbours
   // (the stack re-tucks), so they are always drawn together.
   relayout(e.walks, t);
-  // The rope starts at the hot sign's edge, so it is redrawn while the
+  // The wedge starts at the hot sign's edge, so it is redrawn while the
   // sign walks.
-  if (e.rope.active !== null) drawRope(e);
+  drawBridge(e);
 
   // Nudge legs: out, then back, then wait for the next one.
   const g = e.nudge;
@@ -1115,9 +999,9 @@ function retarget(e: Engine) {
     if (ensureFrames(e)) tick(e, 0);
   } else if (e.frame === null) {
     // Nothing to walk: shadow / gap / height sliders still need a repaint
-    // of the settled stack (and the card, if it is up).
+    // of the settled stack (and the wedge, if a print is up).
     relayout(e.walks, e.tuning);
-    drawRope(e);
+    drawBridge(e);
   }
 }
 
@@ -1182,10 +1066,11 @@ export default function RoadSigns({
    * The project that is open beside the stack (the landing's project
    * window), or null. Its sign holds the hot pose and the others the
    * cold one; a hover still takes the hot pose for itself, so the rest
-   * can be looked over and clicked straight to. While one is open no
-   * card or rope comes out — the window has that room — and only the
-   * signs themselves take the pointer, so the page can put the stack
-   * over the window's edge without the stage covering it.
+   * can be looked over and clicked straight to. While one is open the
+   * column stays put, faded, under the window — the box shrinks back
+   * onto its print — and only the signs themselves take the pointer,
+   * so the page can put the stack over the window's edge without the
+   * stage covering it.
    */
   selected?: string | null;
   /**
@@ -1194,7 +1079,7 @@ export default function RoadSigns({
    * that center the piece. "signs": just the signs at rest, with the
    * stage hanging off it (overflow visible), so a page can put the stack
    * on a wall by its own edges — the landing parks it bottom-left. The
-   * card still pops to the stage's right edge either way.
+   * column still sits at the stage's right edge either way.
    */
   frame?: "stage" | "signs";
   /**
@@ -1236,8 +1121,9 @@ export default function RoadSigns({
   // Bench-only: pin a sign hovered so its hot pose holds while the pointer
   // is over the sliders. null = the real pointer decides.
   const [pinned, setPinned] = useState<string | null>(null);
-  // The project whose card is up. Its sign stays lifted while the pointer
-  // is over the card, the way the site keeps the title highlighted.
+  // The project whose print is up. Its sign stays lifted while the
+  // pointer is over the column, the way the site keeps the title
+  // highlighted.
   const [cardActive, setCardActive] = useState<string | null>(null);
   const [copied, setCopied] = useState(false);
   const active = pinned ?? hovered ?? selected ?? cardActive;
@@ -1247,7 +1133,7 @@ export default function RoadSigns({
   const [engine] = useState(() => createEngine(tuning));
 
   useEffect(() => {
-    engine.rope.onActive = setCardActive;
+    engine.column.onActive = setCardActive;
     const mq = window.matchMedia("(prefers-reduced-motion: reduce)");
     engine.reduced = mq.matches;
     const onChange = () => {
@@ -1274,7 +1160,7 @@ export default function RoadSigns({
       document.removeEventListener("visibilitychange", onVisibility);
       cancelNudge(engine);
       stopFrames(engine);
-      ropeCleanup(engine);
+      columnCleanup(engine);
     };
   }, [engine]);
 
@@ -1284,7 +1170,7 @@ export default function RoadSigns({
   useEffect(() => {
     engine.tuning = tuning;
     engine.active = active;
-    engine.rope.stackAt = geometry(tuning).stackAt;
+    engine.column.stackAt = geometry(tuning).stackAt;
     if (active !== null) cancelNudge(engine);
     retarget(engine);
     if (active === null && engine.nudge.phase === null) scheduleNudge(engine);
@@ -1297,17 +1183,24 @@ export default function RoadSigns({
     for (const w of engine.walks.values()) replayClass(w.el, "rs-sign-enter");
   }, [engine, replay]);
 
-  // A project opening puts the card away, and any on its way.
+  // A project opening fades the column in place, and any on its way;
+  // the project closing brings its print back for the window to land
+  // on, and the ordinary timers take it from there.
+  const wasSelected = useRef<string | null>(null);
   useEffect(() => {
-    if (selected === null) return;
-    cancelShow(engine);
-    hideProject(engine);
+    if (selected !== null) {
+      cancelShow(engine);
+      hideProject(engine, "fade");
+    } else if (wasSelected.current !== null) {
+      restoreProject(engine, wasSelected.current);
+    }
+    wasSelected.current = selected;
   }, [engine, selected]);
 
-  // Bench pin: holds the card up too, no hover needed.
+  // Bench pin: holds the print up too, no hover needed.
   useEffect(() => {
     if (pinned !== null) showProject(engine, pinned);
-    else if (engine.rope.active !== null) hideProject(engine);
+    else if (engine.column.active !== null) hideProject(engine);
   }, [engine, pinned]);
 
   const geo = geometry(tuning);
@@ -1345,24 +1238,39 @@ export default function RoadSigns({
     apply(w, engine.tuning);
   }
 
-  function registerRope<K extends keyof RopeDom>(
+  function registerColumn<K extends keyof ColumnDom>(
     key: K,
-    el: RopeDom[K] | null,
+    el: ColumnDom[K] | null,
   ) {
-    if (el) engine.rope.dom[key] = el;
+    if (el) engine.column.dom[key] = el;
   }
 
-  function registerCard(slug: string, el: HTMLAnchorElement | null) {
-    if (el) engine.rope.cards.set(slug, el);
+  function registerPrint(index: number, el: HTMLAnchorElement | null) {
+    if (el) engine.column.items[index] = el;
+  }
+
+  // A click on a peeking print steps the column to it; on the centred
+  // print, once it has settled, it is the link it is (the landing opens
+  // the project from it). A click mid-step is only a step.
+  function onPrintClick(
+    ev: ReactMouseEvent<HTMLAnchorElement>,
+    index: number,
+    slug: string,
+  ) {
+    play("knock", 1, { at: "click" });
+    const r = engine.column;
+    if (index === r.index && r.settled && r.active === slug) return;
+    ev.preventDefault();
+    showProject(engine, slug);
   }
 
   // The site's title handlers, on the signs. The sign's own lift is still
-  // React's `hovered`; these drive the card and rope.
+  // React's `hovered`; these drive the column.
   function onSignEnter(slug: string) {
     play("tap", 1, { at: "sign" });
     setHovered(slug);
     if (selected !== null) return;
-    const r = engine.rope;
+    const r = engine.column;
     if (r.active === slug && !r.closing) {
       cancelHide(engine);
       return;
@@ -1374,7 +1282,7 @@ export default function RoadSigns({
     cancelShow(engine);
     const t = engine.tuning;
     // Leaving through the sign's right half counts as heading for the
-    // card, whatever the angle: the tilted photo's real edge sits inside
+    // column, whatever the angle: the tilted photo's real edge sits inside
     // its bounding box, so an exact right-edge test rarely fired. The
     // wedge (drawBridge) catches the pointer from here on.
     const rect = ev.currentTarget.getBoundingClientRect();
@@ -1431,36 +1339,34 @@ export default function RoadSigns({
     />
   );
 
-  // The site's card widths and durations, fed to the stylesheet.
+  // The column's sizes and clocks, fed to the stylesheet.
   const stageVars = {
-    "--rs-wide": `${tuning.cardWide}px`,
-    "--rs-tall": `${tuning.cardTall}px`,
-    // In stop-motion the pop is three held poses on the beat and nothing
-    // fades — the card and rope are there or not.
-    "--rs-pop": `${tuning.cardFps > 0 ? 3 / tuning.cardFps : tuning.popDuration}s`,
-    "--rs-fade": `${tuning.cardFps > 0 ? 0 : tuning.fadeDuration}s`,
+    "--rs-print-w": `${tuning.printW}px`,
+    "--rs-col-w": `${tuning.printW + COLUMN_ROOM}px`,
+    "--rs-col-right": `${tuning.columnRight}px`,
+    "--rs-peek-gap": `${tuning.peekGap}px`,
+    "--rs-slide": `${tuning.slideDuration}ms`,
+    "--rs-move": `${tuning.moveDuration}ms`,
+    "--rs-fade": `${tuning.fadeDuration}s`,
   } as CSSProperties;
 
   // frame="signs": the root is the signs' rest box and the stage is
   // offset inside it so the first sign's top-left corner lands on the
-  // root's — the stack's padding and the card room above it are hung
-  // outside, overflow visible.
+  // root's — the stack's padding and the column's room are hung outside,
+  // overflow visible (the page clips the column's slide at its own
+  // edge). frame="stage" clips it at the stage's.
   const signsBox = frame === "signs" ? geo.signs : null;
 
   const stage = (
     <div
       ref={(el) => {
-        engine.rope.stage = el;
+        engine.column.stage = el;
       }}
-      className={[
-        tuning.cardFps > 0 && "is-cut",
-        selected !== null && "is-open",
-      ]
-        .filter(Boolean)
-        .join(" ")}
+      className={selected !== null ? "is-open" : undefined}
       onPointerLeave={() => scheduleHide(engine, tuning.hideFromStage)}
       style={{
         position: signsBox ? "absolute" : "relative",
+        overflow: signsBox ? undefined : "clip",
         left: signsBox ? -(geo.stackAt.x + geo.padX) : undefined,
         top: signsBox ? -(geo.stackAt.y + geo.padY) : undefined,
         width: geo.stage.w,
@@ -1469,17 +1375,17 @@ export default function RoadSigns({
         ...stageVars,
       }}
     >
-      {/* The safe wedge between the hot sign and its card. First in the
-            stage so it paints — and hit-tests — under the signs and the
-            card; only the polygon takes the pointer, and only while a
-            card is up (is-live). Geometry is written by drawBridge. */}
+      {/* The safe wedge between the hot sign and the column. First in
+            the stage so it paints — and hit-tests — under the signs and
+            the prints; only the polygon takes the pointer, and only while
+            a print is up (is-live). Geometry is written by drawBridge. */}
       <svg
-        ref={(el) => registerRope("bridgeSvg", el)}
+        ref={(el) => registerColumn("bridgeSvg", el)}
         className="rs-bridge"
         aria-hidden
       >
         <polygon
-          ref={(el) => registerRope("bridge", el)}
+          ref={(el) => registerColumn("bridge", el)}
           onPointerEnter={() => cancelHide(engine)}
           onPointerLeave={() => scheduleHide(engine, tuning.hideFromCard)}
         />
@@ -1560,54 +1466,39 @@ export default function RoadSigns({
         ))}
       </div>
 
-      {/* The rope. Geometry is written by drawRope; the fade is CSS. */}
-      <svg
-        ref={(el) => registerRope("svg", el)}
-        className="rs-rope"
-        aria-hidden
+      {/* The prints' column: the track's seven (TRACK — the three and
+            their clones), centred on the up one by showProject; the
+            stylesheet slides the column in from the edge and steps the
+            track. The pointer on it keeps it up. */}
+      <div
+        ref={(el) => registerColumn("column", el)}
+        className="rs-prints"
+        onPointerEnter={() => cancelHide(engine)}
+        onPointerLeave={() => scheduleHide(engine, tuning.hideFromCard)}
       >
-        <path ref={(el) => registerRope("path", el)} />
-        <circle ref={(el) => registerRope("start", el)} r={4} />
-        <circle ref={(el) => registerRope("end", el)} r={4} />
-      </svg>
-
-      {/* One card per project, all mounted; showProject toggles
-            is-active and the stylesheet does the pop. */}
-      {SIGNS.map((sign) => (
-        <a
-          key={sign.slug}
-          ref={(el) => registerCard(sign.slug, el)}
-          className={[
-            `rs-card is-${sign.card.media}`,
-            selected === sign.slug && "is-handed",
-          ]
-            .filter(Boolean)
-            .join(" ")}
-          // The landing finds the card's clip by this: the project
-          // window grows out of it.
-          data-slug={sign.slug}
-          href={sign.href}
-          // The clay cursor reads this: a small "open" tag rides beside
-          // the hand while the pointer is over the card.
-          data-cursor-label="open"
-          aria-label={`Open ${sign.title}`}
-          aria-hidden="true"
-          tabIndex={-1}
+        <div
+          ref={(el) => registerColumn("track", el)}
+          className="rs-track"
           style={{ top: geo.cardTop }}
-          onPointerEnter={() => cancelHide(engine)}
-          onPointerLeave={() => scheduleHide(engine, tuning.hideFromCard)}
-          onPointerMove={(ev) => nudgeSag(engine, ev.currentTarget, ev.clientY)}
-          onClick={() => play("knock", 1, { at: "click" })}
         >
-          <CardPanel sign={sign} />
-        </a>
-      ))}
+          {TRACK.map((spec, i) => (
+            <Print
+              key={i}
+              spec={spec}
+              index={i}
+              handed={selected === spec.slug}
+              refCallback={(el) => registerPrint(i, el)}
+              onClick={(ev) => onPrintClick(ev, i, spec.slug)}
+            />
+          ))}
+        </div>
+      </div>
     </div>
   );
 
   return (
     <>
-      <style>{CARD_CSS}</style>
+      <style>{PRINT_CSS + COLUMN_CSS}</style>
       {signsBox ? (
         <div
           style={{
@@ -1742,15 +1633,12 @@ export default function RoadSigns({
             {LAYOUT_FIELDS.map(slider)}
           </Section>
 
-          <Section title="Card" summary="where it sits and how big">
-            {CARD_FIELDS.map(slider)}
+          <Section title="Prints" summary="the column: sizes and moves">
+            {PRINT_FIELDS.map(slider)}
           </Section>
 
-          <Section
-            title="Rope & timing"
-            summary="the sag spring and the delays"
-          >
-            {ROPE_FIELDS.map(slider)}
+          <Section title="Timing" summary="the graces before it shows and goes">
+            {TIMING_FIELDS.map(slider)}
           </Section>
 
           <Section title="Sound" summary="taps, slides, knocks, letters">
@@ -2011,122 +1899,104 @@ const LAYOUT_FIELDS: Field[] = [
   },
 ];
 
-const CARD_FIELDS: Field[] = [
+const PRINT_FIELDS: Field[] = [
+  {
+    key: "printW",
+    label: "Print",
+    hint: "A wide print's width. A tall one is a share of it.",
+    min: 280,
+    max: 1100,
+    step: 10,
+    unit: "px",
+  },
   {
     key: "cardSpan",
     label: "Reach",
-    hint: "Width of the card region right of the stack. The card pins to its far edge, so this is how far the rope travels.",
+    hint: "Width of the column region right of the stack. The column sits at its far edge; on the site this puts that edge on the screen's.",
     min: 400,
-    max: 1200,
+    max: 1400,
     step: 10,
+    unit: "px",
+  },
+  {
+    key: "columnRight",
+    label: "Right air",
+    hint: "Air between the column and the stage's right edge.",
+    min: 0,
+    max: 120,
+    step: 2,
     unit: "px",
   },
   {
     key: "cardY",
     label: "Up / down",
-    hint: "The card's centre relative to the stack's middle. Left of 0 raises it. The site centres it.",
+    hint: "The column's centre line relative to the stack's middle. Left of 0 raises it. The site centres it on the screen.",
     min: -320,
     max: 320,
     step: 2,
     unit: "px",
   },
   {
-    key: "cardWide",
-    label: "Card width",
-    hint: "Width of every card. Under 620 the blurb takes the full width and the pills drop below it.",
-    min: 280,
-    max: 800,
-    step: 5,
-    unit: "px",
-  },
-  {
-    key: "cardTall",
-    label: "Tall media",
-    hint: "Width of a tall card's media. The copy beside it takes the rest of the card.",
-    min: 130,
-    max: 400,
-    step: 5,
-    unit: "px",
-  },
-  {
-    key: "ropeInset",
-    label: "Rope air",
-    hint: "Space between the sign and the first dot, and between the last dot and the card. The site uses 24.",
+    key: "peekGap",
+    label: "Peek gap",
+    hint: "Air between the centred print and the ones peeking above and below.",
     min: 0,
-    max: 40,
-    step: 1,
+    max: 120,
+    step: 2,
     unit: "px",
+  },
+  {
+    key: "slideDuration",
+    label: "Slide",
+    hint: "The column's slide in from the edge, and back out.",
+    min: 100,
+    max: 1200,
+    step: 10,
+    unit: "ms",
+  },
+  {
+    key: "moveDuration",
+    label: "Step",
+    hint: "The column's step to the next print.",
+    min: 100,
+    max: 1200,
+    step: 10,
+    unit: "ms",
   },
 ];
 
-const ROPE_FIELDS: Field[] = [
-  {
-    key: "sagRest",
-    label: "Sag",
-    hint: "How far the rope droops once the card is up. The site uses 44.",
-    min: 0,
-    max: 120,
-    step: 1,
-    unit: "px",
-  },
-  {
-    key: "sagStiffness",
-    label: "Spring",
-    hint: "Stiffness of the droop's spring. The site uses 118.",
-    min: 20,
-    max: 300,
-    step: 1,
-    unit: "",
-  },
-  {
-    key: "sagDamping",
-    label: "Damping",
-    hint: "Damping of the droop's spring. Lower bounces more. The site uses 15.5.",
-    min: 2,
-    max: 40,
-    step: 0.5,
-    unit: "",
-  },
-  {
-    key: "sagNudge",
-    label: "Pointer pull",
-    hint: "How far the pointer's height over the card tugs the droop, either way. The site uses 8.",
-    min: 0,
-    max: 24,
-    step: 1,
-    unit: "px",
-  },
+const TIMING_FIELDS: Field[] = [
   {
     key: "showDelay",
     label: "Show after",
-    hint: "How long the pointer must rest on a sign before its card shows. The site uses 50.",
+    hint: "The pointer must rest on a sign this long before its print comes out.",
     min: 0,
-    max: 300,
+    max: 400,
     step: 10,
     unit: "ms",
   },
   {
     key: "hideDelay",
     label: "Hide after",
-    hint: "Delay after leaving a sign, not toward its card. The site uses 70.",
-    min: 0,
-    max: 500,
-    step: 10,
-    unit: "ms",
-  },
-  {
-    key: "hideTowardCard",
-    label: "Hide · toward card",
-    hint: "Delay after leaving a sign to the right, toward the card. The site uses 240.",
+    hint: "After leaving a sign, not toward the column.",
     min: 0,
     max: 600,
     step: 10,
     unit: "ms",
   },
   {
+    key: "hideTowardCard",
+    label: "Toward column",
+    hint: "After leaving a sign toward the column: the grace to reach it.",
+    min: 0,
+    max: 800,
+    step: 10,
+    unit: "ms",
+  },
+  {
     key: "hideFromCard",
-    label: "Hide · off card",
-    hint: "Delay after leaving the card. The site uses 140.",
+    label: "From column",
+    hint: "After leaving the column.",
     min: 0,
     max: 600,
     step: 10,
@@ -2134,174 +2004,66 @@ const ROPE_FIELDS: Field[] = [
   },
   {
     key: "hideFromStage",
-    label: "Hide · off stage",
-    hint: "Delay after leaving the whole stage. The site uses 100.",
+    label: "From stage",
+    hint: "After leaving the whole stage.",
     min: 0,
     max: 600,
     step: 10,
     unit: "ms",
   },
   {
-    key: "popDuration",
-    label: "Pop",
-    hint: "The card's CSS pop, on the site's overshooting curve. The site uses 0.58.",
-    min: 0.1,
-    max: 1.5,
+    key: "fadeDuration",
+    label: "Fade",
+    hint: "The column's fade out in place when a project opens, and back in when it closes.",
+    min: 0,
+    max: 1,
     step: 0.02,
     unit: "s",
   },
   {
-    key: "fadeDuration",
-    label: "Fade",
-    hint: "The card's and rope's fade. The site uses 0.18.",
-    min: 0.05,
-    max: 0.6,
-    step: 0.01,
-    unit: "s",
-  },
-  {
-    key: "ropeFps",
-    label: "Rope beat",
-    hint: "Cuts per second the rope's droop is drawn at. 0 = the smooth spring; ~10 = it drops in a few held poses.",
+    key: "returnDelay",
+    label: "Return",
+    hint: "After a project closes, how long its print stays before the column goes back out — the window's way back, on the site.",
     min: 0,
-    max: 30,
-    step: 1,
-    unit: "fps",
-  },
-  {
-    key: "cardFps",
-    label: "Card beat",
-    hint: "Cuts per second for the card's pop. 0 = the site's overshoot curve; ~10 = a three-cut stamp, and nothing fades.",
-    min: 0,
-    max: 30,
-    step: 1,
-    unit: "fps",
+    max: 2000,
+    step: 20,
+    unit: "ms",
   },
 ];
 
 /**
- * The rope (the site's, verbatim) and the card: media plus copy on the
- * bare wall. Widths and durations come from the tuning via custom
- * properties. Ink #2b2722, body #57514a; the pills are the site's.
+ * The wedge and the column. Sizes and clocks come from the tuning via
+ * custom properties (stageVars); the prints' own stylesheet is
+ * PRINT_CSS.
  */
-const CARD_CSS = `
-.rs-rope { position: absolute; inset: 0; width: 100%; height: 100%; overflow: visible; color: ${ROPE}; opacity: 0; transition: opacity var(--rs-fade, .18s); pointer-events: none; z-index: 2; }
-.rs-rope.is-visible { opacity: 1; }
-.rs-rope path { fill: none; stroke: currentColor; stroke-width: 2; stroke-linecap: round; vector-effect: non-scaling-stroke; }
-.rs-rope circle { fill: currentColor; }
-/* The safe wedge: invisible, and only a pointer target while a card is
+const COLUMN_CSS = `
+/* The safe wedge: invisible, and only a pointer target while a print is
    up. No z-index — it paints in DOM order, under the signs. */
 .rs-bridge { position: absolute; inset: 0; width: 100%; height: 100%; overflow: visible; pointer-events: none; }
 .rs-bridge polygon { fill: transparent; pointer-events: none; }
 .rs-bridge.is-live polygon { pointer-events: fill; }
-.rs-card { position: absolute; right: 0; z-index: 3; display: flex; opacity: 0; visibility: hidden; pointer-events: none; transform: translateY(-46%) scale(.965) rotate(.35deg); transform-origin: 8% 50%; transition: opacity var(--rs-fade, .18s), visibility linear calc(var(--rs-fade, .18s) + .06s), transform var(--rs-pop, .58s) cubic-bezier(.16, 1.08, .28, 1); will-change: transform, opacity; color: ${INK}; text-decoration: none; font-family: inherit; }
-.rs-card.is-active { opacity: 1; visibility: visible; pointer-events: auto; transform: translateY(-50%) scale(1) rotate(0deg); transition-delay: 0s; }
-/* Every card is the same width, and is the container its layout answers
-   to: the gaps and the type are in cqi, so a card is the same picture at
-   any size, and under CARD_STACK_BELOW it re-stacks (see the @container
-   block below). */
-.rs-card { width: var(--rs-wide, 640px); container-type: inline-size; }
-.rs-panel { display: flex; width: 100%; gap: clamp(14px, 4cqi, 26px); }
-.is-wide .rs-panel { flex-direction: column; }
-.is-tall .rs-panel { flex-direction: row; align-items: flex-end; }
-/* The media: the clip edge to edge in the clip's own shape (aspect-ratio
-   set inline per card). A hairline in the rope's blue keeps a white clip
-   from reading as floating on the wall; light grey while it loads. No
-   shadow. While the
-   pointer is on the card it lifts 3% in two hard cuts from its left
-   edge — the rope's end. */
-.rs-media { position: relative; flex: 0 0 auto; overflow: hidden; background: #ecebe8; outline: 1px solid ${ROPE}; outline-offset: -1px; transform-origin: 0 50%; transition: transform .17s steps(2); }
-.rs-card:hover .rs-media { transform: scale(1.03); }
-/* Handed over: the project window has taken this card's clip as its
-   own box, to the pixel, so the clip goes at once — no fade, or two of
-   it would show — and the copy fades with the card, on the window's
-   fade (--rs-hand, set by the caller; a plain fade even in stop-motion
-   mode, since it is the box's move the copy leaves on, not a cut of
-   the card's own), and so does the rope. */
-.rs-card.is-handed .rs-media { visibility: hidden; transition: none; }
-.rs-card.is-handed, .is-cut .rs-card.is-handed { transition: opacity var(--rs-hand, .25s) ease, visibility linear var(--rs-hand, .25s), transform var(--rs-hand, .25s) ease; }
-.is-open .rs-rope, .is-cut.is-open .rs-rope { transition: opacity var(--rs-hand, .25s) ease; }
-.rs-media video { display: block; width: 100%; height: 100%; object-fit: cover; }
-@media (prefers-reduced-motion: reduce) { .rs-media { transition: none; } }
-.is-wide .rs-media { width: 100%; }
-.is-tall .rs-media { width: var(--rs-tall, 300px); max-width: 100%; }
-/* The copy. Roomy: a wide card sets the blurb and the pills in one row
-   under the media, a tall card in a column beside it, on its foot. */
-.rs-copy { min-width: 0; display: flex; }
-.is-wide .rs-copy { flex-direction: row; justify-content: space-between; align-items: flex-start; gap: 24px; }
-.is-tall .rs-copy { flex: 1 1 0; flex-direction: column; gap: clamp(14px, 3.4cqi, 22px); padding-bottom: 2px; }
-.rs-desc { margin: 0; min-width: 0; color: #57514a; font-weight: 400; font-size: clamp(17px, 13.5px + .85cqi, 22px); line-height: 1.36; letter-spacing: -.014em; text-wrap: pretty; }
-.is-wide .rs-desc { flex: 1 1 0; max-width: 21em; }
-.rs-tags { display: flex; flex-wrap: wrap; gap: 6px; }
-.is-wide .rs-tags { flex: 0 0 auto; flex-wrap: nowrap; padding-top: .3em; }
-/* Tight: no room for a row (or a column beside a phone clip) without
-   squeezing the blurb into a ribbon, so the blurb takes the card's full
-   width and the pills sit under it. A tall card's clip moves on top and
-   grows to a little over half the card, so it isn't a stamp in a corner. */
-@container (width < ${CARD_STACK_BELOW}px) {
-  .is-tall .rs-panel { flex-direction: column; align-items: flex-start; }
-  .is-tall .rs-media { width: max(var(--rs-tall, 300px), ${TALL_STACKED_CQI}cqi); }
-  .is-wide .rs-copy, .is-tall .rs-copy { flex: 0 0 auto; flex-direction: column; justify-content: flex-start; gap: clamp(12px, 3.4cqi, 18px); width: 100%; padding-bottom: 0; }
-  .is-wide .rs-desc { flex: 0 0 auto; max-width: none; }
-  .is-wide .rs-tags { flex-wrap: wrap; padding-top: 0; }
-}
-.rs-tag { display: inline-flex; align-items: center; justify-content: center; min-height: 24px; padding: 4px 9px; border: 1px solid color-mix(in srgb, ${INK} 52%, transparent); border-radius: 999px; background: transparent; color: ${INK}; font-weight: 400; font-size: 11.5px; line-height: 1; letter-spacing: .01em; white-space: nowrap; }
+/* The column: parked past the stage's right edge, out of sight. is-in
+   slides it onto the mat on the settle curve; going, it slides back out
+   and only then hides. is-off fades it where it is (a project is open;
+   the print stays for the window's box to come back to), on the
+   window's fade where the page sets one (--rs-hand). */
+.rs-prints { position: absolute; top: 0; bottom: 0; right: var(--rs-col-right, 0px); width: var(--rs-col-w, 700px); z-index: 3; visibility: hidden; pointer-events: none; transform: translateX(calc(100% + var(--rs-col-right, 0px) + 80px)); transition: transform var(--rs-slide, .5s) ${SETTLE_EASE}, visibility 0s linear var(--rs-slide, .5s), opacity var(--rs-hand, var(--rs-fade, .18s)) ease; }
+.rs-prints.is-in { visibility: visible; pointer-events: auto; transform: none; transition-delay: 0s; }
+.rs-prints.is-off { opacity: 0; pointer-events: none; }
+/* The track: the prints one under the other, moved by placeTrack so the
+   up one sits on the track's top edge — the column's centre line. */
+.rs-track { position: absolute; left: 0; right: 0; display: flex; flex-direction: column; align-items: center; gap: var(--rs-peek-gap, 28px); will-change: transform; transition: transform var(--rs-move, .45s) ${SETTLE_EASE}; }
 /* The mount entrance, one sign after another (the delay is inline, per
    sign): the site's sm-drop keyframes and --sm-duration, generated from
    the motion tuning by <MotionStyles> in the root layout. Fill backwards,
    not both — once it ends the walk engine's inline transform must be what
    shows. */
 .rs-sign-enter { animation: sm-drop var(--sm-duration, .38s) steps(1, end) backwards; }
-@media (prefers-reduced-motion: reduce) { .rs-sign-enter { animation-duration: .01ms; animation-delay: 0ms !important; } }
-/* Stop-motion (cardFps > 0): no transitions at all — the card and rope
-   snap on and off — and the pop is a stamp in three hard cuts: arrives
-   small and low, lands past its mark wide and short, settles a hair
-   narrow, rests. */
-.is-cut .rs-rope, .is-cut .rs-card { transition: none; }
-.is-cut .rs-card.is-active { animation: rs-card-stamp var(--rs-pop, .3s) steps(1, end) both; }
-@keyframes rs-card-stamp {
-  0% { transform: translate(-14px, -44%) scale(.88) rotate(1.2deg); }
-  34% { transform: translate(4px, -51%) scale(1.04, .97) rotate(-.5deg); }
-  68% { transform: translate(-1px, -50%) scale(.985, 1.01) rotate(.2deg); }
-  100% { transform: translate(0, -50%) scale(1) rotate(0deg); }
+@media (prefers-reduced-motion: reduce) {
+  .rs-sign-enter { animation-duration: .01ms; animation-delay: 0ms !important; }
+  .rs-prints, .rs-track { transition-duration: .01ms; }
 }
-@media (prefers-reduced-motion: reduce) { .rs-card { transition-duration: .01ms; animation-duration: .01ms; } }
 `;
-
-/**
- * One project's card: the media block (a muted looping clip, sized to its
- * own aspect), then the copy — the blurb and the tag pills. The
- * stylesheet decides whether the copy sits under or beside the media,
- * and re-stacks it when the card is narrow; rs-panel is the box that
- * lays them out, since the card itself is the queried container.
- */
-function CardPanel({ sign }: { sign: Sign }) {
-  const c = sign.card;
-  return (
-    <div className="rs-panel">
-      <div className="rs-media" style={{ aspectRatio: c.aspect }}>
-        <video
-          src={c.src}
-          muted
-          loop
-          playsInline
-          preload="metadata"
-          aria-hidden
-        />
-      </div>
-      <div className="rs-copy">
-        <p className="rs-desc">{c.blurb}</p>
-        <div className="rs-tags">
-          {c.tags.map((tag) => (
-            <span key={tag} className="rs-tag">
-              {tag}
-            </span>
-          ))}
-        </div>
-      </div>
-    </div>
-  );
-}
 
 const btn: CSSProperties = {
   font: "inherit",

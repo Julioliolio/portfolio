@@ -28,31 +28,31 @@ export function useViewport() {
 /**
  * The road signs tuned to the mockup: each sign 8.8vh tall, and every
  * pixel value of the defaults (which were tuned at 64px) scaled with it,
- * so the walk feels the same at any size. The card is 44vw wide, its
- * right edge lands at 89vw, and it sits with its middle 26.6vh above
- * the stack's — up beside the signs rather than level with them.
+ * so the walk feels the same at any size. A wide print is 62vw across
+ * (Julio's mockup, 2026-09-25), the column's right edge 2.6vw in from
+ * the screen's, and its centre line 26.6vh above the stack's middle —
+ * about the screen's middle. The stage reaches the screen's right edge,
+ * so the column can slide in from off it.
  */
 export function signsTuning(vw: number, vh: number) {
   const height = 0.088 * vh;
   const k = height / 64;
-  const cardWide = 0.44 * vw;
-  // The stage runs from the stack's left edge to the card's right edge:
-  // 89vw - (7.2vw - padX), with padX = 0.6 * height. cardSpan is what the
-  // stage adds past the stack's padded box (widest sign * 3.563 + 2 padX).
+  // The stage runs from the stack's left edge to the screen's right
+  // edge: 100vw - (7.2vw - padX), with padX = 0.6 * height. cardSpan is
+  // what the stage adds past the stack's padded box (widest sign * 3.563
+  // + 2 padX).
   const stackW = 3.563 * height + 1.2 * height;
-  const cardSpan = 0.818 * vw + 0.6 * height - stackW;
+  const cardSpan = 0.928 * vw + 0.6 * height - stackW;
   return {
     height,
     gap: 12 * k,
     dimGap: 8 * k,
     hoverNudge: 6 * k,
     nudgePush: 16 * k,
-    cardWide,
-    cardTall: (cardWide * 300) / 640,
+    printW: 0.62 * vw,
+    columnRight: 0.026 * vw,
+    peekGap: 0.035 * vh,
     cardSpan,
     cardY: -0.266 * vh,
-    ropeInset: 24 * k,
-    sagRest: 44 * k,
-    sagNudge: 8 * k,
   };
 }

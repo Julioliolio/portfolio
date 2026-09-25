@@ -81,7 +81,8 @@ function peaks(profile, share, apart) {
     if (v <= floor || v < profile[i - 1] || v < profile[i + 1]) continue;
     const prev = out[out.length - 1];
     if (prev && i - prev.at < apart) {
-      if (v - median > prev.strength) out[out.length - 1] = { at: i, strength: v - median };
+      if (v - median > prev.strength)
+        out[out.length - 1] = { at: i, strength: v - median };
       continue;
     }
     out.push({ at: i, strength: v - median });
@@ -118,7 +119,13 @@ function findGrid(rows) {
   for (const l of lines) votes[phaseOf(l.at)] += l.strength;
   const best = votes.indexOf(Math.max(...votes));
   const majors = lines.filter((l) => phaseOf(l.at) === best).map((l) => l.at);
-  if (process.env.DEBUG) console.log({ pitch, lines: lines.length, votes: votes.map((v) => v.toFixed(0)), majors });
+  if (process.env.DEBUG)
+    console.log({
+      pitch,
+      lines: lines.length,
+      votes: votes.map((v) => v.toFixed(0)),
+      majors,
+    });
   return { pitch, period, majors };
 }
 
@@ -127,7 +134,9 @@ async function prepareMat() {
     console.warn(`mat: no ${SRC_MAT}, skipping`);
     return;
   }
-  const file = readdirSync(SRC_MAT).find((f) => /\.(png|jpe?g|tiff?)$/i.test(f));
+  const file = readdirSync(SRC_MAT).find((f) =>
+    /\.(png|jpe?g|tiff?)$/i.test(f),
+  );
   if (!file) {
     console.warn("mat: no photo in source-assets/mat, skipping");
     return;
@@ -180,13 +189,21 @@ async function prepareMat() {
     .raw()
     .toBuffer({ resolveWithObject: true });
   const fits = [0, 1, 2].map((c) => {
-    let sx = 0, sy = 0, sxx = 0, sxy = 0, n = 0;
+    let sx = 0,
+      sy = 0,
+      sxx = 0,
+      sxy = 0,
+      n = 0;
     for (let y = y0; y < y1; y++) {
       let sum = 0;
       for (let x = 0; x < ri.width; x++) sum += rgb[(y * ri.width + x) * 3 + c];
       const v = sum / ri.width;
       const t = (y - y0) / (y1 - y0);
-      sx += t; sy += v; sxx += t * t; sxy += t * v; n++;
+      sx += t;
+      sy += v;
+      sxx += t * t;
+      sxy += t * v;
+      n++;
     }
     const slope = (n * sxy - sx * sy) / (n * sxx - sx * sx);
     const intercept = (sy - slope * sx) / n;
@@ -194,8 +211,14 @@ async function prepareMat() {
   });
   console.log(
     "mat: brightness top → bottom per channel " +
-      fits.map((f) => `${f.intercept.toFixed(0)}→${(f.intercept + f.slope).toFixed(0)}`).join(", ") +
-      ", flattened to " + fits.map((f) => f.mid.toFixed(0)).join("/"),
+      fits
+        .map(
+          (f) =>
+            `${f.intercept.toFixed(0)}→${(f.intercept + f.slope).toFixed(0)}`,
+        )
+        .join(", ") +
+      ", flattened to " +
+      fits.map((f) => f.mid.toFixed(0)).join("/"),
   );
 
   mkdirSync(OUT_MAT, { recursive: true });
@@ -233,7 +256,9 @@ async function prepareMat() {
           .map((c) => Math.round(c.mean).toString(16).padStart(2, "0"))
           .join("");
     }
-    console.log(`  ${out.replace(ROOT + "/", "")}: ${oi.width}x${oi.height}, ${kb(out)}`);
+    console.log(
+      `  ${out.replace(ROOT + "/", "")}: ${oi.width}x${oi.height}, ${kb(out)}`,
+    );
   }
   console.log(`mat: mean colour ${meanHex} (for the first paint)`);
 }
@@ -303,7 +328,12 @@ async function preparePaper() {
   const flipXY = await sharp(base).flop().flip().png().toBuffer();
   const out = join(OUT_PAPER, "tile.webp");
   await sharp({
-    create: { width: cut * 2, height: cut * 2, channels: 3, background: "#fff" },
+    create: {
+      width: cut * 2,
+      height: cut * 2,
+      channels: 3,
+      background: "#fff",
+    },
   })
     .composite([
       { input: base, left: 0, top: 0 },

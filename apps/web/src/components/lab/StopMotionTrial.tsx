@@ -43,8 +43,6 @@ const ROAD_SIGNS_SPARSE = {
   shrinkSqueeze: 0.9,
   nudgeFps: 10,
   nudgeSteps: 3,
-  ropeFps: 10,
-  cardFps: 10,
 };
 
 // Cartel: the photo swaps are already on twos (12fps, fixed). Sparse puts
@@ -212,21 +210,32 @@ export function StopMotionTrial() {
         <h1>Stop motion — trial</h1>
         <p>
           The punch of arjunr.dev&apos;s appear animations: hard cuts, no
-          easing. Three or four held poses about a tenth of a second apart —
-          far off, past the mark, a hair short, rest — with a squash on the
-          landing and opacity that snaps. Up top, the entrances built that
-          way. Below, every piece with its own switch between the beat it
-          ships with and the sparse one. Nothing here changes a piece&apos;s
-          defaults. The entrances&apos; knobs (beat, distance, overshoot,
-          squash, stagger) live on <Link href="/lab/motion" style={{ textDecoration: "underline" }}>/lab/motion</Link>, and what is set
-          there applies here and everywhere else.
+          easing. Three or four held poses about a tenth of a second apart — far
+          off, past the mark, a hair short, rest — with a squash on the landing
+          and opacity that snaps. Up top, the entrances built that way. Below,
+          every piece with its own switch between the beat it ships with and the
+          sparse one. Nothing here changes a piece&apos;s defaults. The
+          entrances&apos; knobs (beat, distance, overshoot, squash, stagger)
+          live on{" "}
+          <Link href="/lab/motion" style={{ textDecoration: "underline" }}>
+            /lab/motion
+          </Link>
+          , and what is set there applies here and everywhere else.
         </p>
         <div className="smt-master">
           <span>All pieces:</span>
-          <button type="button" className="smt-btn" onClick={() => setAll("current")}>
+          <button
+            type="button"
+            className="smt-btn"
+            onClick={() => setAll("current")}
+          >
             current
           </button>
-          <button type="button" className="smt-btn" onClick={() => setAll("sparse")}>
+          <button
+            type="button"
+            className="smt-btn"
+            onClick={() => setAll("sparse")}
+          >
             sparse
           </button>
         </div>
@@ -268,7 +277,12 @@ export function StopMotionTrial() {
               <div className="smt-polaroid sm-hover-lift">
                 <div className="pic" />
               </div>
-              <Enter kind="tape" as="span" className="smt-tape" delay={step * 4} />
+              <Enter
+                kind="tape"
+                as="span"
+                className="smt-tape"
+                delay={step * 4}
+              />
             </Enter>
             <Enter kind="stamp" as="header" className="smt-item">
               <h2 className="smt-h2">Road signs</h2>
@@ -285,13 +299,25 @@ export function StopMotionTrial() {
               </Stagger>
               <div className="smt-chips">
                 <Stagger step={Math.round(step * 0.8)} base={step * 6}>
-                  <Enter kind="pop" as="span" className="smt-chip sm-hover-shake">
+                  <Enter
+                    kind="pop"
+                    as="span"
+                    className="smt-chip sm-hover-shake"
+                  >
                     iOS
                   </Enter>
-                  <Enter kind="pop" as="span" className="smt-chip sm-hover-shake">
+                  <Enter
+                    kind="pop"
+                    as="span"
+                    className="smt-chip sm-hover-shake"
+                  >
                     Design system
                   </Enter>
-                  <Enter kind="pop" as="span" className="smt-chip sm-hover-shake">
+                  <Enter
+                    kind="pop"
+                    as="span"
+                    className="smt-chip sm-hover-shake"
+                  >
                     End-to-end
                   </Enter>
                 </Stagger>
@@ -299,18 +325,30 @@ export function StopMotionTrial() {
             </Enter>
             <Enter kind="unfold" className="smt-item">
               <div className="smt-card">
-                <b>Camper</b>
-                A desktop file converter with a mocked conversion flow — drop
-                files, pick a format, get results.
+                <b>Camper</b>A desktop file converter with a mocked conversion
+                flow — drop files, pick a format, get results.
                 <div className="smt-dots">
                   <Stagger step={Math.round(step * 0.7)} base={step * 5}>
                     <Enter kind="pop" className="smt-dot" />
-                    <Enter kind="pop" className="smt-dot" style={{ background: "#1f4fc2" }} />
-                    <Enter kind="pop" className="smt-dot" style={{ background: "#2b2722" }} />
+                    <Enter
+                      kind="pop"
+                      className="smt-dot"
+                      style={{ background: "#1f4fc2" }}
+                    />
+                    <Enter
+                      kind="pop"
+                      className="smt-dot"
+                      style={{ background: "#2b2722" }}
+                    />
                   </Stagger>
                 </div>
               </div>
-              <Enter kind="stamp" as="span" className="smt-stamp mono" delay={step * 7}>
+              <Enter
+                kind="stamp"
+                as="span"
+                className="smt-stamp mono"
+                delay={step * 7}
+              >
                 Live demo
               </Enter>
             </Enter>
@@ -340,11 +378,19 @@ export function StopMotionTrial() {
         ]}
       >
         <div className="smt-head" style={{ marginBottom: 6 }}>
-          <button type="button" className="smt-btn" onClick={() => setSignsRun((n) => n + 1)}>
+          <button
+            type="button"
+            className="smt-btn"
+            onClick={() => setSignsRun((n) => n + 1)}
+          >
             ▶ Replay entrance
           </button>
         </div>
-        <div className="smt-stage" style={{ justifyItems: "start" }} key={signsRun}>
+        <div
+          className="smt-stage"
+          style={{ justifyItems: "start" }}
+          key={signsRun}
+        >
           <Suspense fallback={<Loading />}>
             <RoadSigns
               controls={false}
@@ -367,7 +413,11 @@ export function StopMotionTrial() {
         ]}
       >
         <div className="smt-head" style={{ marginBottom: 6 }}>
-          <button type="button" className="smt-btn" onClick={() => setCartelRun((n) => n + 1)}>
+          <button
+            type="button"
+            className="smt-btn"
+            onClick={() => setCartelRun((n) => n + 1)}
+          >
             ▶ Replay entrance
           </button>
         </div>
@@ -396,7 +446,9 @@ export function StopMotionTrial() {
       >
         <div className="smt-stage">
           <Suspense fallback={<Loading />}>
-            <PointerTilt stepFps={tilt === "sparse" ? POINTER_TILT_SPARSE_FPS : 0} />
+            <PointerTilt
+              stepFps={tilt === "sparse" ? POINTER_TILT_SPARSE_FPS : 0}
+            />
           </Suspense>
         </div>
       </Section>
