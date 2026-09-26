@@ -81,14 +81,21 @@ export const metadata: Metadata = {
 };
 
 // The wall, on every page: Julio's cutting mat (scripts/prepare-paper.mjs),
-// as wide as the viewport and tiling downward with the page. The file
-// tiles without a seam, so a page of any height is covered; the mat's
-// own green paints first, before the file is in. Three widths, picked by
-// viewport width so a big monitor is not upscaling the small one.
+// tiling downward with the page. The file tiles without a seam, so a
+// page of any height is covered; the mat's own green paints first,
+// before the file is in. Its scale follows the screen's height, the
+// way the sign and the words do (Julio, 2026-09-26: a cell must stay
+// the same size against the sign on a narrow screen, not shrink to fit
+// the width) — the mat is 43.6 cells across, and a cell is 3.44vh in
+// his mockup, so it is laid 150vh wide, centred, and wider only when
+// the screen is wider than that (the wide screens, where it fits the
+// width as the mockup does). Three sizes, picked by whichever of the
+// width and 1.5x the height is the bigger, so a big monitor and a tall
+// portrait screen alike are not upscaling the small one.
 const MAT = `
-html { background: #48a27b url(${asset("/mat/mat-1600.webp")}) top center / 100% auto repeat-y; }
-@media (min-width: 1601px) { html { background-image: url(${asset("/mat/mat-2400.webp")}); } }
-@media (min-width: 2401px) { html { background-image: url(${asset("/mat/mat-3200.webp")}); } }
+html { background: #48a27b url(${asset("/mat/mat-1600.webp")}) top center / max(100%, 150vh) auto repeat-y; }
+@media (min-width: 1601px), (min-height: 1068px) { html { background-image: url(${asset("/mat/mat-2400.webp")}); } }
+@media (min-width: 2401px), (min-height: 1601px) { html { background-image: url(${asset("/mat/mat-3200.webp")}); } }
 `;
 
 export default function RootLayout({ children }: LayoutProps<"/">) {

@@ -213,13 +213,15 @@ type ShadowParams = {
   opacity: number; // 0 disables the filter entirely
 };
 
-// Values dialed in by Julio with the on-page sliders: a hard-edged shadow
-// tight to the sign, like the reference photo's wall-mounted lightbox.
+// Read off Julio's mockup of the sign on the mat (2026-09-26): a soft
+// shadow hugging the frame, barely offset — the lightbox sits on the mat
+// under a high light — rather than the hard, thrown one it cast on the
+// white wall.
 const SHADOW_DEFAULTS: ShadowParams = {
-  x: 5,
-  y: 5,
-  blur: 1,
-  opacity: 0.18,
+  x: 1.5,
+  y: 2.5,
+  blur: 2.5,
+  opacity: 0.32,
 };
 
 // The lightbox glow: a blurred copy of the current photo screen-blended
@@ -234,12 +236,14 @@ type GlowParams = {
   warmth: number; // sepia on the blown-out whites, toward lamp-warm
 };
 
-// Values dialed in by Julio with the panel's Glow section on white.
+// Read off the same mockup, where the face is the photo's own cream
+// (a few points lighter, no more): the push is all but off — a faint,
+// warm lift where the tubes are, nothing blown to white.
 const GLOW_DEFAULTS: GlowParams = {
   blur: 0,
-  strength: 0.7,
-  boost: 1.45,
-  warmth: 0.6,
+  strength: 0.35,
+  boost: 1.06,
+  warmth: 0.9,
 };
 
 // The window the glow shines through: where the tube bank actually sits
