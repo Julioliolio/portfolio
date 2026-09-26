@@ -44,6 +44,10 @@ const OUT_PAPER = join(ROOT, "apps", "web", "public", "paper");
 
 const MAT_WIDTHS = [1600, 2400, 3200];
 const MAT_WEBP = { quality: 70, effort: 6 };
+/** The mat's tone on the site: its mean per channel, read off Julio's
+ *  mockup of the hello screen (2026-09-26) — lighter and greener than
+ *  the photo's own middle. The fall-off is flattened to this. */
+const MAT_TONE = [73, 163, 124];
 const PAPER_WIDTH = 1800;
 const PAPER_WEBP = { quality: 72, effort: 6 };
 /** Where the sheets' mean luminance is put (0–255). */
@@ -179,7 +183,8 @@ async function prepareMat() {
 
   // The light falls off down the photo, and its colour drifts with it
   // (the top is paler): fit each channel's row means within the crop
-  // with a line and flatten them, so top and bottom match at the seam.
+  // with a line and flatten them to the site's tone (MAT_TONE), so top
+  // and bottom match at the seam and the whole reads as the mockup.
   // Lines are in every row alike, so the plain means serve.
   const y0 = first;
   const y1 = first + Math.round(periods * grid.period);
@@ -207,7 +212,7 @@ async function prepareMat() {
     }
     const slope = (n * sxy - sx * sy) / (n * sxx - sx * sx);
     const intercept = (sy - slope * sx) / n;
-    return { slope, intercept, mid: intercept + slope * 0.5 };
+    return { slope, intercept, mid: MAT_TONE[c] };
   });
   console.log(
     "mat: brightness top → bottom per channel " +
@@ -218,7 +223,8 @@ async function prepareMat() {
         )
         .join(", ") +
       ", flattened to " +
-      fits.map((f) => f.mid.toFixed(0)).join("/"),
+      fits.map((f) => f.mid.toFixed(0)).join("/") +
+      " (MAT_TONE)",
   );
 
   mkdirSync(OUT_MAT, { recursive: true });

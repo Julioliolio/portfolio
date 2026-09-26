@@ -86,7 +86,7 @@ export const metadata: Metadata = {
 // own green paints first, before the file is in. Three widths, picked by
 // viewport width so a big monitor is not upscaling the small one.
 const MAT = `
-html { background: #3e9d73 url(${asset("/mat/mat-1600.webp")}) top center / 100% auto repeat-y; }
+html { background: #48a27b url(${asset("/mat/mat-1600.webp")}) top center / 100% auto repeat-y; }
 @media (min-width: 1601px) { html { background-image: url(${asset("/mat/mat-2400.webp")}); } }
 @media (min-width: 2401px) { html { background-image: url(${asset("/mat/mat-3200.webp")}); } }
 `;

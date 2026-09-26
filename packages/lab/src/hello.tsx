@@ -51,17 +51,20 @@ export type HelloTuning = {
   wordsTop: number;
 };
 
-// Julio's numbers off the bench, 2026-09-15: the sign a touch bigger
-// and lifted, the words closer in.
+// Read off Julio's mockup of the screen on the mat (2026-09-26, a
+// 1680 x 1076 frame): the words 8.2vh on a 1.0 line, the sign 28.3vh
+// tall (29.7 with the canvas's margins) with its middle a touch under
+// the screen's, a wider breath either side of it — 3.6vw before, 4.9
+// after — and the words' caps on the sign's top.
 const HELLO_DEFAULTS: Readonly<HelloTuning> = Object.freeze({
-  signHeight: 31.5,
-  signX: 0,
-  signY: -3.5,
+  signHeight: 29.7,
+  signX: -0.65,
+  signY: 0.6,
   rowX: 0,
   rowY: 0,
-  gap: 1.2,
-  wordSize: 7.2,
-  wordCap: 5.2,
+  gap: 4.25,
+  wordSize: 8.2,
+  wordCap: 5.25,
   wordsTop: 0.4,
 });
 
@@ -96,7 +99,7 @@ function helloCss(t: HelloTuning): string {
   // The slot's width, vh: its height by the frames' aspect.
   const w = (t.signHeight * SIGN_FRAME.w) / SIGN_FRAME.h;
   return `
-.hello-row { display: flex; align-items: flex-start; justify-content: center; gap: ${n(t.gap)}vw; font-size: min(${n(t.wordSize)}vh, ${n(t.wordCap)}vw); line-height: 1.1; letter-spacing: -.02em; color: #fff; transform: translate(${n(t.rowX)}vw, ${n(t.rowY)}vh); }
+.hello-row { display: flex; align-items: flex-start; justify-content: center; gap: ${n(t.gap)}vw; font-size: min(${n(t.wordSize)}vh, ${n(t.wordCap)}vw); line-height: 1; letter-spacing: -.01em; color: #fff; transform: translate(${n(t.rowX)}vw, ${n(t.rowY)}vh); }
 .hello-words { text-align: right; padding-top: ${n(t.wordsTop)}vh; white-space: nowrap; }
 .hello-sign { flex: none; height: ${n(t.signHeight)}vh; aspect-ratio: ${SIGN_FRAME.w} / ${SIGN_FRAME.h}; margin: 0 ${n(-SIGN_INSET.right * w)}vh 0 ${n(-SIGN_INSET.left * w)}vh; transform: translate(${n(t.signX)}vw, ${n(t.signY)}vh); }
 .hello-sign.is-waiting, .hello-line-slot.is-waiting { visibility: hidden; }
