@@ -213,15 +213,14 @@ type ShadowParams = {
   opacity: number; // 0 disables the filter entirely
 };
 
-// Read off Julio's mockup of the sign on the mat (2026-09-26): a soft
-// shadow hugging the frame, barely offset — the lightbox sits on the mat
-// under a high light — rather than the hard, thrown one it cast on the
+// Julio's numbers off the /lab/cartel sliders on the mat (2026-09-26):
+// thrown a little down and to the right, soft-edged, darker than on the
 // white wall.
 const SHADOW_DEFAULTS: ShadowParams = {
-  x: 1.5,
-  y: 2.5,
-  blur: 2.5,
-  opacity: 0.32,
+  x: 6,
+  y: 6,
+  blur: 2,
+  opacity: 0.34,
 };
 
 // The lightbox glow: a blurred copy of the current photo screen-blended
