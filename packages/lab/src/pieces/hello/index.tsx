@@ -159,7 +159,7 @@ export default function HelloBench() {
           <div className="hello-sign">
             <Suspense fallback={null}>
               <Cartel
-                height={`${values.signHeight}vh`}
+                height="100%"
                 controls={false}
                 radius="page"
                 placeholder={false}

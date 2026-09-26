@@ -25,6 +25,7 @@ import {
 import type { WindowPreview } from "@portfolio/lab/window";
 import {
   moveMs,
+  paperCss,
   useWindowTuning,
   windowEase,
 } from "@portfolio/lab/window-tuning";
@@ -414,6 +415,8 @@ export function Landing() {
   return (
     <>
       <style>{CSS}</style>
+      {/* The prints' paper: the sheet's ground and grain (see prints.tsx). */}
+      <style>{paperCss(wt)}</style>
       <CueStyles />
       <GreetingStyles />
       <HelloStyles />
@@ -456,7 +459,7 @@ export function Landing() {
                   until the stamp, and the stamp waits its turn in the
                   dialogue; its start tells the line when to follow. */}
               <Cartel
-                height={`${hello.signHeight}vh`}
+                height="100%"
                 controls={false}
                 radius="page"
                 placeholder={false}

@@ -43,7 +43,10 @@ export type HelloTuning = {
   /** The breath between the words and the sign, vw. */
   gap: number;
   /** The words' size, vh, and its cap by the width, vw, so a squarer
-   *  window still fits the row. */
+   *  window still fits the row. The cap is the row's: the sign and the
+   *  words' drop shrink with the words under it, so the sign stays the
+   *  same size against the letters on every landscape screen (Julio,
+   *  2026-09-26). */
   wordSize: number;
   wordCap: number;
   /** The words' drop from the row's top, vh — lines up their caps with
@@ -51,13 +54,14 @@ export type HelloTuning = {
   wordsTop: number;
 };
 
-// Read off Julio's mockup of the screen on the mat (2026-09-26, a
-// 1680 x 1076 frame): the words 8.2vh on a 1.0 line, the sign 28.3vh
-// tall (29.7 with the canvas's margins) with its middle a touch under
-// the screen's, a wider breath either side of it — 3.6vw before, 4.9
-// after — and the words' caps on the sign's top.
+// Read off Julio's mockups of the screen on the mat (2026-09-26, a
+// 1680 x 1076 frame): the words 8.2vh on a 1.0 line, the sign about
+// five caps tall — a step past the mockup's 4.95, as he asked for it
+// bigger — with its middle a touch under the screen's, a wider breath
+// either side of it — 3.6vw before, 4.9 after — and the words' caps on
+// the sign's top.
 const HELLO_DEFAULTS: Readonly<HelloTuning> = Object.freeze({
-  signHeight: 29.7,
+  signHeight: 31,
   signX: -0.65,
   signY: 0.6,
   rowX: 0,
@@ -98,10 +102,15 @@ const n = (v: number) => Number(v.toFixed(3)).toString();
 function helloCss(t: HelloTuning): string {
   // The slot's width, vh: its height by the frames' aspect.
   const w = (t.signHeight * SIGN_FRAME.w) / SIGN_FRAME.h;
+  // The row's unit: a vh, capped by the width so a squarer window still
+  // fits the row — and the sign, the words and the words' drop are all
+  // in it, so they shrink together and keep their proportions.
+  const u = "var(--hello-u)";
+  const of = (v: number) => `calc(${n(v)} * ${u})`;
   return `
-.hello-row { display: flex; align-items: flex-start; justify-content: center; gap: ${n(t.gap)}vw; font-size: min(${n(t.wordSize)}vh, ${n(t.wordCap)}vw); line-height: 1; letter-spacing: -.01em; color: #fff; transform: translate(${n(t.rowX)}vw, ${n(t.rowY)}vh); }
-.hello-words { text-align: right; padding-top: ${n(t.wordsTop)}vh; white-space: nowrap; }
-.hello-sign { flex: none; height: ${n(t.signHeight)}vh; aspect-ratio: ${SIGN_FRAME.w} / ${SIGN_FRAME.h}; margin: 0 ${n(-SIGN_INSET.right * w)}vh 0 ${n(-SIGN_INSET.left * w)}vh; transform: translate(${n(t.signX)}vw, ${n(t.signY)}vh); }
+.hello-row { --hello-u: min(1vh, ${Number((t.wordCap / t.wordSize).toFixed(4))}vw); display: flex; align-items: flex-start; justify-content: center; gap: ${n(t.gap)}vw; font-size: ${of(t.wordSize)}; line-height: 1; letter-spacing: -.01em; color: #fff; transform: translate(${n(t.rowX)}vw, ${n(t.rowY)}vh); }
+.hello-words { text-align: right; padding-top: ${of(t.wordsTop)}; white-space: nowrap; }
+.hello-sign { flex: none; height: ${of(t.signHeight)}; aspect-ratio: ${SIGN_FRAME.w} / ${SIGN_FRAME.h}; margin: 0 ${of(-SIGN_INSET.right * w)} 0 ${of(-SIGN_INSET.left * w)}; transform: translate(${n(t.signX)}vw, ${of(t.signY)}); }
 .hello-sign.is-waiting, .hello-line-slot.is-waiting { visibility: hidden; }
 @media (max-width: 700px) {
   .hello-row { flex-direction: column; align-items: center; gap: 3vh; font-size: 4.4vh; transform: none; }
