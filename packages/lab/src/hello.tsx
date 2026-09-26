@@ -30,8 +30,12 @@ const SIGN_FRAME = { w: 929, h: 1600 };
 const SIGN_INSET = { left: 41 / SIGN_FRAME.w, right: 1 - 889 / SIGN_FRAME.w };
 
 export type HelloTuning = {
-  /** The sign's height, vh. */
+  /** The sign's height, in the row's unit (a vh on a wide screen). */
   signHeight: number;
+  /** The sign's height standing on a portrait screen, vh — the column,
+   *  where it is the page's centre and takes a real share of the
+   *  height (Julio, 2026-09-26: "way bigger"). */
+  signPortrait: number;
   /** The sign's offset from its slot in the row, vw right and vh down —
    *  the words stay where the slot put them. */
   signX: number;
@@ -56,12 +60,13 @@ export type HelloTuning = {
 
 // Read off Julio's mockups of the screen on the mat (2026-09-26, a
 // 1680 x 1076 frame): the words 8.2vh on a 1.0 line, the sign about
-// five caps tall — a step past the mockup's 4.95, as he asked for it
-// bigger — with its middle a touch under the screen's, a wider breath
+// five and a half caps tall — past the mockup's 4.95, as he asked for
+// it bigger, twice — with its middle a touch under the screen's, a wider breath
 // either side of it — 3.6vw before, 4.9 after — and the words' caps on
 // the sign's top.
 const HELLO_DEFAULTS: Readonly<HelloTuning> = Object.freeze({
-  signHeight: 31,
+  signHeight: 34,
+  signPortrait: 38,
   signX: -0.65,
   signY: 0.6,
   rowX: 0,
@@ -97,7 +102,10 @@ const n = (v: number) => Number(v.toFixed(3)).toString();
  * back the canvas's transparent margins (SIGN_INSET), so the gap runs
  * from the words to the sign's own edge. Offsets are transforms, so
  * moving the sign or the row never re-lays the words. Narrow, the three
- * stack, centred.
+ * stack, centred. The slot says its height in --hello-sign-h, which is
+ * what the cartel inside is given: it wants a length it can do
+ * arithmetic on (its shadow is a share of it), and a percentage is not
+ * one inside a filter.
  */
 function helloCss(t: HelloTuning): string {
   // The slot's width, vh: its height by the frames' aspect.
@@ -110,12 +118,16 @@ function helloCss(t: HelloTuning): string {
   return `
 .hello-row { --hello-u: min(1vh, ${Number((t.wordCap / t.wordSize).toFixed(4))}vw); display: flex; align-items: flex-start; justify-content: center; gap: ${n(t.gap)}vw; font-size: ${of(t.wordSize)}; line-height: 1; letter-spacing: -.01em; color: #fff; transform: translate(${n(t.rowX)}vw, ${n(t.rowY)}vh); }
 .hello-words { text-align: right; padding-top: ${of(t.wordsTop)}; white-space: nowrap; }
-.hello-sign { flex: none; height: ${of(t.signHeight)}; aspect-ratio: ${SIGN_FRAME.w} / ${SIGN_FRAME.h}; margin: 0 ${of(-SIGN_INSET.right * w)} 0 ${of(-SIGN_INSET.left * w)}; transform: translate(${n(t.signX)}vw, ${of(t.signY)}); }
+.hello-sign { --hello-sign-h: ${of(t.signHeight)}; flex: none; height: var(--hello-sign-h); aspect-ratio: ${SIGN_FRAME.w} / ${SIGN_FRAME.h}; margin: 0 ${of(-SIGN_INSET.right * w)} 0 ${of(-SIGN_INSET.left * w)}; transform: translate(${n(t.signX)}vw, ${of(t.signY)}); }
 .hello-sign.is-waiting, .hello-line-slot.is-waiting { visibility: hidden; }
-@media (max-width: 700px) {
-  .hello-row { flex-direction: column; align-items: center; gap: 3vh; font-size: 4.4vh; transform: none; }
-  .hello-words { text-align: center; }
-  .hello-sign { margin: 0; transform: none; }
+/* Standing: a narrow or a portrait screen. The three stack, centred,
+   and the unit is the plain vh — the column has the room the row
+   lacked — with the sign at its own, bigger, height: it is the page's
+   centre here. */
+@media (max-width: 700px), (orientation: portrait) {
+  .hello-row { --hello-u: 1vh; flex-direction: column; align-items: center; gap: 3vh; font-size: 4.4vh; transform: none; }
+  .hello-words { text-align: center; padding-top: 0; }
+  .hello-sign { --hello-sign-h: ${n(t.signPortrait)}vh; margin: 0; transform: none; }
 }
 `;
 }

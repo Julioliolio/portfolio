@@ -45,6 +45,15 @@ const SIGN: Field<HelloTuning>[] = [
     hint: "the sign's height; its width follows the frames",
   },
   {
+    key: "signPortrait",
+    label: "Standing",
+    min: 12,
+    max: 70,
+    step: 0.5,
+    unit: "vh",
+    hint: "the sign's height on a portrait screen, where the three stack",
+  },
+  {
     key: "signX",
     label: "Across",
     min: -20,
@@ -159,7 +168,7 @@ export default function HelloBench() {
           <div className="hello-sign">
             <Suspense fallback={null}>
               <Cartel
-                height="100%"
+                height="var(--hello-sign-h)"
                 controls={false}
                 radius="page"
                 placeholder={false}

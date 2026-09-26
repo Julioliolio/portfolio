@@ -459,7 +459,7 @@ export function Landing() {
                   until the stamp, and the stamp waits its turn in the
                   dialogue; its start tells the line when to follow. */}
               <Cartel
-                height="100%"
+                height="var(--hello-sign-h)"
                 controls={false}
                 radius="page"
                 placeholder={false}
