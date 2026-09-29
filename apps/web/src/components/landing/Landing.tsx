@@ -9,7 +9,7 @@ import {
   Speech,
   countWords,
 } from "@portfolio/lab/greeting";
-import { HelloStyles, helloSignRect } from "@portfolio/lab/hello";
+import { HelloStyles, helloSignRect, rectOf } from "@portfolio/lab/hello";
 import { SoundToggle, play } from "@portfolio/lab/sound";
 import { TapeArrow, TapeStyles } from "@portfolio/lab/tape";
 import { asset } from "@portfolio/lab/asset";
@@ -27,6 +27,9 @@ import { paperCss, useWindowTuning } from "@portfolio/lab/window-tuning";
 import { PRINTS, printPreview } from "@portfolio/lab/prints";
 import {
   SIGNS_OPEN,
+  SIGNS_PARKED,
+  clickedProject,
+  modified,
   signsTuning,
   useSignsBeside,
   useViewport,
@@ -123,12 +126,6 @@ const TravelLayer = lazy(() =>
   })),
 );
 
-/** An element's box, as the travel wants it. */
-function rectOf(el: Element) {
-  const r = el.getBoundingClientRect();
-  return { x: r.left, y: r.top, w: r.width, h: r.height };
-}
-
 /** A screen counts as arriving once this share of it is in view — early,
  *  so its entrance plays during the scroll rather than after it — and as
  *  away below the lower one; the gap keeps a screen mid-snap from
@@ -197,7 +194,7 @@ const CSS = `
    is back on its print (is-over; useSignsBeside). The prints' column
    fades on the window's fade (--rs-hand). Not on a phone, where the
    box is the whole screen (the window's own 701px line). */
-.landing-projects { position: absolute; left: 7.2vw; bottom: 9.5vh; transform-origin: 0 100%; transition: transform var(--signs-move, 420ms) var(--signs-ease, ease) var(--signs-wait, 0ms); }
+.landing-projects { position: absolute; ${SIGNS_PARKED}; transition: transform var(--signs-move, 420ms) var(--signs-ease, ease) var(--signs-wait, 0ms); }
 @media (min-width: 701px) { .landing-projects.is-over { z-index: 90; } .landing-projects.is-open { transform: ${SIGNS_OPEN}; } }
 @media (prefers-reduced-motion: reduce) { .landing-projects { transition: none; } }
 /* A screen that is away keeps its piece out of sight, so the piece is
@@ -211,6 +208,10 @@ const CSS = `
 .landing-sound[aria-pressed="true"] { opacity: 0.45; }
 .landing-sound:focus-visible { outline: 2px solid currentColor; outline-offset: 4px; border-radius: 999px; }
 `;
+
+/** How long after a stamp starts the line's first word lands, ms: the
+ *  stamp played out, and a stagger. */
+const stampDone = (m: MotionTuning) => m.duration * 1000 + m.stagger;
 
 /** Timers for a speech: a tap as each word lands, and `done` once the
  *  last has settled. */
@@ -320,9 +321,8 @@ export function Landing() {
       live = false;
     };
   }, []);
-  const afterStamp = motion.duration * 1000 + motion.stagger;
-  const afterDrop =
-    motion.lead + 2 * motion.stagger + motion.duration * 1000 + motion.stagger;
+  const afterStamp = stampDone(motion);
+  const afterDrop = motion.lead + 2 * motion.stagger + stampDone(motion);
   // The timings are read at the moment a speech starts — a bench change
   // mid-sentence does not restart it.
   const motionRef = useRef(motion);
@@ -470,9 +470,7 @@ export function Landing() {
   useEffect(() => {
     if (signSaid === 0) return;
     const m = motionRef.current;
-    return schedule(LINE_WORDS, m.duration * 1000 + m.stagger, m, () =>
-      setSaid(true),
-    );
+    return schedule(LINE_WORDS, stampDone(m), m, () => setSaid(true));
   }, [signSaid]);
 
   // Always open on the sign: the browser's restored scroll position (a
@@ -624,10 +622,7 @@ export function Landing() {
   // A plain left click on a link to a project opens it here; anything
   // modified, or any other link, is the browser's.
   function onProjectsClick(e: MouseEvent<HTMLElement>) {
-    if (e.defaultPrevented || e.button !== 0) return;
-    if (e.metaKey || e.ctrlKey || e.shiftKey || e.altKey) return;
-    const a = (e.target as Element).closest("a[href]");
-    const slug = a?.getAttribute("href")?.match(/\/work\/([^/?#]+)/)?.[1];
+    const slug = clickedProject(e);
     if (!slug) return;
     e.preventDefault();
     if (slug === open) closeProject();
@@ -808,7 +803,7 @@ export function Landing() {
           replay={plate.runs}
           href={asset("/")}
           onClick={(e) => {
-            if (e.metaKey || e.ctrlKey || e.shiftKey || e.altKey) return;
+            if (modified(e)) return;
             e.preventDefault();
             play("knock", 1, { at: "click" });
             if (open) closeProject();

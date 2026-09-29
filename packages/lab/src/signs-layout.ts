@@ -1,6 +1,11 @@
 "use client";
 
-import { useEffect, useState, type CSSProperties } from "react";
+import {
+  useEffect,
+  useState,
+  type CSSProperties,
+  type MouseEvent,
+} from "react";
 import type { WindowLayout } from "./window";
 import {
   FADE_EASE,
@@ -123,12 +128,29 @@ export function signsTuning(vw: number, vh: number) {
  *          two gaps + the growth), vh
  */
 export const SIGNS_OPEN = "translate(-4.8vw, 5.5vh) scale(0.72)";
+/** The signs parked at rest, as CSS declarations: the stack's
+ *  bottom-left corner on the mockup's numbers, and the corner
+ *  SIGNS_OPEN steps back from. */
+export const SIGNS_PARKED =
+  "left: 7.2vw; bottom: 9.5vh; transform-origin: 0 100%";
 
 export const WINDOW_LAYOUT: WindowLayout = {
   rail: "calc(2.4vw + 25.6vh)",
   inset: "2.4vw",
   foot: "31vh",
 };
+
+/** A click with a modifier key: the browser's (a new tab, a window). */
+export const modified = (e: MouseEvent) =>
+  e.metaKey || e.ctrlKey || e.shiftKey || e.altKey;
+
+/** The project a plain left click on a link to one asks for, or null:
+ *  anything modified, or any other link, is the browser's. */
+export function clickedProject(e: MouseEvent): string | null {
+  if (e.defaultPrevented || e.button !== 0 || modified(e)) return null;
+  const a = (e.target as Element).closest("a[href]");
+  return a?.getAttribute("href")?.match(/\/work\/([^/?#]+)/)?.[1] ?? null;
+}
 
 /**
  * The road signs beside the project window, on the way in and on the

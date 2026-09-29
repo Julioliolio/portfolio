@@ -18,11 +18,10 @@ import {
   GreetingStyles,
   Speech,
 } from "../../greeting";
-import { HelloStyles, helloSignRect } from "../../hello";
+import { HelloStyles, helloSignRect, rectOf } from "../../hello";
 import { useMotionTuning } from "../../motion";
 import {
   TravelLayer,
-  rectOf,
   resetTravelTuning,
   setTravelTuning,
   useTravelTuning,

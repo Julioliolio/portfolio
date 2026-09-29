@@ -7,7 +7,9 @@ import { paperCss, useWindowTuning } from "@portfolio/lab/window-tuning";
 import { Suspense, lazy, type MouseEvent } from "react";
 import {
   SIGNS_OPEN,
+  SIGNS_PARKED,
   WINDOW_LAYOUT,
+  modified,
   signsTuning,
   useViewport,
 } from "@portfolio/lab/signs-layout";
@@ -45,7 +47,7 @@ const HOME = asset("/");
 const CSS = `
 body { color: #2b2722; }
 .pp-signs { display: none; }
-@media (min-width: 701px) { .pp-signs { display: block; position: fixed; left: 7.2vw; bottom: 9.5vh; z-index: 90; transform-origin: 0 100%; transform: ${SIGNS_OPEN}; } }
+@media (min-width: 701px) { .pp-signs { display: block; position: fixed; ${SIGNS_PARKED}; z-index: 90; transform: ${SIGNS_OPEN}; } }
 `;
 
 export function ProjectPage({ project }: { project: Project }) {
@@ -55,8 +57,7 @@ export function ProjectPage({ project }: { project: Project }) {
   // The open sign is the way back to the projects; the rest are the
   // browser's.
   function onSignsClick(e: MouseEvent<HTMLElement>) {
-    if (e.button !== 0 || e.metaKey || e.ctrlKey || e.shiftKey || e.altKey)
-      return;
+    if (e.button !== 0 || modified(e)) return;
     const a = (e.target as Element).closest("a[aria-current]");
     if (!a) return;
     e.preventDefault();

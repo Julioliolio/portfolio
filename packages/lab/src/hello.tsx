@@ -33,24 +33,33 @@ export const SIGN_INSET = {
   top: 39 / SIGN_FRAME.h,
   bottom: 1 - 1562 / SIGN_FRAME.h,
 };
+/** The share of the canvas the sign itself fills, across and down. */
+export const SIGN_SHARE = {
+  w: 1 - SIGN_INSET.left - SIGN_INSET.right,
+  h: 1 - SIGN_INSET.top - SIGN_INSET.bottom,
+};
+
+/** A box in viewport px. */
+export type Rect = { x: number; y: number; w: number; h: number };
+
+/** An element's box, as the travel wants it. */
+export function rectOf(el: Element): Rect {
+  const r = el.getBoundingClientRect();
+  return { x: r.left, y: r.top, w: r.width, h: r.height };
+}
 
 /**
  * The sign itself inside its slot (`.hello-sign`), in viewport px: the
  * slot's box less the canvas's transparent margins — what the sign's
  * travel (sign-travel.tsx) leaves from and comes back to.
  */
-export function helloSignRect(slot: Element): {
-  x: number;
-  y: number;
-  w: number;
-  h: number;
-} {
+export function helloSignRect(slot: Element): Rect {
   const r = slot.getBoundingClientRect();
   return {
     x: r.left + r.width * SIGN_INSET.left,
     y: r.top + r.height * SIGN_INSET.top,
-    w: r.width * (1 - SIGN_INSET.left - SIGN_INSET.right),
-    h: r.height * (1 - SIGN_INSET.top - SIGN_INSET.bottom),
+    w: r.width * SIGN_SHARE.w,
+    h: r.height * SIGN_SHARE.h,
   };
 }
 

@@ -273,6 +273,12 @@ main > h1 { display: none; }
 .tb-hold { display: flex; align-items: center; gap: 8px; font-size: 12px; }
 `;
 
+/** Which side of its arrow a cue's words sit. */
+const SIDES: { value: "above" | "below"; label: string }[] = [
+  { value: "above", label: "Words above" },
+  { value: "below", label: "Words below" },
+];
+
 export default function TapeArrowLab() {
   const t = useTapeTuning();
   const [held, setHeld] = useState(false);
@@ -340,19 +346,13 @@ export default function TapeArrowLab() {
           <Choice
             label="Down arrow"
             value={t.wordsDown}
-            options={[
-              { value: "above", label: "Words above" },
-              { value: "below", label: "Words below" },
-            ]}
+            options={SIDES}
             pick={(wordsDown) => setTapeTuning({ wordsDown })}
           />
           <Choice
             label="Up arrow"
             value={t.wordsUp}
-            options={[
-              { value: "above", label: "Words above" },
-              { value: "below", label: "Words below" },
-            ]}
+            options={SIDES}
             pick={(wordsUp) => setTapeTuning({ wordsUp })}
           />
           <Group title="" fields={WORDS} values={t} set={setTapeTuning} />

@@ -1,13 +1,6 @@
 "use client";
 
-import {
-  Suspense,
-  lazy,
-  useEffect,
-  useRef,
-  useState,
-  type MouseEvent,
-} from "react";
+import { Suspense, lazy, useRef, useState, type MouseEvent } from "react";
 import { asset } from "../../asset";
 import {
   BENCH_CSS,
@@ -16,6 +9,7 @@ import {
   Expr,
   Group,
   btn,
+  useWholeScreen,
   type Field,
   type Literal,
 } from "../../bench";
@@ -24,7 +18,9 @@ import { PRINTS, printPreview } from "../../prints";
 import { SpringGraph } from "../../spring-graph";
 import {
   SIGNS_OPEN,
+  SIGNS_PARKED,
   WINDOW_LAYOUT,
+  clickedProject,
   signsTuning,
   useSignsBeside,
   useViewport,
@@ -313,7 +309,7 @@ const CSS = `
 ${BENCH_CSS}
 /* The landing's places (Landing.tsx): the signs bottom-left, stepped
    back into the corner while a project is open, on the window's clock. */
-.pb-signs { position: fixed; left: 7.2vw; bottom: 9.5vh; z-index: 90; transform-origin: 0 100%; transition: transform var(--signs-move, 420ms) var(--signs-ease, ease) var(--signs-wait, 0ms); }
+.pb-signs { position: fixed; ${SIGNS_PARKED}; z-index: 90; transition: transform var(--signs-move, 420ms) var(--signs-ease, ease) var(--signs-wait, 0ms); }
 .pb-signs.is-open { transform: ${SIGNS_OPEN}; }
 .pb-panel { top: 16px; bottom: auto; }
 /* The knobs stand over the column's side of the screen: this puts them
@@ -378,7 +374,7 @@ export default function PaperBench() {
   // Placing the sheets by hand: what is on the mat meanwhile, and
   // whether they can be dragged (see RoadSigns' placing).
   const [showing, setShowing] = useState<Show>("pointer");
-  const [placing, setPlacing] = useState(false);
+  const placing = showing !== "pointer";
   const hold =
     showing === "pointer" ? undefined : showing === "pile" ? null : showing;
 
@@ -401,24 +397,14 @@ export default function PaperBench() {
     setOpen(null);
   }
   function onSignsClick(e: MouseEvent<HTMLElement>) {
-    if (e.defaultPrevented || e.button !== 0) return;
-    if (e.metaKey || e.ctrlKey || e.shiftKey || e.altKey) return;
-    const a = (e.target as Element).closest("a[href]");
-    const slug = a?.getAttribute("href")?.match(/\/work\/([^/?#]+)/)?.[1];
+    const slug = clickedProject(e);
     if (!slug) return;
     e.preventDefault();
     if (slug === open) close();
     else show(slug);
   }
   // The lab page centres its piece; this one is the whole screen.
-  useEffect(() => {
-    const main = document.querySelector("main");
-    const was = main?.style.display ?? "";
-    if (main) main.style.display = "block";
-    return () => {
-      if (main) main.style.display = was;
-    };
-  }, []);
+  useWholeScreen();
 
   return (
     <>
@@ -642,10 +628,7 @@ export default function PaperBench() {
               { value: "pile", label: "Pile" },
               ...PRINTS.map((p) => ({ value: p.slug as Show, label: p.title })),
             ]}
-            pick={(v) => {
-              setShowing(v);
-              setPlacing(v !== "pointer");
-            }}
+            pick={setShowing}
           />
           <span style={{ opacity: 0.6, fontSize: 11 }}>
             Pick the pile, or a sign&rsquo;s hover, and drag its sheets where

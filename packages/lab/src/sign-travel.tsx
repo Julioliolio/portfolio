@@ -15,7 +15,7 @@ import {
   cartelGlow,
   cartelShadow,
 } from "./cartel-look";
-import { SIGN_INSET } from "./hello";
+import { SIGN_INSET, SIGN_SHARE, type Rect } from "./hello";
 import { springEasing } from "./spring";
 import { createTuningStore } from "./tuning-store";
 
@@ -92,9 +92,6 @@ import { createTuningStore } from "./tuning-store";
  * during, the layer's; after, the plate's.
  */
 
-/** A box in viewport px. */
-export type Rect = { x: number; y: number; w: number; h: number };
-
 type FrameKey = "sink" | "launch" | "smear" | "land" | "plate" | "front";
 
 /** The frames and their aspects (w / h, printed by
@@ -111,8 +108,7 @@ const FRAMES: Record<FrameKey, { src: string; aspect: number }> = {
   front: { src: asset("/cartel/julio/front.webp"), aspect: 929 / 1600 },
 };
 const FRONT_FIT: CSSProperties = (() => {
-  const w = 1 - SIGN_INSET.left - SIGN_INSET.right;
-  const h = 1 - SIGN_INSET.top - SIGN_INSET.bottom;
+  const { w, h } = SIGN_SHARE;
   return {
     width: `${(100 / w).toFixed(3)}%`,
     height: `${(100 / h).toFixed(3)}%`,
@@ -352,8 +348,7 @@ function scrollFrames(from: Rect, to: Rect, t: TravelTuning) {
   ];
   // The cartel measures its shadow off its canvas, which keeps a margin
   // round the sign: the same share, off the canvas the box stands for.
-  const canvas = (h: number) =>
-    `${n(h / (1 - SIGN_INSET.top - SIGN_INSET.bottom))}px`;
+  const canvas = (h: number) => `${n(h / SIGN_SHARE.h)}px`;
   const signShadow: Keyframe[] = [
     { offset: 0, easing: "linear", filter: cartelShadow(canvas(from.h)) },
     { offset: s, easing: "linear", filter: cartelShadow(canvas(to.h)) },
@@ -797,10 +792,4 @@ export function TravelLayer({
       {/* eslint-enable @next/next/no-img-element */}
     </div>
   );
-}
-
-/** The plate's box as the travel wants it: the anchor's rect. */
-export function rectOf(el: Element): Rect {
-  const r = el.getBoundingClientRect();
-  return { x: r.left, y: r.top, w: r.width, h: r.height };
 }
