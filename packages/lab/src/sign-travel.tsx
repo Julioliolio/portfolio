@@ -407,8 +407,8 @@ export function TravelLayer({
   /** Scroll mode: which of the three the sign is now. */
   onPhase?: (phase: TravelPhase, was: TravelPhase | null) => void;
   /** Scroll mode: the sign as it is right now — the photo it shows and
-   *  the turn it has (the cartel's data-cartel-src and
-   *  data-cartel-transform) — so the layer squashes that photo, turned
+   *  the turn it has (the cartel's data-cartel-src, and the transform
+   *  on its data-cartel-stack) — so the layer squashes that photo, turned
    *  the same way, and the hand-off is seamless. Asked on every step. */
   sign?: () => { src: string; transform: string } | null | undefined;
 }) {

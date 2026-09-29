@@ -1380,10 +1380,6 @@ export default function Cartel({
           spinScaleX,
         );
         stackRef.current.style.transform = transform;
-        // Published with the photo (data-cartel-src), for the travel's
-        // stand-in to turn the same way.
-        if (containerRef.current)
-          containerRef.current.dataset.cartelTransform = transform;
       }
     }
 
@@ -2155,6 +2151,8 @@ export default function Cartel({
         >
           <div
             ref={stackRef}
+            // Its turn, for the travel's stand-in to turn the same way.
+            data-cartel-stack=""
             style={{
               position: "absolute",
               inset: 0,

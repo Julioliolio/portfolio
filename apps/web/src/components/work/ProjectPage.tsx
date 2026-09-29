@@ -79,7 +79,9 @@ export function ProjectPage({ project }: { project: Project }) {
         <CaseStudy project={project} home />
       </ProjectWindow>
       <nav className="pp-signs" aria-label="Projects" onClick={onSignsClick}>
-        {measured && (
+        {/* Not on a phone, where they are never shown: no chunk, no
+            clips fetched. */}
+        {measured && w >= 701 && (
           <Suspense fallback={null}>
             <RoadSigns
               controls={false}

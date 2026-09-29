@@ -380,9 +380,10 @@ export function Landing() {
     const el =
       helloSign.current?.querySelector<HTMLElement>("[data-cartel-src]");
     if (!el?.dataset.cartelSrc) return null;
+    const stack = el.querySelector<HTMLElement>("[data-cartel-stack]");
     return {
       src: el.dataset.cartelSrc,
-      transform: el.dataset.cartelTransform ?? "none",
+      transform: stack?.style.transform || "none",
     };
   };
 
