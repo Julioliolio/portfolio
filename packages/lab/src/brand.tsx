@@ -71,7 +71,9 @@ export function brandShadow(h: string, t: BrandTuning): string {
 
 /**
  * The plate's stylesheet: its place and size as variables on the root
- * (the window reads --brand-foot), the fixed box, and its entrance —
+ * (the window reads --brand-foot), the fixed box, the lit photo that
+ * switches on over it under the pointer (a hard cut, like a lightbox),
+ * and its entrance —
  * the site's sm-drop stamp (packages/lab/src/motion.tsx), so
  * /lab/motion tunes it too. Above the window (z-index 80) and the
  * signs over it (90); the travelling sign goes over this (96).
@@ -82,6 +84,9 @@ function brandCss(t: BrandTuning): string {
 .brand-sign { position: fixed; top: var(--brand-top); left: var(--brand-left); z-index: 95; display: block; height: var(--brand-h); width: calc(var(--brand-h) * ${BRAND_ASPECT}); filter: ${brandShadow("var(--brand-h)", t)}; outline: none; }
 .brand-sign:focus-visible { outline: 2px solid #fff; outline-offset: 6px; }
 .brand-sign img { display: block; width: 100%; height: 100%; user-select: none; }
+.brand-sign .brand-lit { position: absolute; inset: 0; opacity: 0; pointer-events: none; }
+@media (hover: hover) { .brand-sign:hover .brand-lit { opacity: 1; } }
+.brand-sign:focus-visible .brand-lit { opacity: 1; }
 .brand-sign.is-hidden { visibility: hidden; }
 .brand-sign.brand-enter { animation: sm-drop var(--sm-duration, .38s) steps(1, end) backwards; transform-origin: 50% 60%; }
 @media (prefers-reduced-motion: reduce) { .brand-sign.brand-enter { animation-duration: .01ms; } }

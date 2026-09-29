@@ -18,7 +18,8 @@ import {
  * on a project page it is a link to the landing. It stamps in with the
  * site's drop (`entrance`), or is put there by the sign's travel with
  * no entrance of its own, the plate simply being there once the
- * travelling sign has landed (`shown`, flipped by the landing).
+ * travelling sign has landed (`shown`, flipped by the landing). Under
+ * the pointer it lights up: a photo of it switched on, cut in over it.
  *
  * The bench (/lab/brand-sign, `controls`): the plate in its corner with
  * the knobs floating over it — its size, its place, its shadow — and a
@@ -26,6 +27,8 @@ import {
  */
 
 const PLATE = asset("/brand/front.webp");
+/** The same lightbox switched on, over the plate while it's hovered. */
+const LIT = asset("/brand/lit.webp");
 
 const PLACE: Field<BrandTuning>[] = [
   {
@@ -123,6 +126,15 @@ export default function BrandSign({
         <img
           src={PLATE}
           alt="Julio(liolio) — the way home"
+          draggable={false}
+          decoding="async"
+          fetchPriority="low"
+        />
+        {/* eslint-disable-next-line @next/next/no-img-element -- as above */}
+        <img
+          className="brand-lit"
+          src={LIT}
+          alt=""
           draggable={false}
           decoding="async"
           fetchPriority="low"
