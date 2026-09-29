@@ -33,7 +33,8 @@ import { useEffect, useRef } from "react";
  * it becomes a clay I-beam, likewise. prepare-cursor.mjs registers each
  * variant's frames at its hotspot (arrow tip / index fingertip / the
  * beam's middle) and pads them to identical dimensions, so swapping frames
- * never moves the hotspot.
+ * never moves the hotspot. Text inside `data-cursor="arrow"` keeps the
+ * arrow: words that are the picture, like the landing's greeting.
  *
  * Over an element carrying `data-cursor-label` a small tag with that text
  * rides beside the hand — cut in with the site's pop entrance (the sm-pop
@@ -287,7 +288,9 @@ export function ClayCursor() {
         ? "arrow"
         : el.closest(INTERACTIVE)
           ? "pointer"
-          : el.closest(EDITABLE) || overText(el.ownerDocument, localX, localY)
+          : el.closest(EDITABLE) ||
+              (!el.closest("[data-cursor=arrow]") &&
+                overText(el.ownerDocument, localX, localY))
             ? "text"
             : "arrow";
       applyLabel(labelOf(el));

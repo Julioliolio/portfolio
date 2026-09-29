@@ -555,7 +555,11 @@ export function Landing() {
           Hola! I&rsquo;m Julio Romero, a product designer finding charm in the
           unexpected.
         </h1>
-        <div className="landing-piece hello-row" aria-hidden="true">
+        <div
+          className="landing-piece hello-row"
+          aria-hidden="true"
+          data-cursor="arrow"
+        >
           {ready && (
             <Speech
               key={screens.hello.runs}
