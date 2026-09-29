@@ -35,7 +35,7 @@ import {
   useViewport,
 } from "@portfolio/lab/signs-layout";
 import { PHONE_PRINTS_CSS, PhoneProject, phoneScreenId } from "./PhonePrints";
-import { ProjectWindowMount, warmWindow } from "./ProjectWindowMount";
+import { ProjectWindowMount, loadWindow } from "./ProjectWindowMount";
 
 /**
  * The landing: two screens on the wall, snapped.
@@ -476,14 +476,20 @@ export function Landing() {
   const measure = (slug: string) =>
     printPreview(phone ? screensWrap.current : stack.current, slug);
   // The first open is a step in the history; a switch stays on it.
+  // Nothing moves until the window's code is in (at once, once the
+  // projects screen has fetched it), so the signs and the box start
+  // together.
   function showProject(slug: string) {
-    setFrom(measure(slug));
-    setOpen(slug);
-    history[open === null ? "pushState" : "replaceState"](
-      { ...history.state, pw: slug },
-      "",
-      asset(`/work/${slug}/`),
-    );
+    const step = open === null ? "pushState" : "replaceState";
+    void loadWindow().then(() => {
+      setFrom(measure(slug));
+      setOpen(slug);
+      history[step](
+        { ...history.state, pw: slug },
+        "",
+        asset(`/work/${slug}/`),
+      );
+    });
   }
   function closeProject() {
     // Measured again on the way out: the viewport may have changed.
@@ -511,7 +517,7 @@ export function Landing() {
   // The window's chunks come in as the projects screen arrives, so the
   // first click has nothing to wait for.
   useEffect(() => {
-    if (screens.projects.held) warmWindow();
+    if (screens.projects.held) void loadWindow();
   }, [screens.projects.held]);
   // A plain left click on a link to a project opens it here; anything
   // modified, or any other link, is the browser's.
