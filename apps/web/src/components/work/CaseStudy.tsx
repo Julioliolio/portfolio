@@ -64,7 +64,7 @@ import { projectAfter } from "@/content/projects/list";
  * full of them was too heavy) — that is the landing's and the window's.
  * Things fade up once (<Reveal>), a run or a picture at a time, and the
  * page goes out of focus along the sheet's bottom edge (<BottomBlur>).
- * One blue, the rope's, for every project: `accent` no longer tints a
+ * One blue, the site's, for every project: `accent` no longer tints a
  * page.
  *
  * Images are not here yet. A `placeholder` figure renders a grey box

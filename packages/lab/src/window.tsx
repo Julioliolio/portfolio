@@ -13,7 +13,6 @@ import {
   type MouseEvent,
   type ReactNode,
 } from "react";
-import { asset } from "./asset";
 import { loaders } from "./loaders";
 import { loadSounds, playLater } from "./play-later";
 import { BLUE } from "./style";
@@ -41,7 +40,7 @@ import {
  * the way home plus the open page's table of contents, while the
  * project takes the rest of the screen as one big box: a sheet of
  * white paper with Julio's scan as its texture (`sheet`, `ground`,
- * `grain`), square, set in from the mat's top, right and bottom by a
+ * `grain`), set in from the mat's top, right and bottom by a
  * margin so the mat shows around it, lying on the mat under its
  * shadows with one corner a little off it. The whole case study lives
  * inside it and scrolls there — through the sheet, which scrolls with
@@ -70,7 +69,7 @@ import {
  *
  * The rail holds a slot the page inside fills with its contents
  * (`useWindowRail()`), under the brand plate's foot (--brand-foot, from
- * @portfolio/lab/brand: the plate is the site's home mark, fixed in
+ * brand.tsx: the plate is the site's home mark, fixed in
  * the corner — the landing's own while the window is over the landing,
  * the window's, a link to `closeHref`, when it is a page of its own);
  * `foot` keeps the slot clear of whatever the caller parks at the
@@ -79,8 +78,8 @@ import {
  * box is edge to edge and the slot is never filled.
  *
  * `WindowTuning` (window-tuning.ts, shared with the landing so the
- * signs move on the same clock) is the set of knobs; /lab/window is
- * its bench, and <ProjectWindow> regenerates its stylesheet on every
+ * signs move on the same clock) is the set of knobs; /lab/paper,
+ * /lab/sheet and /lab/window are its benches, and <ProjectWindow> regenerates its stylesheet on every
  * change. The window is only the chrome: the page inside is the
  * caller's (`children`), which can find the box's scroller through
  * `useWindowScroller()` for anything scroll-driven.
@@ -88,12 +87,10 @@ import {
 
 // -------------------------------------------------------- the stylesheet
 
-/** The rail's resting text: white, a little back, on the mat. */
 /** From this viewport width there is a rail and a margin; under it the
  *  box is the whole screen. */
 const RAIL_FROM = 701;
-/** The hover card's hairline round its clip: the box starts with it
- *  (grow). */
+/** A hairline round the clip: the box starts with it on the grow. */
 const CLIP_EDGE = `inset 0 0 0 1px ${BLUE}`;
 /** The sheet in the air, mid-lift: a wide soft shadow, the same six
  *  layers in the same order as the paper's at rest (paperShadow(), the
@@ -116,6 +113,81 @@ const CORNER = {
   tr: { at: "100% 0%", dx: 1, dy: -1 },
   tl: { at: "0% 0%", dx: -1, dy: -1 },
 } as const;
+
+/** Room round the box for the lifted corner's shadow, px. */
+const LIFT_ROOM = 80;
+
+/** A small deterministic random, so a seed always cuts the same edge. */
+function random(seed: number) {
+  let a = (seed * 2654435761) >>> 0;
+  return () => {
+    a = (a + 0x6d2b79f5) >>> 0;
+    let x = Math.imul(a ^ (a >>> 15), 1 | a);
+    x = (x + Math.imul(x ^ (x >>> 7), 61 | x)) ^ x;
+    return ((x ^ (x >>> 14)) >>> 0) / 4294967296;
+  };
+}
+
+/** How far apart the cut's points are along an edge, px. */
+const CUT_STEP = 8;
+
+/**
+ * The sheet's outline for a box of w × h px: a rectangle with its
+ * corners rounded by `corner`, each edge wandering in from the straight
+ * line by up to twice `wobble` — a slow wander of `waves` swells, two
+ * sines out of step so it never repeats — with `rough` px of jitter
+ * point to point, both tapering to nothing at the corners so the arcs
+ * join. Inward only: nothing can be drawn outside the box. Straight
+ * edges (no wobble, no rough) still get the path, for the corners and
+ * the edge. As an SVG path in px, for clip-path and the edge's SVG.
+ */
+function sheetPath(w: number, h: number, t: WindowTuning): string {
+  const r = Math.max(0, Math.min(t.corner, w / 4, h / 4));
+  const rnd = random(Math.round(t.seed));
+  const d: string[] = [];
+  const pt = (x: number, y: number) => `${n(x, 1)} ${n(y, 1)}`;
+  // One edge from (x0, y0) to (x1, y1), its inward normal (nx, ny).
+  const edge = (
+    x0: number,
+    y0: number,
+    x1: number,
+    y1: number,
+    nx: number,
+    ny: number,
+  ) => {
+    const len = Math.hypot(x1 - x0, y1 - y0);
+    const steps = Math.max(1, Math.round(len / CUT_STEP));
+    const p1 = rnd() * Math.PI * 2;
+    const p2 = rnd() * Math.PI * 2;
+    for (let i = 1; i < steps; i++) {
+      const u = i / steps;
+      const taper = Math.min(1, u * 6, (1 - u) * 6);
+      const slow =
+        0.5 +
+        0.5 *
+          (0.65 * Math.sin(Math.PI * 2 * t.waves * u + p1) +
+            0.35 * Math.sin(Math.PI * 2 * t.waves * 1.73 * u + p2));
+      const off = taper * (2 * t.wobble * slow + t.rough * (rnd() * 2 - 1));
+      d.push(
+        `L${pt(x0 + (x1 - x0) * u + nx * off, y0 + (y1 - y0) * u + ny * off)}`,
+      );
+    }
+    d.push(`L${pt(x1, y1)}`);
+  };
+  const arc = (x: number, y: number) =>
+    `A${n(r, 1)} ${n(r, 1)} 0 0 1 ${pt(x, y)}`;
+  d.push(`M${pt(r, 0)}`);
+  edge(r, 0, w - r, 0, 0, 1);
+  if (r > 0) d.push(arc(w, r));
+  edge(w, r, w, h - r, -1, 0);
+  if (r > 0) d.push(arc(w - r, h));
+  edge(w - r, h, r, h, 0, -1);
+  if (r > 0) d.push(arc(0, h - r));
+  edge(0, h - r, 0, r, 1, 0);
+  if (r > 0) d.push(arc(r, 0));
+  d.push("Z");
+  return d.join("");
+}
 
 /**
  * The whole stylesheet for a tuning. The notes are here rather than in
@@ -197,81 +269,6 @@ const CORNER = {
  *   and the box shrinks (script). Plays while the window is still
  *   mounted.
  */
-/** Room round the box for the lifted corner's shadow, px. */
-const LIFT_ROOM = 80;
-
-/** A small deterministic random, so a seed always cuts the same edge. */
-function random(seed: number) {
-  let a = (seed * 2654435761) >>> 0;
-  return () => {
-    a = (a + 0x6d2b79f5) >>> 0;
-    let x = Math.imul(a ^ (a >>> 15), 1 | a);
-    x = (x + Math.imul(x ^ (x >>> 7), 61 | x)) ^ x;
-    return ((x ^ (x >>> 14)) >>> 0) / 4294967296;
-  };
-}
-
-/** How far apart the cut's points are along an edge, px. */
-const CUT_STEP = 8;
-
-/**
- * The sheet's outline for a box of w × h px: a rectangle with its
- * corners rounded by `corner`, each edge wandering in from the straight
- * line by up to twice `wobble` — a slow wander of `waves` swells, two
- * sines out of step so it never repeats — with `rough` px of jitter
- * point to point, both tapering to nothing at the corners so the arcs
- * join. Inward only: nothing can be drawn outside the box. Straight
- * edges (no wobble, no rough) still get the path, for the corners and
- * the edge. As an SVG path in px, for clip-path and the edge's SVG.
- */
-function sheetPath(w: number, h: number, t: WindowTuning): string {
-  const r = Math.max(0, Math.min(t.corner, w / 4, h / 4));
-  const rnd = random(Math.round(t.seed));
-  const d: string[] = [];
-  const pt = (x: number, y: number) => `${n(x, 1)} ${n(y, 1)}`;
-  // One edge from (x0, y0) to (x1, y1), its inward normal (nx, ny).
-  const edge = (
-    x0: number,
-    y0: number,
-    x1: number,
-    y1: number,
-    nx: number,
-    ny: number,
-  ) => {
-    const len = Math.hypot(x1 - x0, y1 - y0);
-    const steps = Math.max(1, Math.round(len / CUT_STEP));
-    const p1 = rnd() * Math.PI * 2;
-    const p2 = rnd() * Math.PI * 2;
-    for (let i = 1; i < steps; i++) {
-      const u = i / steps;
-      const taper = Math.min(1, u * 6, (1 - u) * 6);
-      const slow =
-        0.5 +
-        0.5 *
-          (0.65 * Math.sin(Math.PI * 2 * t.waves * u + p1) +
-            0.35 * Math.sin(Math.PI * 2 * t.waves * 1.73 * u + p2));
-      const off = taper * (2 * t.wobble * slow + t.rough * (rnd() * 2 - 1));
-      d.push(
-        `L${pt(x0 + (x1 - x0) * u + nx * off, y0 + (y1 - y0) * u + ny * off)}`,
-      );
-    }
-    d.push(`L${pt(x1, y1)}`);
-  };
-  const arc = (x: number, y: number) =>
-    `A${n(r, 1)} ${n(r, 1)} 0 0 1 ${pt(x, y)}`;
-  d.push(`M${pt(r, 0)}`);
-  edge(r, 0, w - r, 0, 0, 1);
-  if (r > 0) d.push(arc(w, r));
-  edge(w, r, w, h - r, -1, 0);
-  if (r > 0) d.push(arc(w - r, h));
-  edge(w - r, h, r, h, 0, -1);
-  if (r > 0) d.push(arc(0, h - r));
-  edge(0, h - r, 0, r, 1, 0);
-  if (r > 0) d.push(arc(r, 0));
-  d.push("Z");
-  return d.join("");
-}
-
 function windowCss(t: WindowTuning): string {
   const fade = n(t.fade, 0);
   const reveal = n(t.reveal, 0);
@@ -393,8 +390,8 @@ export function useWindowRail(): HTMLElement | null {
 /** A rectangle on the screen, in px. */
 type WindowRect = { x: number; y: number; w: number; h: number };
 
-/** The clip the box grows out of and shrinks back into: the hover
- *  card's media, where it is on the wall and what it plays. */
+/** The print the box grows out of and shrinks back into: its clip,
+ *  where it is on the mat and what it plays. */
 export type WindowPreview = {
   rect: WindowRect;
   /** The clip's src; the box plays it, muted, while it moves. */
@@ -407,8 +404,8 @@ export type WindowPreview = {
   /** When `time` was read, performance.now() ms: anything that picks
    *  the clip up later adds what has played since (see clipTimeNow). */
   at?: number;
-  /** The card's own video: on the way out the box hands its progress
-   *  back, so the next hover carries on from there. */
+  /** The print's own video: on the way out the box hands its progress
+   *  back, so the print carries on from there. */
   video?: HTMLVideoElement;
   /** A print's lean on the mat, degrees: the box starts turned by it and
    *  straightens as it lifts. 0 for a clip with no frame. */
@@ -427,7 +424,7 @@ export function clipTimeNow(preview: WindowPreview): number {
 }
 
 /**
- * A card's clip as the window wants it: its rect on the wall (the
+ * A print's clip as the window wants it: its rect on the mat (the
  * caller's, which may have to undo a transform), the file, the frame
  * it is on, and a snapshot of that frame so the box shows the very
  * same picture from its first paint while its own copy seeks there.
@@ -625,7 +622,7 @@ type ProjectWindowProps = {
   mode?: "modal" | "page";
   /** Modal mode: the clip the box grows out of on mount, and shrinks
    *  back into on close — read at close time, so the caller can keep
-   *  it pointed at the open project's card. Null: fade instead. */
+   *  it pointed at the open project's print. Null: fade instead. */
   from?: WindowPreview | null;
   /** For the dialog's name: the open project's title. */
   label: string;
@@ -637,6 +634,10 @@ type ProjectWindowProps = {
   children?: ReactNode;
 };
 
+/** The brand plate, the way home when the window is a page of its own
+ *  (a piece, so through the loaders like everywhere else). */
+const BrandSign = lazy(loaders["brand-sign"]);
+
 /**
  * The box, the rail and the controls. The page inside is `children`;
  * on a switch it is up to the caller to render the next page (keyed, so
@@ -644,9 +645,6 @@ type ProjectWindowProps = {
  * to the box on open and back where it was on close; the page behind
  * stops scrolling while the window is up.
  */
-/** The brand plate, the way home when the window is a page of its own
- *  (a piece, so through the loaders like everywhere else). */
-const BrandSign = lazy(loaders["brand-sign"]);
 
 export function ProjectWindow({
   active,
@@ -667,9 +665,12 @@ export function ProjectWindow({
   const clip = useRef<HTMLVideoElement>(null);
   /** When the clip was paused under the page, performance.now() ms. */
   const pausedAt = useRef<number | null>(null);
-  // What the caller says now: the box shrinks back into this.
+  // What the caller says now: the box shrinks back into this. Kept in
+  // the commit, ahead of every effect below that reads it.
   const latest = useRef(from);
-  latest.current = from;
+  useLayoutEffect(() => {
+    latest.current = from;
+  });
 
   // Derived during render, the cue's way: a flip to hidden starts the
   // exit, which keeps the window mounted while it plays; a flip to
@@ -734,8 +735,7 @@ export function ProjectWindow({
   // window is gone. The clip carries on from where
   // the project got to — the page's own copy of the same film if it
   // has one (Camper, scrubbed or not), else as if it had never paused
-  // — and hands that back to the card, so the next hover carries on
-  // too.
+  // — and hands that back to the print, so it carries on too.
   useEffect(() => {
     if (!leaving) return;
     const v = clip.current;
@@ -768,8 +768,8 @@ export function ProjectWindow({
         setShrinking(true);
       }, reveal);
       done = window.setTimeout(() => {
-        const card = latest.current?.video;
-        if (card && clip.current) card.currentTime = clip.current.currentTime;
+        const print = latest.current?.video;
+        if (print && clip.current) print.currentTime = clip.current.currentTime;
         setLeaving(false);
         setShrinking(false);
       }, reveal + grow);
@@ -932,7 +932,7 @@ export function ProjectWindow({
             key={preview.src}
             ref={(el) => {
               clip.current = el;
-              // Picks up where the card's copy is now; set before the
+              // Picks up where the print's copy is now; set before the
               // file is in, which the browser keeps as the start.
               if (el && preview.time !== undefined && !el.dataset.started) {
                 el.dataset.started = "1";

@@ -20,7 +20,6 @@ import { replayClass, useMotionTuning } from "../../motion";
 import { PRINTS, PRINT_CSS, Print, printSize } from "../../prints";
 import { springEasing } from "../../spring";
 import { SpringGraph } from "../../spring-graph";
-import { INK } from "../../style";
 import {
   SOUND_FIELDS,
   play,
@@ -118,8 +117,7 @@ import {
  *
  * Photos are served from apps/web/public/signs/ (regenerate with
  * scripts/prepare-signs.mjs) — height-normalized, natural widths, like a
- * real series of signs. The stack sits on the white studio wall so the
- * drop shadows read.
+ * real series of signs. The stack sits on the mat.
  */
 
 type Sign = {
@@ -818,22 +816,23 @@ function geometry(t: RoadSignsTuning) {
   // The column is a wide print plus room for its tilt; the tallest
   // print sets the height (an estimate — the band grows with its blurb;
   // the stage only needs to be roomy enough, the column measures itself).
-  const cardW = t.printW + COLUMN_ROOM;
-  const cardH = Math.max(...PRINTS.map((p) => printSize(p, t.printW).h));
-  const room = 48;
+  const columnW = t.printW + COLUMN_ROOM;
+  const columnH = Math.max(...PRINTS.map((p) => printSize(p, t.printW).h));
+  // Air round the column, px, top and bottom and past the reach.
+  const margin = 48;
   // The reach sets the stage's width (on the site, out to the screen's
   // edge); a column wider than the reach is allowed to overlap the
   // stack's room rather than push the stage past the screen.
-  const stageW = Math.max(stackW + t.cardSpan, cardW + room);
+  const stageW = Math.max(stackW + t.cardSpan, columnW + margin);
   const ay = stackH / 2 + t.cardY;
-  const minY = Math.min(0, ay - cardH / 2 - room);
-  const maxY = Math.max(stackH, ay + cardH / 2 + room);
+  const minY = Math.min(0, ay - columnH / 2 - margin);
+  const maxY = Math.max(stackH, ay + columnH / 2 + margin);
   return {
     stage: { w: stageW, h: maxY - minY },
     stackAt: { x: 0, y: -minY },
     /** The signs at rest — the stack's box without its padding. */
     signs: { w: maxSignW, h: signsH },
-    cardTop: ay - minY,
+    seatTop: ay - minY,
     padX,
     padY,
   };
@@ -1268,7 +1267,7 @@ export default function RoadSigns({
   handed?: string | null;
   /**
    * What the piece's root box is sized to. "stage" (default): the whole
-   * stage — the stack plus the room the card and rope need — for pages
+   * stage — the stack plus the room the prints' column needs — for pages
    * that center the piece. "signs": just the signs at rest, with the
    * stage hanging off it (overflow visible), so a page can put the stack
    * on a wall by its own edges — the landing parks it bottom-left. The
@@ -1301,14 +1300,16 @@ export default function RoadSigns({
     ...ROAD_SIGNS_DEFAULTS,
     ...override,
   });
+  // A change in the override's values resets the tuning to it, during
+  // render; the key stands in for the object so a fresh literal per
+  // render doesn't re-apply every time.
   const overrideKey = JSON.stringify(override ?? null);
-  useEffect(() => {
-    if (override === undefined) return;
-    setTuning({ ...ROAD_SIGNS_DEFAULTS, ...override });
-    // The key stands in for the object so a fresh literal per render
-    // doesn't re-apply every time.
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [overrideKey]);
+  const [appliedKey, setAppliedKey] = useState(overrideKey);
+  if (overrideKey !== appliedKey) {
+    setAppliedKey(overrideKey);
+    if (override !== undefined)
+      setTuning({ ...ROAD_SIGNS_DEFAULTS, ...override });
+  }
   const [hovered, setHovered] = useState<string | null>(null);
   const sound = useSoundTuning();
   // Bench-only: pin a sign hovered so its hot pose holds while the pointer
@@ -1408,9 +1409,6 @@ export default function RoadSigns({
     for (const w of engine.walks.values()) replayClass(w.el, "rs-sign-enter");
   }, [engine, replay]);
 
-  // A project opening fades the column in place, and any on its way;
-  // the project closing brings its print back for the window to land
-  // on, and the ordinary timers take it from there.
   // The open project's prints are handed over (the box is the print):
   // set here, not through the Print's props — a re-render would write
   // the class list over the engine's own marks on the print.
@@ -1419,6 +1417,10 @@ export default function RoadSigns({
       el?.classList.toggle("is-handed", PRINTS[i]?.slug === handed);
     }
   }, [engine, handed]);
+
+  // A project opening fades the column in place, and any on its way;
+  // the project closing brings its print back for the window to land
+  // on, and the ordinary timers take it from there.
   const wasSelected = useRef<string | null>(null);
   useEffect(() => {
     if (selected !== null) {
@@ -1444,11 +1446,6 @@ export default function RoadSigns({
     if (placingNow) cancelShow(engine);
   }, [engine, placingNow]);
 
-  // The tuning as the drag sees it (a drag runs on window listeners,
-  // outside React's render).
-  const tuningRef = useRef(tuning);
-  tuningRef.current = tuning;
-
   // Placing: drag a sheet to move its place, alt-drag to lean it (a
   // quarter degree per px) — the front sheet too, off the column's
   // centre line. Pointer deltas are stage px — the bench pages keep the
@@ -1458,21 +1455,22 @@ export default function RoadSigns({
     const on = engine.column.dealt;
     ev.preventDefault();
     let last = { x: ev.clientX, y: ev.clientY };
+    // The tuning as the drag has left it: the drag runs on window
+    // listeners, outside React's render.
+    let t = tuning;
     const move = (m: PointerEvent) => {
       const dx = m.clientX - last.x;
       const dy = m.clientY - last.y;
       last = { x: m.clientX, y: m.clientY };
-      const t = tuningRef.current;
       const cur =
         (on === null ? t.places.pile[slug] : t.places.hover[on]?.[slug]) ??
         NOWHERE;
       const place: Place = m.altKey
         ? { ...cur, tilt: Math.round((cur.tilt + dx * 0.25) * 2) / 2 }
         : { ...cur, x: Math.round(cur.x + dx), y: Math.round(cur.y + dy) };
-      const next = withPlace(t, on, slug, place);
-      tuningRef.current = next;
-      setTuning(next);
-      onTune?.({ places: next.places });
+      t = withPlace(t, on, slug, place);
+      setTuning(t);
+      onTune?.({ places: t.places });
     };
     const up = () => {
       window.removeEventListener("pointermove", move);
@@ -1575,8 +1573,8 @@ export default function RoadSigns({
     // Leaving through the box's right half counts as heading for the
     // column. The wedge (drawBridge) catches the pointer from here on.
     const rect = ev.currentTarget.getBoundingClientRect();
-    const towardCard = ev.clientX >= rect.left + rect.width / 2;
-    scheduleHide(engine, towardCard ? t.hideTowardCard : t.hideDelay);
+    const towardColumn = ev.clientX >= rect.left + rect.width / 2;
+    scheduleHide(engine, towardColumn ? t.hideTowardCard : t.hideDelay);
   }
 
   function set(key: NumericKey<RoadSignsTuning>, value: number) {
@@ -1763,12 +1761,11 @@ export default function RoadSigns({
             <div
               key={spec.slug}
               className="rs-seat"
-              style={{ top: geo.cardTop, zIndex: at.z }}
+              style={{ top: geo.seatTop, zIndex: at.z }}
               onPointerDown={(ev) => onPlaceDown(ev, spec.slug)}
             >
               <Print
                 spec={spec}
-                index={i}
                 refCallback={(el) => registerPrint(i, el)}
                 onClick={(ev) => onPrintClick(ev, spec.slug)}
                 tilt={at.tilt}
@@ -2219,7 +2216,7 @@ const NUDGE_FIELDS: Field[] = [
   {
     key: "nudgeFps",
     label: "Frame rate",
-    hint: "The poke's own rate. 60 is a smooth tween; 16 is the same hard cuts as the hover; try 8 or 12 for chunkier.",
+    hint: "The poke's own rate. 60 is a smooth tween; 24 is the same hard cuts as the hover; try 8 or 12 for chunkier.",
     min: 4,
     max: 60,
     step: 1,
@@ -2463,7 +2460,7 @@ const PRINT_FIELDS: Field[] = [
 
 /** The places as rows to read: the pile by print, then each hover's
  *  layout. */
-export function placeRows(places: Places): [string, Place][] {
+function placeRows(places: Places): [string, Place][] {
   const rows: [string, Place][] = PRINTS.map((p) => [
     `Pile · ${p.title}`,
     places.pile[p.slug] ?? NOWHERE,
@@ -2572,8 +2569,8 @@ const COLUMN_CSS = `
 /* A sheet: posed off its seat by inline translate / rotate (its place,
    see pose), and sprung between poses — the shift on one spring, the
    turn on its own; the individual properties, so each can have its own
-   curve, and the print's own rotate (PRINT_CSS) is set aside here. */
-.rs-prints .rs-print { pointer-events: none; transform: none; transition: translate var(--rs-in, .6s) var(--rs-spring, ease-out), rotate var(--rs-turn, .5s) var(--rs-turn-spring, ease-out), top var(--rs-lift-ms, .22s) ease, scale var(--rs-lift-ms, .22s) ease, box-shadow var(--rs-lift-ms, .22s) ease; }
+   curve. */
+.rs-prints .rs-print { pointer-events: none; transition: translate var(--rs-in, .6s) var(--rs-spring, ease-out), rotate var(--rs-turn, .5s) var(--rs-turn-spring, ease-out), top var(--rs-lift-ms, .22s) ease, scale var(--rs-lift-ms, .22s) ease, box-shadow var(--rs-lift-ms, .22s) ease; }
 /* The front print under the pointer, lifted a little off the mat: up,
    a touch bigger, its shadow thrown further (the paper's lifted one,
    window-tuning.ts). Not while the sheets are being placed. */

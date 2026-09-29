@@ -6,7 +6,7 @@
 
 /** The ink: text, the controls, the contents' words. */
 export const INK = "#2b2722";
-/** The rope's blue: one blue for the whole site. */
+/** One blue for the whole site. */
 export const BLUE = "#0000ff";
 /** Medium is a family of its own (--font-neue-montreal-extra; see
  *  globals.css in the web app): anything at 500 has to name it, or the

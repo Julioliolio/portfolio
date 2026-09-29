@@ -28,7 +28,6 @@ ${PRINT_CSS}
 /* A screen's print: centred, square on the mat, as wide as the screen
    less a margin; a tall print keeps clear of the top and the bottom. */
 .pp-slide { --rs-print-w: calc(100vw - 32px); position: absolute; inset: 0; display: grid; place-items: center; }
-.pp-slide .rs-print { transform: none; }
 .pp-slide .rs-print.is-tall { width: min(calc(100vw - 32px), calc((100dvh - 200px) * var(--pp-aspect, 1))); }
 .pp-dots { position: absolute; right: 12px; top: 50%; display: grid; gap: 10px; transform: translateY(-50%); }
 .pp-dot { display: block; width: 8px; height: 8px; border-radius: 999px; border: 1px solid rgba(255, 255, 255, .85); background: transparent; }

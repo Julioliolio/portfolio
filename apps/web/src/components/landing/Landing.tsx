@@ -9,11 +9,7 @@ import {
   Speech,
   countWords,
 } from "@portfolio/lab/greeting";
-import {
-  HelloStyles,
-  helloSignRect,
-  useHelloTuning,
-} from "@portfolio/lab/hello";
+import { HelloStyles, helloSignRect } from "@portfolio/lab/hello";
 import { SoundToggle, play } from "@portfolio/lab/sound";
 import { TapeArrow, TapeStyles } from "@portfolio/lab/tape";
 import { asset } from "@portfolio/lab/asset";
@@ -66,23 +62,24 @@ import { ProjectWindowMount, warmWindow } from "./ProjectWindowMount";
  *
  * The sign goes with the page: as the projects screen arrives the sign
  * leaves its row for the upper-left corner and becomes the brand plate
- * there — the travel (@portfolio/lab/sign-travel: held cuts on a fixed
- * layer, from the sign's box to the plate's, tuned on /lab/sign-travel)
- * — and as the hello screen comes back the plate leaves and the sign
- * returns the same way, backwards, landing where the row will have it
- * once the snap has settled; the line and the cue then follow as they
- * would a stamp. `sign` is where it is: on the wall, going, in the
- * corner (the plate, pieces/brand-sign), coming, or off. A page opened
- * on the projects, or a return before the sign had stamped, has no
- * sign to take: the plate drops in on its own. A travel caught by the
- * scroll turning round is cut short and the other way starts from its
- * own ends — hard cuts are the language. The plate is the way back up.
- * With the travel on the scroll (its "scroll" mode, tuned on the
- * bench) the layer drives itself from the scroll position instead and
- * says which of the three the sign is (`onPhase`); the two travels
- * above stand down, and a return by the scroll skips the stamp the
- * words would otherwise call, the line and the cue following as they
- * would one.
+ * there — the travel (@portfolio/lab/sign-travel, tuned on
+ * /lab/sign-travel). On the site the travel is on the scroll: its layer
+ * drives itself from the scroll position and says which of the three
+ * the sign is (`onPhase`), and a return by the scroll skips the stamp
+ * the words would otherwise call, the line and the cue following as
+ * they would one. The plate is the way back up.
+ *
+ * The bench's other two modes play the travel instead (held cuts, or
+ * smooth), on a fixed layer from the sign's box to the plate's, and the
+ * two effects below run them: as the hello screen comes back the plate
+ * leaves and the sign returns the same way, backwards, landing where
+ * the row will have it once the snap has settled; the line and the cue
+ * then follow as they would a stamp. `sign` is where it is: on the
+ * wall, going, in the corner (the plate, pieces/brand-sign), coming, or
+ * off. A page opened on the projects, or a return before the sign had
+ * stamped, has no sign to take: the plate drops in on its own. A travel
+ * caught by the scroll turning round is cut short and the other way
+ * starts from its own ends.
  *
  * Every arrival on a screen plays that screen's entrance, with no dead
  * frames: both pieces are mounted once, at load, and stay mounted. An
@@ -170,8 +167,9 @@ const LINE_WORDS = countWords(GREETING_LINE);
  *
  *   hello screen     the row of words and sign — @portfolio/lab/hello;
  *                    the cue — its size and foot are the tape tuning's (/lab/tape-arrow)
- *   projects screen  glyph at the top, 3.5vh down; the stack's left edge
- *                    at 7.2vw, its foot 9.5vh up; each sign 8.8vh tall
+ *   projects screen  the brand plate in the corner (brand.tsx); the
+ *                    stack's left edge at 7.2vw, its foot 9.5vh up;
+ *                    each sign 8.8vh tall
  *   the prints       a wide print 57.9vw across, the column's edge on
  *                    the screen's, its centre line up beside
  *                    the stack — signsTuning()
@@ -185,13 +183,12 @@ const CSS = `
 /* The row of the greeting — the words, the sign, the line — and its
    sizes live in @portfolio/lab/hello (tuned on /lab/hello); this file
    only places the pieces in it. */
-/* The signs sit by their own edges (frame="signs"); the stage and its
-   card hang off the box to the right and above. */
-.landing-projects { position: absolute; left: 7.2vw; bottom: 9.5vh; }
-/* The tape arrow over the signs' stage (the box their card hangs off
-   reaches the head of the screen), under the prints' column (3). */
+/* The tape arrow over the signs' stage (which reaches the head of the
+   screen), under the prints' column (3). */
 .landing-screen .tape { z-index: 2; }
-/* A project is open: the signs sit over the window (z-index 80) and
+/* The signs sit by their own edges (frame="signs"); the stage and the
+   prints' column hang off the box to the right and above.
+   A project is open: the signs sit over the window (z-index 80) and
    step back into the corner (SIGNS_OPEN), on the box's own clock and
    curve (--signs-move / --signs-ease, from the window's tuning) so the
    two move as one; on the way back — the way in, backwards — they wait
@@ -200,7 +197,7 @@ const CSS = `
    is back on its print (is-over; useSignsBeside). The prints' column
    fades on the window's fade (--rs-hand). Not on a phone, where the
    box is the whole screen (the window's own 701px line). */
-.landing-projects { transform-origin: 0 100%; transition: transform var(--signs-move, 420ms) var(--signs-ease, ease) var(--signs-wait, 0ms); }
+.landing-projects { position: absolute; left: 7.2vw; bottom: 9.5vh; transform-origin: 0 100%; transition: transform var(--signs-move, 420ms) var(--signs-ease, ease) var(--signs-wait, 0ms); }
 @media (min-width: 701px) { .landing-projects.is-over { z-index: 90; } .landing-projects.is-open { transform: ${SIGNS_OPEN}; } }
 @media (prefers-reduced-motion: reduce) { .landing-projects { transition: none; } }
 /* A screen that is away keeps its piece out of sight, so the piece is
@@ -208,8 +205,7 @@ const CSS = `
 .landing-screen.is-away .landing-piece { visibility: hidden; }
 /* The sign is on its way (or in the corner): its slot stays, empty. */
 .hello-sign.is-gone { visibility: hidden; }
-/* The mute switch: white on the mat, bottom right, level with the
-   glyph's foot; over the prints' column (z-index 3), under the window. */
+/* The mute switch: white on the mat, bottom right, 3.5vh up; over the prints' column (z-index 3), under the window. */
 .landing-sound { position: fixed; right: 2.4vw; bottom: 3.5vh; z-index: 4; display: grid; place-items: center; width: 3.2vh; height: 3.2vh; min-width: 24px; min-height: 24px; padding: 0; background: none; border: 0; color: #fff; }
 .landing-sound svg { display: block; width: 100%; height: 100%; }
 .landing-sound[aria-pressed="true"] { opacity: 0.45; }
@@ -262,7 +258,6 @@ export function Landing() {
   // viewport is measured; until then neither is mounted.
   const phone = measured && w < 701;
   const motion = useMotionTuning();
-  const hello = useHelloTuning();
 
   // The load and every return are sequenced, nothing appears on its own.
   // On the hello screen it is the dialogue: the words before (keyed on
@@ -562,7 +557,7 @@ export function Landing() {
 
   // A real scroll to the other screen — the page travels, the arrival
   // entrance plays as it settles.
-  function scrollTo(ref: React.RefObject<HTMLElement | null>) {
+  function goTo(ref: React.RefObject<HTMLElement | null>) {
     ref.current?.scrollIntoView({ behavior: "smooth", block: "start" });
   }
 
@@ -587,7 +582,7 @@ export function Landing() {
   // tree in the state; ours rides along.
   const [open, setOpen] = useState<string | null>(null);
   // The window's clock: the signs step back and return on it, and the
-  // card's copy fades on its fade.
+  // prints' column fades on its fade.
   const wt = useWindowTuning();
   // The signs beside the window, on the way in and the way back.
   const beside = useSignsBeside(open, wt);
@@ -727,7 +722,7 @@ export function Landing() {
           label="Scroll to the projects"
           onClick={() => {
             play("knock", 1, { at: "click" });
-            scrollTo(projectsScreen);
+            goTo(projectsScreen);
           }}
         />
       </section>
@@ -752,7 +747,7 @@ export function Landing() {
             label="Scroll back to the top"
             onClick={() => {
               play("knock", 1, { at: "click" });
-              scrollTo(helloScreen);
+              goTo(helloScreen);
             }}
           />
           {phone && <PhoneProject spec={PRINTS[0]!} index={0} />}
@@ -817,7 +812,7 @@ export function Landing() {
             e.preventDefault();
             play("knock", 1, { at: "click" });
             if (open) closeProject();
-            scrollTo(helloScreen);
+            goTo(helloScreen);
           }}
         />
       </Suspense>

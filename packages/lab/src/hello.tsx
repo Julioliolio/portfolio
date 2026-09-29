@@ -8,8 +8,8 @@ import { createTuningStore } from "./tuning-store";
  * screen (apps/web .../landing), as one set of knobs.
  *
  * Every size is a share of the viewport (vh, vw) so the screen keeps
- * its proportions at any size: the mockup (2026-09-13, a 1512 x 982
- * frame) is the origin of the defaults. /lab/hello is the bench: the
+ * its proportions at any size: Julio's mockups (see HELLO_DEFAULTS) are
+ * the origin of the defaults. /lab/hello is the bench: the
  * real screen, full size, with the knobs floating over it. The store
  * is a tuning store like the motion one — values are kept in this
  * browser until Reset, and <HelloStyles> regenerates the stylesheet on
@@ -61,8 +61,8 @@ export type HelloTuning = {
    *  where it is the page's centre and takes a real share of the
    *  height (Julio, 2026-09-26: "way bigger"). */
   signPortrait: number;
-  /** The sign's offset from its slot in the row, vw right and vh down —
-   *  the words stay where the slot put them. */
+  /** The sign's offset from its slot in the row, vw right and, in the
+   *  row's unit, down — the words stay where the slot put them. */
   signX: number;
   signY: number;
   /** The whole row's offset from the screen's centre, vw right and vh
@@ -78,8 +78,8 @@ export type HelloTuning = {
    *  2026-09-26). */
   wordSize: number;
   wordCap: number;
-  /** The words' drop from the row's top, vh — lines up their caps with
-   *  the sign's top. */
+  /** The words' drop from the row's top, in the row's unit — lines up
+   *  their caps with the sign's top. */
   wordsTop: number;
 };
 

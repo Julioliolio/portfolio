@@ -40,7 +40,7 @@ export type BrandTuning = {
   shadowAlpha: number;
 };
 
-export const BRAND_DEFAULTS: Readonly<BrandTuning> = Object.freeze({
+const BRAND_DEFAULTS: Readonly<BrandTuning> = Object.freeze({
   height: 7.1,
   top: 2,
   left: 2.4,
@@ -77,7 +77,7 @@ export function brandShadow(h: string, t: BrandTuning): string {
  * /lab/motion tunes it too. Above the window (z-index 80) and the
  * signs over it (90); the travelling sign goes over this (96).
  */
-export function brandCss(t: BrandTuning): string {
+function brandCss(t: BrandTuning): string {
   return `
 :root { --brand-h: ${n(t.height)}vh; --brand-top: ${n(t.top)}vh; --brand-left: ${n(t.left)}vw; --brand-foot: calc(${n(t.top + t.height)}vh + ${n(t.gap)}px); }
 .brand-sign { position: fixed; top: var(--brand-top); left: var(--brand-left); z-index: 95; display: block; height: var(--brand-h); width: calc(var(--brand-h) * ${BRAND_ASPECT}); filter: ${brandShadow("var(--brand-h)", t)}; outline: none; }

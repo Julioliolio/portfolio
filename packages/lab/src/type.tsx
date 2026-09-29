@@ -28,7 +28,7 @@ import { BLUE, INK, MEDIUM, MONO } from "./style";
  * A ground (.ty-ground) is a band with its own colours: the header is the
  * blue one, filling the first screen, and the page turns to paper under
  * it as you scroll; the way on at the foot is blue again. One blue for
- * the whole portfolio — the rope's. Projects no longer tint their type.
+ * the whole portfolio (style.ts). Projects no longer tint their type.
  *
  * It is a stylesheet and two small components, and no layout beyond the
  * twelve columns. Wrap the page in `.ty` (the container the sizes are

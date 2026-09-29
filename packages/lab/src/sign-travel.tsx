@@ -23,8 +23,9 @@ import { createTuningStore } from "./tuning-store";
  * The sign's travel: the hello screen's tall lightbox leaving for the
  * upper-left corner, where it becomes the brand plate (pieces/brand-sign)
  * as the page scrolls down to the projects — and coming back the same
- * way, backwards, on the way up. Fast, and in the site's stop motion:
- * seven held poses, cut at the walker's twelve a second, nothing
+ * way, backwards, on the way up. Three ways (`mode`): held cuts,
+ * smooth, or on the scroll — the site's. Held cuts, the first: the
+ * site's stop motion, seven held poses, cut at the walker's twelve a second, nothing
  * eased. The sign is deformed by hand, frame by frame, after the
  * animator's rules — anticipation, squash and stretch, an arc, follow-
  * through — and the landing squash is the swap: its silhouette is
@@ -53,10 +54,11 @@ import { createTuningStore } from "./tuning-store";
  * it is WAAPI keyframes on a fixed layer, held with steps(1), the way
  * back the same keyframes reversed (the window's move does this). The
  * shares, the arc, the lean and the beat are the knobs; /lab/sign-travel
- * is the bench. Reduced motion: no travel, the two just swap.
+ * is the bench. Reduced motion, when played: no travel, the two just
+ * swap.
  *
- * Or smooth (`mode`, the site's feel since 2026-09-28: held cuts read
- * as choppy with this few frames, Julio): the box glides through the
+ * Or smooth (Julio, 2026-09-28: held cuts read as choppy with this few
+ * frames): the box glides through the
  * same poses on the site's spring (spring.ts) — its place, size, lean
  * and shadow all interpolated, the spring's bounce carrying it past
  * the plate and back — while the frames still cut hard from pose to
@@ -67,7 +69,8 @@ import { createTuningStore } from "./tuning-store";
  * from the sign) and then goes across, so the cut from the tall sign
  * to the wide one lands in the fast part of the way.
  *
- * Or on the scroll (`mode: "scroll"`, Julio's try of 2026-09-28): the
+ * Or on the scroll (`mode: "scroll"`, the site's since Julio's try of
+ * 2026-09-28): the
  * sign rides with the page until its top meets the top of the screen,
  * then a pinned copy takes over — its top held there, its bottom
  * still going up with the page, so the page squashes it — until it is
@@ -91,10 +94,6 @@ import { createTuningStore } from "./tuning-store";
 
 /** A box in viewport px. */
 export type Rect = { x: number; y: number; w: number; h: number };
-
-/** The tick the cuts are held for: the cartel's walker's, twelve a
- *  second, in ms — the default `fps`. */
-export const TRAVEL_FPS = 12;
 
 type FrameKey = "sink" | "launch" | "smear" | "land" | "plate" | "front";
 
@@ -172,7 +171,7 @@ export type TravelTuning = {
   at4: number;
 };
 
-export const TRAVEL_DEFAULTS: Readonly<TravelTuning> = Object.freeze({
+const TRAVEL_DEFAULTS: Readonly<TravelTuning> = Object.freeze({
   // Julio's slider values (2026-09-28): the squash on the scroll,
   // trailing it, done three quarters of the way to the second screen.
   mode: "scroll",
@@ -182,7 +181,7 @@ export const TRAVEL_DEFAULTS: Readonly<TravelTuning> = Object.freeze({
   widen: 1,
   swap: 0.35,
   lag: 0.6,
-  fps: TRAVEL_FPS,
+  fps: 12, // the cartel's walker's beat
   period: 520,
   bounce: 0.2,
   rise: 0.5,
@@ -202,11 +201,11 @@ export const TRAVEL_DEFAULTS: Readonly<TravelTuning> = Object.freeze({
 const store = createTuningStore("sign-travel-tuning", TRAVEL_DEFAULTS);
 export const setTravelTuning = store.set;
 export const resetTravelTuning = store.reset;
-export const getTravelTuning = store.get;
+const getTravelTuning = store.get;
 export const useTravelTuning = store.useTuning;
 
 /** One held pose: which frame, where the box is, and its transform. */
-export type Cut = { frame: FrameKey; rect: Rect; transform: string };
+type Cut = { frame: FrameKey; rect: Rect; transform: string };
 
 const n = (v: number) => Number(v.toFixed(2));
 
@@ -214,7 +213,7 @@ const n = (v: number) => Number(v.toFixed(2));
  * The cuts of a travel from the sign's box to the plate's, for a
  * tuning. Pure, so the bench can draw them.
  */
-export function travelCuts(from: Rect, to: Rect, t: TravelTuning): Cut[] {
+function travelCuts(from: Rect, to: Rect, t: TravelTuning): Cut[] {
   const c0 = { x: from.x + from.w / 2, y: from.y + from.h / 2 };
   const c1 = { x: to.x + to.w / 2, y: to.y + to.h / 2 };
   const dx = c1.x - c0.x;
@@ -389,9 +388,6 @@ export type TravelHandle = {
   /** Scroll mode is on: the layer drives itself from the scroll, the
    *  page's own travels stand down. */
   scrolls: () => boolean;
-  /** Scroll mode, for the bench: hold the squash at a share of its
-   *  way, 0 the sign at the top of the screen, 1 the plate. */
-  preview: (from: Rect, to: Rect, share: number) => void;
 };
 
 /**
@@ -426,46 +422,11 @@ export function TravelLayer({
   const running = useRef<Animation[]>([]);
   const t = useTravelTuning();
   const scrolls = t.mode === "scroll";
-  const scrollsRef = useRef(scrolls);
-  scrollsRef.current = scrolls;
 
   useEffect(() => {
     const list = running;
     return () => list.current.forEach((a) => a.cancel());
   }, []);
-
-  // The squash's own keyframes, for a pair of boxes; paused, scrubbed
-  // by a share of the way (the scroll's, or the bench's).
-  const hold = (f: Rect, g: Rect, share: number) => {
-    const el = layer.current;
-    if (!el) return;
-    const frames = scrollFrames(f, g, t);
-    running.current.forEach((a) => a.cancel());
-    const options: KeyframeAnimationOptions = {
-      duration: 1000,
-      easing: "linear",
-      fill: "both",
-    };
-    const list = [
-      el.animate(frames.box, options),
-      el.animate(frames.boxShadow, options),
-    ];
-    if (turn.current)
-      list.push(turn.current.animate(frames.signShadow, options));
-    for (const key of FRAME_KEYS) {
-      // The front is its stand-in wrapper (see the markup).
-      const target = key === "front" ? front.current : imgs.current.get(key);
-      if (target) list.push(target.animate(frames.opacity(key), options));
-    }
-    for (const a of list) {
-      a.pause();
-      a.currentTime = Math.min(1, Math.max(0, share)) * 1000;
-    }
-    running.current = list;
-    el.classList.add("is-on");
-  };
-  const holdRef = useRef(hold);
-  holdRef.current = hold;
 
   // Scroll mode: the layer follows the scroll. The sign's box is
   // measured while it is still the page's, so the hand-off is exact,
@@ -507,6 +468,34 @@ export function TravelLayer({
     // `lag` a frame at a time.
     let shown: number | null = null;
     const lag = Math.min(0.95, Math.max(0, t.lag));
+    // The squash's own keyframes, for a pair of boxes; paused, scrubbed
+    // by a share of the way.
+    const hold = (f: Rect, g: Rect, share: number) => {
+      const frames = scrollFrames(f, g, t);
+      running.current.forEach((a) => a.cancel());
+      const options: KeyframeAnimationOptions = {
+        duration: 1000,
+        easing: "linear",
+        fill: "both",
+      };
+      const list = [
+        el.animate(frames.box, options),
+        el.animate(frames.boxShadow, options),
+      ];
+      if (turn.current)
+        list.push(turn.current.animate(frames.signShadow, options));
+      for (const key of FRAME_KEYS) {
+        // The front is its stand-in wrapper (see the markup).
+        const target = key === "front" ? front.current : imgs.current.get(key);
+        if (target) list.push(target.animate(frames.opacity(key), options));
+      }
+      for (const a of list) {
+        a.pause();
+        a.currentTime = Math.min(1, Math.max(0, share)) * 1000;
+      }
+      running.current = list;
+      el.classList.add("is-on");
+    };
     const off = () => {
       clearHide();
       running.current.forEach((a) => a.cancel());
@@ -561,7 +550,7 @@ export function TravelLayer({
         clearHide();
         followPhoto();
         if (!built) {
-          holdRef.current(rects.from, rects.to, share);
+          hold(rects.from, rects.to, share);
           built = true;
         } else {
           const at = share * 1000;
@@ -726,10 +715,7 @@ export function TravelLayer({
         for (const img of imgs.current.values())
           void img.decode().catch(() => {});
       },
-      scrolls: () => scrollsRef.current,
-      preview(f, g, share) {
-        holdRef.current(f, g, share);
-      },
+      scrolls: () => getTravelTuning().mode === "scroll",
     };
   }, []);
 

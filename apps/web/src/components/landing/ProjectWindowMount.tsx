@@ -37,8 +37,8 @@ export function ProjectWindowMount({
 }: {
   /** The open project's slug, or null for closed. */
   open: string | null;
-  /** The open project's card clip: the box grows out of it and shrinks
-   *  back into it. */
+  /** The open project's print (printPreview): the box grows out of it
+   *  and shrinks back into it. */
   from: WindowPreview | null;
   onClose: () => void;
 }) {

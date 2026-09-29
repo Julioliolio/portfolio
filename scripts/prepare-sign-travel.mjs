@@ -20,8 +20,8 @@
  * Every frame keeps its own canvas: unlike the cartel's grid, the shapes
  * have nothing in common, so the travel sizes each cut's box by the
  * frame's aspect. Prints each aspect (w / h) — paste them into
- * TRAVEL_FRAMES in packages/lab/src/sign-travel.tsx and BRAND_ASPECT in
- * packages/lab/src/brand.ts so the boxes are sized before the photos
+ * FRAMES in packages/lab/src/sign-travel.tsx and BRAND_ASPECT in
+ * packages/lab/src/brand.tsx so the boxes are sized before the photos
  * decode.
  *
  * Usage: node scripts/prepare-sign-travel.mjs

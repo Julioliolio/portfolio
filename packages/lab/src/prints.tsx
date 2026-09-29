@@ -16,8 +16,7 @@ import {
 /**
  * A print: one project as a photo print on the mat — a paper frame round
  * the project's looping clip, and a band under the picture with the
- * blurb on the left and the tag pills on the right, the whole thing at
- * a slight tilt of its own. It is what the road signs bring out on hover
+ * blurb on the left and the tag pills on the right. It is what the road signs bring out on hover
  * (the column, see pieces/road-signs), what a phone scrolls through, and
  * what the project window picks up: the window starts as the print, to
  * the pixel, and grows into the sheet (see window.tsx, `lift`).
@@ -48,12 +47,13 @@ export type PrintSpec = {
   aspect: number;
   blurb: string;
   tags: string[];
-  /** The print's own lean on the mat, degrees; alternate signs. */
+  /** The print's lean on the mat, degrees, where the column's layout
+   *  gives the front print none. */
   tilt: number;
 };
 
 /** A tall print's width, as a share of a wide one's. */
-export const TALL_SHARE = 0.62;
+const TALL_SHARE = 0.62;
 
 /** Placeholder clips, until each project has its own. */
 const PLACEHOLDER_WIDE = {
@@ -103,9 +103,6 @@ export const PRINTS: readonly PrintSpec[] = [
   },
 ];
 
-export const printBySlug = (slug: string) =>
-  PRINTS.find((p) => p.slug === slug) ?? null;
-
 /**
  * A print's box for a wide print's width, px — the stylesheet's numbers
  * done in arithmetic, for layouts that must know a print's size before
@@ -144,15 +141,15 @@ const share = (k: number, lo: number, hi: number) =>
 const D = WINDOW_DEFAULTS;
 
 /**
- * The print's stylesheet. The width is the caller's --rs-print-w; the
- * tilt is the print's own (inline). The picture runs edge to edge, the
+ * The print's stylesheet. The width is the caller's --rs-print-w, and
+ * so is the lean (the column's rotate, see road-signs). The picture runs edge to edge, the
  * band under it; the paper is the sheet's own — its scan, ground,
  * grain, corners, shadow, light and curl, off the page's variables
  * (paperCss()), so tuning the sheet tunes the prints. The light lies
  * over everything, the picture too, as it does on the sheet.
  */
 export const PRINT_CSS = `
-.rs-print { position: relative; display: block; box-sizing: border-box; width: var(--rs-print-w, 640px); overflow: hidden; isolation: isolate; border-radius: var(--paper-corner, ${D.corner}px); background: var(--paper-veil, ${paperVeil(D)}), var(--paper-sheet, ${paperSheet(D)}), var(--paper-ground, ${D.ground}); box-shadow: var(--paper-shadow, ${paperShadow(D)}); transform: rotate(var(--rs-tilt, 0deg)); transform-origin: 50% 50%; color: ${INK}; text-decoration: none; font-family: inherit; }
+.rs-print { position: relative; display: block; box-sizing: border-box; width: var(--rs-print-w, 640px); overflow: hidden; isolation: isolate; border-radius: var(--paper-corner, ${D.corner}px); background: var(--paper-veil, ${paperVeil(D)}), var(--paper-sheet, ${paperSheet(D)}), var(--paper-ground, ${D.ground}); box-shadow: var(--paper-shadow, ${paperShadow(D)}); color: ${INK}; text-decoration: none; font-family: inherit; }
 .rs-print::after { content: ""; position: absolute; inset: 0; z-index: 1; pointer-events: none; border-radius: inherit; background: var(--paper-light, ${paperLight(D)}); box-shadow: var(--paper-curl, ${paperCurl(D)}); mix-blend-mode: soft-light; }
 .rs-print.is-tall { width: calc(var(--rs-print-w, 640px) * ${TALL_SHARE}); }
 .rs-print:focus-visible { outline: 2px solid ${INK}; outline-offset: 4px; }
@@ -169,25 +166,21 @@ export const PRINT_CSS = `
 `;
 
 /**
- * One print. `index` is the caller's tag for the element (the column
- * keeps clones); `active` is the one whose clip plays and that the
- * pointer can open.
+ * One print. `active` is the one whose clip plays and that the pointer
+ * can open; `tilt` is its lean, which the caller draws (the window
+ * reads it off --rs-tilt to lean the same way).
  */
 export function Print({
   spec,
-  index,
   active = false,
   tilt = spec.tilt,
-  handed = false,
   refCallback,
   onClick,
   style,
 }: {
   spec: PrintSpec;
-  index?: number;
   active?: boolean;
   tilt?: number;
-  handed?: boolean;
   refCallback?: (el: HTMLAnchorElement | null) => void;
   onClick?: (ev: ReactMouseEvent<HTMLAnchorElement>) => void;
   style?: CSSProperties;
@@ -195,17 +188,12 @@ export function Print({
   return (
     <a
       ref={refCallback}
-      className={[
-        `rs-print is-${spec.media}`,
-        active && "is-active",
-        handed && "is-handed",
-      ]
+      className={[`rs-print is-${spec.media}`, active && "is-active"]
         .filter(Boolean)
         .join(" ")}
       // The landing finds the print by this: the project window grows
       // out of it.
       data-slug={spec.slug}
-      data-index={index}
       href={spec.href}
       // The clay cursor reads this: a small tag rides beside the hand.
       data-cursor-label={active ? "open" : undefined}
@@ -241,8 +229,8 @@ export function Print({
 
 /**
  * The print the window picks up: the project's, found in the signs'
- * column by its slug — the one that is up (or, before any is, its own
- * place in the track) — its rect, lean and frame, its clip, the frame
+ * column by its slug — the one that is up, or else its sheet in the
+ * pile — its rect, lean and frame, its clip, the frame
  * the clip is on and a snapshot (clipPreview). The print is measured
  * where it sits with the stack at rest — while a project is open the
  * stack is stepped back (SIGNS_OPEN in signs-layout, a transform on
@@ -289,9 +277,10 @@ export function printPreview(
   }
   // The print's own size, and its frame, from layout — untouched by
   // any transform, and the stack at rest has none — grown by its lift
-  // under the pointer (PRINT_CSS's scale), so the box starts as big as
+  // under the pointer (the column's scale, road-signs), so the box starts as big as
   // the print looked.
-  const grown = parseFloat(getComputedStyle(print).scale) || 1;
+  const ps = getComputedStyle(print);
+  const grown = parseFloat(ps.scale) || 1;
   const w = print.offsetWidth * grown;
   const h = print.offsetHeight * grown;
   const inset = {
@@ -300,8 +289,7 @@ export function printPreview(
     right: print.offsetWidth - media.offsetLeft - media.offsetWidth,
     bottom: print.offsetHeight - media.offsetTop - media.offsetHeight,
   };
-  const tilt =
-    parseFloat(getComputedStyle(print).getPropertyValue("--rs-tilt")) || 0;
+  const tilt = parseFloat(ps.getPropertyValue("--rs-tilt")) || 0;
   return clipPreview(
     video,
     { x: cx - w / 2, y: cy - h / 2, w, h },

@@ -50,8 +50,8 @@ import {
  * mat: it goes back. Exactly the home page's flow, minus the URL.
  *
  * The knobs: which move (the lift, or Convertr's grow), the sheet's
- * paper (plain, or a crease; its ground, shadows and the ink are
- * /lab/sheet's, read from the same store), the window's clocks and box,
+ * paper (plain, or a crease; its ground and shadows are /lab/sheet's,
+ * read from the same store), the window's clocks and box,
  * the column's sizes and clocks (laid over the site's, which
  * follow the viewport), and the sounds. The window's knobs write the
  * window store (what the home page reads, in this browser, until
@@ -472,9 +472,9 @@ export default function PaperBench() {
               the pick-up can be judged with a page on the sheet.
             </p>
             <p>
-              The paper and the ink are tuned on their own bench, /lab/sheet;
-              this page reads the same knobs, so what is set there is what a
-              print is picked up into here.
+              The paper is tuned on its own bench, /lab/sheet; this page reads
+              the same knobs, so what is set there is what a print is picked up
+              into here.
             </p>
             <div className="pb-ph">Photo needed: a still from the film.</div>
             <p>

@@ -31,7 +31,7 @@ import { paperCss, useWindowTuning } from "../../window-tuning";
 /**
  * The ink, parked (Julio, 2026-09-26: "hide it away in a lab page
  * named ink, I don't want to use it for now"): the case study's type
- * treated as printed on the sheet — the four looks and what else on
+ * treated as printed on the sheet — the looks and what else on
  * the page is printed matter — on the sheet bench's stand-in, with
  * every knob. This page is the only place the ink is applied; the
  * site's window is paper alone. ink.tsx holds the looks and their own

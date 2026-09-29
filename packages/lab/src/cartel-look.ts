@@ -76,7 +76,11 @@ const share = (height: string, v: number) =>
   `calc((${height}) * ${(v / 100).toFixed(4)})`;
 
 /** The shadow as a filter for a sign `height` tall, or undefined when
- *  off. */
+ *  off. A drop-shadow on the frame stack traces the alpha of whichever
+ *  photo is showing — the silhouette changes with every cut for free —
+ *  and, painted before the transform, rides the bob, drift and jump
+ *  like a shadow glued to the sign. Its lengths are shares of the
+ *  height, so the same values read the same at any size. */
 export function cartelShadow(
   height: string,
   p: ShadowParams = SHADOW_DEFAULTS,

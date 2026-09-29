@@ -2,7 +2,7 @@
 
 import { useEffect, useRef, useState, type CSSProperties } from "react";
 import { asset } from "./asset";
-import { Enter, type EnterKind } from "./motion";
+import { Enter } from "./motion";
 import { play } from "./sound";
 import { springEasing } from "./spring";
 import { MEDIUM, SETTLE_EASE } from "./style";
@@ -18,7 +18,7 @@ import { createTuningStore } from "./tuning-store";
  * the camera — it grows (`lift`), its tip comes up first (`tilt`, about
  * the end that stays down, `pivot`), it twists a hair (`turn`) — and
  * its shadow leaves it and falls, soft and wide, on the mat and on the
- * words that appear under its tip ("see projects", "back up"): the
+ * words that appear with it (textDown, textUp): the
  * tape is over the words, and its shadow on them, as in the reference.
  * Leaving sticks it back down and the words go. While it waits it
  * nudges along its way like the parens cue did (`idle`). It taps as it
@@ -72,8 +72,7 @@ export type TapeTuning = {
   castBlur: number;
   castAlpha: number;
 
-  /** The words: what they say, under each cue; which side of each
-   *  arrow they sit, and how far in; their size, u; their
+  /** The words: what they say, for each cue; their size, u; their
    *  letter-spacing, em; their cut; how they come — the site's pop in
    *  held cuts, a fade and rise, or a fade — how long that takes, ms,
    *  and how long after the peel starts, ms. */
@@ -166,7 +165,7 @@ export const useTapeTuning = store.useTuning;
 
 /** The tape's width over its height, printed by scripts/prepare-tape.mjs
  *  — sizes the slot before the photo decodes. */
-export const TAPE_ASPECT = 0.835;
+const TAPE_ASPECT = 0.835;
 const TAPE = asset("/tape/arrow.webp");
 
 /** ms the stick-back's tap waits for the pointer to come back. */
@@ -241,6 +240,7 @@ ${idleCss(t)}
    cue's image (--sx). */
 .tape-img { display: block; width: 100%; height: 100%; user-select: none; opacity: ${between(t.stuck, 1)}; filter: ${shadow}; }
 .is-up .tape-img { transform: rotate(180deg); }
+.tape-open .tape-idle, .tape-close .tape-idle { animation: none; }
 ${t.motion === "cuts" ? cutsCss(t) : smoothCss(t)}
 ${wordsCss(t)}
 @media (prefers-reduced-motion: reduce) {
@@ -276,23 +276,20 @@ const cutsCss = (t: TapeTuning) => {
   const ms = `${n(t.cut, 0)}ms steps(1, end) both`;
   return `
 .tape-open { animation: tape-peel ${ms}; }
-.tape-open .tape-idle { animation: none; }
 .tape-close { animation: tape-stick ${ms}; }
-.tape-close .tape-idle { animation: none; }
 @keyframes tape-peel { 0% { --tape-p: 1.35; } 33.3% { --tape-p: .88; } 66.7%, 100% { --tape-p: 1; } }
 @keyframes tape-stick { 0% { --tape-p: .4; } 33.3% { --tape-p: -.08; } 66.7%, 100% { --tape-p: 0; } }`;
 };
 
 /* Smooth: the peel rides the spring — past its lift by the bounce and
-   back — and sticks back on the ease. */
+   back — and sticks back on the ease. The peel's transition is written
+   twice: the ease for a browser without linear(), the spring over it. */
 const smoothCss = (t: TapeTuning) => {
   const ms = n(t.cut, 0);
   const { easing, settle } = springEasing(t.cut, t.bounce);
   return `
 .tape-hit { transition: --tape-p ${ms}ms ${SETTLE_EASE}; }
-.tape-open { --tape-p: 1; transition: --tape-p ${n(settle, 0)}ms ${SETTLE_EASE}; transition: --tape-p ${n(settle, 0)}ms ${easing}; }
-.tape-open .tape-idle { animation: none; }
-.tape-close .tape-idle { animation: none; }`;
+.tape-open { --tape-p: 1; transition: --tape-p ${n(settle, 0)}ms ${SETTLE_EASE}; transition: --tape-p ${n(settle, 0)}ms ${easing}; }`;
 };
 
 /* The words, on their own clock: they come after wordWait — the site's
@@ -360,7 +357,7 @@ export function TapeArrow({
   /** ms before the entrance's first cut, at each mount. */
   delay: number;
   label: string;
-  /** The words under the tip — the tuning's for this way unless given. */
+  /** The words — the tuning's for this way unless given. */
   text?: string;
   /** The tape's height, vh (never under the tuning's minPx) — the
    *  tuning's size unless given; a bench may go bigger. */
@@ -451,7 +448,7 @@ export function TapeArrow({
     >
       <Enter
         key={shows}
-        kind={t.entrance as EnterKind}
+        kind={t.entrance}
         gate="mount"
         delay={delay}
         className="tape-pop"

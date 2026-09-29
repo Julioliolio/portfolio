@@ -38,18 +38,19 @@ export function useViewport() {
 }
 
 /**
- * The road signs tuned to the mockup: each sign 8.8vh tall, and every
- * pixel value of the defaults (which were tuned at 64px) scaled with it,
- * so the walk feels the same at any size. A wide print is 57.9vw
+ * The road signs tuned to the mockup: each sign 8.8vh tall, and the
+ * walk's spacing (the gaps and the nudges, tuned at 64px) scaled with
+ * it, so the walk feels the same at any size. A wide print is 57.9vw
  * across, the column's right edge on the screen's, and its centre line
- * 26.1vh above the stack's middle — about the screen's middle (Julio's
- * values off /lab/paper, 2026-09-26, set at a 1709x961 window). The stage reaches the screen's right edge.
- * The places (Julio's mockup, 2026-09-26) are shares of the screen off
- * the front spot: the pile at rest at the bottom right, and for each
- * hover, where each sheet goes: the front one about the column's centre
- * line at its own lean, the other two peeking in — one hanging in from
- * the top, one showing at the bottom right — each hover its own. Placed by hand on /lab/paper by Julio,
- * 2026-09-26, at a 1710x961 window (Copy values writes this block).
+ * 26.1vh above the stack's middle — about the screen's middle. The
+ * stage reaches the screen's right edge.
+ * The places are shares of the screen off the front spot: the pile at
+ * rest at the bottom right, and for each hover, where each sheet goes:
+ * the front one about the column's centre line at its own lean, the
+ * other two peeking in — one hanging in from the top, one showing at
+ * the bottom right — each hover its own. All of it placed by hand on
+ * /lab/paper by Julio, 2026-09-26, at a 1710x961 window (Copy values
+ * writes this block).
  */
 export function signsTuning(vw: number, vh: number) {
   const height = 0.088 * vh;

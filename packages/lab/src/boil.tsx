@@ -80,7 +80,7 @@ const BLUR_LEAST = 0.75;
  * The numbers that thicken a glyph by `outset` px in a filter — the
  * blur that draws it and the alpha ramp that puts the new edge there
  * (see BoilFilter's hairline): feGaussianBlur at `sigma`, then feFuncA
- * linear with `slope` and `intercept`. The ink's spread (window.tsx)
+ * linear with `slope` and `intercept`. The ink's spread (ink.tsx)
  * fattens its strokes the same way.
  */
 export function thicken(outset: number) {

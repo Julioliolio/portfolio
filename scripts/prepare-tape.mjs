@@ -6,8 +6,8 @@
  * Input:  source-assets/tape/arrow.png — a transparent PNG of the tape,
  *         pointing down, any size.
  * Output: apps/web/public/tape/arrow.webp — trimmed to its alpha and
- *         scaled to 800 tall (it shows at about 12vh, and three times
- *         that on the bench's close-up).
+ *         scaled to 800 tall (it shows at about 5vh, and much bigger
+ *         on the bench's close-up).
  *
  * Prints the aspect (w / h) — paste it into TAPE_ASPECT in tape.tsx so
  * the slot is sized before the photo decodes.

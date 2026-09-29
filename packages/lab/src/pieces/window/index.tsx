@@ -14,21 +14,19 @@ import {
 /**
  * The project window's bench: the box over a stand-in for the
  * landing's projects screen, with the knobs floating over it — the
- * grow and the page's fade, the margin round the box, its corner
- * (square by default), the hairline, the rail's width. Three stand-in
- * signs sit bottom-left, each with its card's clip beside it (always up
- * here, no rope): a click on a sign grows the box out of that clip, as
- * the landing does from the hover card, and the open one closes it —
- * the box shrinks back into the clip. Home and the empty wall close it
- * too. The rail's contents are the page's own (a case study portals
- * them in), so here it only has Home.
+ * grow and the page's fade, the margin round the box, its corner, the
+ * hairline, the rail's width. Three stand-in signs sit bottom-left,
+ * each with a clip beside it: a click on a sign grows the box out of
+ * that clip, and the open one closes it — the box shrinks back into
+ * the clip. The empty wall closes it too. The rail's contents are the
+ * page's own (a case study portals them in), so here it is empty.
  *
  * Sliders write the window store and the window regenerates its
  * stylesheet on every change, so what you set here is what the home
  * page does — in this browser, until Reset. "Copy values" exports them
  * for WINDOW_DEFAULTS in packages/lab/src/window-tuning.ts. (On the
- * site the rail's width follows the signs — windowLayout.ts in the web
- * app — not the slider.)
+ * site the rail's width follows the signs — WINDOW_LAYOUT in
+ * signs-layout.ts — not the slider.)
  */
 
 const MOTION: Field<WindowTuning>[] = [
@@ -66,7 +64,7 @@ const MOTION: Field<WindowTuning>[] = [
     max: 800,
     step: 10,
     unit: "ms",
-    hint: "the quick ones: the page and rail out before the shrink, the rail in, the hover card's copy leaving",
+    hint: "the quick ones: the page and rail out before the shrink, the rail in, the prints' column leaving",
   },
 ];
 
@@ -96,7 +94,7 @@ const BOX: Field<WindowTuning>[] = [
     max: 80,
     step: 1,
     unit: "px",
-    hint: "square by the reference; here in case",
+    hint: "the box's corner radius, the prints' too",
   },
   { key: "hairline", label: "Hairline", min: 0, max: 0.6, step: 0.02 },
   { key: "rail", label: "Rail", min: 12, max: 45, step: 0.5, unit: "vw" },
@@ -135,8 +133,8 @@ ${BENCH_CSS}
 .wb-wall { position: fixed; inset: 0; background: #faf9f6; }
 /* A stand-in for the landing's projects screen: three sign-sized
    blocks bottom-left, over the window; the open one grown. Each has
-   its card's clip to its right, where the rope would lead — hidden
-   while its project is open, since the box is that clip grown. */
+   a clip to its right — hidden while its project is open, since the
+   box is that clip grown. */
 .wb-sign { position: fixed; z-index: 85; left: 7vw; height: 8.8vh; padding: 0; border: 0; background: #dcd8d0; border-radius: 6px; transform-origin: 50% 50%; cursor: pointer; }
 .wb-sign[aria-pressed="true"] { background: #0000ff; transform: scale(1.2) rotate(-1.5deg); }
 .wb-clip { position: fixed; z-index: 84; left: 30vw; width: 200px; overflow: hidden; outline: 1px solid #0000ff; outline-offset: -1px; background: #ecebe8; transform: translateY(50%); }

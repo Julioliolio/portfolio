@@ -33,7 +33,7 @@ type Beat = "current" | "sparse";
 
 // Road signs: the hover walk in three cuts on a 10-beat, lands well past
 // its pose and squeezes hard; the poke cuts on the same beat instead of
-// tweening. (The prints' column eases either way: big surfaces do.)
+// tweening. (The prints are dealt on a spring either way: big surfaces ease.)
 const ROAD_SIGNS_SPARSE = {
   fps: 10,
   steps: 3,
@@ -374,7 +374,7 @@ export function StopMotionTrial() {
         notes={[
           "On mount the signs drop in one after another in hard cuts — the piece's own entrance, on by default. Replay re-mounts it.",
           "Current: seven cuts at 24fps, the poke a 60fps tween.",
-          "Sparse: three cuts at 10fps with overshoot 1.6 / 1.4 and squeeze 0.9; the poke in three cuts on the same beat. The prints' column slides on its settle curve either way.",
+          "Sparse: three cuts at 10fps with overshoot 1.6 / 1.4 and squeeze 0.9; the poke in three cuts on the same beat. The prints are dealt on a spring either way.",
         ]}
       >
         <div className="smt-head" style={{ marginBottom: 6 }}>

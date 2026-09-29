@@ -8,8 +8,8 @@ import { spring } from "../../spring";
  * (across), the dashed line where it rests, the blue tick where it has
  * settled — with a dot on its peak to drag: up and down is how far past
  * its place it runs (the bounce), across is when it gets there (the
- * swing). The spring is spring.ts's. Shared by the tabs of /lab/cue and
- * by /lab/contents.
+ * swing). The spring is spring.ts's. Shared by the tabs of /lab/cue,
+ * /lab/contents and /lab/tape-arrow.
  */
 
 const GRAPH_CSS = `

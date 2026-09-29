@@ -94,8 +94,8 @@ const FIRST_FIG = SECTIONS.map((_, i) =>
   SECTIONS.slice(0, i).reduce((n, s) => n + s.figures.length, 0),
 );
 
-/** The rail's width beside the sheet, as windowLayout.ts in the web app
- *  had it when the specimen was set (the layout has since widened it). */
+/** The rail's width beside the sheet, as the site's layout (WINDOW_LAYOUT
+ *  in signs-layout.ts) had it when the specimen was set (the layout has since widened it). */
 const RAIL = "calc(2.4vw + 21.4vh)";
 
 const STAGE_CSS = `

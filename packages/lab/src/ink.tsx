@@ -8,15 +8,14 @@ import { createTuningStore } from "./tuning-store";
  * The ink: the case study's type treated as printed on the sheet.
  * Parked (Julio, 2026-09-26: "ditch the whole ink thing, save it
  * somewhere in case I want to use it again") — the site's window is
- * paper alone, and only /lab/sheet (pieces/sheet) puts this on it: it
+ * paper alone, and only /lab/ink (pieces/ink) puts this on it: it
  * renders `inkCss()` in a <style> beside the window and <InkFilter>
  * once, and the rules find the page through `.pw-scroll`. To bring it
  * back to the site, a page would render the same two things next to
- * its <ProjectWindow>; the knobs are still in the window tuning.
+ * its <ProjectWindow>; the knobs are in this file's own store.
  *
- * The looks, each a switch with its strengths (window-tuning.ts):
- * - density — a mask of the paper's grain (public/paper/ink.webp, the
- *   same cut as the tile) under a flat floor, added, so the ink thins
+ * The looks, each a switch with its strengths:
+ * - density — a mask of the paper's grain (public/paper/ink.webp) under a flat floor, added, so the ink thins
  *   where the fibres are, by as much as the floor lets it; not clipped
  *   to the block, or a title's overshoots and the bleed's shoved pixels
  *   would be cut;

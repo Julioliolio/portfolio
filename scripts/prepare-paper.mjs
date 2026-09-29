@@ -5,7 +5,7 @@
  *   source-assets/mat/*.png|jpg   — one photo of the green cutting mat,
  *     portrait, the grid straight; the first file found is used
  *   source-assets/paper/          — flatbed scans of white paper
- *     papertexture3.png  → plain     (the sheet, and the prints' tile)
+ *     papertexture3.png  → plain     (the sheet, and the ink tile)
  *     papertexture1.png  → crease-1  (a fold on the right)
  *     papertexture2.png  → crease-2  (a crease line on the left)
  *
@@ -24,14 +24,11 @@
  *     grain (the scan's spread) kept — the case-study template's greys
  *     need a sheet lighter than the raw scan. Made to tile downward
  *     (seamlessDown): the project window scrolls through the sheet.
- *   apps/web/public/paper/tile.webp
- *     A 1024px seamless tile of the plain paper at the same scale, for the
- *     prints' frames (mirror-tiled from a 512px cut, so the seams are
- *     invisible in low-contrast mottle).
  *   apps/web/public/paper/ink.webp
- *     The same cut as a luminance mask, the grain stretched: the project
- *     window lays it over its type so the ink thins where the fibres are
- *     (the "density" ink look).
+ *     A 1024px seamless tile of the plain paper's grain as a luminance
+ *     mask (mirror-tiled from a 512px cut, so the seams are invisible in
+ *     low-contrast mottle): the parked ink looks lay it over the type so
+ *     the ink thins where the fibres are (the "density" look, /lab/ink).
  *
  * Rerun after dropping or replacing a source file:
  *   node scripts/prepare-paper.mjs
@@ -351,20 +348,16 @@ async function preparePaper() {
   }
   if (!plain) return;
 
-  // The tile: a 512 cut from the middle of the plain sheet, mirrored
-  // four ways into 1024, so its edges meet themselves.
+  // A 512 cut from the middle of the plain sheet, for the ink tile.
   const cut = 512;
   const pm = await plain.clone().toBuffer({ resolveWithObject: true });
   const left = Math.round((pm.info.width - cut) / 2);
   const top = Math.round((pm.info.height - cut) / 2);
   const middle = plain.clone().extract({ left, top, width: cut, height: cut });
   const base = await middle.clone().png().toBuffer();
-  const out = join(OUT_PAPER, "tile.webp");
-  const tile = await mirrored(base, cut, { channels: 3, background: "#fff" });
-  await tile.webp(PAPER_WEBP).toFile(out);
-  console.log(`paper: tile ${cut * 2}x${cut * 2}, ${kb(out)}`);
 
-  // The ink tile: the same cut as a luminance mask for the type — the
+  // The ink tile: the cut as a luminance mask for the type, mirrored
+  // four ways into 1024 so its edges meet themselves — the
   // grain alone, softened so it is fibres rather than speckle, then
   // stretched so the roughest paper is INK_FLOOR and the smoothest
   // white. (A greyscale tile; an alpha one of the same grain was seven

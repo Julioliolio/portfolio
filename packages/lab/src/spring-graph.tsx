@@ -1,10 +1,6 @@
 "use client";
 
-import {
-  useEffect,
-  useState,
-  type PointerEvent as ReactPointerEvent,
-} from "react";
+import { useState, type PointerEvent as ReactPointerEvent } from "react";
 import { spring, springEasing } from "./spring";
 import { BLUE } from "./style";
 
@@ -96,12 +92,6 @@ export function SpringGraph({
 
   // Play: the dot goes to the other end on the spring's own easing.
   const [end, setEnd] = useState(false);
-  const [playing, setPlaying] = useState(false);
-  useEffect(() => {
-    if (!playing) return;
-    const id = window.setTimeout(() => setPlaying(false), settle);
-    return () => window.clearTimeout(id);
-  }, [playing, settle, end]);
 
   return (
     <div style={{ display: "grid", gap: 4 }}>
@@ -194,10 +184,7 @@ export function SpringGraph({
       <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
         <button
           type="button"
-          onClick={() => {
-            setEnd((e) => !e);
-            setPlaying(true);
-          }}
+          onClick={() => setEnd((e) => !e)}
           style={{
             font: "inherit",
             fontSize: 11,

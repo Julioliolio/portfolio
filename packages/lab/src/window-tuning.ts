@@ -1,4 +1,5 @@
 import { asset } from "./asset";
+import { SETTLE_EASE } from "./style";
 import { createTuningStore } from "./tuning-store";
 
 /**
@@ -49,8 +50,7 @@ export type WindowTuning = {
    *  box starts this far back under the end of the grown sign (Julio's
    *  reference: slightly over). 0 butts the box against it. */
   overhang: number;
-  /** The box's corner radius, px. Square by his reference; the knob
-   *  is here for the bench. */
+  /** The box's corner radius, px — the prints' too. */
   corner: number;
   /** The rail's width, vw, when the caller does not give one. */
   rail: number;
@@ -87,7 +87,7 @@ export type WindowTuning = {
   /** The paper's own white, hex: what the scan is laid on. */
   ground: string;
   /** How much of the scan shows on it, 0 to 1: 0 is the bare ground,
-   *  1 the scan itself. The prints' tile follows the same number. */
+   *  1 the scan itself. The prints wear the same. */
   grain: number;
   /** The hairline round the sheet, its alpha. */
   hairline: number;
@@ -186,8 +186,9 @@ export const WINDOW_DEFAULTS: Readonly<WindowTuning> = Object.freeze({
 /** Convertr's curve for its box: a wind-up, then past the mark and
  *  back. The box, the signs and the shrink all move on it (grow). */
 export const WINDOW_EASE = "cubic-bezier(1, -.35, .22, 1.15)";
-/** The lift's curve: quick off the mat, a long settle. */
-export const LIFT_EASE = "cubic-bezier(.22, 1, .36, 1)";
+/** The lift's curve: quick off the mat, a long settle — the site's
+ *  settle curve. */
+export const LIFT_EASE = SETTLE_EASE;
 
 /** The whole move, ms: the lift, or the first axis to the second's
  *  end. */
@@ -237,7 +238,7 @@ export const returnMs = (t: WindowTuning) => t.reveal + moveMs(t);
 const n = (v: number, d = 3) => Number(v.toFixed(d)).toString();
 
 /** A hex colour with an alpha, as rgba(). */
-export function rgba(hex: string, alpha: number) {
+function rgba(hex: string, alpha: number) {
   const m = /^#?([0-9a-f]{6})$/i.exec(hex.trim());
   const v = m ? parseInt(m[1]!, 16) : 0xffffff;
   return `rgba(${v >> 16}, ${(v >> 8) & 255}, ${v & 255}, ${n(alpha)})`;
@@ -305,10 +306,9 @@ export const paperCurl = (t: WindowTuning) =>
 /** The paper's look as page-wide variables, for the prints to read
  *  off :root (PRINT_CSS falls back to the defaults' where a page sets
  *  none). */
-export const paperVars = (t: WindowTuning) =>
+const paperVars = (t: WindowTuning) =>
   [
     `--paper-ground: ${t.ground}`,
-    `--paper-grain: ${n(t.grain)}`,
     `--paper-veil: ${paperVeil(t)}`,
     `--paper-sheet: ${paperSheet(t)}`,
     `--paper-shadow: ${paperShadow(t)}`,

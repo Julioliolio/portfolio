@@ -265,7 +265,7 @@ export const SOUND_FIELDS: Required<Field<SoundTuning>>[] = [
   {
     key: "cue",
     label: "Cue hover",
-    hint: "The scroll cue's tap as its parens part under the pointer, and the softer one as it shuts.",
+    hint: "The scroll cue's tap as the tape peels under the pointer, and the softer one as it sticks back.",
     min: 0,
     max: 1,
     step: 0.05,
@@ -282,8 +282,8 @@ export const SOUND_FIELDS: Required<Field<SoundTuning>>[] = [
   },
   {
     key: "card",
-    label: "Card",
-    hint: "The paper slide as a project card comes out, and back.",
+    label: "Prints",
+    hint: "The paper slide as the prints come out, and back, and the breath as one is picked up and set down.",
     min: 0,
     max: 1,
     step: 0.05,

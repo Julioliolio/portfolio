@@ -104,11 +104,10 @@ import {
  *
  * The sign casts a drop shadow (see ShadowParams): a filter on the frame
  * stack, so the shadow's silhouette is the current photo's alpha and
- * changes with every cut, tunable from the panel's Shadow section. The
- * pages that host the sign paint a white wall for it. On top of the
- * frames sits the glow (see GlowParams): a blurred screen-blend copy of
- * the current photo that pushes exposure only where the lightbox is lit,
- * so the sign reads as glowing against the white wall.
+ * changes with every cut, tunable from the panel's Shadow section. On
+ * top of the frames sits the glow (see GlowParams): a blurred
+ * screen-blend copy of the current photo that pushes exposure only where
+ * the lightbox is lit, so the sign reads as glowing.
  *
  * Frames are served from apps/web/public/cartel/{julio,about}/ (regenerate
  * with scripts/prepare-cartel-frames.mjs) — an intentional coupling to the
@@ -209,14 +208,8 @@ const BOB_DEFAULTS: BobParams = {
   fps: 24,
 };
 
-// The cast shadow: a drop-shadow filter on the frame stack, so it traces
-// the alpha of whichever photo is showing — the silhouette changes with
-// every angle cut for free — and, being painted before the transform, it
-// rides the bob, drift and jump like a shadow glued to the sign. Offsets
-// and blur in % of the sign's height so the shadow scales with however
-// big the sign is rendered (trial page vs lab page).
-// The shadow and the glow are the cartel's look, shared with the
-// travel's stand-in for the sign: ../../cartel-look.
+// The shadow and the glow are the cartel's look, in ../../cartel-look,
+// shared with the travel's stand-in for the sign.
 
 // One-tick scale stretch along the axis of a walker cut, per unit of the
 // Smear slider — the angle swaps' share of the smear treatment.
@@ -2077,9 +2070,7 @@ export default function Cartel({
 
   const showFrames = mode === "pointer" || mode === "gyro";
 
-  // Shadow lengths in % of the sign's height, resolved with calc() against
-  // the height prop so the same values read identically at any render size.
-  // React only diffs the properties it owns, so updating `filter` here never
+  // The shadow at this height (cartel-look). React only diffs the properties it owns, so updating `filter` here never
   // disturbs the imperatively-written transform on the same element.
   const shadowFilter = cartelShadow(height, shadow);
 

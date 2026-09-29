@@ -286,7 +286,7 @@ const resetPaper = () => setWindowTuning(paperOf(WINDOW_DEFAULTS));
 const CSS = `
 ${BENCH_CSS}
 ${STAND_IN_CSS}
-/* Over the rail, under Home (top 3.5vh, a 24px line). */
+/* Over the rail, near its top. */
 .sb-knobs { left: 16px; right: auto; top: calc(3.5vh + 40px); bottom: auto; width: 300px; max-height: calc(100vh - 3.5vh - 56px); }
 .sb-knobs .bench-title { margin-top: 10px; }
 `;
