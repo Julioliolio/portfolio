@@ -34,7 +34,7 @@ export default function CursorDemoPage() {
         }
         .cursor-demo-button:hover { background: rgba(43, 39, 34, 0.07); }
         .cursor-demo-button:active { background: rgba(43, 39, 34, 0.14); transform: scale(0.97); }
-        .cursor-demo-button:focus-visible { outline: 2px solid #0000ff; outline-offset: 4px; }
+        .cursor-demo-button:focus-visible { outline: 2px solid #2f6df6; outline-offset: 4px; }
         @media (prefers-reduced-motion: reduce) { .cursor-demo-button { transition: none; } }
       `}</style>
       <button type="button" className="cursor-demo-button">

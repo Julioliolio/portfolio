@@ -7,7 +7,7 @@
 /** The ink: text, the controls, the contents' words. */
 export const INK = "#2b2722";
 /** One blue for the whole site. */
-export const BLUE = "#0000ff";
+export const BLUE = "#2f6df6";
 /** Medium is a family of its own (--font-neue-montreal-extra; see
  *  globals.css in the web app): anything at 500 has to name it, or the
  *  browser fakes the weight from Regular. */

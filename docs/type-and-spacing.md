@@ -26,11 +26,11 @@ One family, three sizes, one weight under the title, one unit of space, one blue
 
 | Token             | Paper     | Blue ground | Ink ground |
 | ----------------- | --------- | ----------- | ---------- |
-| `--ty-bg`         | `#fff`    | `#0000ff`   | `#171513`  |
+| `--ty-bg`         | `#fff`    | `#2f6df6`   | `#171513`  |
 | `--ty-fg` (ink)   | `#2b2722` | `#fff`      | `#fff`     |
 | `--ty-dim` (grey) | `#77716a` | white 64%   | white 56%  |
 
-- **One blue, the site's `#0000ff`, for every project.** Project colour lives only in its media and opening.
+- **One blue, the site's `#2f6df6`, for every project.** Project colour lives only in its media and opening.
 - **Blue is a ground, not an ink.** Text is ink or grey. Blue text appears only as the title on paper (a project with an opening) and as links in reading text on paper. On a coloured ground links are underlined in the text's colour.
 - A ground (`.ty-ground[data-ground]`) flips the three tokens; everything on it follows. Don't set colours on children.
 

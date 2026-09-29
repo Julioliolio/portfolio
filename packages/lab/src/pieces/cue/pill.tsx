@@ -97,7 +97,7 @@ const PILL_DEFAULTS: Readonly<PillTuning> = Object.freeze({
   grow: 0.94,
   foot: 3.5,
   rest: "#2b2722",
-  hover: "#0000ff",
+  hover: "#2f6df6",
   fg: "#ffffff",
   arrow: 10,
   line: 1.6,
