@@ -79,6 +79,9 @@ export type ContentsTuning = {
   line: number;
   /** The room beside the words, em: the selection's reach past them. */
   side: number;
+  /** The room above and below the words, em: Side's reach, top and
+   *  bottom — each row is its line plus twice this. */
+  pad: number;
   /** In a range, the ms between one line's sweep and the next's. */
   stagger: number;
   /** How far a row's blue reaches past its line, em, up and down: the
@@ -111,6 +114,7 @@ const CONTENTS_DEFAULTS: Readonly<ContentsTuning> = Object.freeze({
   bar: "off",
   line: 1.5,
   side: 0.25,
+  pad: 0,
   stagger: 120,
   overlap: 0.15,
   tilt: 2,
@@ -182,7 +186,7 @@ function contentsCss(t: ContentsTuning): string {
 .ct ol { position: relative; display: flex; flex-direction: column; align-items: stretch; margin: 0; padding: 0; list-style: none; ${onBar ? `background: ${ink};` : ""} }
 .ct li { position: relative; display: flex; }
 .ct li.is-tilt { z-index: 1; }
-.ct a { position: relative; display: flex; align-items: center; width: max-content; height: ${n(t.line)}em; padding: 0 ${n(t.side)}em; white-space: nowrap; color: inherit; text-decoration: none; outline: none; transition: transform ${back}; }
+.ct a { position: relative; display: flex; align-items: center; width: max-content; height: ${n(t.line + 2 * t.pad)}em; padding: 0 ${n(t.side)}em; white-space: nowrap; color: inherit; text-decoration: none; outline: none; transition: transform ${back}; }
 .ct li.is-tilt a { transform: rotate(var(--lean, 0deg)); transition: transform ${sweep}; }
 .ct a:focus-visible { text-decoration: underline; text-underline-offset: .2em; }
 .ct-hi { position: absolute; inset: -${n(t.overlap)}em 0; display: flex; align-items: center; padding: 0 ${n(t.side)}em; background: ${blue}; color: #fff; clip-path: inset(0 100% 0 0); transition: clip-path ${back} var(--d, 0ms); }

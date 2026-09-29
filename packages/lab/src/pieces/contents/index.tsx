@@ -110,6 +110,15 @@ const SELECTION: Field<ContentsTuning>[] = [
     hint: "the selection's reach past the words",
   },
   {
+    key: "pad",
+    label: "Top & bottom",
+    min: 0,
+    max: 1,
+    step: 0.05,
+    unit: "em",
+    hint: "the selection's reach above and below the words",
+  },
+  {
     key: "stagger",
     label: "Stagger",
     min: 0,
@@ -157,6 +166,15 @@ const GOO_ROWS: Field<GooTuning>[] = [
     hint: "a row's height, in the type's em",
   },
   { key: "side", label: "Side", min: 0.4, max: 2.5, step: 0.05, unit: "em" },
+  {
+    key: "pad",
+    label: "Top & bottom",
+    min: 0,
+    max: 1,
+    step: 0.05,
+    unit: "em",
+    hint: "the room above and below the words",
+  },
   {
     key: "corner",
     label: "Corner",

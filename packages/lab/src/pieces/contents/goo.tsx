@@ -53,6 +53,9 @@ export type GooTuning = {
   /** A row's height, em, and the room beside the words. */
   row: number;
   side: number;
+  /** The room above and below the words, em: the side's, top and
+   *  bottom — each row grows by twice this. */
+  pad: number;
   /** The squircles' corners, em, and their shape. */
   corner: number;
   shape: "squircle" | "round";
@@ -78,6 +81,7 @@ const GOO_DEFAULTS: Readonly<GooTuning> = Object.freeze({
   column: "goo",
   row: 2.2,
   side: 1.4,
+  pad: 0,
   corner: 0.65,
   shape: "squircle",
   gap: 0.5,
@@ -157,7 +161,7 @@ function gooCss(t: ContentsTuning, g: GooTuning): string {
 .cg-goo i::after { background: ${tint}; transform: scale(${from}); opacity: 0; }
 .cg-goo i.is-here::before { transform: scale(.82); }
 .cg-goo i.is-here::after { transform: none; opacity: 1; }
-.cg a, .cg-goo span { display: flex; align-items: center; box-sizing: border-box; min-height: ${n(g.row)}em; padding: .35em ${n(g.side)}em; line-height: 1.05; text-wrap: balance; }
+.cg a, .cg-goo span { display: flex; align-items: center; box-sizing: border-box; min-height: ${n(g.row + 2 * g.pad)}em; padding: ${n(0.35 + g.pad)}em ${n(g.side)}em; line-height: 1.05; text-wrap: balance; }
 .cg-goo span { position: relative; visibility: hidden; }
 .cg a { color: #fff; text-decoration: none; outline: none; }
 .cg a:focus-visible { text-decoration: underline; text-underline-offset: .2em; }
