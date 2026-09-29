@@ -98,7 +98,7 @@ const BOX: Field<WindowTuning>[] = [
     unit: "px",
     hint: "square by the reference; here in case",
   },
-  { key: "edge", label: "Hairline", min: 0, max: 0.6, step: 0.02 },
+  { key: "hairline", label: "Hairline", min: 0, max: 0.6, step: 0.02 },
   { key: "rail", label: "Rail", min: 12, max: 45, step: 0.5, unit: "vw" },
 ];
 
@@ -138,8 +138,8 @@ ${BENCH_CSS}
    its card's clip to its right, where the rope would lead — hidden
    while its project is open, since the box is that clip grown. */
 .wb-sign { position: fixed; z-index: 85; left: 7vw; height: 8.8vh; padding: 0; border: 0; background: #dcd8d0; border-radius: 6px; transform-origin: 50% 50%; cursor: pointer; }
-.wb-sign[aria-pressed="true"] { background: #2f6df6; transform: scale(1.2) rotate(-1.5deg); }
-.wb-clip { position: fixed; z-index: 84; left: 30vw; width: 200px; overflow: hidden; outline: 1px solid #2f6df6; outline-offset: -1px; background: #ecebe8; transform: translateY(50%); }
+.wb-sign[aria-pressed="true"] { background: #0000ff; transform: scale(1.2) rotate(-1.5deg); }
+.wb-clip { position: fixed; z-index: 84; left: 30vw; width: 200px; overflow: hidden; outline: 1px solid #0000ff; outline-offset: -1px; background: #ecebe8; transform: translateY(50%); }
 .wb-clip.is-open { visibility: hidden; }
 .wb-clip video { display: block; width: 100%; height: 100%; object-fit: cover; }
 /* The stand-in page inside the window. */

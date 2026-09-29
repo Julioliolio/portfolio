@@ -22,11 +22,16 @@
  *     fibres at about print scale on a laptop. Scanner edges trimmed, and
  *     the levels lifted so the paper's mean lands near PAPER_MEAN with the
  *     grain (the scan's spread) kept — the case-study template's greys
- *     need a sheet lighter than the raw scan.
+ *     need a sheet lighter than the raw scan. Made to tile downward
+ *     (seamlessDown): the project window scrolls through the sheet.
  *   apps/web/public/paper/tile.webp
  *     A 1024px seamless tile of the plain paper at the same scale, for the
- *     prints' frames and the printed-media overlay (mirror-tiled from a
- *     512px cut, so the seams are invisible in low-contrast mottle).
+ *     prints' frames (mirror-tiled from a 512px cut, so the seams are
+ *     invisible in low-contrast mottle).
+ *   apps/web/public/paper/ink.webp
+ *     The same cut as a luminance mask, the grain stretched: the project
+ *     window lays it over its type so the ink thins where the fibres are
+ *     (the "density" ink look).
  *
  * Rerun after dropping or replacing a source file:
  *   node scripts/prepare-paper.mjs
@@ -57,6 +62,26 @@ const PAPER_MEAN = 246;
 const PAPER_GRAIN = 1.4;
 /** Share of each scan edge trimmed away: the scanner's lid and glass. */
 const PAPER_TRIM = 0.015;
+/** Share of the sheet's height cross-faded into its top, so it tiles
+ *  downward (seamlessDown). */
+const SEAM_SHARE = 0.12;
+/** The specks (despeckle): the window the paper's median is taken
+ *  over, px at PAPER_WIDTH — wider than a speck; the softening the
+ *  sheet is judged through, px; how much darker than the median a
+ *  speck then is, 0–255 — the grain's spread is about 6; and how far
+ *  round a speck is filled, px. On Julio's plain scan this finds about
+ *  a hundred specks. */
+const SPECK_WINDOW = 31;
+const SPECK_BLUR = 2;
+const SPECK_DEPTH = 10;
+const SPECK_REACH = 5;
+/** The ink tile's blur, px at tile scale: the grain as fibres, not the
+ *  scan's speckle. Softer also compresses far better. */
+const INK_SOFTEN = 1.2;
+/** The ink tile's darkest (0–255): how much of a stroke the roughest
+ *  paper can take away before the window's own floor. */
+const INK_FLOOR = 90;
+const INK_WEBP = { quality: 55, effort: 6 };
 /** Which scan is which sheet. */
 const PAPERS = {
   plain: "papertexture3.png",
@@ -304,15 +329,23 @@ async function preparePaper() {
     const offsets = st.channels
       .slice(0, 3)
       .map((c) => PAPER_MEAN - PAPER_GRAIN * c.mean);
-    const lifted = trimmed
+    let lifted = trimmed
       .clone()
       .linear([PAPER_GRAIN, PAPER_GRAIN, PAPER_GRAIN], offsets);
+    // The plain sheet is cleaned of the scan's specks (dust, a fleck
+    // in the pulp: Julio, 2026-09-26, "take this out of the texture");
+    // the crease sheets keep theirs, since their crease is a dark line
+    // the cleaning would take for a speck.
+    let specks = 0;
+    if (name === "plain") ({ sheet: lifted, specks } = await despeckle(lifted));
     const out = join(OUT_PAPER, `${name}.webp`);
-    await lifted.clone().webp(PAPER_WEBP).toFile(out);
+    const seamless = await seamlessDown(lifted);
+    await seamless.webp(PAPER_WEBP).toFile(out);
     const om = await sharp(out).metadata();
     console.log(
       `paper: ${name} ← ${file}, mean ${st.channels.map((c) => c.mean.toFixed(0)).join("/")} ` +
-        `(sd ${st.channels[0].stdev.toFixed(1)}), ${om.width}x${om.height}, ${kb(out)}`,
+        `(sd ${st.channels[0].stdev.toFixed(1)}), ${om.width}x${om.height}, ${kb(out)}` +
+        (specks ? `, ${specks} px of specks filled` : ""),
     );
     if (name === "plain") plain = lifted;
   }
@@ -324,32 +357,147 @@ async function preparePaper() {
   const pm = await plain.clone().toBuffer({ resolveWithObject: true });
   const left = Math.round((pm.info.width - cut) / 2);
   const top = Math.round((pm.info.height - cut) / 2);
-  const base = await plain
-    .clone()
-    .extract({ left, top, width: cut, height: cut })
+  const middle = plain.clone().extract({ left, top, width: cut, height: cut });
+  const base = await middle.clone().png().toBuffer();
+  const out = join(OUT_PAPER, "tile.webp");
+  const tile = await mirrored(base, cut, { channels: 3, background: "#fff" });
+  await tile.webp(PAPER_WEBP).toFile(out);
+  console.log(`paper: tile ${cut * 2}x${cut * 2}, ${kb(out)}`);
+
+  // The ink tile: the same cut as a luminance mask for the type — the
+  // grain alone, softened so it is fibres rather than speckle, then
+  // stretched so the roughest paper is INK_FLOOR and the smoothest
+  // white. (A greyscale tile; an alpha one of the same grain was seven
+  // times the bytes.) The window lays a flat floor under it
+  // (mask-composite: add), so the ink thins where the paper is roughest
+  // by as much as the floor lets it.
+  // Two passes: sharp runs linear() before normalise() whatever the
+  // call order, and the floor has to go on the stretched grain.
+  const stretched = await sharp(base)
+    .greyscale()
+    .blur(INK_SOFTEN)
+    .normalise()
     .png()
     .toBuffer();
+  const inkBase = await sharp(stretched)
+    .linear((255 - INK_FLOOR) / 255, INK_FLOOR)
+    .png()
+    .toBuffer();
+  const ink = join(OUT_PAPER, "ink.webp");
+  const inkTile = await mirrored(inkBase, cut, {
+    channels: 3,
+    background: "#fff",
+  });
+  await inkTile.webp(INK_WEBP).toFile(ink);
+  console.log(`paper: ink ${cut * 2}x${cut * 2}, ${kb(ink)}`);
+}
+
+/**
+ * The sheet's specks filled in: a pixel darker than the paper around
+ * it (its median over SPECK_WINDOW) by more than SPECK_DEPTH is a
+ * speck, and so is everything within SPECK_REACH of one, so the
+ * speck's soft edge goes with it; all of it is replaced by that median
+ * — the paper as it is around the speck, grain and all. Only dark
+ * specks: the paper's own light mottle stays.
+ */
+async function despeckle(sheet) {
+  const { data, info } = await sheet
+    .clone()
+    .raw()
+    .toBuffer({ resolveWithObject: true });
+  const { width, height, channels } = info;
+  const fill = await sharp(data, { raw: { width, height, channels } })
+    .median(SPECK_WINDOW)
+    .raw()
+    .toBuffer();
+  // Judged on a softened copy: a speck is a blob, and softening takes
+  // the grain's own dark pixels — one here, one there — out of the
+  // running before they are counted (unsoftened, they took a third of
+  // the sheet with them once grown).
+  const soft = await sharp(data, { raw: { width, height, channels } })
+    .blur(SPECK_BLUR)
+    .raw()
+    .toBuffer();
+  const n = width * height;
+  const lum = (buf, i) =>
+    (buf[i * channels] + buf[i * channels + 1] + buf[i * channels + 2]) / 3;
+  const dark = new Uint8Array(n);
+  for (let i = 0; i < n; i++)
+    if (lum(fill, i) - lum(soft, i) > SPECK_DEPTH) dark[i] = 1;
+  // Grown by SPECK_REACH, one axis at a time.
+  const grown = new Uint8Array(n);
+  for (let y = 0; y < height; y++)
+    for (let x = 0; x < width; x++) {
+      const i = y * width + x;
+      if (!dark[i]) continue;
+      for (let d = -SPECK_REACH; d <= SPECK_REACH; d++) {
+        const xx = x + d;
+        if (xx >= 0 && xx < width) grown[y * width + xx] = 1;
+      }
+    }
+  const mask = new Uint8Array(n);
+  for (let y = 0; y < height; y++)
+    for (let x = 0; x < width; x++) {
+      const i = y * width + x;
+      if (!grown[i]) continue;
+      for (let d = -SPECK_REACH; d <= SPECK_REACH; d++) {
+        const yy = y + d;
+        if (yy >= 0 && yy < height) mask[yy * width + x] = 1;
+      }
+    }
+  let specks = 0;
+  for (let i = 0; i < n; i++) {
+    if (!mask[i]) continue;
+    specks++;
+    for (let c = 0; c < channels; c++)
+      data[i * channels + c] = fill[i * channels + c];
+  }
+  return { sheet: sharp(data, { raw: { width, height, channels } }), specks };
+}
+
+/**
+ * The sheet made to tile downward without a seam: its bottom
+ * SEAM_SHARE is cross-faded into its top, so the last row is the first
+ * row and the page can scroll through a sheet of any length
+ * (background-repeat: repeat-y). The fade is long enough that the
+ * mottle's change of phase is never a line; a crease repeats with the
+ * sheet, which is the price of the crease sheets.
+ */
+async function seamlessDown(sheet) {
+  const { data, info } = await sheet
+    .clone()
+    .raw()
+    .toBuffer({ resolveWithObject: true });
+  const { width, height, channels } = info;
+  const rows = Math.round(height * SEAM_SHARE);
+  const stride = width * channels;
+  for (let r = 0; r < rows; r++) {
+    // 0 at the start of the fade, 1 on the last row.
+    const t = (r + 1) / rows;
+    const bottom = (height - rows + r) * stride;
+    const top = r * stride;
+    for (let i = 0; i < stride; i++) {
+      data[bottom + i] = Math.round(
+        data[bottom + i] * (1 - t) + data[top + i] * t,
+      );
+    }
+  }
+  return sharp(data, { raw: { width, height, channels } });
+}
+
+/** A `cut`-square PNG mirrored four ways into a seamless 2×cut square. */
+async function mirrored(base, cut, { channels, background }) {
   const flipX = await sharp(base).flop().png().toBuffer();
   const flipY = await sharp(base).flip().png().toBuffer();
   const flipXY = await sharp(base).flop().flip().png().toBuffer();
-  const out = join(OUT_PAPER, "tile.webp");
-  await sharp({
-    create: {
-      width: cut * 2,
-      height: cut * 2,
-      channels: 3,
-      background: "#fff",
-    },
-  })
-    .composite([
-      { input: base, left: 0, top: 0 },
-      { input: flipX, left: cut, top: 0 },
-      { input: flipY, left: 0, top: cut },
-      { input: flipXY, left: cut, top: cut },
-    ])
-    .webp(PAPER_WEBP)
-    .toFile(out);
-  console.log(`paper: tile ${cut * 2}x${cut * 2}, ${kb(out)}`);
+  return sharp({
+    create: { width: cut * 2, height: cut * 2, channels, background },
+  }).composite([
+    { input: base, left: 0, top: 0 },
+    { input: flipX, left: cut, top: 0 },
+    { input: flipY, left: 0, top: cut },
+    { input: flipXY, left: cut, top: cut },
+  ]);
 }
 
 await prepareMat();

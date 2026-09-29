@@ -3,6 +3,7 @@
 import { asset } from "@portfolio/lab/asset";
 import { loaders } from "@portfolio/lab/loaders";
 import { ProjectWindow } from "@portfolio/lab/window";
+import { paperCss, useWindowTuning } from "@portfolio/lab/window-tuning";
 import { Suspense, lazy, type MouseEvent } from "react";
 import {
   SIGNS_OPEN,
@@ -16,9 +17,10 @@ import { CaseStudy } from "./CaseStudy";
 /**
  * /work/<slug> as a page of its own — a direct link, a reload, a
  * modified click on a sign. It looks like the landing with the project
- * open: the same window in its page mode (no entrance; Home is a link
- * back to the projects), and the road signs parked where the landing
- * parks them, this project's one held open. Here the signs are plain
+ * open: the same window in its page mode (no entrance; the brand plate
+ * in the corner is a link home, to the landing's top), and the road
+ * signs parked where the landing parks them, this project's one held
+ * open. Here the signs are plain
  * links: another goes to that project's page, and the open one goes
  * back to the projects, as its second click closes the window on the
  * landing. The signs are a
@@ -32,6 +34,8 @@ const RoadSigns = lazy(loaders["road-signs"]);
 
 /** The landing, opened on its projects screen (see Landing.tsx). */
 const PROJECTS = asset("/#projects");
+/** The landing's top: where the brand plate goes. */
+const HOME = asset("/");
 
 // .pp-signs is the landing's place for the signs, stepped back as they
 // are there while a project is open (SIGNS_OPEN), over the window
@@ -46,6 +50,8 @@ body { color: #2b2722; }
 
 export function ProjectPage({ project }: { project: Project }) {
   const { w, h, measured } = useViewport();
+  // The signs' prints are the sheet's paper (see prints.tsx).
+  const wt = useWindowTuning();
   // The open sign is the way back to the projects; the rest are the
   // browser's.
   function onSignsClick(e: MouseEvent<HTMLElement>) {
@@ -60,13 +66,14 @@ export function ProjectPage({ project }: { project: Project }) {
   return (
     <main>
       <style>{CSS}</style>
+      <style>{paperCss(wt)}</style>
       <ProjectWindow
         mode="page"
         active={project.slug}
         shown
         label={project.title}
         layout={WINDOW_LAYOUT}
-        closeHref={PROJECTS}
+        closeHref={HOME}
       >
         <CaseStudy project={project} home />
       </ProjectWindow>

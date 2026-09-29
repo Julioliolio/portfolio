@@ -26,11 +26,11 @@ One family, three sizes, one weight under the title, one unit of space, one blue
 
 | Token | Paper | Blue ground | Ink ground |
 | --- | --- | --- | --- |
-| `--ty-bg` | `#fff` | `#2f6df6` | `#171513` |
+| `--ty-bg` | `#fff` | `#0000ff` | `#171513` |
 | `--ty-fg` (ink) | `#2b2722` | `#fff` | `#fff` |
 | `--ty-dim` (grey) | `#77716a` | white 64% | white 56% |
 
-- **One blue, the rope's `#2f6df6`, for every project.** Project colour lives only in its media and opening.
+- **One blue, the rope's `#0000ff`, for every project.** Project colour lives only in its media and opening.
 - **Blue is a ground, not an ink.** Text is ink or grey. Blue text appears only as the title on paper (a project with an opening) and as links in reading text on paper. On a coloured ground links are underlined in the text's colour.
 - A ground (`.ty-ground[data-ground]`) flips the three tokens; everything on it follows. Don't set colours on children.
 
@@ -64,6 +64,7 @@ Everything is in the unit **`--ty-u = clamp(20px, 2.5cqw, 28px)`** — about a l
 ## Motion
 
 - **Nothing on a project page cuts.** Stop-motion (`<Enter>`, `steps()`) belongs to the landing, the signs and the window chrome, not to anything inside the sheet.
+- **The sign's travel is stop-motion too:** the hello sign leaves for the corner and becomes the brand plate in seven held cuts on the walker's beat (`@portfolio/lab/sign-travel`, tuned on `/lab/sign-travel`); the plate (`/lab/brand-sign`) is the way home on every page, in the upper-left, and a page's rail contents start under its foot (`--brand-foot`).
 - **Things arrive once, softly:** `<Reveal>` — 0.8s fade + 12px rise, `cubic-bezier(.2, .65, .2, 1)`. One reveal per text run or per picture, never per paragraph. Neighbours arriving together are 70ms apart, at most a few of them. Header pieces play at mount; everything else when it scrolls in.
 - **The page goes out of focus at the bottom edge:** `<BottomBlur>` — four stacked backdrop blurs (1/2/4/6px) over a band of 4 units, masked so focus falls off, not stops. Whatever sits at the foot of a screen needs 5 units of room to clear it.
 - `prefers-reduced-motion`: things simply appear.

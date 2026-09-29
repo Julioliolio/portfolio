@@ -5,6 +5,8 @@
   "type": "module",
   "exports": {
     "./asset": "./src/asset.ts",
+    "./brand": "./src/brand.tsx",
+    "./sign-travel": "./src/sign-travel.tsx",
     "./contents": "./src/contents.tsx",
     "./registry": "./src/registry.ts",
     "./loaders": "./src/loaders.ts",
@@ -12,6 +14,7 @@
     "./motion": "./src/motion.tsx",
     "./play-later": "./src/play-later.ts",
     "./cue": "./src/cue.tsx",
+    "./tape": "./src/tape.tsx",
     "./greeting": "./src/greeting.tsx",
     "./hello": "./src/hello.tsx",
     "./sound": "./src/sound.tsx",

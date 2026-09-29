@@ -17,9 +17,9 @@ const GRAPH_CSS = `
 .qb-graph svg { display: block; width: 100%; height: auto; border-radius: 8px; background: rgba(23, 23, 23, .04); cursor: crosshair; touch-action: none; user-select: none; }
 .qb-grid { stroke: rgba(23, 23, 23, .08); stroke-width: 1; }
 .qb-rest { stroke: rgba(23, 23, 23, .35); stroke-width: 1; stroke-dasharray: 3 3; }
-.qb-settle { stroke: #2f6df6; stroke-width: 1.5; }
+.qb-settle { stroke: #0000ff; stroke-width: 1.5; }
 .qb-curve { fill: none; stroke: #171717; stroke-width: 1.75; stroke-linejoin: round; }
-.qb-handle { fill: #2f6df6; stroke: #faf9f6; stroke-width: 2; cursor: grab; }
+.qb-handle { fill: #0000ff; stroke: #faf9f6; stroke-width: 2; cursor: grab; }
 .qb-tick { font-size: 8px; fill: rgba(23, 23, 23, .45); }
 .qb-graph-note { font-size: 11px; opacity: .65; }
 `;

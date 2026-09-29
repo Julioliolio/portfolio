@@ -6,34 +6,37 @@ import {
   useEffect,
   useRef,
   useState,
-  type CSSProperties,
   type MouseEvent,
 } from "react";
 import { asset } from "../../asset";
 import {
   BENCH_CSS,
   Choice,
-  CopyValues,
+  CopyAll,
+  Expr,
   Group,
   btn,
   type Field,
+  type Literal,
 } from "../../bench";
-import { printPreview } from "../../prints";
+import type { Place, Places } from "../road-signs";
+import { PRINTS, printPreview } from "../../prints";
+import { SpringGraph } from "../../spring-graph";
 import {
   SIGNS_OPEN,
   WINDOW_LAYOUT,
   signsTuning,
+  useSignsBeside,
   useViewport,
 } from "../../signs-layout";
 import { SOUND_FIELDS, setSoundTuning, useSoundTuning } from "../../sound";
-import { BLUE, INK, MEDIUM, PAPER_BASE } from "../../style";
+import { BLUE, INK, MEDIUM } from "../../style";
 import { ProjectWindow, type WindowPreview } from "../../window";
 import {
-  moveMs,
+  paperCss,
   resetWindowTuning,
   setWindowTuning,
   useWindowTuning,
-  windowEase,
   type WindowTuning,
 } from "../../window-tuning";
 
@@ -47,15 +50,15 @@ import {
  * mat: it goes back. Exactly the home page's flow, minus the URL.
  *
  * The knobs: which move (the lift, or Convertr's grow), the sheet's
- * paper (plain, or a crease), the page's look on it (clean, the grain
- * laid over once, the whole page multiplied in — Julio wanted to see
- * both printed looks against clean, 2026-09-25), the window's clocks
- * and box, the column's sizes and clocks (laid over the site's, which
+ * paper (plain, or a crease; its ground, shadows and the ink are
+ * /lab/sheet's, read from the same store), the window's clocks and box,
+ * the column's sizes and clocks (laid over the site's, which
  * follow the viewport), and the sounds. The window's knobs write the
  * window store (what the home page reads, in this browser, until
- * Reset); the column's are this page's own until "Copy values" — paste
- * them into signsTuning() in packages/lab/src/signs-layout.ts, as
- * shares of the viewport.
+ * Reset); the column's are this page's own. One "Copy values" takes
+ * the lot — the window, the column's sizes and places as the site's
+ * shares of this window, the springs, the sounds — each under a note
+ * of where it goes.
  *
  * The page is taller than the screen on purpose: scroll it to see the
  * mat repeat, and that the seam does not show.
@@ -68,10 +71,15 @@ const RoadSigns = lazy(() => import("../road-signs"));
 type ColumnKnobs = {
   printW: number;
   columnRight: number;
-  peekGap: number;
   cardY: number;
-  slideDuration: number;
-  moveDuration: number;
+  springPeriod: number;
+  springBounce: number;
+  turnPeriod: number;
+  turnBounce: number;
+  liftRise: number;
+  liftGrow: number;
+  liftMs: number;
+  places: Places;
 };
 
 const COLUMN: Field<ColumnKnobs>[] = [
@@ -82,7 +90,7 @@ const COLUMN: Field<ColumnKnobs>[] = [
     max: 1200,
     step: 10,
     unit: "px",
-    hint: "A wide print's width; a tall one is a share of it (62vw on the site)",
+    hint: "A wide print's width; a tall one is a share of it (57.9vw on the site)",
   },
   {
     key: "columnRight",
@@ -91,16 +99,7 @@ const COLUMN: Field<ColumnKnobs>[] = [
     max: 160,
     step: 2,
     unit: "px",
-    hint: "between the column and the screen's edge (2.6vw on the site)",
-  },
-  {
-    key: "peekGap",
-    label: "Peek gap",
-    min: 0,
-    max: 120,
-    step: 2,
-    unit: "px",
-    hint: "between the centred print and the ones peeking (3.5vh on the site)",
+    hint: "between the column and the screen's edge (0 on the site)",
   },
   {
     key: "cardY",
@@ -109,27 +108,125 @@ const COLUMN: Field<ColumnKnobs>[] = [
     max: 200,
     step: 2,
     unit: "px",
-    hint: "the column's centre line, from the stack's middle (-26.6vh on the site)",
+    hint: "the column's centre line, from the stack's middle (-26.1vh on the site)",
   },
   {
-    key: "slideDuration",
-    label: "Slide",
-    min: 100,
+    key: "springPeriod",
+    label: "Swing",
+    min: 150,
     max: 1200,
     step: 10,
     unit: "ms",
-    hint: "the column's slide in from the edge, and back out",
+    hint: "a move is a spring: one swing; it settles a little after",
   },
   {
-    key: "moveDuration",
-    label: "Step",
-    min: 100,
+    key: "springBounce",
+    label: "Bounce",
+    min: 0,
+    max: 0.8,
+    step: 0.02,
+    hint: "0 settles without passing its spot; more swings back further",
+  },
+  {
+    key: "turnPeriod",
+    label: "Turn swing",
+    min: 150,
     max: 1200,
     step: 10,
     unit: "ms",
-    hint: "the column's step to the next print",
+    hint: "the turn on the way has its own spring: one swing",
+  },
+  {
+    key: "turnBounce",
+    label: "Turn bounce",
+    min: 0,
+    max: 0.8,
+    step: 0.02,
+    hint: "how far the turn overshoots the lean",
+  },
+  {
+    key: "liftRise",
+    label: "Lift rise",
+    min: 0,
+    max: 24,
+    step: 1,
+    unit: "px",
+    hint: "the front print under the pointer rises this far",
+  },
+  {
+    key: "liftGrow",
+    label: "Lift grow",
+    min: 1,
+    max: 1.08,
+    step: 0.005,
+    hint: "and grows to this scale",
+  },
+  {
+    key: "liftMs",
+    label: "Lift time",
+    min: 60,
+    max: 600,
+    step: 10,
+    unit: "ms",
+    hint: "the lift's ease, up and back down",
   },
 ];
+
+/** Which arrangement is on the mat while the sheets are placed. */
+type Show = "pointer" | "pile" | "localpal" | "camper" | "convertr";
+
+/** The places as signsTuning() writes them: each px as a share of the
+ *  window it was placed at. */
+function placeShares(places: Places, vw: number, vh: number): Literal {
+  const one = (at: Place) => ({
+    x: new Expr(`${+(at.x / vw).toFixed(3)} * vw`),
+    y: new Expr(`${+(at.y / vh).toFixed(3)} * vh`),
+    tilt: at.tilt,
+  });
+  const each = (set: Record<string, Place>) =>
+    Object.fromEntries(Object.entries(set).map(([k, at]) => [k, one(at)]));
+  return {
+    pile: each(places.pile),
+    hover: Object.fromEntries(
+      Object.entries(places.hover).map(([k, set]) => [k, each(set)]),
+    ),
+  };
+}
+
+/** A place's numbers, editable: x, y (px off the front spot) and the
+ *  lean. */
+function PlaceRow({
+  label,
+  at,
+  set,
+}: {
+  label: string;
+  at: Place;
+  set: (at: Place) => void;
+}) {
+  const field = (key: keyof Place, unit: string) => (
+    <label className="pb-place-field">
+      <input
+        type="number"
+        className="bench-text"
+        value={at[key]}
+        step={key === "tilt" ? 0.5 : 1}
+        onChange={(e) => set({ ...at, [key]: Number(e.target.value) })}
+      />
+      <span>{unit}</span>
+    </label>
+  );
+  return (
+    <div className="bench-row is-wide">
+      <span>{label}</span>
+      <div className="pb-place">
+        {field("x", "x")}
+        {field("y", "y")}
+        {field("tilt", "°")}
+      </div>
+    </div>
+  );
+}
 
 const LIFT: Field<WindowTuning>[] = [
   {
@@ -190,7 +287,7 @@ const SHEET: Field<WindowTuning>[] = [
     hint: "the mat above, right of and below the sheet",
   },
   {
-    key: "edge",
+    key: "hairline",
     label: "Hairline",
     min: 0,
     max: 0.6,
@@ -222,6 +319,10 @@ ${BENCH_CSS}
 /* The knobs stand over the column's side of the screen: this puts them
    away to see it whole. */
 .pb-panel.is-hidden { display: none; }
+.pb-place { display: flex; gap: 4px; }
+.pb-place-field { display: flex; align-items: center; gap: 3px; min-width: 0; }
+.pb-place-field input { width: 4.2em; padding: 3px 4px; }
+.pb-place-field span { font-size: 10px; opacity: .6; }
 .pb-knobs { position: fixed; top: 16px; right: 16px; z-index: 91; }
 /* A stand-in for the case study, in its type's spirit: a title, a run
    of text, a photo waiting for itself, a film, a demo's dark box. */
@@ -237,6 +338,20 @@ ${BENCH_CSS}
 
 const FILM = asset("/media/camper.mp4");
 
+const roundPlace = (at: Place): Place => ({
+  x: Math.round(at.x),
+  y: Math.round(at.y),
+  tilt: at.tilt,
+});
+const roundSet = (set: Record<string, Place>) =>
+  Object.fromEntries(Object.entries(set).map(([k, at]) => [k, roundPlace(at)]));
+const roundPlaces = (p: Places): Places => ({
+  pile: roundSet(p.pile),
+  hover: Object.fromEntries(
+    Object.entries(p.hover).map(([k, set]) => [k, roundSet(set)]),
+  ),
+});
+
 export default function PaperBench() {
   const t = useWindowTuning();
   const sound = useSoundTuning();
@@ -246,17 +361,35 @@ export default function PaperBench() {
   const column: ColumnKnobs = knobs ?? {
     printW: Math.round(site.printW),
     columnRight: Math.round(site.columnRight),
-    peekGap: Math.round(site.peekGap),
     cardY: Math.round(site.cardY),
-    slideDuration: 520,
-    moveDuration: 460,
+    springPeriod: 250,
+    springBounce: 0.1,
+    turnPeriod: 370,
+    turnBounce: 0.34,
+    liftRise: 6,
+    liftGrow: 1.015,
+    liftMs: 220,
+    places: roundPlaces(site.places),
   };
   const setColumn = (patch: Partial<ColumnKnobs>) =>
     setKnobs({ ...column, ...patch });
+  const { places } = column;
+  const setPlaces = (next: Places) => setColumn({ places: next });
+  // Placing the sheets by hand: what is on the mat meanwhile, and
+  // whether they can be dragged (see RoadSigns' placing).
+  const [showing, setShowing] = useState<Show>("pointer");
+  const [placing, setPlacing] = useState(false);
+  const hold =
+    showing === "pointer" ? undefined : showing === "pile" ? null : showing;
 
   // The landing's flow: the open project, and the print it grew from.
   const [open, setOpen] = useState<string | null>(null);
   const [knobsShown, setKnobsShown] = useState(true);
+  // The signs beside the window, the landing's way: in, and back.
+  const beside = useSignsBeside(open, t);
+  // The window stays up for its way back, on the project it is putting
+  // down (it unmounts itself once that has played).
+  const shownSlug = beside.handed;
   const stack = useRef<HTMLDivElement>(null);
   const [from, setFrom] = useState<WindowPreview | null>(null);
   function show(slug: string) {
@@ -290,20 +423,14 @@ export default function PaperBench() {
   return (
     <>
       <style>{CSS}</style>
+      <style>{paperCss(t)}</style>
       <div className="pb-tail" aria-hidden />
 
       <div
         ref={stack}
-        className={open !== null ? "pb-signs is-open" : "pb-signs"}
+        className={beside.opened ? "pb-signs is-open" : "pb-signs"}
         onClick={onSignsClick}
-        style={
-          {
-            "--signs-move": `${moveMs(t)}ms`,
-            "--signs-ease": windowEase(t),
-            "--signs-wait": `${open === null ? t.fade : 0}ms`,
-            "--rs-hand": `${t.fade}ms`,
-          } as CSSProperties
-        }
+        style={beside.style}
       >
         {measured && (
           <Suspense fallback={null}>
@@ -313,37 +440,41 @@ export default function PaperBench() {
               tuning={{
                 ...site,
                 ...column,
-                returnDelay: t.fade + moveMs(t),
+                returnDelay: beside.returnDelay,
               }}
-              selected={open}
+              selected={beside.selected}
+              handed={beside.handed}
+              hold={beside.over ? undefined : hold}
+              placing={placing && !beside.over}
+              onTune={(patch) => {
+                if (patch.places) setPlaces(patch.places);
+              }}
             />
           </Suspense>
         )}
       </div>
 
-      {open !== null && (
+      {shownSlug !== null && (
         <ProjectWindow
-          active={open}
-          shown
+          active={shownSlug}
+          shown={open !== null}
           from={from}
-          label={open}
+          label={shownSlug}
           layout={WINDOW_LAYOUT}
           onClose={close}
         >
-          <div className="pb-page" key={open}>
-            <h1>{open.charAt(0).toUpperCase() + open.slice(1)}</h1>
+          <div className="pb-page" key={shownSlug}>
+            <h1>{shownSlug.charAt(0).toUpperCase() + shownSlug.slice(1)}</h1>
             <p>
               A stand-in for the case study, printed on the sheet: the title in
               the blue, a run of reading text at the measure, and the three
               kinds of thing a page shows — a photo, a film, a live demo — so
-              the looks can be compared where they differ.
+              the pick-up can be judged with a page on the sheet.
             </p>
             <p>
-              Clean is the page as printed on a white sheet, the type on the
-              paper and the pictures crisp. Overlay lays the paper&rsquo;s grain
-              over everything once, as one layer the page scrolls under.
-              Multiply prints the whole page into the paper, every picture and
-              all, blended again on every scroll.
+              The paper and the ink are tuned on their own bench, /lab/sheet;
+              this page reads the same knobs, so what is set there is what a
+              print is picked up into here.
             </p>
             <div className="pb-ph">Photo needed: a still from the film.</div>
             <p>
@@ -363,9 +494,8 @@ export default function PaperBench() {
               A demo&rsquo;s box: the iframe would be here.
             </div>
             <p>
-              More of the page, so there is something to scroll: the grain
-              should hold still under the words in overlay, and ride with them
-              in multiply.
+              More of the page, so there is something to scroll: the paper
+              scrolls with the page, one long sheet.
             </p>
           </div>
         </ProjectWindow>
@@ -401,8 +531,46 @@ export default function PaperBench() {
           >
             Reset
           </button>
-          <CopyValues values={t} />
-          <CopyValues values={column} />
+          <CopyAll
+            header={`/lab/paper at a ${w}x${h} window`}
+            sections={() => [
+              {
+                name: "window",
+                into: "WINDOW_DEFAULTS, packages/lab/src/window-tuning.ts",
+                values: t,
+              },
+              {
+                name: "signs",
+                into: "signsTuning(), packages/lab/src/signs-layout.ts (shares of this window)",
+                values: {
+                  printW: new Expr(`${+(column.printW / w).toFixed(3)} * vw`),
+                  columnRight: new Expr(
+                    `${+(column.columnRight / w).toFixed(3)} * vw`,
+                  ),
+                  cardY: new Expr(`${+(column.cardY / h).toFixed(3)} * vh`),
+                  places: placeShares(places, w, h),
+                },
+              },
+              {
+                name: "springs",
+                into: "ROAD_SIGNS_DEFAULTS, packages/lab/src/pieces/road-signs/index.tsx",
+                values: {
+                  springPeriod: column.springPeriod,
+                  springBounce: column.springBounce,
+                  turnPeriod: column.turnPeriod,
+                  turnBounce: column.turnBounce,
+                  liftRise: column.liftRise,
+                  liftGrow: column.liftGrow,
+                  liftMs: column.liftMs,
+                },
+              },
+              {
+                name: "sound",
+                into: "SOUND_DEFAULTS, packages/lab/src/sound.tsx",
+                values: sound,
+              },
+            ]}
+          />
         </div>
         <Choice
           label="Move"
@@ -423,16 +591,6 @@ export default function PaperBench() {
           ]}
           pick={(sheet) => setWindowTuning({ sheet })}
         />
-        <Choice
-          label="Look"
-          value={t.media}
-          options={[
-            { value: "clean", label: "Clean" },
-            { value: "overlay", label: "Overlay" },
-            { value: "multiply", label: "Multiply" },
-          ]}
-          pick={(media) => setWindowTuning({ media })}
-        />
         <Group
           title="The pick-up"
           fields={LIFT}
@@ -451,6 +609,84 @@ export default function PaperBench() {
           values={column}
           set={setColumn}
         />
+        <div className="bench-group">
+          <div className="bench-title">The springs</div>
+          <span style={{ opacity: 0.6, fontSize: 11 }}>
+            Drag a curve: across for the swing, up for the bounce. Play runs a
+            dot on the same easing the sheets move on.
+          </span>
+          <SpringGraph
+            label="Move"
+            period={column.springPeriod}
+            bounce={column.springBounce}
+            onChange={({ period, bounce }) =>
+              setColumn({ springPeriod: period, springBounce: bounce })
+            }
+          />
+          <SpringGraph
+            label="Turn"
+            period={column.turnPeriod}
+            bounce={column.turnBounce}
+            onChange={({ period, bounce }) =>
+              setColumn({ turnPeriod: period, turnBounce: bounce })
+            }
+          />
+        </div>
+        <div className="bench-group">
+          <div className="bench-title">The places</div>
+          <Choice
+            label="Edit"
+            value={showing}
+            options={[
+              { value: "pointer", label: "Live" },
+              { value: "pile", label: "Pile" },
+              ...PRINTS.map((p) => ({ value: p.slug as Show, label: p.title })),
+            ]}
+            pick={(v) => {
+              setShowing(v);
+              setPlacing(v !== "pointer");
+            }}
+          />
+          <span style={{ opacity: 0.6, fontSize: 11 }}>
+            Pick the pile, or a sign&rsquo;s hover, and drag its sheets where
+            you want them, the front one too; alt-drag leans one. Each hover has
+            its own layout. Live gives the pointer back. The numbers are px off
+            the front spot at this window; Copy values turns them into the
+            site&rsquo;s shares.
+          </span>
+          {showing === "pointer"
+            ? null
+            : PRINTS.map((p) => {
+                const set =
+                  showing === "pile"
+                    ? places.pile
+                    : (places.hover[showing] ?? {});
+                const at = set[p.slug] ?? { x: 0, y: 0, tilt: p.tilt };
+                return (
+                  <PlaceRow
+                    key={p.slug}
+                    label={p.slug === showing ? `${p.title} (front)` : p.title}
+                    at={at}
+                    set={(next) =>
+                      setPlaces(
+                        showing === "pile"
+                          ? {
+                              ...places,
+                              pile: { ...places.pile, [p.slug]: next },
+                            }
+                          : {
+                              ...places,
+                              hover: {
+                                ...places.hover,
+                                [showing]: { ...set, [p.slug]: next },
+                              },
+                            },
+                      )
+                    }
+                  />
+                );
+              })}
+        </div>
         <Group
           title="Sound"
           fields={SOUNDS}

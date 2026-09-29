@@ -11,6 +11,15 @@ import {
 } from "react";
 import { asset } from "../../asset";
 import type { Field } from "../../bench";
+import {
+  GLOW_DEFAULTS,
+  GLOW_MASK,
+  SHADOW_DEFAULTS,
+  cartelGlow,
+  cartelShadow,
+  type GlowParams,
+  type ShadowParams,
+} from "../../cartel-look";
 import { replayClass } from "../../motion";
 import {
   SOUND_FIELDS,
@@ -206,69 +215,8 @@ const BOB_DEFAULTS: BobParams = {
 // rides the bob, drift and jump like a shadow glued to the sign. Offsets
 // and blur in % of the sign's height so the shadow scales with however
 // big the sign is rendered (trial page vs lab page).
-type ShadowParams = {
-  x: number; // horizontal offset, % of sign height (positive = right)
-  y: number; // vertical offset, % of sign height (positive = down)
-  blur: number; // softness, % of sign height
-  opacity: number; // 0 disables the filter entirely
-};
-
-// Julio's numbers off the /lab/cartel sliders on the mat (2026-09-26):
-// thrown a little down and to the right, soft-edged, darker than on the
-// white wall.
-const SHADOW_DEFAULTS: ShadowParams = {
-  x: 6,
-  y: 6,
-  blur: 2,
-  opacity: 0.34,
-};
-
-// The lightbox glow: a blurred copy of the current photo screen-blended
-// over the stack. Screen can only lighten, and only by what the source
-// pixel carries — so the lit white face blooms while the dark frame and
-// the wall stay put, and the blur bleeds the light a little past the
-// sign's edges. Reads as exposure pushed just where the lamp shines.
-type GlowParams = {
-  blur: number; // bleed radius, % of sign height
-  strength: number; // overlay opacity; 0 removes the layer entirely
-  boost: number; // brightness on the blurred copy — the exposure push
-  warmth: number; // sepia on the blown-out whites, toward lamp-warm
-};
-
-// Read off the same mockup, where the face is the photo's own cream
-// (a few points lighter, no more): the push is all but off — a faint,
-// warm lift where the tubes are, nothing blown to white.
-const GLOW_DEFAULTS: GlowParams = {
-  blur: 0,
-  strength: 0.35,
-  boost: 1.06,
-  warmth: 0.9,
-};
-
-// The window the glow shines through: where the tube bank actually sits
-// behind the acrylic (marked by Julio on the front photo, mapped into
-// container % via the sign's opaque bbox in the frame canvas). Two
-// crossed linear-gradient masks intersect into a feathered rectangle —
-// full glow inside, fading out over the feather distance. The mask lives
-// on the glow layer only and is fixed in the stack's space, so it rides
-// the transform but not the angle cuts; the band stays near the sign's
-// center in every photo, so the drift is invisible at this feather.
-const GLOW_CORE = {
-  left: 27, // container %, band edges
-  right: 74,
-  top: 17,
-  bottom: 92,
-  featherX: 18, // fade-out distance past each edge, container %
-  featherY: 14,
-};
-
-const GLOW_MASK =
-  `linear-gradient(to right, transparent ${GLOW_CORE.left - GLOW_CORE.featherX}%, ` +
-  `black ${GLOW_CORE.left}%, black ${GLOW_CORE.right}%, ` +
-  `transparent ${GLOW_CORE.right + GLOW_CORE.featherX}%), ` +
-  `linear-gradient(to bottom, transparent ${GLOW_CORE.top - GLOW_CORE.featherY}%, ` +
-  `black ${GLOW_CORE.top}%, black ${GLOW_CORE.bottom}%, ` +
-  `transparent ${GLOW_CORE.bottom + GLOW_CORE.featherY}%)`;
+// The shadow and the glow are the cartel's look, shared with the
+// travel's stand-in for the sign: ../../cartel-look.
 
 // One-tick scale stretch along the axis of a walker cut, per unit of the
 // Smear slider — the angle swaps' share of the smear treatment.
@@ -1431,13 +1379,18 @@ export default function Cartel({
 
     function writeTransform() {
       if (stackRef.current) {
-        stackRef.current.style.transform = signTransform(
+        const transform = signTransform(
           axesShown,
           bobY + spinJumpY,
           cutStretch.x,
           cutStretch.y + bobStretch + spinStretchY,
           spinScaleX,
         );
+        stackRef.current.style.transform = transform;
+        // Published with the photo (data-cartel-src), for the travel's
+        // stand-in to turn the same way.
+        if (containerRef.current)
+          containerRef.current.dataset.cartelTransform = transform;
       }
     }
 
@@ -2128,16 +2081,15 @@ export default function Cartel({
   // the height prop so the same values read identically at any render size.
   // React only diffs the properties it owns, so updating `filter` here never
   // disturbs the imperatively-written transform on the same element.
-  const shadowLen = (v: number) =>
-    `calc((${height}) * ${(v / 100).toFixed(4)})`;
-  const shadowFilter =
-    shadow.opacity > 0
-      ? `drop-shadow(${shadowLen(shadow.x)} ${shadowLen(shadow.y)} ${shadowLen(shadow.blur)} rgba(0, 0, 0, ${shadow.opacity}))`
-      : undefined;
+  const shadowFilter = cartelShadow(height, shadow);
 
   return (
     <div
       ref={containerRef}
+      // The photo up right now, for whatever stands in for the sign
+      // elsewhere (the travel's layer, sign-travel.tsx) to show the
+      // same one, so a hand-off between the two is seamless.
+      data-cartel-src={srcOf(shown.cur)}
       style={{
         position: "relative",
         height,
@@ -2277,7 +2229,7 @@ export default function Cartel({
                 style={{
                   ...PHOTO,
                   opacity: phase === "ready" ? glow.strength : 0,
-                  filter: `blur(${shadowLen(glow.blur)}) brightness(${glow.boost}) sepia(${glow.warmth})`,
+                  filter: cartelGlow(height, glow),
                   mixBlendMode: "screen",
                   maskImage: GLOW_MASK,
                   maskComposite: "intersect",

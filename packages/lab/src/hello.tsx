@@ -27,7 +27,32 @@ const SIGN_FRAME = { w: 929, h: 1600 };
  *  neighbours in by these. Measured off front.webp's alpha (2026-09-15;
  *  re-measure if the frames are regenerated): opaque from x 41 to 889
  *  of 929, y 39 to 1562 of 1600. */
-const SIGN_INSET = { left: 41 / SIGN_FRAME.w, right: 1 - 889 / SIGN_FRAME.w };
+export const SIGN_INSET = {
+  left: 41 / SIGN_FRAME.w,
+  right: 1 - 889 / SIGN_FRAME.w,
+  top: 39 / SIGN_FRAME.h,
+  bottom: 1 - 1562 / SIGN_FRAME.h,
+};
+
+/**
+ * The sign itself inside its slot (`.hello-sign`), in viewport px: the
+ * slot's box less the canvas's transparent margins — what the sign's
+ * travel (sign-travel.tsx) leaves from and comes back to.
+ */
+export function helloSignRect(slot: Element): {
+  x: number;
+  y: number;
+  w: number;
+  h: number;
+} {
+  const r = slot.getBoundingClientRect();
+  return {
+    x: r.left + r.width * SIGN_INSET.left,
+    y: r.top + r.height * SIGN_INSET.top,
+    w: r.width * (1 - SIGN_INSET.left - SIGN_INSET.right),
+    h: r.height * (1 - SIGN_INSET.top - SIGN_INSET.bottom),
+  };
+}
 
 export type HelloTuning = {
   /** The sign's height, in the row's unit (a vh on a wide screen). */

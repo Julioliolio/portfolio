@@ -30,7 +30,10 @@ const KB = 1024;
 // Per route, first load. Set from the post-optimization build plus ~15%
 // headroom; the biggest line is the React + Next runtime floor.
 const BUDGETS = {
-  js: 165 * KB, // gzip
+  // gzip — 165 plus the landing's wiring for the sign's travel to the
+  // corner (2026-09-28: the observer's hand-offs and the plate; the
+  // travel layer itself is a chunk of its own).
+  js: 167 * KB,
   css: 12 * KB, // gzip
   fonts: 115 * KB, // raw woff2 — Regular + SemiBold of the sans, nothing else
   // raw — the landing preloads the cartel's front frame (its largest

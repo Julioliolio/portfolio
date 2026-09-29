@@ -1,7 +1,15 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useState, type CSSProperties } from "react";
 import type { WindowLayout } from "./window";
+import {
+  FADE_EASE,
+  moveMs,
+  returnMs,
+  reverseEase,
+  windowEase,
+  type WindowTuning,
+} from "./window-tuning";
 
 /**
  * Where the road signs, the prints and the project window sit on the
@@ -32,11 +40,16 @@ export function useViewport() {
 /**
  * The road signs tuned to the mockup: each sign 8.8vh tall, and every
  * pixel value of the defaults (which were tuned at 64px) scaled with it,
- * so the walk feels the same at any size. A wide print is 62vw across
- * (Julio's mockup, 2026-09-25), the column's right edge 2.6vw in from
- * the screen's, and its centre line 26.6vh above the stack's middle —
- * about the screen's middle. The stage reaches the screen's right edge,
- * so the column can slide in from off it.
+ * so the walk feels the same at any size. A wide print is 57.9vw
+ * across, the column's right edge on the screen's, and its centre line
+ * 26.1vh above the stack's middle — about the screen's middle (Julio's
+ * values off /lab/paper, 2026-09-26, set at a 1709x961 window). The stage reaches the screen's right edge.
+ * The places (Julio's mockup, 2026-09-26) are shares of the screen off
+ * the front spot: the pile at rest at the bottom right, and for each
+ * hover, where each sheet goes: the front one about the column's centre
+ * line at its own lean, the other two peeking in — one hanging in from
+ * the top, one showing at the bottom right — each hover its own. Placed by hand on /lab/paper by Julio,
+ * 2026-09-26, at a 1710x961 window (Copy values writes this block).
  */
 export function signsTuning(vw: number, vh: number) {
   const height = 0.088 * vh;
@@ -53,11 +66,34 @@ export function signsTuning(vw: number, vh: number) {
     dimGap: 8 * k,
     hoverNudge: 6 * k,
     nudgePush: 16 * k,
-    printW: 0.62 * vw,
-    columnRight: 0.026 * vw,
-    peekGap: 0.035 * vh,
+    printW: 0.579 * vw,
+    columnRight: 0,
     cardSpan,
-    cardY: -0.266 * vh,
+    cardY: -0.261 * vh,
+    places: {
+      pile: {
+        localpal: { x: 0.356 * vw, y: 0.775 * vh, tilt: -3 },
+        camper: { x: 0.412 * vw, y: 0.83 * vh, tilt: 4.5 },
+        convertr: { x: 0.451 * vw, y: 0.895 * vh, tilt: 12 },
+      },
+      hover: {
+        localpal: {
+          localpal: { x: 0, y: 0, tilt: -1.6 },
+          camper: { x: 0.591 * vw, y: -0.707 * vh, tilt: 9 },
+          convertr: { x: 0.555 * vw, y: 0.774 * vh, tilt: 4.5 },
+        },
+        camper: {
+          camper: { x: 0, y: 0, tilt: 1.2 },
+          localpal: { x: 0.243 * vw, y: -0.922 * vh, tilt: -10 },
+          convertr: { x: 0.537 * vw, y: 0.903 * vh, tilt: 4.5 },
+        },
+        convertr: {
+          convertr: { x: 0, y: 0, tilt: -0.8 },
+          localpal: { x: 0.308 * vw, y: -0.926 * vh, tilt: -10 },
+          camper: { x: 0.518 * vw, y: 0.911 * vh, tilt: 13.5 },
+        },
+      },
+    },
   };
 }
 
@@ -92,3 +128,80 @@ export const WINDOW_LAYOUT: WindowLayout = {
   inset: "2.4vw",
   foot: "31vh",
 };
+
+/**
+ * The road signs beside the project window, on the way in and on the
+ * way back — the landing's and the paper bench's alike. The way back is
+ * the way in played backwards (Julio, 2026-09-26), so everything the
+ * signs did as the box was picked up is undone in reverse order, on
+ * the same clocks, the curves turned end for end (reverseEase):
+ *
+ *   in                               back (T = the whole way back)
+ *   0     the print handed over      T      the print handed back
+ *   0     the column fades out       T-fade the column fades in
+ *   0     the stack steps back,      reveal the stack steps home, the
+ *         over the move              move reversed, as the box shrinks
+ *   0     the stack over the window  T      under it again
+ *
+ * `open` is the open project; the result is what to give the signs:
+ * `selected` (the open one, held until the column comes back), `handed`
+ * (the print the box is, held until the box is back on it), `over`
+ * (the stack above the window while the box is up or on its way back),
+ * `opened` (the stack stepped back) and `style` (the clocks and curves
+ * for the stack's own transition and the column's fade).
+ */
+export function useSignsBeside(open: string | null, t: WindowTuning) {
+  // The project on its way back, and whether its column is back yet.
+  const [back, setBack] = useState<{ slug: string; column: boolean } | null>(
+    null,
+  );
+  const [prev, setPrev] = useState(open);
+  if (open !== prev) {
+    setPrev(open);
+    setBack(
+      open === null && prev !== null ? { slug: prev, column: false } : null,
+    );
+  }
+  const backSlug = back?.slug ?? null;
+  useEffect(() => {
+    if (backSlug === null) return;
+    const still = matchMedia("(prefers-reduced-motion: reduce)").matches;
+    const total = still ? 2 : returnMs(t);
+    // From the way back's first frame, as the window times it.
+    let column = 0;
+    let done = 0;
+    const start = requestAnimationFrame(() => {
+      column = window.setTimeout(
+        () => setBack((b) => b && { ...b, column: true }),
+        Math.max(0, total - (still ? 1 : t.fade)),
+      );
+      done = window.setTimeout(() => setBack(null), total);
+    });
+    return () => {
+      cancelAnimationFrame(start);
+      window.clearTimeout(column);
+      window.clearTimeout(done);
+    };
+    // One way back per close; the clocks are read as it starts.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [backSlug]);
+
+  const returning = back !== null;
+  const held = open ?? backSlug;
+  return {
+    selected: open ?? (back && !back.column ? back.slug : null),
+    handed: held,
+    over: held !== null,
+    opened: open !== null,
+    /** For the column's own timer, once it is back: out again when the
+     *  box has landed on the print, unless the pointer is there. */
+    returnDelay: t.fade,
+    style: {
+      "--signs-move": `${moveMs(t)}ms`,
+      "--signs-ease": returning ? reverseEase(windowEase(t)) : windowEase(t),
+      "--signs-wait": `${returning ? t.reveal : 0}ms`,
+      "--rs-hand": `${t.fade}ms`,
+      "--rs-hand-ease": returning ? reverseEase(FADE_EASE) : FADE_EASE,
+    } as CSSProperties,
+  };
+}

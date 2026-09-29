@@ -3,15 +3,15 @@
 import type { MouseEvent as ReactMouseEvent, CSSProperties } from "react";
 import { asset } from "./asset";
 import { clipPreview, type WindowPreview } from "./window";
+import { INK } from "./style";
 import {
-  INK,
-  PAPER_BASE,
-  PAPER_TILE,
-  PAPER_TILE_SIZE,
-  PRINT_BAND,
-  PRINT_PAD,
-  PRINT_SHADOW,
-} from "./style";
+  WINDOW_DEFAULTS,
+  paperCurl,
+  paperLight,
+  paperShadow,
+  paperSheet,
+  paperVeil,
+} from "./window-tuning";
 
 /**
  * A print: one project as a photo print on the mat — a paper frame round
@@ -25,12 +25,13 @@ import {
  * Wide prints (the desktop projects, the film) are landscape, the
  * picture as wide as the print's width; tall prints (the phone project)
  * are portrait and narrower, TALL_SHARE of that width. The width is the
- * caller's (`--rs-print-w`); the frame and the band are PRINT_PAD and
- * PRINT_BAND, in px, and the same for every print, so the window can
- * take them as its starting inset.
+ * caller's (`--rs-print-w`); the picture runs edge to edge and the band
+ * under it is measured in shares of that width (BAND), so the window
+ * takes the band as its starting inset (printPreview()).
  *
- * The paper is Julio's scan, tiled (PAPER_TILE); the pills are the
- * site's. No photo-print look — it is drawn, a frame and a band.
+ * The paper is the sheet's (the paper's layers in window-tuning.ts,
+ * off :root); the pills are the site's. No photo-print look — it is
+ * drawn, a picture and a band.
  */
 
 export type PrintSpec = {
@@ -113,27 +114,55 @@ export const printBySlug = (slug: string) =>
  */
 export function printSize(spec: PrintSpec, wideW: number) {
   const w = spec.media === "tall" ? wideW * TALL_SHARE : wideW;
-  const picture = (w - 2 * PRINT_PAD) / spec.aspect;
-  return { w, h: PRINT_PAD + picture + PRINT_BAND };
+  const picture = w / spec.aspect;
+  // The band: its padding and three lines of the blurb (BAND below).
+  const type = Math.min(22, Math.max(12, wideW * BAND.type));
+  const band = 2 * wideW * BAND.padY + 3 * type * 1.35;
+  return { w, h: picture + band };
 }
+
+/** The band's measures, as shares of a wide print's width, so a print
+ *  keeps its proportions at any size and a tall print's type matches a
+ *  wide one's (Julio's reference, 2026-09-26: the picture edge to edge
+ *  and a white band under it, the blurb left and the pills right). */
+const BAND = {
+  padY: 0.026,
+  padLeft: 0.031,
+  padRight: 0.022,
+  type: 0.0138,
+  tag: 0.0098,
+  tagH: 0.025,
+};
+
+/** A share of the wide print's width, as CSS, between a floor and a
+ *  ceiling in px. */
+const share = (k: number, lo: number, hi: number) =>
+  `clamp(${lo}px, calc(var(--rs-print-w, 640px) * ${k}), ${hi}px)`;
+
+/** The paper, from the page's variables (paperCss() on :root), the
+ *  defaults' where a page sets none. */
+const D = WINDOW_DEFAULTS;
 
 /**
  * The print's stylesheet. The width is the caller's --rs-print-w; the
- * tilt is the print's own (inline). The picture keeps a hairline so a
- * white clip does not float on the paper; the paper keeps the same tile
- * at the same scale as the sheet.
+ * tilt is the print's own (inline). The picture runs edge to edge, the
+ * band under it; the paper is the sheet's own — its scan, ground,
+ * grain, corners, shadow, light and curl, off the page's variables
+ * (paperCss()), so tuning the sheet tunes the prints. The light lies
+ * over everything, the picture too, as it does on the sheet.
  */
 export const PRINT_CSS = `
-.rs-print { position: relative; display: block; box-sizing: border-box; width: var(--rs-print-w, 640px); padding: ${PRINT_PAD}px ${PRINT_PAD}px 0; background: ${PAPER_BASE} url(${asset(PAPER_TILE)}) 0 0 / ${PAPER_TILE_SIZE} repeat; box-shadow: ${PRINT_SHADOW}; transform: rotate(var(--rs-tilt, 0deg)); transform-origin: 50% 50%; color: ${INK}; text-decoration: none; font-family: inherit; container-type: inline-size; }
+.rs-print { position: relative; display: block; box-sizing: border-box; width: var(--rs-print-w, 640px); overflow: hidden; isolation: isolate; border-radius: var(--paper-corner, ${D.corner}px); background: var(--paper-veil, ${paperVeil(D)}), var(--paper-sheet, ${paperSheet(D)}), var(--paper-ground, ${D.ground}); box-shadow: var(--paper-shadow, ${paperShadow(D)}); transform: rotate(var(--rs-tilt, 0deg)); transform-origin: 50% 50%; color: ${INK}; text-decoration: none; font-family: inherit; }
+.rs-print::after { content: ""; position: absolute; inset: 0; z-index: 1; pointer-events: none; border-radius: inherit; background: var(--paper-light, ${paperLight(D)}); box-shadow: var(--paper-curl, ${paperCurl(D)}); mix-blend-mode: soft-light; }
 .rs-print.is-tall { width: calc(var(--rs-print-w, 640px) * ${TALL_SHARE}); }
 .rs-print:focus-visible { outline: 2px solid ${INK}; outline-offset: 4px; }
-.rs-media { position: relative; overflow: hidden; background: #ecebe8; box-shadow: inset 0 0 0 1px rgba(43, 39, 34, .12); }
+.rs-media { position: relative; overflow: hidden; background: #ecebe8; }
 .rs-media video { display: block; width: 100%; height: 100%; object-fit: cover; }
-/* The band: the blurb left, the pills right, on the picture's foot. */
-.rs-band { display: flex; justify-content: space-between; align-items: flex-start; gap: 16px; min-height: ${PRINT_BAND}px; padding: ${PRINT_PAD}px 0 ${PRINT_PAD}px; }
-.rs-desc { margin: 0; min-width: 0; max-width: 26em; color: #57514a; font-weight: 400; font-size: clamp(11.5px, 9px + .9cqi, 15px); line-height: 1.35; letter-spacing: -.01em; text-wrap: pretty; }
-.rs-tags { flex: 0 0 auto; display: flex; flex-wrap: wrap; justify-content: flex-end; gap: 6px; max-width: 45%; }
-.rs-tag { display: inline-flex; align-items: center; justify-content: center; min-height: 22px; padding: 3px 8px; border: 1px solid color-mix(in srgb, ${INK} 52%, transparent); border-radius: 999px; background: transparent; color: ${INK}; font-weight: 400; font-size: 11px; line-height: 1; letter-spacing: .01em; white-space: nowrap; }
+/* The band: the blurb left, the pills right, both from its top. */
+.rs-band { display: flex; justify-content: space-between; align-items: flex-start; gap: ${share(0.03, 12, 48)}; padding: ${share(BAND.padY, 12, 42)} ${share(BAND.padRight, 10, 36)} ${share(BAND.padY, 12, 42)} ${share(BAND.padLeft, 12, 50)}; }
+.rs-desc { margin: 0; min-width: 0; max-width: 21em; color: #57514a; font-weight: 400; font-size: ${share(BAND.type, 12, 22)}; line-height: 1.35; letter-spacing: -.01em; text-wrap: pretty; }
+.rs-tags { flex: 0 1 auto; display: flex; flex-wrap: wrap; justify-content: flex-end; gap: ${share(0.006, 5, 10)}; max-width: 55%; }
+.rs-tag { display: inline-flex; align-items: center; justify-content: center; box-sizing: border-box; min-height: ${share(BAND.tagH, 22, 40)}; padding: 0 ${share(0.0095, 8, 16)}; border: 1px solid color-mix(in srgb, ${INK} 70%, transparent); border-radius: 999px; background: transparent; color: ${INK}; font-weight: 400; font-size: ${share(BAND.tag, 10.5, 16)}; line-height: 1; letter-spacing: .01em; white-space: nowrap; }
 /* Handed over: the project window has taken this print as its own box,
    to the pixel, so the print goes at once — or two of it would show. */
 .rs-print.is-handed { visibility: hidden; }
@@ -259,9 +288,12 @@ export function printPreview(
     cy = restY + p.y;
   }
   // The print's own size, and its frame, from layout — untouched by
-  // any transform, and the stack at rest has none.
-  const w = print.offsetWidth;
-  const h = print.offsetHeight;
+  // any transform, and the stack at rest has none — grown by its lift
+  // under the pointer (PRINT_CSS's scale), so the box starts as big as
+  // the print looked.
+  const grown = parseFloat(getComputedStyle(print).scale) || 1;
+  const w = print.offsetWidth * grown;
+  const h = print.offsetHeight * grown;
   const inset = {
     top: media.offsetTop,
     left: media.offsetLeft,

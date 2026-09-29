@@ -75,6 +75,20 @@ export const BOIL_SEEDS: readonly number[] = [
 
 /** The least blur the browser will draw, px: below this it draws none. */
 const BLUR_LEAST = 0.75;
+
+/**
+ * The numbers that thicken a glyph by `outset` px in a filter — the
+ * blur that draws it and the alpha ramp that puts the new edge there
+ * (see BoilFilter's hairline): feGaussianBlur at `sigma`, then feFuncA
+ * linear with `slope` and `intercept`. The ink's spread (window.tsx)
+ * fattens its strokes the same way.
+ */
+export function thicken(outset: number) {
+  const sigma = Math.max(outset, BLUR_LEAST);
+  const level = normalCdf(-outset / sigma);
+  const slope = sigma / normalPdf(outset / sigma);
+  return { sigma, slope, intercept: 0.5 - level * slope };
+}
 /** φ, the standard normal's density. */
 const normalPdf = (x: number) =>
   Math.exp((-x * x) / 2) / Math.sqrt(2 * Math.PI);
@@ -137,10 +151,7 @@ export function BoilFilter({
   const cycles = seeds.length > 1;
   // The hairline's outset, the blur that draws it and the alpha level
   // the new edge sits at (see above).
-  const outset = hair / 2;
-  const sigma = Math.max(outset, BLUR_LEAST);
-  const level = normalCdf(-outset / sigma);
-  const ramp = sigma / normalPdf(outset / sigma);
+  const { sigma, slope: ramp, intercept } = thicken(hair / 2);
   useEffect(() => {
     if (!cycles || !on) return;
     if (matchMedia("(prefers-reduced-motion: reduce)").matches) return;
@@ -168,11 +179,7 @@ export function BoilFilter({
             result="haze"
           />
           <feComponentTransfer in="haze" result="haired">
-            <feFuncA
-              type="linear"
-              slope={ramp}
-              intercept={0.5 - level * ramp}
-            />
+            <feFuncA type="linear" slope={ramp} intercept={intercept} />
           </feComponentTransfer>
         </>
       )}

@@ -135,7 +135,7 @@ const FRAMER_STYLE: Style = {
 const CONTENTS_STYLE: Style = {
   color: "#2b2722",
   alpha: 1,
-  labelColor: "#2f6df6",
+  labelColor: "#0000ff",
   labelAlpha: 1,
   corner: 4.8,
   shape: "squircle",

@@ -82,6 +82,18 @@ const pieces = [
       "The site's sounds under one set of knobs — the greeting's felt-piano letters to hover, every one-shot to preview, and the bed that can play under the landing, switchable to hear the letters with and without it.",
   },
   {
+    slug: "brand-sign",
+    title: "Brand plate",
+    description:
+      "The small Julio(liolio) lightbox, the site's home mark, fixed in the upper-left of the projects screen and the project pages — its size, its place and its shadow, tuned live.",
+  },
+  {
+    slug: "sign-travel",
+    title: "Sign travel",
+    description:
+      "The home page cut down to the sign's travel: the two screens, snapped, the sign in its row and the brand plate in its corner — scroll, and the sign leaves for the corner and becomes the plate, seven poses on a spring, on the beat, or squashed by the scroll itself; the feel, the path, each pose's size and place, tuned live.",
+  },
+  {
     slug: "road-signs",
     title: "Road signs",
     description:
@@ -92,6 +104,18 @@ const pieces = [
     title: "Paper",
     description:
       "The projects screen on the mat, whole: the signs, the prints' column they bring out, and the sheet a print is picked up into — the move, the paper, the page's look on it, the column's sizes and clocks, tuned live.",
+  },
+  {
+    slug: "sheet",
+    title: "Sheet",
+    description:
+      "The sheet at the site's size — paper with the scan as its texture, lying on the mat at a lean under its shadows and its light, its edges cut rather than drawn, the cut lit, one corner off the mat; its size, its lean, its cut, its paper, tuned live.",
+  },
+  {
+    slug: "ink",
+    title: "Ink",
+    description:
+      "Parked: the type treated as printed on the sheet — the grain thinning the strokes, the edges bleeding, the hand bearing down, the ink soaking in, the impression — each a switch, and whether the photos, films and demos are printed too. Only this page puts it on; the site's sheet is paper alone.",
   },
   {
     slug: "window",
@@ -122,6 +146,12 @@ const pieces = [
     title: "Scroll cue",
     description:
       "The landing's scroll cue — the arrow between its parens, parting for the words under the pointer. At size on stand-in screens and three times over; the glyph, the words and the held cuts, tuned live. A switch at the top flips to the pill sketch — the arrow in a squircle that turns blue and opens on a spring — with its own knobs.",
+  },
+  {
+    slug: "tape-arrow",
+    title: "Tape arrow",
+    description:
+      "The landing's scroll cue as a strip of paper tape stuck to the mat — peeling off toward the camera under the pointer, its shadow falling on the words that appear under its tip, nudging while it waits. At size on stand-in screens and three times over; the peel, the shadows, the words, the idle and the entrance, tuned live.",
   },
 ] as const satisfies readonly LabPiece[];
 

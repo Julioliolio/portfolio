@@ -2,6 +2,7 @@
 
 import {
   useEffect,
+  useMemo,
   useRef,
   useState,
   type CSSProperties,
@@ -10,10 +11,16 @@ import {
   type ReactNode,
 } from "react";
 import { asset } from "../../asset";
-import type { Field as BenchField, NumericKey } from "../../bench";
+import {
+  CopyAll,
+  type Field as BenchField,
+  type NumericKey,
+} from "../../bench";
 import { replayClass, useMotionTuning } from "../../motion";
 import { PRINTS, PRINT_CSS, Print, printSize } from "../../prints";
-import { INK, SETTLE_EASE } from "../../style";
+import { springEasing } from "../../spring";
+import { SpringGraph } from "../../spring-graph";
+import { INK } from "../../style";
 import {
   SOUND_FIELDS,
   play,
@@ -31,25 +38,33 @@ import {
  * stack settles everything to rest. Each sign is a link to its project
  * page.
  *
- * Hovering a sign also brings out its print (see ../../prints): the
- * column at the stage's right edge — the three prints, one under the
- * other, with the hovered one centred and the others peeking above and
- * below — slides in from off the screen's edge onto the mat (Julio,
- * 2026-09-25: "like sliding into the mat") and settles. Hovering another
- * sign steps the column to its print; so does a click on a peeking
- * print. The column is cyclic: the last print peeks above the first and
- * the first below the last (TRACK keeps clones for that). The pointer
- * can leave a sign for its print: an invisible wedge (see drawBridge)
- * fans out from the hot sign's middle to the column's left edge while a
- * print is up, so the pointer can cross the mat along any straight-ish
- * line between the two without the column going, and the wedge sits
- * under the signs and the prints so it never steals a hover from them.
- * Leaving all of it (the sign toward the column waits 240ms, elsewhere
- * 70ms; the column 140ms; the stage 100ms) slides the column back out.
- * The centred print's sign stays lifted meanwhile, and a click on the
- * centred print opens the project (the landing picks the print up into
- * the project window). See ColumnState / showProject / hideProject.
- * hideProject / animateRope.
+ * Hovering a sign also brings out its print (see ../../prints). The
+ * prints are sheets on the mat's right, always partly in view: at rest
+ * they lie in a pile at the screen's bottom-right corner, fanned, only
+ * their corners showing (Julio's mockup, 2026-09-26). Hovering a sign
+ * deals them out, each on a spring: the hovered one to the front —
+ * about the column's centre line, at the stage's right edge, where its
+ * hover's layout puts it — and the other two to that hover's own places,
+ * peeking in from off the screen's edge.
+ * Each hover has its layout (Julio, 2026-09-26: "have a menu for each
+ * hover and let me place the out of screen papers how I want"), so
+ * hovering another sign deals again, every sheet to its place in that
+ * sign's layout. The places (each hover's, and the pile's) are the
+ * tuning's (see pose; on a bench they are dragged into place, see
+ * onPlaceDown), and each print's own lean is its front pose. The pointer can leave a sign for its print: an invisible wedge
+ * (see drawBridge) fans out from the hot sign's middle to the column's
+ * left edge while a print is up, so the pointer can cross the mat
+ * along any straight-ish line between the two without the sheets
+ * going, and the wedge sits under the signs and the sheets so it never
+ * steals a hover from them. The signs' whole box is one hitbox: between
+ * two signs the last stays hot until the pointer reaches the next.
+ * Leaving all of it (the box toward the column waits 240ms, elsewhere
+ * 70ms; the column 140ms; the stage 100ms) sends the sheets back to
+ * the pile. The front print's sign
+ * stays lifted meanwhile; a click on the front print opens the project
+ * (the landing picks the print up into the project window), and a
+ * click on a corner brings that print to the front. See ColumnState /
+ * showProject / hideProject.
  *
  * Motion is stop-motion, not tweened: every pose change is walked in a
  * handful of hard cuts on a beat (see Tuning.steps / fps), the
@@ -145,6 +160,19 @@ const SIGNS: Sign[] = [
 /** Room in the column past a print's width, px, for its tilt. */
 const COLUMN_ROOM = 48;
 
+/** A sheet's place: its centre off the front spot (the column's centre
+ *  line; px, x right, y down) and its lean, deg (negative =
+ *  counter-clockwise). */
+export type Place = { x: number; y: number; tilt: number };
+/** The places: at rest, each sheet's own spot in the pile, by slug; and
+ *  for each hover (the slug at the front), where every sheet goes, by
+ *  slug — the front one's own entry included (Julio, 2026-09-29:
+ *  "customize the location of the hovered project too"). */
+export type Places = {
+  pile: Record<string, Place>;
+  hover: Record<string, Record<string, Place>>;
+};
+
 type RoadSignsTuning = {
   /** Rendered sign height, px. Widths follow each photo's aspect. */
   height: number;
@@ -195,8 +223,30 @@ type RoadSignsTuning = {
    */
   growSqueeze: number;
   shrinkSqueeze: number;
-  /** Cast-shadow opacity. Offset and blur grow with the sign's scale. */
+  /** Cast-shadow opacity at rest. Offset and blur grow with the sign's
+   *  scale (see shadowLift). */
   shadow: number;
+  /** The cast shadow's offset at rest, px: right (negative = left) and
+   *  down (negative = up) — where the light is. */
+  shadowX: number;
+  shadowY: number;
+  /** The cast shadow's blur at rest, px. */
+  shadowBlur: number;
+  /** How fast the shadow grows as the sign lifts: its offset and blur
+   *  are multiplied by 1 + (scale − 1) × this. 0 = the same shadow at
+   *  every size. A shrunk sign's shadow tucks in by the same rule. */
+  shadowLift: number;
+  /** Opacity lost per unit of that growth: further from the wall is a
+   *  fainter shadow. 0 = the same darkness at every size. */
+  shadowFade: number;
+  /** The shadow's colour, from black (0) to the mat's warm brown (1). */
+  shadowWarmth: number;
+  /** A second, tight shadow right under the sign's edge, where it meets
+   *  the wall: its opacity (0 = off), its drop and its blur, px. It
+   *  doesn't grow with the lift; it fades as the sign leaves the wall. */
+  contact: number;
+  contactY: number;
+  contactBlur: number;
   /** Seconds between idle nudges (measured from the previous nudge's
    *  settle, or from the pointer leaving). 0 disables the nudge. */
   nudgeEvery: number;
@@ -228,17 +278,31 @@ type RoadSignsTuning = {
   printW: number;
   /** Air between the column and the stage's right edge, px. */
   columnRight: number;
-  /** Air between a print and the ones peeking above and below it, px. */
-  peekGap: number;
-  /** The column's slide in from the edge, and back out, ms. */
-  slideDuration: number;
-  /** The column's step to the next print, ms. */
-  moveDuration: number;
+  /** A sheet's move between places, a spring (see ../../spring): the
+   *  period of one swing, ms, and the bounce, 0 to 0.8 — 0 settles
+   *  without passing its spot, more overshoots further and swings back.
+   *  A move lasts the spring's settle. */
+  springPeriod: number;
+  springBounce: number;
+  /** Its turn on the way, on a spring of its own. */
+  turnPeriod: number;
+  turnBounce: number;
+  /** The front print under the pointer lifts a little off the mat
+   *  (Julio, 2026-09-26): up by `liftRise` px, grown by `liftGrow`,
+   *  its shadow the paper's lifted one, over `liftMs`. */
+  liftRise: number;
+  liftGrow: number;
+  liftMs: number;
+  /** The places (see Places): each hover's layout for the other two
+   *  sheets, and each sheet's own place in the pile at rest. Placed by
+   *  hand on the bench (placing). */
+  places: Places;
   /** ms the pointer must rest on a sign before its print shows. */
   showDelay: number;
-  /** ms after leaving a sign (not toward its print) before hiding. */
+  /** ms after leaving the signs' box (not toward its print) before
+   *  hiding. */
   hideDelay: number;
-  /** ms after leaving a sign toward the column before hiding — the
+  /** ms after leaving the signs' box toward the column before hiding — the
    *  grace for the pointer to reach it. */
   hideTowardCard: number;
   /** ms after leaving the column before hiding. */
@@ -258,6 +322,9 @@ type RoadSignsTuning = {
 // deep 0.8x step back, walked in seven cuts on a 24fps beat; light squeeze
 // both ways; the cold signs fan outward (top tilts left, bottom right)
 // while each hot sign hangs at its own angle.
+// The shadow and the cold signs' fade retuned 2026-09-26: a longer,
+// darker shadow thrown down-right, growing gently and thinning as a sign
+// lifts; the stepped-back signs barely dimmed.
 const ROAD_SIGNS_DEFAULTS: Readonly<RoadSignsTuning> = Object.freeze({
   height: 64,
   gap: 12,
@@ -267,14 +334,23 @@ const ROAD_SIGNS_DEFAULTS: Readonly<RoadSignsTuning> = Object.freeze({
   hoverNudge: 6,
   dimScale: 0.8,
   dimTilt: Object.freeze({ localpal: -2, camper: 0, convertr: 2 }),
-  dimOpacity: 0.48,
+  dimOpacity: 0.8,
   fps: 24,
   steps: 7,
   growOvershoot: 1,
   shrinkOvershoot: 1.2,
   growSqueeze: 0.4,
   shrinkSqueeze: 0.6,
-  shadow: 0.19,
+  shadow: 0.32,
+  shadowX: 10,
+  shadowY: 10,
+  shadowBlur: 2.5,
+  shadowLift: 2.25,
+  shadowFade: 0.25,
+  shadowWarmth: 0,
+  contact: 0,
+  contactY: 1,
+  contactBlur: 1,
   nudgeEvery: 3.5,
   nudgePush: 16,
   nudgeTilt: 1.25,
@@ -285,9 +361,40 @@ const ROAD_SIGNS_DEFAULTS: Readonly<RoadSignsTuning> = Object.freeze({
   cardY: 0,
   printW: 640,
   columnRight: 24,
-  peekGap: 28,
-  slideDuration: 520,
-  moveDuration: 460,
+  // Julio's springs off /lab/paper, 2026-09-26: a snappy move that
+  // barely passes its spot, and the turn a little longer with a wobble
+  // of its own as the sheet lands.
+  springPeriod: 250,
+  springBounce: 0.1,
+  turnPeriod: 370,
+  turnBounce: 0.34,
+  liftRise: 6,
+  liftGrow: 1.015,
+  liftMs: 220,
+  places: Object.freeze({
+    pile: {
+      localpal: { x: 290, y: 520, tilt: 6 },
+      camper: { x: 235, y: 480, tilt: -10 },
+      convertr: { x: 180, y: 440, tilt: -26 },
+    },
+    hover: {
+      localpal: {
+        localpal: { x: 0, y: 0, tilt: -1.6 },
+        camper: { x: 200, y: -500, tilt: -4 },
+        convertr: { x: 310, y: 520, tilt: 6 },
+      },
+      camper: {
+        camper: { x: 0, y: 0, tilt: 1.2 },
+        localpal: { x: 200, y: -500, tilt: -4 },
+        convertr: { x: 310, y: 520, tilt: 6 },
+      },
+      convertr: {
+        convertr: { x: 0, y: 0, tilt: -0.8 },
+        localpal: { x: 200, y: -500, tilt: -4 },
+        camper: { x: 310, y: 520, tilt: 6 },
+      },
+    },
+  }),
   showDelay: 50,
   hideDelay: 70,
   hideTowardCard: 240,
@@ -362,42 +469,79 @@ type ColumnDom = {
   /** The safe wedge's own svg (under the signs) and its polygon. */
   bridgeSvg: SVGSVGElement;
   bridge: SVGPolygonElement;
-  /** The column at the stage's right edge, and the track in it that
-   *  moves to centre a print. */
+  /** The column at the stage's right edge: the prints' seats, one on
+   *  the other, on its centre line. */
   column: HTMLDivElement;
-  track: HTMLDivElement;
 };
 
-/**
- * The track's prints: the three, with two clones before and two after,
- * so whatever is centred has a neighbour peeking above and below — the
- * last above the first, the first below the last. FIRST..LAST are the
- * prints themselves; a step that lands on a clone jumps, unseen, to the
- * original (see showProject's settle).
- */
-const TRACK = Array.from(
-  { length: PRINTS.length + 4 },
-  (_, i) => PRINTS[(i + PRINTS.length - 2) % PRINTS.length]!,
-);
-const FIRST = 2;
-const LAST = FIRST + PRINTS.length - 1;
-const canonical = (slug: string) =>
-  FIRST + PRINTS.findIndex((p) => p.slug === slug);
+/** The print for a slug, as an index into PRINTS (and `items`). */
+const printIndex = (slug: string) => PRINTS.findIndex((p) => p.slug === slug);
+
+const NOWHERE: Place = { x: 0, y: 0, tilt: 0 };
 
 /**
- * The column machine. Prints are shown and hidden by toggling classes
- * the stylesheet transitions (the column's slide, the track's step);
- * the wedge is redrawn from layout whenever the hot sign walks (see
- * tick), and the timers are the site's grace periods.
+ * A print's pose while `dealt` is at the front (null: the pile at
+ * rest): its centre off the front spot, px, its lean, deg, and its
+ * layer. Every print is at that hover's place for it — the front one
+ * too (its own entry in the layout; on the spot at its own lean when
+ * the layout has none), on top; in the pile each is at its own. The
+ * later print lies over the earlier.
+ */
+function pose(i: number, dealt: string | null, t: RoadSignsTuning) {
+  const slug = PRINTS[i]?.slug ?? "";
+  if (dealt === null) return { ...(t.places.pile[slug] ?? NOWHERE), z: 1 + i };
+  const at = t.places.hover[dealt]?.[slug];
+  if (slug === dealt) {
+    return { ...(at ?? { x: 0, y: 0, tilt: PRINTS[i]?.tilt ?? 0 }), z: 10 };
+  }
+  return { ...(at ?? NOWHERE), z: 4 + i };
+}
+
+/** The front print's place while `dealt` is at the front: off the
+ *  front spot (the column's centre line), as the layout has it. */
+const frontPlace = (dealt: string, t: RoadSignsTuning): Place =>
+  t.places.hover[dealt]?.[dealt] ?? NOWHERE;
+
+/** The tuning with one place moved: a print's in the pile (dealt
+ *  null), or in the layout of the hover `dealt`. */
+function withPlace(
+  t: RoadSignsTuning,
+  dealt: string | null,
+  slug: string,
+  place: Place,
+): RoadSignsTuning {
+  const places =
+    dealt === null
+      ? { ...t.places, pile: { ...t.places.pile, [slug]: place } }
+      : {
+          ...t.places,
+          hover: {
+            ...t.places.hover,
+            [dealt]: { ...t.places.hover[dealt], [slug]: place },
+          },
+        };
+  return { ...t, places };
+}
+
+/**
+ * The column machine. Which sheet the sheets are dealt round is
+ * `dealt` (null: the pile); React renders each sheet's pose from it
+ * (see pose) and the stylesheet springs it there. The wedge is redrawn from layout whenever the hot sign walks
+ * (see tick), and the timers are the site's grace periods.
  */
 type ColumnState = {
   dom: Partial<ColumnDom>;
-  /** The track's prints, by index into TRACK. */
+  /** The prints, by index into PRINTS. */
   items: (HTMLAnchorElement | undefined)[];
-  /** The track index centred, or on its way to the centre. */
+  /** The print at the front, or on its way there or back. */
   index: number;
-  /** The last step has settled (and any clone was swapped out). */
+  /** The front print has landed (the spring has settled). */
   settled: boolean;
+  /** The print the sheets are dealt round (null: the pile at rest). */
+  dealt: string | null;
+  /** The springs' settle, ms — how long a move takes. Written by the
+   *  component from the tuning. */
+  inMs: number;
   stage: HTMLDivElement | null;
   /** Where the stack sits in the stage, so sign edges can be placed. */
   stackAt: { x: number; y: number };
@@ -409,14 +553,18 @@ type ColumnState = {
   settleTimer: number | null;
   /** Tells React which print is up, so its sign stays lifted. */
   onActive: (slug: string | null) => void;
+  /** Tells React which hover's layout to render the sheets from. */
+  onArrange: (dealt: string | null) => void;
 };
 
 function createColumn(): ColumnState {
   return {
     dom: {},
     items: [],
-    index: FIRST,
+    index: 0,
     settled: true,
+    dealt: null,
+    inMs: 600,
     stage: null,
     stackAt: { x: 0, y: 0 },
     active: null,
@@ -425,6 +573,7 @@ function createColumn(): ColumnState {
     showTimer: null,
     settleTimer: null,
     onActive: () => {},
+    onArrange: () => {},
   };
 }
 
@@ -491,14 +640,14 @@ function armSettle(e: Engine, ms: number, done: () => void) {
  * inside it) to the column's left edge, the height of the centred print,
  * overlapping the column by a few px so there is no seam. Anything
  * inside it counts as "still on the way to the print". Drawn from
- * layout — where the print is once the track has stepped — so it is
- * right during the slide with no redraw per frame. It is drawn under the
+ * layout — where the print sits once it has landed — so it is right
+ * during the slide with no redraw per frame. It is drawn under the
  * signs and the column, so wherever they overlap it, they win the hover.
  */
 function drawBridge(e: Engine) {
   const r = e.column;
-  const { bridge, column, track } = r.dom;
-  if (!bridge || !column || !track || r.active === null) return;
+  const { bridge, column } = r.dom;
+  if (!bridge || !column || r.active === null) return;
   const g = signGeom(e, r.active);
   const el = r.items[r.index];
   if (!g || !el) return;
@@ -506,29 +655,21 @@ function drawBridge(e: Engine) {
   const sx = g.cx;
   const top = g.cy - g.halfH - slack;
   const bottom = g.cy + g.halfH + slack;
-  const ex = column.offsetLeft + 8;
+  // The front print's place: its seat centres it on the column's centre
+  // line (the seat's top, before the -50% that centres it), and the
+  // layout moves it off that (frontPlace) — where it will be once it has
+  // landed, which is what the wedge is drawn to.
+  const at = r.dealt !== null ? frontPlace(r.dealt, e.tuning) : NOWHERE;
+  const ex =
+    column.offsetLeft + (column.offsetWidth - el.offsetWidth) / 2 + at.x + 8;
   const half = el.offsetHeight / 2;
-  const ct = track.offsetTop - half;
-  const cb = track.offsetTop + half;
+  const line = (el.parentElement?.offsetTop ?? 0) + at.y;
+  const ct = line - half;
+  const cb = line + half;
   bridge.setAttribute(
     "points",
     `${sx.toFixed(1)},${top.toFixed(1)} ${sx.toFixed(1)},${bottom.toFixed(1)} ${ex.toFixed(1)},${cb.toFixed(1)} ${ex.toFixed(1)},${ct.toFixed(1)}`,
   );
-}
-
-/** Moves the track so the print at `k` sits on the column's centre line
- *  (the track's own top): eased by the stylesheet, or at once. */
-function placeTrack(r: ColumnState, k: number, eased: boolean) {
-  const track = r.dom.track;
-  const el = r.items[k];
-  if (!track || !el) return;
-  const y = el.offsetTop + el.offsetHeight / 2;
-  if (!eased) track.style.transition = "none";
-  track.style.transform = `translateY(${(-y).toFixed(1)}px)`;
-  if (!eased) {
-    void track.offsetHeight;
-    track.style.transition = "";
-  }
 }
 
 /** Makes a print the one that is up — reachable, the pointer's "open",
@@ -546,75 +687,56 @@ function setPrintUp(el: HTMLElement | undefined, up: boolean) {
   else video?.pause();
 }
 
-/** The peeking prints tell the cursor what a click does. */
-function labelPeeks(r: ColumnState) {
-  r.items.forEach((el, i) => {
-    if (!el || i === r.index) return;
-    if (i === r.index - 1) el.setAttribute("data-cursor-label", "previous");
-    else if (i === r.index + 1) el.setAttribute("data-cursor-label", "next");
+/** Tells React the layout, and the cursor what the other sheets are
+ *  while dealt (a click brings one to the front); the front's own
+ *  label is setPrintUp's. */
+function arrange(r: ColumnState) {
+  for (const [i, p] of PRINTS.entries()) {
+    const el = r.items[i];
+    if (!el || p.slug === r.dealt) continue;
+    if (r.dealt !== null) el.setAttribute("data-cursor-label", p.title);
     else el.removeAttribute("data-cursor-label");
-  });
+  }
+  r.onArrange(r.dealt);
 }
 
+/**
+ * Brings a project's print to the front, and deals the others to that
+ * hover's layout — from the pile, or from another hover's layout, each
+ * sheet springing from wherever it is to its place in this one.
+ */
 function showProject(e: Engine, slug: string) {
   const r = e.column;
-  const t = e.tuning;
   cancelHide(e);
-  const { column, track, bridgeSvg } = r.dom;
-  if (!column || !track) return;
-  const firstReveal = r.active === null || r.closing;
-  const changed = r.active !== slug;
-  if (!changed && !firstReveal) return;
-  // Where to go: the same print stays where it is (a hover while it
-  // was leaving); another goes to the neighbour when it is next door,
-  // so the column steps one the way the peek promised, else to its own
-  // place — the column comes in already centred on it.
-  let k = changed ? canonical(slug) : r.index;
-  if (changed && !firstReveal) {
-    for (const j of [r.index - 1, r.index + 1]) {
-      if (TRACK[j]?.slug === slug) k = j;
-    }
-  }
-  if (r.index !== k) setPrintUp(r.items[r.index], false);
+  const { column, bridgeSvg } = r.dom;
+  if (!column) return;
+  if (r.active === slug && !r.closing) return;
+  const k = printIndex(slug);
+  if (r.active !== null && !r.closing) setPrintUp(r.items[r.index], false);
+  r.dealt = slug;
   // Paper over the mat.
   play("slide", 1, { at: "card" });
   r.active = slug;
   r.closing = false;
   r.settled = false;
   r.index = k;
-  placeTrack(r, k, !firstReveal);
   column.classList.add("is-in");
   column.classList.remove("is-off");
   setPrintUp(r.items[k], true);
-  labelPeeks(r);
   bridgeSvg?.classList.add("is-live");
   drawBridge(e);
-  armSettle(e, firstReveal ? t.slideDuration : t.moveDuration, () => {
+  arrange(r);
+  armSettle(e, r.inMs, () => {
     r.settled = true;
-    if (r.index < FIRST || r.index > LAST) {
-      // Landed on a clone: the original takes over in place, its clip
-      // where the clone's was — the view is the same to the pixel.
-      const from = r.items[r.index];
-      const to = canonical(slug);
-      const at = from?.querySelector("video")?.currentTime ?? 0;
-      setPrintUp(from, false);
-      r.index = to;
-      placeTrack(r, to, false);
-      const el = r.items[to];
-      const video = el?.querySelector("video");
-      if (video) video.currentTime = at;
-      setPrintUp(el, true);
-      labelPeeks(r);
-    }
   });
   r.onActive(slug);
 }
 
 /**
- * Takes the column away: a slide back out past the edge (the pointer
- * has left), or a fade in place (a project opened — the print stays
- * where it is, still marked up, so the window's box can shrink back
- * onto it; see restoreProject).
+ * Takes the sheets away: back to the pile (the pointer has left), or a
+ * fade in place (a project opened — the sheets stay where they are, the
+ * front one still marked up, so the window's box can shrink back onto
+ * it; see restoreProject).
  */
 function hideProject(e: Engine, how: "slide" | "fade" = "slide") {
   const r = e.column;
@@ -623,23 +745,24 @@ function hideProject(e: Engine, how: "slide" | "fade" = "slide") {
   if (r.active === null) return;
   const { column, bridgeSvg } = r.dom;
   bridgeSvg?.classList.remove("is-live");
+  const el = r.items[r.index];
   if (how === "slide") {
+    // Already on its way: nothing to add. Held (bench): stays.
+    if (r.closing || e.hold !== null) return;
     play("slideOut", 1, { at: "card" });
-    setPrintUp(r.items[r.index], false);
-    column?.classList.remove("is-in");
+    setPrintUp(el, false);
+    r.dealt = null;
+    arrange(r);
   } else {
-    r.items[r.index]?.querySelector("video")?.pause();
+    el?.querySelector("video")?.pause();
     column?.classList.add("is-off");
   }
   r.closing = true;
-  armSettle(
-    e,
-    how === "slide" ? t.slideDuration : t.fadeDuration * 1000,
-    () => {
-      r.active = null;
-      r.closing = false;
-    },
-  );
+  armSettle(e, how === "slide" ? r.inMs : t.fadeDuration * 1000, () => {
+    r.active = null;
+    r.closing = false;
+    column?.classList.remove("is-in");
+  });
   r.onActive(null);
 }
 
@@ -666,6 +789,7 @@ function scheduleShow(e: Engine, slug: string, ms: number) {
   cancelHide(e);
   e.column.showTimer = window.setTimeout(() => {
     e.column.showTimer = null;
+    if (e.placing) return;
     const el = e.walks.get(slug)?.el;
     if (el?.matches(":hover")) showProject(e, slug);
   }, ms);
@@ -757,10 +881,36 @@ function apply(w: Walk, t: RoadSignsTuning) {
     scale * q
   }, ${scale / q})`;
   s.opacity = `${opacity}`;
-  // The shadow is a filter, so its silhouette is the photo's alpha. A
-  // lifted sign is further from the wall: longer, softer shadow.
-  const lift = Math.max(0, 1 + (scale - 1) * 4);
-  s.filter = `drop-shadow(${3 * lift}px ${4 * lift}px ${2 * lift}px rgba(0, 0, 0, ${t.shadow}))`;
+  s.filter = shadowFilter(scale, t);
+}
+
+/** Black to the mat's warm brown, by shadowWarmth. */
+function shadowRgb(t: RoadSignsTuning): string {
+  const w = Math.min(1, Math.max(0, t.shadowWarmth));
+  return `${Math.round(43 * w)}, ${Math.round(39 * w)}, ${Math.round(34 * w)}`;
+}
+
+// The shadow is a filter, so its silhouette is the photo's alpha. A
+// lifted sign is further from the wall: longer, softer, fainter shadow;
+// the contact shadow under its edge lets go of it.
+function shadowFilter(scale: number, t: RoadSignsTuning): string {
+  const lift = Math.max(0, 1 + (scale - 1) * t.shadowLift);
+  const grown = Math.max(0, lift - 1);
+  const rgb = shadowRgb(t);
+  const cast = Math.max(0, t.shadow * (1 - grown * t.shadowFade));
+  const layers: string[] = [];
+  if (t.contact > 0) {
+    const a = t.contact / Math.max(1, lift);
+    layers.push(
+      `drop-shadow(0 ${t.contactY}px ${t.contactBlur}px rgba(${rgb}, ${a.toFixed(3)}))`,
+    );
+  }
+  if (cast > 0) {
+    layers.push(
+      `drop-shadow(${t.shadowX * lift}px ${t.shadowY * lift}px ${t.shadowBlur * lift}px rgba(${rgb}, ${cast.toFixed(3)}))`,
+    );
+  }
+  return layers.length ? layers.join(" ") : "none";
 }
 
 /**
@@ -816,6 +966,12 @@ type Engine = {
   reduced: boolean;
   /** Hovered or pinned sign — the hot one. null = nothing hovered. */
   active: string | null;
+  /** Bench: a print held at the front whatever the pointer does — the
+   *  sheets stay dealt (a hide is a no-op). */
+  hold: string | null;
+  /** Bench: the sheets are being placed by hand — hovers deal nothing
+   *  (the pile, or the held print's deal, stays to be dragged). */
+  placing: boolean;
   /** The frame loop (requestAnimationFrame id) — runs only while some
    *  walk is unsettled. Each walk cuts at its own fps off this clock. */
   frame: number | null;
@@ -840,6 +996,8 @@ function createEngine(tuning: RoadSignsTuning): Engine {
     tuning,
     reduced: false,
     active: null,
+    hold: null,
+    placing: false,
     frame: null,
     last: 0,
     nudge: { slug: null, phase: null, idx: 0, timer: null, pending: false },
@@ -1060,8 +1218,36 @@ export default function RoadSigns({
   frame = "stage",
   replay = 0,
   selected = null,
+  handed = selected,
+  hold,
+  placing = false,
+  onTune,
+  onHot,
 }: {
   controls?: boolean;
+  /**
+   * Bench: the print held at the front, no hover needed (its sign hot,
+   * the other sheets in the corners), or null for the pile with nothing
+   * hovered. Undefined: the pointer decides (and the piece's own panel
+   * has its pin).
+   */
+  hold?: string | null;
+  /**
+   * Bench: the sheets can be dragged into place — a corner's, or a
+   * print's in the pile, whichever the sheet is in (the front one is
+   * fixed at the column's centre line). Alt-drag leans it. Hovers deal
+   * nothing meanwhile. Each drag writes the tuning's places, and
+   * `onTune` gets the patch, for a page that keeps the values itself.
+   */
+  placing?: boolean;
+  onTune?: (patch: Partial<RoadSignsTuning>) => void;
+  /**
+   * Told whether the projects are under the pointer: a sign hovered, or
+   * a print dealt out of the column (the pointer on its way to it or on
+   * it) — true as the first takes the pointer, false once the sheets
+   * have been sent home. The landing hides its up arrow meanwhile.
+   */
+  onHot?: (hot: boolean) => void;
   /**
    * The project that is open beside the stack (the landing's project
    * window), or null. Its sign holds the hot pose and the others the
@@ -1073,6 +1259,13 @@ export default function RoadSigns({
    * stage covering it.
    */
   selected?: string | null;
+  /**
+   * The print the window's box is, hidden while it is (the box is that
+   * print, picked up): `selected` unless the page says otherwise — the
+   * landing keeps it handed over until the box has shrunk back onto it,
+   * a little after the column has come back round it.
+   */
+  handed?: string | null;
   /**
    * What the piece's root box is sized to. "stage" (default): the whole
    * stage — the stack plus the room the card and rope need — for pages
@@ -1121,19 +1314,50 @@ export default function RoadSigns({
   // Bench-only: pin a sign hovered so its hot pose holds while the pointer
   // is over the sliders. null = the real pointer decides.
   const [pinned, setPinned] = useState<string | null>(null);
+  const pin = hold === undefined ? pinned : hold;
   // The project whose print is up. Its sign stays lifted while the
   // pointer is over the column, the way the site keeps the title
   // highlighted.
   const [cardActive, setCardActive] = useState<string | null>(null);
-  const [copied, setCopied] = useState(false);
-  const active = pinned ?? hovered ?? selected ?? cardActive;
+  // The sheets' places, from the engine; each sheet's pose is rendered
+  // from them and the tuning, so a slider moves the sheets live.
+  const [dealt, setDealt] = useState<string | null>(null);
+  // Bench-only: place the sheets by dragging them (see onPlaceDown).
+  const [placingHere, setPlacingHere] = useState(false);
+  const placingNow = placing || placingHere;
+  const active = pin ?? hovered ?? selected ?? cardActive;
+  // Whether the pointer is on the projects, for the page (onHot). Kept
+  // in a ref so a new callback each render does not re-report.
+  const hot = hovered !== null || cardActive !== null;
+  const onHotRef = useRef(onHot);
+  useEffect(() => {
+    onHotRef.current = onHot;
+  }, [onHot]);
+  useEffect(() => {
+    onHotRef.current?.(hot);
+  }, [hot]);
 
   // The engine is state so it's created exactly once per instance; it is
   // mutated in place and never set again.
   const [engine] = useState(() => createEngine(tuning));
 
+  // The prints' springs as CSS easings (linear(), see ../../spring), and
+  // the ms the longer of the two takes to settle — what the engine waits
+  // before a print counts as landed.
+  const springs = useMemo(() => {
+    const slide = springEasing(tuning.springPeriod, tuning.springBounce);
+    const turn = springEasing(tuning.turnPeriod, tuning.turnBounce);
+    return { slide, turn, inMs: Math.max(slide.settle, turn.settle) };
+  }, [
+    tuning.springPeriod,
+    tuning.springBounce,
+    tuning.turnPeriod,
+    tuning.turnBounce,
+  ]);
+
   useEffect(() => {
     engine.column.onActive = setCardActive;
+    engine.column.onArrange = setDealt;
     const mq = window.matchMedia("(prefers-reduced-motion: reduce)");
     engine.reduced = mq.matches;
     const onChange = () => {
@@ -1171,10 +1395,11 @@ export default function RoadSigns({
     engine.tuning = tuning;
     engine.active = active;
     engine.column.stackAt = geometry(tuning).stackAt;
+    engine.column.inMs = springs.inMs;
     if (active !== null) cancelNudge(engine);
     retarget(engine);
     if (active === null && engine.nudge.phase === null) scheduleNudge(engine);
-  }, [engine, active, tuning]);
+  }, [engine, active, tuning, springs]);
 
   // A replay restarts every sign's entrance in place, on the same
   // stagger (the delays are still on the elements).
@@ -1189,11 +1414,13 @@ export default function RoadSigns({
   // The open project's prints are handed over (the box is the print):
   // set here, not through the Print's props — a re-render would write
   // the class list over the engine's own marks on the print.
-  const wasSelected = useRef<string | null>(null);
   useEffect(() => {
     for (const [i, el] of engine.column.items.entries()) {
-      el?.classList.toggle("is-handed", TRACK[i]?.slug === selected);
+      el?.classList.toggle("is-handed", PRINTS[i]?.slug === handed);
     }
+  }, [engine, handed]);
+  const wasSelected = useRef<string | null>(null);
+  useEffect(() => {
     if (selected !== null) {
       cancelShow(engine);
       hideProject(engine, "fade");
@@ -1203,11 +1430,59 @@ export default function RoadSigns({
     wasSelected.current = selected;
   }, [engine, selected]);
 
-  // Bench pin: holds the print up too, no hover needed.
+  // Bench pin: holds the print up too, no hover needed, and hides stay
+  // off while it does (hideProject).
   useEffect(() => {
-    if (pinned !== null) showProject(engine, pinned);
+    engine.hold = pin;
+    if (pin !== null) showProject(engine, pin);
     else if (engine.column.active !== null) hideProject(engine);
-  }, [engine, pinned]);
+  }, [engine, pin]);
+
+  // Bench placing: hovers deal nothing while the sheets are dragged.
+  useEffect(() => {
+    engine.placing = placingNow;
+    if (placingNow) cancelShow(engine);
+  }, [engine, placingNow]);
+
+  // The tuning as the drag sees it (a drag runs on window listeners,
+  // outside React's render).
+  const tuningRef = useRef(tuning);
+  tuningRef.current = tuning;
+
+  // Placing: drag a sheet to move its place, alt-drag to lean it (a
+  // quarter degree per px) — the front sheet too, off the column's
+  // centre line. Pointer deltas are stage px — the bench pages keep the
+  // stack untransformed at rest.
+  function onPlaceDown(ev: ReactPointerEvent<HTMLDivElement>, slug: string) {
+    if (!placingNow || ev.button !== 0) return;
+    const on = engine.column.dealt;
+    ev.preventDefault();
+    let last = { x: ev.clientX, y: ev.clientY };
+    const move = (m: PointerEvent) => {
+      const dx = m.clientX - last.x;
+      const dy = m.clientY - last.y;
+      last = { x: m.clientX, y: m.clientY };
+      const t = tuningRef.current;
+      const cur =
+        (on === null ? t.places.pile[slug] : t.places.hover[on]?.[slug]) ??
+        NOWHERE;
+      const place: Place = m.altKey
+        ? { ...cur, tilt: Math.round((cur.tilt + dx * 0.25) * 2) / 2 }
+        : { ...cur, x: Math.round(cur.x + dx), y: Math.round(cur.y + dy) };
+      const next = withPlace(t, on, slug, place);
+      tuningRef.current = next;
+      setTuning(next);
+      onTune?.({ places: next.places });
+    };
+    const up = () => {
+      window.removeEventListener("pointermove", move);
+      window.removeEventListener("pointerup", up);
+      window.removeEventListener("pointercancel", up);
+    };
+    window.addEventListener("pointermove", move);
+    window.addEventListener("pointerup", up);
+    window.addEventListener("pointercancel", up);
+  }
 
   const geo = geometry(tuning);
 
@@ -1255,17 +1530,17 @@ export default function RoadSigns({
     if (el) engine.column.items[index] = el;
   }
 
-  // A click on a peeking print steps the column to it; on the centred
-  // print, once it has settled, it is the link it is (the landing opens
-  // the project from it). A click mid-step is only a step.
-  function onPrintClick(
-    ev: ReactMouseEvent<HTMLAnchorElement>,
-    index: number,
-    slug: string,
-  ) {
+  // A click on the front print once it has landed is the link it is
+  // (the landing opens the project from it, measuring it where it
+  // sits); on a corner, or mid-move, it brings the print to the front.
+  function onPrintClick(ev: ReactMouseEvent<HTMLAnchorElement>, slug: string) {
+    if (placingNow) {
+      ev.preventDefault();
+      return;
+    }
     play("knock", 1, { at: "click" });
     const r = engine.column;
-    if (index === r.index && r.settled && r.active === slug) return;
+    if (r.active === slug && r.settled) return;
     ev.preventDefault();
     showProject(engine, slug);
   }
@@ -1284,13 +1559,21 @@ export default function RoadSigns({
     scheduleShow(engine, slug, engine.tuning.showDelay);
   }
 
-  function onSignLeave(ev: ReactPointerEvent<HTMLAnchorElement>) {
+  // Leaving a sign only calls off a show still waiting on it: the stack's
+  // whole box is the hitbox (Julio, 2026-09-26: "when I'm hovering in
+  // between signs, the pile doesn't go back"), so between two signs the
+  // last one stays hot and its sheet up until the next one takes over.
+  // Only leaving the box (onStackLeave) sends the sheets home.
+  function onSignLeave() {
+    cancelShow(engine);
+  }
+
+  function onStackLeave(ev: ReactPointerEvent<HTMLDivElement>) {
+    setHovered(null);
     cancelShow(engine);
     const t = engine.tuning;
-    // Leaving through the sign's right half counts as heading for the
-    // column, whatever the angle: the tilted photo's real edge sits inside
-    // its bounding box, so an exact right-edge test rarely fired. The
-    // wedge (drawBridge) catches the pointer from here on.
+    // Leaving through the box's right half counts as heading for the
+    // column. The wedge (drawBridge) catches the pointer from here on.
     const rect = ev.currentTarget.getBoundingClientRect();
     const towardCard = ev.clientX >= rect.left + rect.width / 2;
     scheduleHide(engine, towardCard ? t.hideTowardCard : t.hideDelay);
@@ -1316,21 +1599,6 @@ export default function RoadSigns({
     setPinned(null);
   }
 
-  async function copy() {
-    const lines = Object.entries(tuning)
-      .map(([k, v]) =>
-        typeof v === "number"
-          ? `  ${k}: ${v},`
-          : `  ${k}: { ${Object.entries(v)
-              .map(([s, d]) => `${s}: ${d}`)
-              .join(", ")} },`,
-      )
-      .join("\n");
-    await navigator.clipboard.writeText(`{\n${lines}\n}`);
-    setCopied(true);
-    setTimeout(() => setCopied(false), 1500);
-  }
-
   const slider = (f: Field) => (
     <TuneSlider
       key={f.key}
@@ -1350,10 +1618,14 @@ export default function RoadSigns({
     "--rs-print-w": `${tuning.printW}px`,
     "--rs-col-w": `${tuning.printW + COLUMN_ROOM}px`,
     "--rs-col-right": `${tuning.columnRight}px`,
-    "--rs-peek-gap": `${tuning.peekGap}px`,
-    "--rs-slide": `${tuning.slideDuration}ms`,
-    "--rs-move": `${tuning.moveDuration}ms`,
+    "--rs-in": `${springs.slide.settle}ms`,
+    "--rs-spring": springs.slide.easing,
+    "--rs-turn": `${springs.turn.settle}ms`,
+    "--rs-turn-spring": springs.turn.easing,
     "--rs-fade": `${tuning.fadeDuration}s`,
+    "--rs-lift": `${tuning.liftRise}px`,
+    "--rs-grow": `${tuning.liftGrow}`,
+    "--rs-lift-ms": `${tuning.liftMs}ms`,
   } as CSSProperties;
 
   // frame="signs": the root is the signs' rest box and the stage is
@@ -1397,7 +1669,7 @@ export default function RoadSigns({
         />
       </svg>
       <div
-        onPointerLeave={() => setHovered(null)}
+        onPointerLeave={onStackLeave}
         style={{
           position: "absolute",
           left: geo.stackAt.x,
@@ -1472,31 +1744,42 @@ export default function RoadSigns({
         ))}
       </div>
 
-      {/* The prints' column: the track's seven (TRACK — the three and
-            their clones), centred on the up one by showProject; the
-            stylesheet slides the column in from the edge and steps the
-            track. The pointer on it keeps it up. */}
+      {/* The prints' column: a seat per print, all on the column's
+            centre line (the front spot), one over the other; each sheet
+            is posed off its seat by its place (pose) and springs
+            between places. The layer is the seat's: a moved sheet is a
+            stacking context of its own, so its z-index would not reach
+            its siblings. The pointer on the column keeps the sheets
+            dealt. */}
       <div
         ref={(el) => registerColumn("column", el)}
-        className="rs-prints"
+        className={placingNow ? "rs-prints is-placing" : "rs-prints"}
         onPointerEnter={() => cancelHide(engine)}
         onPointerLeave={() => scheduleHide(engine, tuning.hideFromCard)}
       >
-        <div
-          ref={(el) => registerColumn("track", el)}
-          className="rs-track"
-          style={{ top: geo.cardTop }}
-        >
-          {TRACK.map((spec, i) => (
-            <Print
-              key={i}
-              spec={spec}
-              index={i}
-              refCallback={(el) => registerPrint(i, el)}
-              onClick={(ev) => onPrintClick(ev, i, spec.slug)}
-            />
-          ))}
-        </div>
+        {PRINTS.map((spec, i) => {
+          const at = pose(i, dealt, tuning);
+          return (
+            <div
+              key={spec.slug}
+              className="rs-seat"
+              style={{ top: geo.cardTop, zIndex: at.z }}
+              onPointerDown={(ev) => onPlaceDown(ev, spec.slug)}
+            >
+              <Print
+                spec={spec}
+                index={i}
+                refCallback={(el) => registerPrint(i, el)}
+                onClick={(ev) => onPrintClick(ev, spec.slug)}
+                tilt={at.tilt}
+                style={{
+                  translate: `${at.x}px ${at.y}px`,
+                  rotate: `${at.tilt}deg`,
+                }}
+              />
+            </div>
+          );
+        })}
       </div>
     </div>
   );
@@ -1570,6 +1853,15 @@ export default function RoadSigns({
                   {sign.title}
                 </button>
               ))}
+              <button
+                type="button"
+                onClick={() => setPlacingHere((v) => !v)}
+                aria-pressed={placingHere}
+                style={chip(placingHere)}
+                title="Drag a sheet to move its place; alt-drag to lean it. Pin a sign to place the corners; Pointer, with nothing hovered, to place the pile."
+              >
+                Place sheets
+              </button>
             </div>
           </div>
 
@@ -1634,12 +1926,70 @@ export default function RoadSigns({
             </button>
           </Section>
 
-          <Section title="Layout & shadow" summary="sizes, spacing, the wall">
+          <Section title="Layout" summary="sizes, spacing">
             {LAYOUT_FIELDS.map(slider)}
+          </Section>
+
+          <Section title="Shadow" summary="where it falls, how it lifts">
+            {SHADOW_FIELDS.map(slider)}
           </Section>
 
           <Section title="Prints" summary="the column: sizes and moves">
             {PRINT_FIELDS.map(slider)}
+            <SpringGraph
+              label="Move"
+              period={tuning.springPeriod}
+              bounce={tuning.springBounce}
+              onChange={({ period, bounce }) =>
+                setTuning((prev) => ({
+                  ...prev,
+                  springPeriod: period,
+                  springBounce: bounce,
+                }))
+              }
+            />
+            <SpringGraph
+              label="Turn"
+              period={tuning.turnPeriod}
+              bounce={tuning.turnBounce}
+              onChange={({ period, bounce }) =>
+                setTuning((prev) => ({
+                  ...prev,
+                  turnPeriod: period,
+                  turnBounce: bounce,
+                }))
+              }
+            />
+          </Section>
+          <Section title="Places" summary="each hover's layout, and the pile">
+            <span style={{ opacity: 0.55, fontSize: 11 }}>
+              Turn on Place sheets above and drag them: pin a sign to lay out
+              its hover (the front sheet too), or Pointer with nothing hovered
+              for the pile. Alt-drag leans. Each is the sheet&rsquo;s centre off
+              the front spot.
+            </span>
+            {placeRows(tuning.places).map(([name, at]) => (
+              <div
+                key={name}
+                style={{
+                  display: "flex",
+                  justifyContent: "space-between",
+                  gap: 8,
+                  fontVariantNumeric: "tabular-nums",
+                }}
+              >
+                <span>{name}</span>
+                <span
+                  style={{
+                    fontFamily:
+                      "ui-monospace, SFMono-Regular, Menlo, monospace",
+                    opacity: 0.8,
+                  }}
+                >
+                  {at.x}, {at.y}px · {at.tilt}°
+                </span>
+              </div>
+            ))}
           </Section>
 
           <Section title="Timing" summary="the graces before it shows and goes">
@@ -1700,13 +2050,25 @@ export default function RoadSigns({
             <button type="button" onClick={reset} style={btn}>
               Reset
             </button>
-            <button type="button" onClick={copy} style={btn}>
-              {copied ? "Copied ✓" : "Copy values"}
-            </button>
+            <CopyAll
+              style={btn}
+              sections={() => [
+                {
+                  name: "roadSigns",
+                  into: "ROAD_SIGNS_DEFAULTS, packages/lab/src/pieces/road-signs/index.tsx",
+                  values: tuning,
+                },
+                {
+                  name: "sound",
+                  into: "SOUND_DEFAULTS, packages/lab/src/sound.tsx",
+                  values: sound,
+                },
+              ]}
+            />
           </div>
           <p style={{ margin: "6px 0 0", opacity: 0.55, fontSize: 11 }}>
-            Values last until reload. Lock a feel in by pasting them into
-            ROAD_SIGNS_DEFAULTS in packages/lab/src/pieces/road-signs/index.tsx.
+            Values last until reload. Copy values takes them all, the sounds
+            too, each under a note of where it goes.
           </p>
         </div>
       )}
@@ -1902,14 +2264,98 @@ const LAYOUT_FIELDS: Field[] = [
     step: 1,
     unit: "px",
   },
+];
+
+const SHADOW_FIELDS: Field[] = [
   {
     key: "shadow",
-    label: "Shadow",
-    hint: "How dark the cast shadow is. It grows longer as a sign lifts.",
+    label: "Darkness",
+    hint: "How dark the cast shadow is at rest.",
     min: 0,
     max: 0.6,
     step: 0.01,
     unit: "",
+  },
+  {
+    key: "shadowX",
+    label: "Across",
+    hint: "The shadow's offset at rest, right of the sign. Left of 0 throws it left.",
+    min: -20,
+    max: 20,
+    step: 0.5,
+    unit: "px",
+  },
+  {
+    key: "shadowY",
+    label: "Down",
+    hint: "The shadow's offset at rest, below the sign. Left of 0 throws it up.",
+    min: -20,
+    max: 20,
+    step: 0.5,
+    unit: "px",
+  },
+  {
+    key: "shadowBlur",
+    label: "Blur",
+    hint: "How soft the shadow's edge is at rest.",
+    min: 0,
+    max: 24,
+    step: 0.5,
+    unit: "px",
+  },
+  {
+    key: "shadowLift",
+    label: "Lift",
+    hint: "How much longer and softer it gets as a sign grows (and tighter as it shrinks). 0 = the same shadow at every size.",
+    min: 0,
+    max: 10,
+    step: 0.25,
+    unit: "×",
+  },
+  {
+    key: "shadowFade",
+    label: "Fade with lift",
+    hint: "How much fainter the shadow gets as the sign lifts off the wall. 0 = just as dark.",
+    min: 0,
+    max: 1,
+    step: 0.05,
+    unit: "",
+  },
+  {
+    key: "shadowWarmth",
+    label: "Warmth",
+    hint: "The shadow's colour: 0 is black, 1 the mat's warm brown.",
+    min: 0,
+    max: 1,
+    step: 0.05,
+    unit: "",
+  },
+  {
+    key: "contact",
+    label: "Contact",
+    hint: "A second tight shadow right under the edge, where the sign meets the wall. 0 = off. It fades as the sign lifts.",
+    min: 0,
+    max: 0.6,
+    step: 0.01,
+    unit: "",
+  },
+  {
+    key: "contactY",
+    label: "Contact drop",
+    hint: "How far below the edge the contact shadow sits.",
+    min: -4,
+    max: 6,
+    step: 0.25,
+    unit: "px",
+  },
+  {
+    key: "contactBlur",
+    label: "Contact blur",
+    hint: "How soft the contact shadow is.",
+    min: 0,
+    max: 8,
+    step: 0.25,
+    unit: "px",
   },
 ];
 
@@ -1951,33 +2397,87 @@ const PRINT_FIELDS: Field[] = [
     unit: "px",
   },
   {
-    key: "peekGap",
-    label: "Peek gap",
-    hint: "Air between the centred print and the ones peeking above and below.",
-    min: 0,
-    max: 120,
-    step: 2,
-    unit: "px",
-  },
-  {
-    key: "slideDuration",
-    label: "Slide",
-    hint: "The column's slide in from the edge, and back out.",
-    min: 100,
+    key: "springPeriod",
+    label: "Swing",
+    hint: "A move is a spring: how long one swing takes. It settles a little after.",
+    min: 150,
     max: 1200,
     step: 10,
     unit: "ms",
   },
   {
-    key: "moveDuration",
-    label: "Step",
-    hint: "The column's step to the next print.",
-    min: 100,
+    key: "springBounce",
+    label: "Bounce",
+    hint: "0 settles without passing its spot; more overshoots further and swings back.",
+    min: 0,
+    max: 0.8,
+    step: 0.02,
+    unit: "",
+  },
+  {
+    key: "turnPeriod",
+    label: "Turn swing",
+    hint: "The sheet's turn on the way has its own spring: one swing.",
+    min: 150,
     max: 1200,
+    step: 10,
+    unit: "ms",
+  },
+  {
+    key: "turnBounce",
+    label: "Turn bounce",
+    hint: "How far the turn overshoots the lean before it settles.",
+    min: 0,
+    max: 0.8,
+    step: 0.02,
+    unit: "",
+  },
+  {
+    key: "liftRise",
+    label: "Lift rise",
+    hint: "How far the front print rises under the pointer.",
+    min: 0,
+    max: 24,
+    step: 1,
+    unit: "px",
+  },
+  {
+    key: "liftGrow",
+    label: "Lift grow",
+    hint: "How much bigger it gets, as a scale.",
+    min: 1,
+    max: 1.08,
+    step: 0.005,
+    unit: "",
+  },
+  {
+    key: "liftMs",
+    label: "Lift time",
+    hint: "The lift's ease, up and back down.",
+    min: 60,
+    max: 600,
     step: 10,
     unit: "ms",
   },
 ];
+
+/** The places as rows to read: the pile by print, then each hover's
+ *  layout. */
+export function placeRows(places: Places): [string, Place][] {
+  const rows: [string, Place][] = PRINTS.map((p) => [
+    `Pile · ${p.title}`,
+    places.pile[p.slug] ?? NOWHERE,
+  ]);
+  for (const front of PRINTS) {
+    for (const p of PRINTS) {
+      rows.push([
+        `${front.title} hover · ${p.title}${p.slug === front.slug ? " (front)" : ""}`,
+        places.hover[front.slug]?.[p.slug] ?? NOWHERE,
+      ]);
+    }
+  }
+  return rows;
+}
 
 const TIMING_FIELDS: Field[] = [
   {
@@ -1992,7 +2492,7 @@ const TIMING_FIELDS: Field[] = [
   {
     key: "hideDelay",
     label: "Hide after",
-    hint: "After leaving a sign, not toward the column.",
+    hint: "After leaving the signs' box, not toward the column.",
     min: 0,
     max: 600,
     step: 10,
@@ -2001,7 +2501,7 @@ const TIMING_FIELDS: Field[] = [
   {
     key: "hideTowardCard",
     label: "Toward column",
-    hint: "After leaving a sign toward the column: the grace to reach it.",
+    hint: "After leaving the signs' box toward the column: the grace to reach it.",
     min: 0,
     max: 800,
     step: 10,
@@ -2056,17 +2556,33 @@ const COLUMN_CSS = `
 .rs-bridge { position: absolute; inset: 0; width: 100%; height: 100%; overflow: visible; pointer-events: none; }
 .rs-bridge polygon { fill: transparent; pointer-events: none; }
 .rs-bridge.is-live polygon { pointer-events: fill; }
-/* The column: parked past the stage's right edge, out of sight. is-in
-   slides it onto the mat on the settle curve; going, it slides back out
-   and only then hides. is-off fades it where it is (a project is open;
-   the print stays for the window's box to come back to), on the
-   window's fade where the page sets one (--rs-hand). */
-.rs-prints { position: absolute; top: 0; bottom: 0; right: var(--rs-col-right, 0px); width: var(--rs-col-w, 700px); z-index: 3; visibility: hidden; pointer-events: none; transform: translateX(calc(100% + var(--rs-col-right, 0px) + 80px)); transition: transform var(--rs-slide, .5s) ${SETTLE_EASE}, visibility 0s linear var(--rs-slide, .5s), opacity var(--rs-hand, var(--rs-fade, .18s)) ease; }
-.rs-prints.is-in { visibility: visible; pointer-events: auto; transform: none; transition-delay: 0s; }
+/* The column: at the stage's right edge, the prints' seats on its
+   centre line. is-in lets the pointer reach the sheets (a corner is a
+   click, the front the link) and keep them dealt; is-off fades them
+   where they are (a project is open; the front print stays for the
+   window's box to come back to), on the window's fade where the page
+   sets one (--rs-hand), on its curve or, on the way back, the curve
+   reversed (--rs-hand-ease). The column itself never moves. */
+.rs-prints { position: absolute; top: 0; bottom: 0; right: var(--rs-col-right, 0px); width: var(--rs-col-w, 700px); z-index: 3; pointer-events: none; transition: opacity var(--rs-hand, var(--rs-fade, .18s)) var(--rs-hand-ease, ease); }
+.rs-prints.is-in { pointer-events: auto; }
 .rs-prints.is-off { opacity: 0; pointer-events: none; }
-/* The track: the prints one under the other, moved by placeTrack so the
-   up one sits on the track's top edge — the column's centre line. */
-.rs-track { position: absolute; left: 0; right: 0; display: flex; flex-direction: column; align-items: center; gap: var(--rs-peek-gap, 28px); will-change: transform; transition: transform var(--rs-move, .45s) ${SETTLE_EASE}; }
+/* A seat: the print centred on the column's centre line (the seat's
+   top, raised by half its own height) — the front spot. */
+.rs-seat { position: absolute; left: 0; right: 0; display: flex; justify-content: center; translate: 0 -50%; pointer-events: none; }
+/* A sheet: posed off its seat by inline translate / rotate (its place,
+   see pose), and sprung between poses — the shift on one spring, the
+   turn on its own; the individual properties, so each can have its own
+   curve, and the print's own rotate (PRINT_CSS) is set aside here. */
+.rs-prints .rs-print { pointer-events: none; transform: none; transition: translate var(--rs-in, .6s) var(--rs-spring, ease-out), rotate var(--rs-turn, .5s) var(--rs-turn-spring, ease-out), top var(--rs-lift-ms, .22s) ease, scale var(--rs-lift-ms, .22s) ease, box-shadow var(--rs-lift-ms, .22s) ease; }
+/* The front print under the pointer, lifted a little off the mat: up,
+   a touch bigger, its shadow thrown further (the paper's lifted one,
+   window-tuning.ts). Not while the sheets are being placed. */
+.rs-prints.is-in:not(.is-placing) .rs-print.is-active:hover { top: calc(-1 * var(--rs-lift, 6px)); scale: var(--rs-grow, 1.015); box-shadow: var(--paper-lifted, var(--paper-shadow)); }
+.rs-prints.is-in .rs-print { pointer-events: auto; }
+/* Placing (bench): every sheet takes the pointer, follows the drag with
+   no spring, and says so. */
+.rs-prints.is-placing .rs-print { pointer-events: auto; transition: none; cursor: grab; }
+.rs-prints.is-placing .rs-print.is-active { cursor: default; }
 /* The mount entrance, one sign after another (the delay is inline, per
    sign): the site's sm-drop keyframes and --sm-duration, generated from
    the motion tuning by <MotionStyles> in the root layout. Fill backwards,
@@ -2075,7 +2591,7 @@ const COLUMN_CSS = `
 .rs-sign-enter { animation: sm-drop var(--sm-duration, .38s) steps(1, end) backwards; }
 @media (prefers-reduced-motion: reduce) {
   .rs-sign-enter { animation-duration: .01ms; animation-delay: 0ms !important; }
-  .rs-prints, .rs-track { transition-duration: .01ms; }
+  .rs-prints, .rs-prints .rs-print { transition-duration: .01ms; }
 }
 `;
 
