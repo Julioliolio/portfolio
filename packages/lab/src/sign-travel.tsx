@@ -509,7 +509,8 @@ export function TravelLayer({
       hideId = null;
     }
     const offSoon = () => {
-      if (hideId != null) return;
+      // Nothing to hand off while the layer is already out of sight.
+      if (hideId != null || !el.classList.contains("is-on")) return;
       // Still the sign's photo while it holds: the sign may step.
       hideId = requestAnimationFrame(() => {
         followPhoto();
@@ -718,7 +719,12 @@ export function TravelLayer({
     <div ref={layer} className="sign-travel" aria-hidden="true">
       <style>{CSS}</style>
       {/* eslint-disable @next/next/no-img-element -- stacked pre-sized WebP frames cut by opacity; the Next optimizer adds nothing and would break decode-ahead */}
-      {FRAME_KEYS.filter((key) => key !== "front").map((key) => (
+      {/* The drawn frames only for the played modes: on the scroll the
+          way is the sign's photo and the plate, and the rest would be
+          fetched and decoded for nothing. */}
+      {FRAME_KEYS.filter(
+        (key) => key !== "front" && (key === "plate" || !scrolls),
+      ).map((key) => (
         <img
           key={key}
           ref={(el) => {

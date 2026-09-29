@@ -1,7 +1,7 @@
 "use client";
 
 import { WINDOW_LAYOUT } from "@portfolio/lab/signs-layout";
-import type { WindowPreview } from "@portfolio/lab/window";
+import type { WindowPreview } from "@portfolio/lab/window-preview";
 import { Suspense, lazy, useState } from "react";
 import { PROJECT_LIST } from "@/content/projects/list";
 

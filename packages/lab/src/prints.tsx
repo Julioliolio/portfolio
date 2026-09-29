@@ -2,7 +2,7 @@
 
 import type { MouseEvent as ReactMouseEvent, CSSProperties } from "react";
 import { asset } from "./asset";
-import { clipPreview, type WindowPreview } from "./window";
+import { clipPreview, type WindowPreview } from "./window-preview";
 import { INK } from "./style";
 import {
   WINDOW_DEFAULTS,

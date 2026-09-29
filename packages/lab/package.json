@@ -22,6 +22,7 @@
     "./prints": "./src/prints.tsx",
     "./signs-layout": "./src/signs-layout.ts",
     "./window": "./src/window.tsx",
+    "./window-preview": "./src/window-preview.ts",
     "./window-tuning": "./src/window-tuning.ts"
   },
   "scripts": {

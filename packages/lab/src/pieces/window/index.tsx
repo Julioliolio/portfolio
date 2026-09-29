@@ -3,7 +3,8 @@
 import { useRef, useState } from "react";
 import { asset } from "../../asset";
 import { BENCH_CSS, CopyValues, Group, btn, type Field } from "../../bench";
-import { ProjectWindow, clipPreview, type WindowPreview } from "../../window";
+import { ProjectWindow } from "../../window";
+import { clipPreview, type WindowPreview } from "../../window-preview";
 import {
   resetWindowTuning,
   setWindowTuning,

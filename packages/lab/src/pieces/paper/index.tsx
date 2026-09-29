@@ -27,7 +27,8 @@ import {
 } from "../../signs-layout";
 import { SOUND_FIELDS, setSoundTuning, useSoundTuning } from "../../sound";
 import { BLUE, INK, MEDIUM } from "../../style";
-import { ProjectWindow, type WindowPreview } from "../../window";
+import { ProjectWindow } from "../../window";
+import type { WindowPreview } from "../../window-preview";
 import {
   paperCss,
   resetWindowTuning,

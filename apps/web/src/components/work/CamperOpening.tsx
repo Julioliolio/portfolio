@@ -1,10 +1,7 @@
 "use client";
 
-import {
-  clipTimeNow,
-  useWindowPreview,
-  useWindowScroller,
-} from "@portfolio/lab/window";
+import { useWindowPreview, useWindowScroller } from "@portfolio/lab/window";
+import { clipTimeNow } from "@portfolio/lab/window-preview";
 import { useEffect, useRef, useState } from "react";
 import FilmPlayer from "./FilmPlayer";
 import type { OpeningProps } from "./openings";

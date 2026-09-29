@@ -22,7 +22,7 @@ import {
   type MouseEvent,
 } from "react";
 import type { TravelHandle, TravelPhase } from "@portfolio/lab/sign-travel";
-import type { WindowPreview } from "@portfolio/lab/window";
+import type { WindowPreview } from "@portfolio/lab/window-preview";
 import { paperCss, useWindowTuning } from "@portfolio/lab/window-tuning";
 import { PRINTS, printPreview } from "@portfolio/lab/prints";
 import {
