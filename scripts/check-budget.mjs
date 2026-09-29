@@ -40,7 +40,7 @@ const BUDGETS = {
   // paint, ~68 KB) and nothing else; every other photo on the site comes
   // in without a hint.
   images: 80 * KB,
-  cursorFrames: 64 * KB, // raw — all 19 WebP boil frames together
+  cursorFrames: 80 * KB, // raw — all 31 WebP boil frames together (arrow, pointer, I-beam)
 };
 
 const root = join(fileURLToPath(import.meta.url), "../..");
