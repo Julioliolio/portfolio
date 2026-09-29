@@ -1,5 +1,6 @@
 "use client";
 
+import { TapeArrow, TapeStyles } from "@portfolio/lab/tape";
 import { useWindowPreview, useWindowScroller } from "@portfolio/lab/window";
 import { clipTimeNow } from "@portfolio/lab/window-preview";
 import { useEffect, useRef, useState } from "react";
@@ -8,11 +9,13 @@ import type { OpeningProps } from "./openings";
 
 /**
  * Camper's opening: the project is a film, so the window opens on the
- * film — filling it, already playing — with a small arrow at its foot
- * to say the case study is underneath (Julio, 2026-09-18: keep it
- * simple). The page scrolls as any page does; the film holds once it is
- * mostly out of sight, so its sound doesn't play under the reading, and
- * carries on when it is back.
+ * film — filling it, already playing — with a little tape arrow at its
+ * foot, the landing's own (@portfolio/lab/tape) a size smaller, to say
+ * the case study is underneath (Julio, 2026-09-18: keep it simple;
+ * 2026-09-29: the tape in place of the drawn arrow). The page scrolls
+ * as any page does; the film holds once it is mostly out of sight, so
+ * its sound doesn't play under the reading, and carries on when it is
+ * back.
  *
  * It is never taller than three quarters of its width: on a wide window
  * that is the whole first screen, cropped a little at the sides; on a
@@ -22,13 +25,11 @@ import type { OpeningProps } from "./openings";
 
 const CSS = `
 .co { position: relative; height: min(var(--cs-vh, 100dvh), 75cqw); margin: 0 calc(-1 * var(--cs-gutter)); overflow: hidden; background: #000; }
-/* The arrow: nudges down a couple of px in held cuts, now and then. */
-.co-arrow { position: absolute; left: 50%; bottom: 14px; display: grid; place-items: center; width: 32px; height: 32px; margin-left: -16px; padding: 0; border: 0; border-radius: 999px; background: none; color: #fff; opacity: .9; }
-.co-arrow:hover { opacity: 1; }
-.co-arrow:focus-visible { outline: 2px solid #fff; outline-offset: -2px; }
-.co-arrow svg { display: block; width: 14px; height: 14px; filter: drop-shadow(0 0 3px rgba(0, 0, 0, .55)); animation: co-nudge 2.4s steps(1, end) infinite; }
-@keyframes co-nudge { 0%, 70%, 100% { transform: none; } 80% { transform: translateY(3px); } 90% { transform: translateY(1px); } }
-@media (prefers-reduced-motion: reduce) { .co-arrow svg { animation: none; } }
+/* The tape arrow, a size under the landing's (whose least, 40px, would
+   hold it there on most windows). It is the film's company, not the
+   fullscreen film's. */
+.co .tape { --tape-size: max(3.2vh, 30px); }
+.fp:fullscreen .tape { display: none; }
 `;
 
 export default function CamperOpening({ project }: OpeningProps) {
@@ -77,6 +78,7 @@ export default function CamperOpening({ project }: OpeningProps) {
   return (
     <div ref={film} className="co">
       <style>{CSS}</style>
+      <TapeStyles />
       <FilmPlayer
         src={hero.src}
         poster={hero.poster}
@@ -85,21 +87,15 @@ export default function CamperOpening({ project }: OpeningProps) {
         away={away}
         startAt={startAt}
       >
-        <button
-          type="button"
-          className="co-arrow sm-press"
-          aria-label="Read the case study"
+        <TapeArrow
+          dir="down"
+          shown
+          delay={400}
+          // No words: here the tape only peels.
+          text=""
+          label="Read the case study"
           onClick={down}
-        >
-          <svg viewBox="0 0 12 12" fill="none" aria-hidden="true">
-            <path
-              d="M1.5 6.5 6 11l4.5-4.5M6 11V1"
-              stroke="currentColor"
-              strokeWidth="1.5"
-              strokeLinecap="square"
-            />
-          </svg>
-        </button>
+        />
       </FilmPlayer>
     </div>
   );

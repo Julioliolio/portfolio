@@ -22,9 +22,12 @@ import {
  * A hairline along the film's foot is the seek bar: the part played in
  * the site's blue, press and drag (or click) anywhere along it to scrub,
  * the film following the pointer and carrying on afterwards if it was
- * playing. Over it, small white icons: play, mute, fullscreen. A click
- * on the picture plays and pauses. While the film plays and the pointer
- * rests, the icons cut away and the line dims. The line moves the way
+ * playing. While the pointer is over the film, small white icons come
+ * up (Julio, 2026-09-29): in the middle, back to the start, play or
+ * pause, and five seconds on; the sound at the top right, fullscreen at
+ * the bottom right. A click on the picture plays and pauses. When the
+ * pointer rests or leaves, the icons cut away; while the film plays the
+ * line dims too. The line moves the way
  * the site moves: in hard cuts on a 12 fps beat, never a glide.
  *
  * In a figure it sits in a box of the film's own shape, behind its
@@ -37,7 +40,7 @@ const PAPER = "#faf9f6";
 const BEAT = 12;
 /** ms the icons stay up after the pointer last moved, while playing. */
 const REST = 2000;
-/** Seconds an arrow key steps. */
+/** Seconds an arrow key, or the five-on button, steps. */
 const STEP = 5;
 
 const CSS = `
@@ -48,17 +51,26 @@ const CSS = `
 .fp-mark svg { width: 20px; height: 20px; margin-left: 3px; }
 .fp-stage:hover .fp-mark { transform: scale(1.08); }
 
-/* The icons, on a shade just deep enough to read them on a bright
-   shot. They cut away while the film plays and the pointer rests. */
-.fp-bar { position: absolute; left: 0; right: 0; bottom: 0; display: flex; align-items: center; gap: 2px; padding: 28px 10px 12px; background: linear-gradient(to bottom, rgba(0, 0, 0, 0), rgba(0, 0, 0, .38)); color: #fff; pointer-events: none; transition: opacity .16s steps(2, end); }
-.fp.is-idle .fp-bar:not(:focus-within) { opacity: 0; }
-.fp-btn { display: grid; place-items: center; width: 32px; height: 32px; padding: 0; border: 0; border-radius: 999px; background: none; color: inherit; opacity: .82; pointer-events: auto; }
+/* The controls come up while the pointer is over the film (or focus is
+   inside it) and cut away when it rests or leaves: in the middle, back
+   to the start, play or pause, five seconds on; the sound at the top
+   right, fullscreen at the bottom right. White on a soft shadow, so they
+   read on a white floor as well as on a dark doorway; the middle three
+   on a faint round shade, since they sit on the picture itself. */
+.fp-mid, .fp-corner { position: absolute; display: flex; align-items: center; color: #fff; pointer-events: none; transition: opacity .16s steps(2, end); }
+.fp-mid { left: 50%; top: 50%; gap: 14px; transform: translate(-50%, -50%); }
+.fp-corner.is-top { top: 10px; right: 10px; }
+.fp-corner.is-foot { bottom: 14px; right: 10px; }
+.fp.is-rest .fp-mid:not(:focus-within), .fp.is-rest .fp-corner:not(:focus-within), .fp.is-fresh .fp-mid { opacity: 0; }
+.fp.is-rest .fp-mid:not(:focus-within) .fp-btn, .fp.is-rest .fp-corner:not(:focus-within) .fp-btn, .fp.is-fresh .fp-mid .fp-btn { pointer-events: none; }
+.fp-btn { display: grid; place-items: center; width: 32px; height: 32px; padding: 0; border: 0; border-radius: 999px; background: none; color: inherit; opacity: .86; pointer-events: auto; }
 .fp-btn:hover { opacity: 1; }
 .fp-btn:focus-visible { outline: 2px solid #fff; outline-offset: -2px; }
-/* A soft shadow, so white reads on a white floor as well as on a dark
-   doorway. */
-.fp-btn svg { display: block; width: 14px; height: 14px; filter: drop-shadow(0 0 3px rgba(0, 0, 0, .55)); }
-.fp-gap { flex: 1; }
+.fp-btn svg { display: block; width: 14px; height: 14px; filter: drop-shadow(0 0 3px rgba(0, 0, 0, .6)); }
+.fp-mid .fp-btn { width: 44px; height: 44px; background: rgba(0, 0, 0, .22); }
+.fp-mid .fp-btn svg { width: 18px; height: 18px; }
+.fp-mid .fp-btn.is-main { width: 60px; height: 60px; }
+.fp-mid .fp-btn.is-main svg { width: 22px; height: 22px; }
 
 /* The line. Its box is taller than it looks, so it is easy to catch;
    nothing here eases — it is written on the beat, and tracks the pointer
@@ -80,7 +92,7 @@ const CSS = `
 .cs-media.fp:fullscreen video { object-fit: contain; }
 html.clay-cursor .fp:fullscreen, html.clay-cursor .fp:fullscreen * { cursor: auto !important; }
 html.clay-cursor .fp.is-idle:fullscreen, html.clay-cursor .fp.is-idle:fullscreen * { cursor: none !important; }
-@media (prefers-reduced-motion: reduce) { .fp-bar, .fp-mark { transition: none; } }
+@media (prefers-reduced-motion: reduce) { .fp-mid, .fp-corner, .fp-mark { transition: none; } }
 `;
 
 const PLAY = (
@@ -92,6 +104,40 @@ const PAUSE = (
   <svg viewBox="0 0 14 14" fill="currentColor" aria-hidden="true">
     <rect x="2.5" y="1.5" width="3.2" height="11" rx=".8" />
     <rect x="8.3" y="1.5" width="3.2" height="11" rx=".8" />
+  </svg>
+);
+const TO_START = (
+  <svg viewBox="0 0 14 14" fill="currentColor" aria-hidden="true">
+    <rect x="1.6" y="1.8" width="1.8" height="10.4" rx=".6" />
+    <path d="M12.4 2.3v9.4a.6.6 0 0 1-.93.5L4.6 7.5a.6.6 0 0 1 0-1l6.87-4.7a.6.6 0 0 1 .93.5Z" />
+  </svg>
+);
+/** A turn clockwise with the seconds it goes on in it. */
+const FIVE_ON = (
+  <svg viewBox="0 0 24 24" fill="none" aria-hidden="true">
+    <path
+      d="M20.5 12a8.5 8.5 0 1 1-2.5-6"
+      stroke="currentColor"
+      strokeWidth="2"
+      strokeLinecap="round"
+    />
+    <path
+      d="M19.8 1.8v5.4h-5.4"
+      stroke="currentColor"
+      strokeWidth="2"
+      strokeLinecap="round"
+      strokeLinejoin="round"
+    />
+    <text
+      x="12"
+      y="16"
+      textAnchor="middle"
+      fontSize="10.5"
+      fontWeight="600"
+      fill="currentColor"
+    >
+      {STEP}
+    </text>
   </svg>
 );
 const SPEAKER =
@@ -255,6 +301,21 @@ export default function FilmPlayer({
     else v.pause();
   }
 
+  /** Back to the first frame, playing. */
+  function restart() {
+    const v = video.current;
+    if (!v) return;
+    playLater("tap", 1, "click");
+    held.current = false;
+    seek(0);
+    void v.play().catch(() => {});
+  }
+
+  function skip() {
+    playLater("tap", 1, "click");
+    seek((pending.current ?? time) + STEP);
+  }
+
   function toggleMute() {
     const v = video.current;
     if (!v) return;
@@ -337,12 +398,21 @@ export default function FilmPlayer({
   }
 
   const progress = duration ? Math.min(1, time / duration) : 0;
-  const idle = playing && !awake && !dragging;
+  /** No pointer about: the controls are down. */
+  const lowered = !awake && !dragging;
+  const idle = playing && lowered;
 
   return (
     <div
       ref={root}
-      className={["cs-media fp", cinema && "is-cinema", idle && "is-idle"]
+      className={[
+        "cs-media fp",
+        cinema && "is-cinema",
+        lowered && "is-rest",
+        idle && "is-idle",
+        // Before the first play the mark is the way in.
+        !started && "is-fresh",
+      ]
         .filter(Boolean)
         .join(" ")}
       style={cinema ? undefined : { aspectRatio: aspect }}
@@ -381,21 +451,38 @@ export default function FilmPlayer({
         type="button"
         className="fp-stage"
         aria-label={playing ? "Pause the film" : "Play the film"}
-        data-cursor-label={playing ? "pause" : "play"}
         onClick={toggle}
       >
         {!started && <span className="fp-mark">{PLAY}</span>}
       </button>
 
-      <div className="fp-bar">
+      <div className="fp-mid">
         <button
           type="button"
           className="fp-btn sm-press"
+          aria-label="Start again"
+          onClick={restart}
+        >
+          {TO_START}
+        </button>
+        <button
+          type="button"
+          className="fp-btn is-main sm-press"
           aria-label={playing ? "Pause" : "Play"}
           onClick={toggle}
         >
           {playing ? PAUSE : PLAY}
         </button>
+        <button
+          type="button"
+          className="fp-btn sm-press"
+          aria-label={`${STEP} seconds on`}
+          onClick={skip}
+        >
+          {FIVE_ON}
+        </button>
+      </div>
+      <div className="fp-corner is-top">
         <button
           type="button"
           className="fp-btn sm-press"
@@ -405,7 +492,8 @@ export default function FilmPlayer({
         >
           {muted ? SOUND_OFF : SOUND_ON}
         </button>
-        <span className="fp-gap" />
+      </div>
+      <div className="fp-corner is-foot">
         <button
           type="button"
           className="fp-btn sm-press"
