@@ -271,6 +271,23 @@ const LIFT: Field<WindowTuning>[] = [
     unit: "ms",
     hint: "grow only: the second axis's wait",
   },
+  {
+    key: "slidePeriod",
+    label: "Slide",
+    min: 100,
+    max: 1200,
+    step: 10,
+    unit: "ms",
+    hint: "a switch: the sheets' spring, its period",
+  },
+  {
+    key: "slideBounce",
+    label: "Slide bounce",
+    min: 0,
+    max: 0.6,
+    step: 0.02,
+    hint: "a switch: how far a sheet passes its place",
+  },
 ];
 
 const SHEET: Field<WindowTuning>[] = [
@@ -444,6 +461,7 @@ export default function PaperBench() {
       {shownSlug !== null && (
         <ProjectWindow
           active={shownSlug}
+          order={PRINTS.map((p) => p.slug)}
           shown={open !== null}
           from={from}
           label={shownSlug}

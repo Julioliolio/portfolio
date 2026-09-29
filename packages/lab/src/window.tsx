@@ -15,6 +15,7 @@ import {
 } from "react";
 import { loaders } from "./loaders";
 import { loadSounds, playLater } from "./play-later";
+import { springEasing } from "./spring";
 import {
   clipTimeNow,
   type WindowPreview,
@@ -70,6 +71,11 @@ import {
  * Convertr's curve.) Without a print to come from (a Back that
  * reopens, a page of its own) the box is simply there, or fades. Big
  * surfaces ease; they don't cut.
+ *
+ * A switch, from one open project to another, is two sheets: the one
+ * on the mat slides off the screen with its page still on it and the
+ * next slides in from off it, over it, as the prints do between hovers
+ * (Julio, 2026-09-29; see slide()).
  *
  * The rail holds a slot the page inside fills with its contents
  * (`useWindowRail()`), under the brand plate's foot (--brand-foot, from
@@ -263,6 +269,9 @@ function sheetPath(w: number, h: number, t: WindowTuning): string {
  *   same fade; nothing pops.
  * - The way home is the brand plate, in the corner (see above).
  * - A page of its own (/work/<slug>): the box is simply there.
+ * - A sheet: the box with what lies under it (the lift, the cut's
+ *   shadows), so the three slide as one on a switch (slide(), by
+ *   script). The whole screen, and nothing to the pointer but its box.
  * - Leaving: the way in, backwards (Julio, 2026-09-26). Everything the
  *   landing did runs in reverse, on its own clock and on its curve
  *   reversed (reverseEase): the page dissolves out over the reveal as
@@ -304,7 +313,8 @@ function windowCss(t: WindowTuning): string {
     .join(", ");
   return `
 .pw { --pw-margin: 0px; --pw-over: 0px; --pw-corner: 0px; --pw-x: 0px; --pw-y: 0px; --pw-w: 100vw; --pw-h: 100dvh; position: fixed; inset: 0; z-index: 80; }
-.pw-box { position: absolute; left: var(--pw-x); top: var(--pw-y); width: var(--pw-w); height: var(--pw-h); overflow: hidden; isolation: isolate; border-radius: var(--pw-corner); background: ${paper}; box-shadow: ${paperShadow(t)}; transform: rotate(${n(t.tilt, 2)}deg); transform-origin: 50% 50%; }
+.pw-sheet { position: absolute; inset: 0; pointer-events: none; }
+.pw-box { position: absolute; left: var(--pw-x); top: var(--pw-y); width: var(--pw-w); height: var(--pw-h); pointer-events: auto; overflow: hidden; isolation: isolate; border-radius: var(--pw-corner); background: ${paper}; box-shadow: ${paperShadow(t)}; transform: rotate(${n(t.tilt, 2)}deg); transform-origin: 50% 50%; }
 .pw-box:focus { outline: none; }
 .pw-under { display: none; position: absolute; left: var(--pw-x); top: var(--pw-y); width: var(--pw-w); height: var(--pw-h); pointer-events: none; transform: rotate(${n(t.tilt, 2)}deg); transform-origin: 50% 50%; filter: drop-shadow(${n(contact.x, 1)}px ${n(contact.y, 1)}px ${n(t.contactBlur / 2, 2)}px rgba(0, 0, 0, ${n(t.contactAlpha)})) drop-shadow(${n(soft.x, 1)}px ${n(soft.y, 1)}px ${n(t.softBlur / 2, 2)}px rgba(0, 0, 0, ${n(t.softAlpha)})) drop-shadow(0 1px 0 rgba(43, 39, 34, ${n(t.lip)})); }
 .pw-under::before { content: ""; position: absolute; inset: 0; background: ${t.ground}; clip-path: var(--pw-shape); }
@@ -532,6 +542,203 @@ function move(
   return together(list);
 }
 
+// ------------------------------------------------------------ the switch
+
+/** Above the screen, or below it. */
+type Side = -1 | 1;
+
+/** A sheet's place off the screen, as the prints have theirs off the
+ *  front spot: its lean above the screen and below it, degrees, how far
+ *  to the right it drifts on the way, as a share of its width, and the
+ *  room past the screen's edge for its shadow, px. */
+const OFF = { above: -4, below: 6, drift: 0.1, room: 48 };
+
+/**
+ * Slides a sheet between its place and one off the screen, `side` of
+ * it: `in` from there, or `out` to it, on the switch's spring. The
+ * sheet turns about its box's centre, and its box's place is its
+ * layout's, which no slide changes — so a sheet sent off while still on
+ * its way in leaves from where it has got to.
+ */
+function slide(
+  sheet: HTMLElement,
+  side: Side,
+  to: "in" | "out",
+  t: WindowTuning,
+): Animation | null {
+  const box = sheet.querySelector<HTMLElement>(".pw-box");
+  if (!box) return null;
+  const tilt = side < 0 ? OFF.above : OFF.below;
+  // Clear of the screen's edge, the lean's corner and the shadow too.
+  const room =
+    OFF.room +
+    (box.offsetWidth / 2) * Math.sin((Math.abs(tilt) * Math.PI) / 180);
+  const y =
+    side < 0
+      ? -(box.offsetTop + box.offsetHeight + room)
+      : window.innerHeight - box.offsetTop + room;
+  const off: Keyframe = {
+    translate: `${n(box.offsetWidth * OFF.drift, 1)}px ${n(y, 1)}px`,
+    rotate: `${tilt}deg`,
+  };
+  sheet.style.transformOrigin = `${n(box.offsetLeft + box.offsetWidth / 2, 1)}px ${n(box.offsetTop + box.offsetHeight / 2, 1)}px`;
+  const { easing, settle } = springEasing(t.slidePeriod, t.slideBounce);
+  return to === "in"
+    ? sheet.animate([off, { translate: "0px 0px", rotate: "0deg" }], {
+        duration: settle,
+        easing,
+        fill: "backwards",
+      })
+    : sheet.animate([off], { duration: settle, easing, fill: "forwards" });
+}
+
+/** A sheet on the mat: a project, and how it came. */
+type Leaf = {
+  /** One per sheet put up: a project come back to is a new sheet. */
+  id: number;
+  slug: string;
+  label: string;
+  /** The page on it, as it was when the sheet was put up — what it
+   *  keeps once another project is the open one. */
+  page: ReactNode;
+  /** Slid in on a switch, from this side; 0: picked up, or simply
+   *  there. */
+  enter: Side | 0;
+  /** Switched away from: sliding off, to this side; 0 while it is the
+   *  open one. */
+  exit: Side | 0;
+};
+
+/**
+ * One sheet: the box and what lies under it. The open one is the
+ * window's (`boxRef`, `clipRef`, the rail's slot, the cut); one switched
+ * away from keeps its page and its scroll, gives up the rail, takes
+ * nothing from the pointer, and is gone (`onGone`) once it has slid
+ * off.
+ */
+function Sheet({
+  leaf,
+  cut,
+  preview,
+  opened,
+  rail,
+  boxRef,
+  clipRef,
+  onGone,
+  children,
+}: {
+  leaf: Leaf;
+  cut: string | null;
+  /** The clip in the box, under the page. */
+  preview: WindowPreview | null;
+  /** The clip the box grew out of, for the page (useWindowPreview). */
+  opened: WindowPreview | null;
+  rail: HTMLElement | null;
+  boxRef?: { current: HTMLDivElement | null };
+  clipRef?: { current: HTMLVideoElement | null };
+  onGone: (id: number) => void;
+  children?: ReactNode;
+}) {
+  const t = useWindowTuning();
+  const sheet = useRef<HTMLDivElement>(null);
+  const [scroller, setScroller] = useState<HTMLElement | null>(null);
+  const { id, slug, enter, exit } = leaf;
+
+  // In, on a switch: from off the screen, the paper over the mat, and
+  // the focus with it.
+  useLayoutEffect(() => {
+    const el = sheet.current;
+    if (!el || enter === 0) return;
+    const move = slide(el, enter, "in", t);
+    playLater("slide", 1, "card");
+    el.querySelector<HTMLElement>(".pw-box")?.focus({ preventScroll: true });
+    return () => move?.cancel();
+    // Once, as the sheet is put up; the tuning is read then.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+  // Out, switched away from.
+  useLayoutEffect(() => {
+    const el = sheet.current;
+    if (!el || exit === 0) return;
+    const move = slide(el, exit, "out", t);
+    // On a timer, as the rest of the window is: a finish event waits
+    // for a frame, which a tab out of sight never gets.
+    const ms = Number(move?.effect?.getTiming().duration) || 0;
+    const done = window.setTimeout(() => onGone(id), ms);
+    return () => {
+      move?.cancel();
+      window.clearTimeout(done);
+    };
+    // Once, as the sheet is sent off.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [exit]);
+
+  // A switch in place starts the next page at its top.
+  useEffect(() => {
+    if (scroller) scroller.scrollTop = 0;
+  }, [slug, scroller]);
+
+  return (
+    <div ref={sheet} className="pw-sheet" inert={exit !== 0}>
+      {/* The lifted corner's shadow, under the box; then the sheet's
+          own shadows, cast by its cut outline once it has landed. */}
+      <div className="pw-lift" aria-hidden />
+      <div className="pw-under" aria-hidden />
+      <div
+        ref={boxRef}
+        className="pw-box"
+        role="dialog"
+        aria-label={leaf.label}
+        tabIndex={-1}
+        // No tag over the box: the window's own is for the empty wall.
+        data-cursor-label=""
+      >
+        {preview && (
+          <video
+            key={preview.src}
+            ref={(el) => {
+              if (clipRef) clipRef.current = el;
+              // Picks up where the print's copy is now; set before the
+              // file is in, which the browser keeps as the start.
+              if (el && preview.time !== undefined && !el.dataset.started) {
+                el.dataset.started = "1";
+                el.currentTime = clipTimeNow(preview);
+              }
+            }}
+            className="pw-clip"
+            src={preview.src}
+            poster={preview.poster}
+            preload="auto"
+            autoPlay
+            muted
+            loop
+            playsInline
+            aria-hidden
+          />
+        )}
+        <div ref={setScroller} className="pw-scroll">
+          <ScrollerContext.Provider value={scroller}>
+            <RailContext.Provider value={rail}>
+              <PreviewContext.Provider value={opened}>
+                {children}
+              </PreviewContext.Provider>
+            </RailContext.Provider>
+          </ScrollerContext.Provider>
+        </div>
+        {/* The light across the sheet, and its edges curling down. */}
+        <div className="pw-light" aria-hidden />
+        {cut && (
+          <svg className="pw-edge" aria-hidden>
+            <path className="pw-edge-hair" d={cut} />
+            <path className="pw-edge-light" d={cut} />
+            <path className="pw-edge-shade" d={cut} />
+          </svg>
+        )}
+      </div>
+    </div>
+  );
+}
+
 // --------------------------------------------------------- the component
 
 /** Where the rail's things go, as CSS lengths — the caller's, since
@@ -546,8 +753,14 @@ export type WindowLayout = {
 };
 
 type ProjectWindowProps = {
-  /** The open project's slug: a change starts the next page at its top. */
+  /** The open project's slug: a change is a switch — the sheet slides
+   *  off and the next one in. */
   active: string;
+  /** The projects' slugs in the signs' order, top to bottom, for the
+   *  way a switch goes: to a sign further down, the sheet leaves by the
+   *  top and the next comes up from the bottom; further up, the other
+   *  way. Without it, always the first. */
+  order?: readonly string[];
   /** Flip to false to close: the exit plays, then the window unmounts
    *  itself. */
   shown: boolean;
@@ -575,15 +788,18 @@ type ProjectWindowProps = {
 const BrandSign = lazy(loaders["brand-sign"]);
 
 /**
- * The box, the rail and the controls. The page inside is `children`;
- * on a switch it is up to the caller to render the next page (keyed, so
- * its entrances play) — the window scrolls back to the top. Focus goes
- * to the box on open and back where it was on close; the page behind
- * stops scrolling while the window is up.
+ * The box, the rail and the controls. The page inside is `children`,
+ * the open project's; on a switch the caller renders the next page and
+ * the window puts it on a sheet of its own, the last one sliding off
+ * with the page it had (before the box has landed, under reduced motion
+ * and on a page of its own the page changes in place, from its top).
+ * Focus goes to the box on open and back where it was on close; the
+ * page behind stops scrolling while the window is up.
  */
 
 export function ProjectWindow({
   active,
+  order,
   shown,
   mode = "modal",
   from = null,
@@ -595,7 +811,6 @@ export function ProjectWindow({
 }: ProjectWindowProps) {
   const t = useWindowTuning();
   const page = mode === "page";
-  const [scroller, setScroller] = useState<HTMLElement | null>(null);
   const [rail, setRail] = useState<HTMLElement | null>(null);
   const box = useRef<HTMLDivElement>(null);
   const clip = useRef<HTMLVideoElement>(null);
@@ -624,18 +839,40 @@ export function ProjectWindow({
   /** On the way back, the page is out and the box is shrinking: the
    *  cut is off, as it was before the box landed. */
   const [shrinking, setShrinking] = useState(false);
-  if (shown !== prevShown) {
+  /** The open project's sheet, and the ones switched away from, still
+   *  sliding off. */
+  const [leaf, setLeaf] = useState<Leaf>({
+    id: 0,
+    slug: active,
+    label,
+    page: children,
+    enter: 0,
+    exit: 0,
+  });
+  const [gone, setGone] = useState<Leaf[]>([]);
+  const still = reduced();
+  const flipped = shown !== prevShown;
+  if (flipped) {
     setPrevShown(shown);
     setLeaving(!shown);
     setShrinking(false);
     if (shown) {
       setOpened(from);
       setLanded(page);
+      setGone([]);
     }
+  }
+  if (active !== leaf.slug) {
+    const next = { ...leaf, slug: active, label, page: children };
+    if (shown && !flipped && landed && !page && !still) {
+      const at = (slug: string) => order?.indexOf(slug) ?? -1;
+      const side: Side = at(active) < at(leaf.slug) ? -1 : 1;
+      setGone([...gone, { ...leaf, exit: side < 0 ? 1 : -1 }]);
+      setLeaf({ ...next, id: leaf.id + 1, enter: side });
+    } else setLeaf(next);
   }
 
   const mounted = shown || leaving;
-  const still = reduced();
   // The grow and the shrink take the same, the whole move.
   const grow = still ? 1 : moveMs(t);
   const reveal = still ? 1 : t.reveal;
@@ -676,7 +913,9 @@ export function ProjectWindow({
     if (!leaving) return;
     const v = clip.current;
     if (v) {
-      const same = [...(scroller?.querySelectorAll("video") ?? [])].find(
+      const films =
+        box.current?.querySelectorAll<HTMLVideoElement>(".pw-scroll video");
+      const same = [...(films ?? [])].find(
         (f) => f.currentSrc && f.currentSrc === v.currentSrc,
       );
       if (same) v.currentTime = same.currentTime;
@@ -715,8 +954,6 @@ export function ProjectWindow({
       window.clearTimeout(go);
       window.clearTimeout(done);
     };
-    // The scroller is read at the start of the exit only.
-    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [leaving, reveal, grow, t]);
 
   // The shrink, in the commit that takes the cut off and before that
@@ -733,8 +970,9 @@ export function ProjectWindow({
   // The sheet's cut: measured once landed — the layout size, which the
   // lean does not change — and again whenever that size changes (the
   // screen, the knobs, a lab page showing its piece late) or the knobs
-  // do; gone once the way back reaches the shrink, so the box shrinks
-  // with its own shadow, as it grew.
+  // do, and off the next sheet's box on a switch; gone once the way
+  // back reaches the shrink, so the box shrinks with its own shadow, as
+  // it grew.
   // Not on a phone, where the box is the screen.
   useEffect(() => {
     const el = box.current;
@@ -758,7 +996,7 @@ export function ProjectWindow({
       ro.disconnect();
       window.removeEventListener("resize", cut);
     };
-  }, [landed, shrinking, t]);
+  }, [landed, shrinking, t, leaf.id]);
 
   // The page behind holds still, Esc closes, and focus is kept: on the
   // box while the window is up, back where it was after.
@@ -786,10 +1024,6 @@ export function ProjectWindow({
     return () => window.removeEventListener("keydown", onKey);
   }, [shown, page, onClose]);
 
-  // A switch starts the next page at its top.
-  useEffect(() => {
-    if (scroller) scroller.scrollTop = 0;
-  }, [active, scroller]);
   // A page of its own (/work/<slug>) has no synth yet: fetched on mount,
   // so the first click plays from the cache.
   useEffect(() => {
@@ -817,9 +1051,12 @@ export function ProjectWindow({
   const onEmpty = (e: MouseEvent) => {
     if (!page && e.target === e.currentTarget) close();
   };
-  // The clip in the box: the one it grew out of, or, on the way out,
-  // the open project's — the caller keeps `from` pointed at it.
-  const preview = leaving ? (from ?? opened) : opened;
+  // The clip in the box: the one it grew out of (a sheet that slid in
+  // grew out of none), or, on the way out, the open project's — the
+  // caller keeps `from` pointed at it.
+  const grown = page || leaf.enter !== 0 ? null : opened;
+  const preview = leaving ? (from ?? opened) : leaf.enter !== 0 ? null : opened;
+  const onGone = (id: number) => setGone((g) => g.filter((s) => s.id !== id));
 
   return (
     <div
@@ -851,61 +1088,37 @@ export function ProjectWindow({
           <div ref={setRail} className="pw-rail-slot" />
         </div>
       </div>
-      {/* The lifted corner's shadow, under the box; then the sheet's
-          own shadows, cast by its cut outline once it has landed. */}
-      <div className="pw-lift" aria-hidden />
-      <div className="pw-under" aria-hidden />
-      <div
-        ref={box}
-        className="pw-box"
-        role="dialog"
-        aria-label={label}
-        tabIndex={-1}
-        // No tag over the box: the window's own is for the empty wall.
-        data-cursor-label=""
-      >
-        {preview && (
-          <video
-            key={preview.src}
-            ref={(el) => {
-              clip.current = el;
-              // Picks up where the print's copy is now; set before the
-              // file is in, which the browser keeps as the start.
-              if (el && preview.time !== undefined && !el.dataset.started) {
-                el.dataset.started = "1";
-                el.currentTime = clipTimeNow(preview);
-              }
-            }}
-            className="pw-clip"
-            src={preview.src}
-            poster={preview.poster}
-            preload="auto"
-            autoPlay
-            muted
-            loop
-            playsInline
-            aria-hidden
-          />
-        )}
-        <div ref={setScroller} className="pw-scroll">
-          <ScrollerContext.Provider value={scroller}>
-            <RailContext.Provider value={rail}>
-              <PreviewContext.Provider value={page ? null : opened}>
-                {children}
-              </PreviewContext.Provider>
-            </RailContext.Provider>
-          </ScrollerContext.Provider>
-        </div>
-        {/* The light across the sheet, and its edges curling down. */}
-        <div className="pw-light" aria-hidden />
-        {cut && (
-          <svg className="pw-edge" aria-hidden>
-            <path className="pw-edge-hair" d={cut} />
-            <path className="pw-edge-light" d={cut} />
-            <path className="pw-edge-shade" d={cut} />
-          </svg>
-        )}
-      </div>
+      {/* One list, the open sheet last — over the ones sliding off —
+          so a sheet switched away from stays the sheet it was. */}
+      {[...gone, leaf].map((s) =>
+        s === leaf ? (
+          <Sheet
+            key={s.id}
+            leaf={{ ...s, label }}
+            cut={cut}
+            preview={preview}
+            opened={grown}
+            rail={rail}
+            boxRef={box}
+            clipRef={clip}
+            onGone={onGone}
+          >
+            {children}
+          </Sheet>
+        ) : (
+          <Sheet
+            key={s.id}
+            leaf={s}
+            cut={cut}
+            preview={null}
+            opened={null}
+            rail={null}
+            onGone={onGone}
+          >
+            {s.page}
+          </Sheet>
+        ),
+      )}
     </div>
   );
 }

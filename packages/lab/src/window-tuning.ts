@@ -44,6 +44,12 @@ export type WindowTuning = {
   /** The quick fades, ms: the page and the rail out before the way
    *  back, the rail in, and the prints' column leaving as the box lifts. */
   fade: number;
+  /** A switch, from one open project to another: the sheet slides off
+   *  the screen and the next one in from off it, as the prints do
+   *  between hovers, on a spring of this period, ms, and bounce (the
+   *  prints': 250 and .1; the sheet has further to go). */
+  slidePeriod: number;
+  slideBounce: number;
   /** The wall around the box: its top, right and bottom margin, px. */
   margin: number;
   /** How far the open sign reaches over the box's left edge, vh: the
@@ -137,6 +143,8 @@ export const WINDOW_DEFAULTS: Readonly<WindowTuning> = Object.freeze({
   lag: 180,
   reveal: 520,
   fade: 220,
+  slidePeriod: 380,
+  slideBounce: 0.1,
   margin: 24,
   overhang: 3.5,
   corner: 5.5,

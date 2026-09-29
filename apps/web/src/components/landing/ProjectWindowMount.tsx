@@ -27,6 +27,8 @@ type Loaded = {
   ProjectWindow: typeof import("@portfolio/lab/window").ProjectWindow;
   WindowPage: typeof import("@/components/work/WindowPage").default;
 };
+/** The signs' order, for the way a switch goes. */
+const ORDER = PROJECT_LIST.map((p) => p.slug);
 let loaded: Loaded | null = null;
 let loading: Promise<void> | null = null;
 
@@ -68,6 +70,7 @@ export function ProjectWindowMount({
   return (
     <ProjectWindow
       active={slug}
+      order={ORDER}
       shown={open !== null}
       from={from}
       label={title}
