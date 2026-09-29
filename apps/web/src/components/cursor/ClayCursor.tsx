@@ -29,9 +29,11 @@ import { useEffect, useRef } from "react";
  * The arrow is a set of photos of the same clay arrow re-posed slightly,
  * cycled at a stop-motion rate so the outline "boils" like a claymation
  * hold. Over interactive elements it becomes a clay pointing hand with its
- * own boil frames, animated identically. prepare-cursor.mjs registers each
- * variant's frames at its hotspot (arrow tip / index fingertip) and pads
- * them to identical dimensions, so swapping frames never moves the hotspot.
+ * own boil frames, animated identically; over the glyphs of readable text
+ * it becomes a clay I-beam, likewise. prepare-cursor.mjs registers each
+ * variant's frames at its hotspot (arrow tip / index fingertip / the
+ * beam's middle) and pads them to identical dimensions, so swapping frames
+ * never moves the hotspot.
  *
  * Over an element carrying `data-cursor-label` a small tag with that text
  * rides beside the hand — cut in with the site's pop entrance (the sm-pop
@@ -39,8 +41,8 @@ import { useEffect, useRef } from "react";
  * layout), cut off the moment the pointer leaves. The landing's project
  * cards say "open".
  *
- * Both variants are always mounted, stacked with their hotspots on the same
- * point. The arrow<->hand change is a short crossfade with a squish dip at
+ * All variants are always mounted, stacked with their hotspots on the same
+ * point. A change of shape is a short crossfade with a squish dip at
  * the midpoint, so the clay reads as re-forming rather than being cut to a
  * different object. The hand is drawn at tuning.pointerScale x the arrow's
  * height so the two read as the same size — see that knob for why equal
@@ -54,6 +56,7 @@ import { useEffect, useRef } from "react";
 // prepare-cursor.mjs prints the pointer's fingertip column when it runs).
 const ARROW_HOTSPOT = { x: 0.064, y: 0.01 }; // arrow tip
 const POINTER_HOTSPOT = { x: 0.39, y: 0.01 }; // index fingertip
+const TEXT_HOTSPOT = { x: 0.5, y: 0.5 }; // the middle of the beam
 
 // WebP at 2x the display size (prepare-cursor.mjs) — the whole set is a
 // few dozen KB, so warming every frame on mount is cheap.
@@ -63,8 +66,45 @@ const ARROW_FRAMES = Array.from({ length: 14 }, (_, i) =>
 const POINTER_FRAMES = Array.from({ length: 5 }, (_, i) =>
   asset(`/cursor/arrow-pointer-${i + 1}.webp`),
 );
+const TEXT_FRAMES = Array.from({ length: 12 }, (_, i) =>
+  asset(`/cursor/text-${i + 1}.webp`),
+);
+const VARIANTS = ["arrow", "pointer", "text"] as const;
 const INTERACTIVE =
   "a,button,[role=button],label,select,summary,[data-cursor=pointer]";
+const EDITABLE =
+  "textarea,[contenteditable=''],[contenteditable=true],input:not([type]),input[type=text],input[type=search],input[type=email],input[type=url],input[type=tel],input[type=password],input[type=number]";
+
+/** Whether (x, y), in `doc`'s viewport, is on a run of text, the way the OS
+ *  decides to show its I-beam: on the lines of a text node, with the
+ *  line's leading counted in so the gaps between lines don't flicker back
+ *  to the arrow, but not in a block's margins beside or below the text. */
+function overText(doc: Document, x: number, y: number) {
+  const node =
+    "caretPositionFromPoint" in doc
+      ? doc.caretPositionFromPoint(x, y)?.offsetNode
+      : (doc as Document).caretRangeFromPoint?.(x, y)?.startContainer;
+  if (!node || node.nodeType !== Node.TEXT_NODE || !node.textContent?.trim())
+    return false;
+  const parent = node.parentElement;
+  if (!parent) return false;
+  const lineHeight = parseFloat(getComputedStyle(parent).lineHeight);
+  const range = doc.createRange();
+  range.selectNodeContents(node);
+  for (const r of range.getClientRects()) {
+    const lead = Number.isFinite(lineHeight)
+      ? Math.max(0, (lineHeight - r.height) / 2)
+      : 0;
+    if (
+      x >= r.left &&
+      x <= r.right &&
+      y >= r.top - lead &&
+      y <= r.bottom + lead
+    )
+      return true;
+  }
+  return false;
+}
 
 // The label: a small ink-on-wall tag in the mono cut, growing from its
 // left edge (next to the hand) when it pops in.
@@ -76,14 +116,16 @@ export function ClayCursor() {
   const rootRef = useRef<HTMLDivElement>(null);
   const arrowRef = useRef<HTMLImageElement>(null);
   const pointerRef = useRef<HTMLImageElement>(null);
+  const textRef = useRef<HTMLImageElement>(null);
   const labelRef = useRef<HTMLSpanElement>(null);
 
   useEffect(() => {
     const root = rootRef.current;
     const arrowImg = arrowRef.current;
     const pointerImg = pointerRef.current;
+    const textImg = textRef.current;
     const labelEl = labelRef.current;
-    if (!root || !arrowImg || !pointerImg || !labelEl) return;
+    if (!root || !arrowImg || !pointerImg || !textImg || !labelEl) return;
 
     const reducedMotion = window.matchMedia("(prefers-reduced-motion: reduce)");
 
@@ -103,6 +145,7 @@ export function ClayCursor() {
         frames: POINTER_FRAMES,
         hotspot: POINTER_HOTSPOT,
       },
+      text: { img: textImg, frames: TEXT_FRAMES, hotspot: TEXT_HOTSPOT },
     };
 
     // Physics state, mutated per-frame outside React.
@@ -116,19 +159,24 @@ export function ClayCursor() {
     let visible = false;
     let seenFirstMove = false;
 
-    // Arrow<->hand blend: 0 = arrow, 1 = hand. Moves linearly toward the
-    // target so a hover that flickers just reverses mid-way instead of
-    // restarting; the eased value drives opacity, the raw value the squish.
+    // How much of each shape is showing; always sums to 1. The target's
+    // share moves linearly toward 1 so a hover that flickers just reverses
+    // mid-way instead of restarting; the eased shares drive opacity, the
+    // raw ones the squish.
     let target: Variant = "arrow";
-    let blend = 0;
-    let drawnBlend = -1;
+    const weight: Record<Variant, number> = { arrow: 1, pointer: 0, text: 0 };
+    const drawnWeight: Record<Variant, number> = {
+      arrow: -1,
+      pointer: -1,
+      text: -1,
+    };
     // The tag beside the hand; null while the pointer is over nothing
     // labelled.
     let label: string | null = null;
 
     let frameIdx = 0;
     let boilAcc = 0; // seconds accumulated toward the next boil frame
-    let appliedSize = -1;
+    let appliedSize = "";
     // What the body is drawn with. Tracks the physics every frame at
     // tuning.stepFps 0; otherwise sampled from it on the beat.
     let stepAcc = 0;
@@ -138,16 +186,19 @@ export function ClayCursor() {
     /** Display height per variant. The variants ship at the same pixel
      * height, but the hand carries a thin raised finger where the arrow has
      * solid body, so matching heights makes the hand read smaller —
-     * pointerScale compensates so the swap has no size pop. */
+     * pointerScale compensates so the swap has no size pop. The I-beam
+     * has its own textScale. */
     function displaySize(v: Variant) {
-      return v === "pointer" ? tuning.size * tuning.pointerScale : tuning.size;
+      if (v === "pointer") return tuning.size * tuning.pointerScale;
+      if (v === "text") return tuning.size * tuning.textScale;
+      return tuning.size;
     }
 
     function applySizes() {
       // The tag sits off the hand's lower right, clear of the finger.
       labelEl!.style.left = `${tuning.size * 0.62}px`;
       labelEl!.style.top = `${tuning.size * 0.98}px`;
-      for (const v of ["arrow", "pointer"] as const) {
+      for (const v of VARIANTS) {
         const size = displaySize(v);
         const { img } = layers[v];
         img.style.height = `${size}px`;
@@ -162,15 +213,17 @@ export function ClayCursor() {
     }
 
     // Warm the browser cache so frame swaps never flash a missing image.
-    const preload = [...ARROW_FRAMES, ...POINTER_FRAMES].map((src) => {
-      const im = new Image();
-      im.src = src;
-      return im;
-    });
+    const preload = [...ARROW_FRAMES, ...POINTER_FRAMES, ...TEXT_FRAMES].map(
+      (src) => {
+        const im = new Image();
+        im.src = src;
+        return im;
+      },
+    );
     void preload;
 
     function applyFrames() {
-      for (const v of ["arrow", "pointer"] as const) {
+      for (const v of VARIANTS) {
         const { img, frames } = layers[v];
         const next = frames[frameIdx % frames.length];
         if (next && !img.src.endsWith(next)) img.src = next;
@@ -210,7 +263,16 @@ export function ClayCursor() {
 
     const prev = { x: -100, y: -100 }; // pos at last frame, for velocity
 
-    function onMove(x: number, y: number, eventTarget: EventTarget | null) {
+    /** `x`, `y` are in the parent viewport, where the cursor is drawn;
+     *  `localX`, `localY` in the viewport of the document the event came
+     *  from, which the text hit-test needs. */
+    function onMove(
+      x: number,
+      y: number,
+      eventTarget: EventTarget | null,
+      localX = x,
+      localY = y,
+    ) {
       if (!seenFirstMove) {
         // Don't register the jump from the parked position as a flick.
         prev.x = x;
@@ -221,7 +283,13 @@ export function ClayCursor() {
       pos.y = y;
       show();
       const el = eventTarget instanceof Element ? eventTarget : null;
-      target = el?.closest(INTERACTIVE) ? "pointer" : "arrow";
+      target = !el
+        ? "arrow"
+        : el.closest(INTERACTIVE)
+          ? "pointer"
+          : el.closest(EDITABLE) || overText(el.ownerDocument, localX, localY)
+            ? "text"
+            : "arrow";
       applyLabel(labelOf(el));
     }
 
@@ -278,6 +346,8 @@ export function ClayCursor() {
             rect.left + e.clientX * sx,
             rect.top + e.clientY * sy,
             e.target,
+            e.clientX,
+            e.clientY,
           );
         };
         doc.addEventListener("pointermove", frameMove, { passive: true });
@@ -321,7 +391,7 @@ export function ClayCursor() {
 
       // Sizes are re-derived each frame so bench edits land immediately;
       // the style writes only happen when something changed.
-      const sizeKey = tuning.size * 1000 + tuning.pointerScale;
+      const sizeKey = `${tuning.size} ${tuning.pointerScale} ${tuning.textScale}`;
       if (sizeKey !== appliedSize) {
         appliedSize = sizeKey;
         applySizes();
@@ -345,21 +415,31 @@ export function ClayCursor() {
           // One shared index drives both layers; a step shorter than the
           // smaller set guarantees each layer's `idx % length` changes on
           // every beat, so neither variant ever holds the same pose twice.
-          const count = Math.min(ARROW_FRAMES.length, POINTER_FRAMES.length);
+          const count = Math.min(
+            ARROW_FRAMES.length,
+            POINTER_FRAMES.length,
+            TEXT_FRAMES.length,
+          );
           if (count > 1)
             frameIdx += 1 + Math.floor(Math.random() * (count - 1));
           applyFrames();
         }
       }
 
-      // Arrow<->hand transition. The bench can pin the shape to play the
-      // swap on demand; otherwise hover decides.
-      const blendTarget = (override.variant ?? target) === "pointer" ? 1 : 0;
-      if (reducedMotion.matches || tuning.swapMs <= 0) {
-        blend = blendTarget;
-      } else {
-        const maxStep = (dt * 1000) / tuning.swapMs;
-        blend += Math.max(-maxStep, Math.min(maxStep, blendTarget - blend));
+      // Shape transition. The bench can pin the shape to play a swap on
+      // demand; otherwise hover decides. The target gains share and the
+      // others give theirs up in proportion, so a swap that changes its
+      // mind mid-way (hand -> I-beam) still fades out whatever is showing.
+      const shape = override.variant ?? target;
+      const gain =
+        reducedMotion.matches || tuning.swapMs <= 0
+          ? 1
+          : (dt * 1000) / tuning.swapMs;
+      const from = 1 - weight[shape];
+      if (from > 0) {
+        weight[shape] = Math.min(1, weight[shape] + gain);
+        const keep = (1 - weight[shape]) / from;
+        for (const v of VARIANTS) if (v !== shape) weight[v] *= keep;
       }
 
       if (reducedMotion.matches) {
@@ -389,7 +469,8 @@ export function ClayCursor() {
 
       // The squish dip peaks half-way through the crossfade, so the clay
       // looks like it pinches in and re-forms as the other shape.
-      const morph = 1 - tuning.swapSquish * Math.sin(Math.PI * blend);
+      const lead = Math.max(weight.arrow, weight.pointer, weight.text);
+      const morph = 1 - tuning.swapSquish * Math.sin(Math.PI * (1 - lead));
 
       // Stop-motion body: the springs above run every frame, but the lean
       // and squish that get drawn only catch up on the beat, so the body
@@ -413,16 +494,14 @@ export function ClayCursor() {
       // Each layer is pinned by its own hotspot: the percent translate is
       // relative to that image's box, so no measuring is needed and the
       // rotate/scale (origin 0 0, applied after) pivot exactly on the tip.
-      for (const v of ["arrow", "pointer"] as const) {
+      for (const v of VARIANTS) {
         const { img, hotspot } = layers[v];
         img.style.transform = `rotate(${shownAngle}deg) scale(${shownScale}) translate(${-hotspot.x * 100}%, ${-hotspot.y * 100}%)`;
-      }
-
-      if (blend !== drawnBlend) {
-        drawnBlend = blend;
-        const eased = blend * blend * (3 - 2 * blend);
-        arrowImg!.style.opacity = `${1 - eased}`;
-        pointerImg!.style.opacity = `${eased}`;
+        const w = weight[v];
+        if (w !== drawnWeight[v]) {
+          drawnWeight[v] = w;
+          img.style.opacity = `${w * w * (3 - 2 * w)}`;
+        }
       }
     }
     raf = requestAnimationFrame(tick);
@@ -475,6 +554,18 @@ export function ClayCursor() {
         style={{
           ...layerStyle,
           height: `${tuning.size * tuning.pointerScale}px`,
+          opacity: 0,
+        }}
+      />
+      {/* eslint-disable-next-line @next/next/no-img-element -- same as above */}
+      <img
+        ref={textRef}
+        src={TEXT_FRAMES[0]}
+        alt=""
+        draggable={false}
+        style={{
+          ...layerStyle,
+          height: `${tuning.size * tuning.textScale}px`,
           opacity: 0,
         }}
       />

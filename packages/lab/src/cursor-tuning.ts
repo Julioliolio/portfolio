@@ -48,6 +48,8 @@ export type ClayCursorTuning = {
    * scales the hand back up so the swap has no visible size pop.
    */
   pointerScale: number;
+  /** Height of the I-beam as a multiple of `size`. */
+  textScale: number;
   /**
    * Arrow<->hand crossfade length in ms. 0 = hard cut. A hover that
    * flickers reverses the fade mid-way rather than restarting it.
@@ -90,6 +92,7 @@ export const CLAY_CURSOR_DEFAULTS: Readonly<ClayCursorTuning> = Object.freeze({
   scaleDamping: 24,
   boilFps: 6,
   pointerScale: 1.15,
+  textScale: 0.6,
   swapMs: 100,
   swapSquish: 0.2,
   stepFps: 10,
@@ -98,11 +101,11 @@ export const CLAY_CURSOR_DEFAULTS: Readonly<ClayCursorTuning> = Object.freeze({
 /** Mutable singleton — the cursor reads it per frame, the lab tuner writes it. */
 export const clayCursorTuning: ClayCursorTuning = { ...CLAY_CURSOR_DEFAULTS };
 
-export type ClayCursorVariant = "arrow" | "pointer";
+export type ClayCursorVariant = "arrow" | "pointer" | "text";
 
 /**
  * Bench-only override of which shape the cursor shows. `null` (the default)
- * lets hover decide; "arrow" / "pointer" pin it so the arrow<->hand swap
+ * lets hover decide; "arrow" / "pointer" / "text" pin it so the swaps
  * can be played and inspected without hunting for a link. Kept separate
  * from the numeric tuning so it never ends up in copied defaults.
  */

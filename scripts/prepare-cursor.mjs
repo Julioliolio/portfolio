@@ -7,6 +7,8 @@
  *   arrow.png                — single-frame fallback if no numbered frames
  *   arrow-pointer-1.png..N   — pointing-hand state shown over interactive
  *     elements, same numbering convention
+ *   text-1.png..N            — the I-beam shown over readable text, same
+ *     numbering convention
  * Output: apps/web/public/cursor/<name>-<i>.webp — one file per boil frame,
  *   lossy WebP with alpha at TARGET_HEIGHT (2x the ~48px display size).
  *   The set has to stay small: every frame is fetched on first load so the
@@ -24,12 +26,17 @@
  *                    frames are shifted horizontally to line their tips up.
  *                    The script prints the resulting hotspot fraction; copy
  *                    it into POINTER_HOTSPOT in ClayCursor.tsx if it moves.
+ *   text           — centred on both axes: the I-beam's hotspot is its middle,
+ *                    so frames grow evenly around it.
  *
  * If no source exists at all, a placeholder is rasterized from an inline SVG
  * (white fill, fat black outline) into every frame slot so the cursor system
  * works before the real photos land. Sources are not committed; outputs are.
  * Rerun after dropping/updating source PNGs:
  *   node scripts/prepare-cursor.mjs
+ * or for some variants only (the rest keep their emitted files, which
+ * matters when their sources are no longer on disk):
+ *   node scripts/prepare-cursor.mjs source-assets/cursor text
  */
 import { existsSync, mkdirSync, statSync } from "node:fs";
 import { join, dirname } from "node:path";
@@ -74,7 +81,10 @@ function findSources(name) {
   return null;
 }
 
-for (const name of ["arrow", "arrow-pointer"]) {
+const VARIANTS = ["arrow", "arrow-pointer", "text"];
+const only = process.argv.slice(3);
+
+for (const name of only.length ? only : VARIANTS) {
   const sources = findSources(name);
 
   if (!sources) {
@@ -98,7 +108,8 @@ for (const name of ["arrow", "arrow-pointer"]) {
   }
 
   // Trim every frame to its alpha bbox, then pad to the union size anchored
-  // top-left (the tip corner) so the frames stay registered at the tip.
+  // top-left (the tip corner) so the frames stay registered at the tip —
+  // or, for the I-beam, around the middle.
   const trimmed = await Promise.all(
     sources.map((src) =>
       sharp(src)
@@ -120,18 +131,23 @@ for (const name of ["arrow", "arrow-pointer"]) {
     ...trimmed.map(({ info }, i) => anchorX - anchors[i] + info.width),
   );
   const unionH = Math.max(...trimmed.map(({ info }) => info.height));
+  const centred = name === "text";
 
   for (let i = 0; i < trimmed.length; i++) {
     const { data, info } = trimmed[i];
     const outPath = join(outDir, `${name}-${i + 1}.webp`);
-    const left = anchorX - anchors[i];
+    const left = centred
+      ? Math.floor((unionW - info.width) / 2)
+      : anchorX - anchors[i];
+    const top = centred ? Math.floor((unionH - info.height) / 2) : 0;
     // Two passes: sharp always applies resize before extend within one
     // pipeline, which would pad *after* scaling and desync the frame sizes.
     const padded = await sharp(data)
       .extend({
         left,
         right: unionW - info.width - left,
-        bottom: unionH - info.height,
+        top,
+        bottom: unionH - info.height - top,
         background: { r: 0, g: 0, b: 0, alpha: 0 },
       })
       .png()

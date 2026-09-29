@@ -37,6 +37,14 @@ const FIELDS: Field[] = [
     hint: "hand height as a multiple of the arrow's — dial until the swap has no size pop",
   },
   {
+    key: "textScale",
+    label: "I-beam size",
+    min: 0.4,
+    max: 1.2,
+    step: 0.01,
+    hint: "I-beam height as a multiple of the arrow's",
+  },
+  {
     key: "swapMs",
     label: "Swap fade (ms)",
     min: 0,
@@ -113,6 +121,7 @@ const SHAPES: { value: Shape; label: string }[] = [
   { value: "auto", label: "Auto" },
   { value: "arrow", label: "Arrow" },
   { value: "pointer", label: "Hand" },
+  { value: "text", label: "I-beam" },
 ];
 
 const btn = (active = false): CSSProperties => ({
