@@ -693,21 +693,25 @@ export function Landing() {
 
       {/* The brand plate in the corner, and the layer the sign travels
           on between its row and the plate (see above). The plate is the
-          way back up: it shuts an open project and scrolls to the
-          greeting. */}
+          way back up, to the greeting; while a project is open it
+          reads "Back" and shuts it, leaving the projects as they
+          were. Under the pointer it turns to "About me", a link to
+          the about page. */}
       <Suspense fallback={null}>
         <BrandSign
           ref={plateRef}
           controls={false}
           shown={plateShown}
           entrance={false}
-          href={asset("/")}
+          back={!!open}
+          about={asset("/about/")}
+          href={asset(open ? "/#projects" : "/")}
           onClick={(e) => {
             if (modified(e)) return;
             e.preventDefault();
             play("knock", 1, { at: "click" });
             if (open) closeProject();
-            goTo(helloScreen);
+            else goTo(helloScreen);
           }}
         />
       </Suspense>

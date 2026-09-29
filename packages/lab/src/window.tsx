@@ -1076,7 +1076,7 @@ export function ProjectWindow({
       <style>{windowCss(t)}</style>
       {page && closeHref && (
         <Suspense fallback={null}>
-          <BrandSign controls={false} href={closeHref} />
+          <BrandSign controls={false} href={closeHref} back />
         </Suspense>
       )}
       <div

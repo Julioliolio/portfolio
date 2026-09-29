@@ -13,6 +13,11 @@ import { createTuningStore } from "./tuning-store";
  * <BrandStyles> — and the window's rail reads the plate's foot
  * (--brand-foot) so a page's contents start under it.
  *
+ * While a project is open the plate reads "Back": it turns over to it
+ * through photos of the box from below and of its rear, on the hello
+ * sign's own sheet (spin-sheet.ts), and turns home when the project
+ * shuts. Those photos are laid over the plate's box, centred.
+ *
  * Read off Julio's mockup (2026-09-28, a 1764 x 984 frame): the plate
  * about 7vh tall, 1.7vw in and 1.8vh down; its left is set on the
  * window rail's inset (WINDOW_LAYOUT.inset, 2.4vw) so the rail's things
@@ -23,6 +28,10 @@ import { createTuningStore } from "./tuning-store";
  *  scripts/prepare-brand.mjs — sizes the box before the photo
  *  decodes. */
 export const BRAND_ASPECT = 2.703;
+
+/** The turn's photos, their box's width over its height, printed by
+ *  scripts/prepare-brand-turn.mjs. */
+export const TURN_ASPECT = 2.717;
 
 export type BrandTuning = {
   /** The plate's height, vh. */
@@ -37,6 +46,12 @@ export type BrandTuning = {
   shadowY: number;
   shadowBlur: number;
   shadowAlpha: number;
+  /** The turn's photos (the box from below, its rear, "Back"): their
+   *  width over the plate's. They are centred on it. */
+  turnSize: number;
+  /** The turn's hop, over the hello sign's (which is in % of its own
+   *  height, and the plate is a short thing). */
+  hop: number;
 };
 
 const BRAND_DEFAULTS: Readonly<BrandTuning> = Object.freeze({
@@ -49,6 +64,8 @@ const BRAND_DEFAULTS: Readonly<BrandTuning> = Object.freeze({
   shadowY: 15,
   shadowBlur: 3.5,
   shadowAlpha: 0.34,
+  turnSize: 1.12,
+  hop: 2,
 });
 
 const store = createTuningStore("brand-tuning", BRAND_DEFAULTS);
@@ -71,9 +88,10 @@ export function brandShadow(h: string, t: BrandTuning): string {
 
 /**
  * The plate's stylesheet: its place and size as variables on the root
- * (the window reads --brand-foot), the fixed box, the lit photo that
- * switches on over it under the pointer (a hard cut, like a lightbox),
- * and its entrance —
+ * (the window reads --brand-foot), the fixed box, its photos stacked
+ * in it with one on show, the lit photo that switches on over a face
+ * under the pointer (a hard cut, like a lightbox), the turn's photos
+ * laid over the box, and its entrance —
  * the site's sm-drop stamp (packages/lab/src/motion.tsx), so
  * /lab/motion tunes it too. Above the window (z-index 80) and the
  * signs over it (90); the travelling sign goes over this (96).
@@ -83,10 +101,12 @@ function brandCss(t: BrandTuning): string {
 :root { --brand-h: ${n(t.height)}vh; --brand-top: ${n(t.top)}vh; --brand-left: ${n(t.left)}vw; --brand-foot: calc(${n(t.top + t.height)}vh + ${n(t.gap)}px); }
 .brand-sign { position: fixed; top: var(--brand-top); left: var(--brand-left); z-index: 95; display: block; height: var(--brand-h); width: calc(var(--brand-h) * ${BRAND_ASPECT}); filter: ${brandShadow("var(--brand-h)", t)}; outline: none; }
 .brand-sign:focus-visible { outline: 2px solid #fff; outline-offset: 6px; }
-.brand-sign img { display: block; width: 100%; height: 100%; user-select: none; }
-.brand-sign .brand-lit { position: absolute; inset: 0; opacity: 0; pointer-events: none; }
-@media (hover: hover) { .brand-sign:hover .brand-lit { opacity: 1; } }
-.brand-sign:focus-visible .brand-lit { opacity: 1; }
+.brand-sign .brand-body { display: block; position: relative; width: 100%; height: 100%; transform-origin: 50% 100%; }
+.brand-sign img { position: absolute; inset: 0; display: block; width: 100%; height: 100%; max-width: none; opacity: 0; pointer-events: none; user-select: none; }
+.brand-sign img.is-on { opacity: 1; }
+@media (hover: hover) { .brand-sign:hover .brand-flat.is-on + .brand-lit { opacity: 1; } }
+.brand-sign:focus-visible .brand-flat.is-on + .brand-lit { opacity: 1; }
+.brand-sign .brand-turn { inset: auto; left: 50%; top: 50%; width: ${n(t.turnSize * 100)}%; height: auto; aspect-ratio: ${TURN_ASPECT}; transform: translate(-50%, -50%); }
 .brand-sign.is-hidden { visibility: hidden; }
 .brand-sign.brand-enter { animation: sm-drop var(--sm-duration, .38s) steps(1, end) backwards; transform-origin: 50% 60%; }
 @media (prefers-reduced-motion: reduce) { .brand-sign.brand-enter { animation-duration: .01ms; } }
