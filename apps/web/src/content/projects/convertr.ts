@@ -20,6 +20,8 @@ export const convertr: Project = {
     },
     { label: "Role", value: "Design and build" },
     { label: "Stack", value: "Solid.js, Electron, FFmpeg, yt-dlp" },
+    // Draft, a guess; Julio to correct.
+    { label: "Tools", value: "Figma, Claude" },
   ],
   hero: {
     kind: "demo",

@@ -12,6 +12,7 @@ Facts:
 - Fields: UX research, product design, interaction design, brand design
 - Year: 2026
 - Role: Research, concept, brand, UI and prototype
+- Tools: Figma, Claude
 - Live: localpal.co (https://localpal.co)
 
 Hero: [photo needed — The onboarding sticker collage on one phone, large, on the LocalPal blue.]
@@ -86,7 +87,7 @@ An app where the plans and the people are on the same map. Venues and organisati
 [photo needed — Three frames of the storyboard.]
   Label: Storyboard
 
-## Brand and design system
+## Brand
 
 **A blue that means connection, and shapes that make you feel at ease**
 
@@ -160,6 +161,7 @@ Facts:
 - Type: Spec film · 2894 Studio, 2026
 - Fields: Concept, art direction, AI image and video generation, edit
 - Role: All of it
+- Tools: Flora, After Effects, Premiere
 - Length: 60 seconds
 
 Hero: [video — /media/camper.mp4]
@@ -209,6 +211,7 @@ Facts:
 - Fields: Product design, interaction design, desktop, build
 - Role: Design and build
 - Stack: Solid.js, Electron, FFmpeg, yt-dlp
+- Tools: Figma, Claude
 
 Hero: [demo — live demo: Convertr]
   Label: The real interface. Drop a video or a GIF on it, trim, convert, drag the result out. The conversion is simulated on this page, so the file you get is a stand-in; everything you see and touch is the app.

@@ -21,6 +21,8 @@ export const localpal: Project = {
     },
     { label: "Year", value: "2026" },
     { label: "Role", value: "Research, concept, brand, UI and prototype" },
+    // Draft, a guess; Julio to correct.
+    { label: "Tools", value: "Figma, Claude" },
     { label: "Live", value: "localpal.co", href: "https://localpal.co" },
   ],
   hero: {
@@ -193,7 +195,7 @@ export const localpal: Project = {
     },
     {
       id: "brand",
-      label: "Brand and design system",
+      label: "Brand",
       heading:
         "A blue that means connection, and shapes that make you feel at ease",
       blocks: [

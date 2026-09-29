@@ -20,7 +20,7 @@ import { CaseStudy } from "./CaseStudy";
  * /work/<slug> as a page of its own — a direct link, a reload, a
  * modified click on a sign. It looks like the landing with the project
  * open: the same window in its page mode (no entrance; the brand plate
- * in the corner is a link home, to the landing's top), and the road
+ * in the corner reads "Back", a link to the landing's projects), and the road
  * signs parked where the landing parks them, this project's one held
  * open. Here the signs are plain
  * links: another goes to that project's page, and the open one goes
@@ -34,10 +34,9 @@ import { CaseStudy } from "./CaseStudy";
 
 const RoadSigns = lazy(loaders["road-signs"]);
 
-/** The landing, opened on its projects screen (see Landing.tsx). */
+/** The landing, opened on its projects screen (see Landing.tsx): where
+ *  the brand plate, reading "Back", and the open sign go. */
 const PROJECTS = asset("/#projects");
-/** The landing's top: where the brand plate goes. */
-const HOME = asset("/");
 
 // .pp-signs is the landing's place for the signs, stepped back as they
 // are there while a project is open (SIGNS_OPEN), over the window
@@ -74,7 +73,7 @@ export function ProjectPage({ project }: { project: Project }) {
         shown
         label={project.title}
         layout={WINDOW_LAYOUT}
-        closeHref={HOME}
+        closeHref={PROJECTS}
       >
         <CaseStudy project={project} home />
       </ProjectWindow>

@@ -6,13 +6,11 @@ import { MONO } from "@portfolio/lab/style";
 import {
   Arrow,
   BottomBlur,
-  FitTitle,
   Reveal,
   TYPE_CSS,
 } from "@portfolio/lab/type";
 import { useWindowRail, useWindowScroller } from "@portfolio/lab/window";
 import {
-  Fragment,
   Suspense,
   lazy,
   useLayoutEffect,
@@ -41,17 +39,18 @@ import { projectAfter } from "@/content/projects/list";
  * two columns in (everything a section says or shows) — the middle
  * eight of the twelve, so what is read sits in the middle of the sheet.
  *
- *   header    the first screen, one blue field: the name fitted to the
- *             width at its top; the tagline, the summary and the facts
- *             at its foot. A project with an opening of its own (see
- *             openings.ts — Camper's film) opens on that instead, and
- *             the header follows on the paper, its name in the blue.
- *   hero      edge to edge under the header, unless it is something
- *             with a frame of its own (a demo, a film).
+ *   hero      first, rounded, a column wider than the text on each
+ *             side. A project with an opening of its own (see
+ *             openings.ts — Camper's film) opens on that instead.
+ *   header    on the paper under it, on the text's edge: the name and
+ *             the tagline as one line of title (name in ink, tagline in
+ *             grey), the summary, and the facts in a row of columns
+ *             (after estrellagracia.com/work/wavn2, 2026-09-29).
  *   sections  the label as a note in the margin; the heading is the
  *             first line of the text, ink over grey at one size; text
  *             blocks that follow one another are one run, paragraphs
- *             indented, not spaced; media sits on the text's edge.
+ *             indented, not spaced; media a column wider than the
+ *             text each side, rounded, stacked close together.
  *   foot      blue again: the next project's name, as big as a title.
  *
  * The contents are a column of stops (@portfolio/lab/contents-goo) — the
@@ -88,16 +87,20 @@ const BEAT = 70;
  *
  * - --cs-gutter: the openings bleed by it, and the grounds carry the
  *   page's padding now, so there is none to bleed past.
- * - The header. As the first screen it is as tall as what the window
- *   shows (--cs-vh), and its foot clears the blur.
+ * - The top: the hero, a column in from the sheet's edge each side
+ *   (--cs-wide: one of the twelve columns and its gap).
+ * - The header: the title sentence is the one size between the reading
+ *   size and a title's; the facts are label-over-value columns.
  * - The way home, on a phone (.cs-bar); with a rail (the window's 701px
  *   line) Home is there, and so are the contents.
  * - Sections: the note on the sheet's edge, everything else in the
  *   middle eight columns, as much margin on its right as on its left.
  * - One weight: a list's title is told by its ink. (globals.css hands
  *   <b> the Medium family.)
- * - Media: square and frameless, each with its caption under it, the
- *   captions numbered down the page.
+ * - Media: .cs-wide reaches a column past the text on each side;
+ *   neighbours stack half a unit apart, rounded, with no captions
+ *   (Julio, 2026-09-29, after wavn: the subtitles cluttered the
+ *   pictures). Text and pictures 1.5 units apart, sections 3.
  * - The grey box (.cs-ph): what goes here, said in the box. Dashed so it
  *   never passes for a finished frame.
  * - The timeline: months across the top, a bar per phase.
@@ -108,33 +111,34 @@ const BEAT = 70;
  * - The foot: the way on, and the way home.
  */
 const CSS = `
-.cs { --cs-gutter: 0px; --cs-pad: calc(1.5 * var(--ty-u)); counter-reset: cs-fig; }
+.cs { --cs-gutter: 0px; --cs-pad: calc(1.5 * var(--ty-u)); }
 
-.cs-head { display: flex; flex-direction: column; justify-content: space-between; gap: calc(4 * var(--ty-u)); padding-top: var(--cs-pad); }
-.cs-head.is-screen { min-height: var(--cs-vh, 100dvh); padding-bottom: calc(5 * var(--ty-u)); }
-.cs-head:not([data-ground]) .ty-title { color: var(--ty-blue); }
-.cs-intro { grid-column: 1 / span 7; }
-.cs-intro p + p { text-indent: 0; }
-.cs-facts { grid-column: 9 / -1; align-self: end; }
+.cs-top { padding: var(--cs-pad) var(--cs-pad) 0; }
+.cs-hero { margin-inline: var(--cs-wide); --cs-wide: calc((100% - 11 * var(--ty-u)) / 12 + var(--ty-u)); }
+.cs-head { padding-top: calc(3 * var(--ty-u)); padding-bottom: 0; }
+.cs-intro, .cs-facts { grid-column: 3 / span 8; }
+.cs-title { margin: 0 0 var(--ty-u); font: inherit; font-size: clamp(30px, 3.6cqw, 48px); line-height: 1.08; letter-spacing: -.03em; text-wrap: balance; }
+.cs-facts { display: grid; grid-template-columns: repeat(auto-fit, minmax(100px, 1fr)); gap: var(--ty-u); margin: calc(2 * var(--ty-u)) 0 0; }
+.cs-facts dt { color: var(--ty-dim); }
+.cs-facts dd { margin: .25em 0 0; }
 .cs-facts a { text-decoration: underline; text-decoration-thickness: 1px; text-underline-offset: .15em; }
 .cs-bar { display: inline-flex; align-items: center; gap: .5em; margin-bottom: calc(2 * var(--ty-u)); }
-@media (min-width: 701px) { .cs-bar, .cs-toc { display: none; } }
+@media (min-width: 701px) { .cs-bar, .cs-toc, .cs-top:not(:has(.cs-hero)) { display: none; } }
 .cs-toc { margin-top: calc(2 * var(--ty-u)); }
-
-.cs-hero figcaption { padding: 0 var(--cs-pad); }
-.cs-hero.is-framed { padding: calc(2 * var(--ty-u)) var(--cs-pad) 0; }
-.cs-hero.is-framed figcaption { padding: 0; }
 .cs-opening-hold { height: min(var(--cs-vh, 100dvh), 75cqw); background: #000; }
 
 .cs-body { padding-bottom: calc(8 * var(--ty-u)); }
-.cs-section { margin-top: calc(8 * var(--ty-u)); scroll-margin-top: calc(2 * var(--ty-u)); }
+.cs-section { margin-top: calc(3 * var(--ty-u)); scroll-margin-top: calc(2 * var(--ty-u)); }
 .cs-section:first-of-type { margin-top: calc(4 * var(--ty-u)); }
 .cs-note { grid-column: 1 / span 2; padding-top: .5em; }
 .cs-main { grid-column: 3 / span 8; min-width: 0; --cs-bleed: calc((100% - 7 * var(--ty-u)) / 4 + 2 * var(--ty-u) + var(--cs-pad)); }
-.cs-main > * + * { margin-top: calc(2 * var(--ty-u)); }
+.cs-main > * + * { margin-top: calc(1.5 * var(--ty-u)); }
+.cs-main > .cs-wide { margin-inline: calc(-1 * ((100% - 7 * var(--ty-u)) / 8 + var(--ty-u))); }
+.cs-main > .cs-wide + .cs-wide { margin-top: calc(.5 * var(--ty-u)); }
 .cs-text > :first-child { margin-top: 0; }
 .cs-text > :last-child { margin-bottom: 0; }
 .cs-text h2, .cs-text h3 { font: inherit; letter-spacing: inherit; }
+.cs-text h2 { color: var(--ty-blue); }
 .cs-text h3 { margin: var(--ty-u) 0 0; }
 .cs-list { list-style: none; margin: var(--ty-u) 0; padding: 0; display: grid; gap: calc(.5 * var(--ty-u)); counter-reset: cs-li; color: var(--ty-dim); }
 .cs-list li { display: grid; grid-template-columns: 2.2em minmax(0, 1fr); }
@@ -147,18 +151,16 @@ const CSS = `
 .cs-quote cite { display: block; margin-top: calc(.5 * var(--ty-u)); font-style: normal; }
 @container (max-width: 700px) {
   .cs-intro, .cs-facts, .cs-note, .cs-main { grid-column: 1 / -1; }
-  .cs-facts { margin-top: calc(2 * var(--ty-u)); }
+  .cs-hero, .cs-main > .cs-wide { margin-inline: 0; }
   .cs-note { padding: 0 0 var(--ty-u); }
   .cs-main { --cs-bleed: var(--cs-pad); }
 }
 
-.cs-figs { display: grid; grid-template-columns: repeat(auto-fit, minmax(min(100%, 220px), 1fr)); gap: var(--ty-u); align-items: start; }
+.cs-figs { display: grid; grid-template-columns: repeat(auto-fit, minmax(min(100%, 220px), 1fr)); gap: calc(.5 * var(--ty-u)); align-items: start; }
 .cs-figs.is-tall { grid-template-columns: repeat(auto-fit, minmax(min(100%, 160px), 1fr)); }
-.cs-media { position: relative; width: 100%; overflow: hidden; background: ${GREY}; }
+.cs-media { position: relative; width: 100%; overflow: hidden; border-radius: calc(.5 * var(--ty-u)); background: ${GREY}; }
 .cs-media img, .cs-media video { display: block; width: 100%; height: 100%; object-fit: cover; }
 .cs-media video { background: #000; }
-.cs-cap { margin-top: calc(.5 * var(--ty-u)); }
-.cs-cap::before { counter-increment: cs-fig; content: counter(cs-fig, decimal-leading-zero) "\\2002"; font-family: ${MONO}; }
 .cs-ph { display: grid; align-content: end; padding: calc(.75 * var(--ty-u)); outline: 1px dashed rgba(43, 39, 34, .28); outline-offset: -1px; }
 
 .cs-tl-months, .cs-tl-row { display: grid; grid-template-columns: minmax(96px, 1fr) 3fr; column-gap: var(--ty-u); align-items: center; }
@@ -169,12 +171,11 @@ const CSS = `
 .cs-tl-bar { position: absolute; top: 0; bottom: 0; background: var(--ty-blue); }
 .cs-tl-note { margin-top: var(--ty-u); }
 
-.cs-carousel-row { display: flex; gap: var(--ty-u); align-items: flex-start; width: calc(100% + var(--cs-bleed)); padding-right: var(--cs-pad); overflow-x: auto; scroll-snap-type: x proximity; scrollbar-width: none; cursor: grab; touch-action: pan-y; }
+.cs-carousel-row { display: flex; gap: calc(.5 * var(--ty-u)); align-items: flex-start; width: calc(100% + var(--cs-bleed)); padding-right: var(--cs-pad); overflow-x: auto; scroll-snap-type: x proximity; scrollbar-width: none; cursor: grab; touch-action: pan-y; }
 .cs-carousel-row::-webkit-scrollbar { display: none; }
 .cs-carousel-row.is-dragging { cursor: grabbing; scroll-snap-type: none; }
 .cs-carousel-row.is-dragging * { pointer-events: none; }
 .cs-carousel-row > * { flex: none; width: min(360px, 78%); scroll-snap-align: start; }
-.cs-carousel-hint { display: flex; align-items: center; gap: .5em; margin-top: calc(.5 * var(--ty-u)); }
 
 .cs-foot { padding-bottom: calc(6 * var(--ty-u)); }
 .cs-home { display: inline-flex; align-items: center; gap: .5em; margin-top: calc(4 * var(--ty-u)); }
@@ -191,10 +192,6 @@ const isText = (b: Block): b is TextBlock =>
   b.type === "lede" ||
   b.type === "list" ||
   b.type === "quote";
-
-/** Media with a frame of its own keeps the page's margin around it. */
-const isFramed = (f: Figure) =>
-  f.kind === "demo" || (f.kind === "video" && f.mode === "film");
 
 export function CaseStudy({
   project,
@@ -238,13 +235,8 @@ export function CaseStudy({
       {rail &&
         createPortal(<ContentsGoo stops={stops} scroller={scroller} />, rail)}
 
-      <header
-        className={
-          Opening ? "ty-ground cs-head" : "ty-ground cs-head is-screen"
-        }
-        data-ground={Opening ? undefined : "blue"}
-      >
-        <div>
+      {(home || !Opening) && (
+        <div className="cs-top">
           {home && (
             <nav className="ty-small" aria-label="Site">
               <a
@@ -257,52 +249,50 @@ export function CaseStudy({
               </a>
             </nav>
           )}
-          <Reveal gate="mount">
-            <FitTitle>{project.title}</FitTitle>
-          </Reveal>
+          {/* A project's own opening stands in for the hero. */}
+          {!Opening && (
+            <Reveal gate="mount" className="cs-hero">
+              <FigureView figure={project.hero} />
+            </Reveal>
+          )}
         </div>
-        <div className="ty-grid">
-          <Reveal gate="mount" delay={BEAT} className="ty-read cs-intro">
-            <p>{project.tagline}</p>
-            <p className="ty-dim">{project.summary}</p>
-          </Reveal>
-          <Reveal
-            as="dl"
-            gate="mount"
-            delay={2 * BEAT}
-            className="ty-small ty-facts cs-facts"
-          >
-            {project.meta.map((m) => (
-              <Fragment key={m.label}>
-                <dt>{m.label}</dt>
-                <dd>
-                  {m.href ? (
-                    <a
-                      href={m.href}
-                      target="_blank"
-                      rel="noreferrer"
-                      data-cursor-label="open"
-                    >
-                      {m.value}
-                    </a>
-                  ) : (
-                    m.value
-                  )}
-                </dd>
-              </Fragment>
-            ))}
-          </Reveal>
-        </div>
-      </header>
-
-      {/* A project's own opening stands in for the hero. */}
-      {!Opening && (
-        <Reveal
-          className={isFramed(project.hero) ? "cs-hero is-framed" : "cs-hero"}
-        >
-          <FigureView figure={project.hero} />
-        </Reveal>
       )}
+
+      <header className="ty-ground ty-grid cs-head">
+        <Reveal gate="mount" delay={BEAT} className="cs-intro">
+          <h1 className="cs-title">
+            {project.title}{" "}
+            <span className="ty-dim">— {project.tagline}</span>
+          </h1>
+          <p className="ty-read ty-dim">{project.summary}</p>
+        </Reveal>
+        <Reveal
+          as="dl"
+          gate="mount"
+          delay={2 * BEAT}
+          className="ty-small cs-facts"
+        >
+          {project.meta.map((m) => (
+            <div key={m.label}>
+              <dt>{m.label}</dt>
+              <dd>
+                {m.href ? (
+                  <a
+                    href={m.href}
+                    target="_blank"
+                    rel="noreferrer"
+                    data-cursor-label="open"
+                  >
+                    {m.value}
+                  </a>
+                ) : (
+                  m.value
+                )}
+              </dd>
+            </div>
+          ))}
+        </Reveal>
+      </header>
 
       <div className="ty-ground cs-body">
         {project.contents && (
@@ -440,7 +430,7 @@ function MediaView({ block }: { block: Exclude<Block, TextBlock> }) {
   switch (block.type) {
     case "figure":
       return (
-        <Reveal>
+        <Reveal className="cs-wide">
           <FigureView figure={block.figure} />
         </Reveal>
       );
@@ -449,7 +439,7 @@ function MediaView({ block }: { block: Exclude<Block, TextBlock> }) {
         (f) => f.kind !== "demo" && f.aspect < 1,
       );
       return (
-        <div className={tall ? "cs-figs is-tall" : "cs-figs"}>
+        <div className={tall ? "cs-wide cs-figs is-tall" : "cs-wide cs-figs"}>
           {block.figures.map((f, i) => (
             <Reveal key={i} delay={i * BEAT}>
               <FigureView figure={f} />
@@ -494,7 +484,7 @@ function MediaView({ block }: { block: Exclude<Block, TextBlock> }) {
       );
     }
     case "carousel":
-      return <Carousel figures={block.figures} hint={block.hint} />;
+      return <Carousel figures={block.figures} />;
   }
 }
 
@@ -503,7 +493,7 @@ function MediaView({ block }: { block: Exclude<Block, TextBlock> }) {
  * with snapping, plus the pointer: press and pull to scroll, so a mouse
  * can do what a trackpad does. A pull swallows the click it ends on.
  */
-function Carousel({ figures, hint }: { figures: Figure[]; hint?: string }) {
+function Carousel({ figures }: { figures: Figure[] }) {
   const row = useRef<HTMLDivElement>(null);
   const drag = useRef<{ x: number; left: number; moved: boolean } | null>(null);
   const [dragging, setDragging] = useState(false);
@@ -554,12 +544,6 @@ function Carousel({ figures, hint }: { figures: Figure[]; hint?: string }) {
           </Reveal>
         ))}
       </div>
-      {hint && (
-        <p className="ty-small ty-dim cs-carousel-hint">
-          {hint}
-          <Arrow />
-        </p>
-      )}
     </div>
   );
 }
@@ -568,9 +552,6 @@ function Carousel({ figures, hint }: { figures: Figure[]; hint?: string }) {
 const AWAITS = { photo: "Photo", video: "Video", link: "Link" } as const;
 
 function FigureView({ figure }: { figure: Figure }) {
-  const cap = figure.caption && (
-    <figcaption className="ty-small ty-dim cs-cap">{figure.caption}</figcaption>
-  );
   switch (figure.kind) {
     case "placeholder":
       return (
@@ -585,7 +566,6 @@ function FigureView({ figure }: { figure: Figure }) {
               {AWAITS[figure.awaits ?? "photo"]} needed: {figure.need}
             </p>
           </div>
-          {cap}
         </figure>
       );
     case "image":
@@ -597,7 +577,6 @@ function FigureView({ figure }: { figure: Figure }) {
             {/* eslint-disable-next-line @next/next/no-img-element */}
             <img src={asset(figure.src)} alt={figure.alt} />
           </div>
-          {cap}
         </figure>
       );
     case "video":
@@ -633,7 +612,6 @@ function FigureView({ figure }: { figure: Figure }) {
               />
             </div>
           )}
-          {cap}
         </figure>
       );
     case "demo":
@@ -646,7 +624,6 @@ function FigureView({ figure }: { figure: Figure }) {
             query={figure.query}
             autoload
           />
-          {cap}
         </figure>
       );
   }

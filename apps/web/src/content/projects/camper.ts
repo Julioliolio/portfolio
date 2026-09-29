@@ -19,6 +19,8 @@ export const camper: Project = {
       value: "Concept, art direction, AI image and video generation, edit",
     },
     { label: "Role", value: "All of it" },
+    // Draft: only Flora is from the copy; Julio to correct.
+    { label: "Tools", value: "Flora, After Effects, Premiere" },
     { label: "Length", value: "60 seconds" },
   ],
   hero: {
