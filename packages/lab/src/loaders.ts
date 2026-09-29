@@ -25,7 +25,6 @@ export const loaders = {
   paper: () => import("./pieces/paper"),
   sheet: () => import("./pieces/sheet"),
   ink: () => import("./pieces/ink"),
-  window: () => import("./pieces/window"),
   "ransom-note": () => import("./pieces/ransom-note"),
   type: () => import("./pieces/type"),
   contents: () => import("./pieces/contents"),

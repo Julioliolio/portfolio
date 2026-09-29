@@ -1,228 +1,159 @@
 "use client";
 
-import { useState, type PointerEvent as ReactPointerEvent } from "react";
-import { spring, springEasing } from "./spring";
+import { useRef, type PointerEvent } from "react";
+import { spring } from "./spring";
 import { BLUE } from "./style";
 
 /**
- * A spring to look at and to pull: the curve of one of the site's
- * springs (see spring.ts) — where it is against time, the mark it
- * settles on, the ms it takes — drawn small enough for a bench panel.
- * Drag on it: across for the period (the swing's length), up for the
- * bounce (how far past the mark it goes). Play runs a dot along the
- * bar below it on the very easing the site uses (linear()), so what
- * the graph says can be felt.
+ * A spring's curve for a bench — how far along it is (up) against time
+ * (across), the dashed line where it rests, the blue tick where it has
+ * settled — with a dot on its peak to drag: up and down is how far past
+ * its place it runs (the bounce), across is when it gets there (the
+ * swing). The spring is spring.ts's. The lines are the panel's own ink
+ * (currentColor), so it reads on any bench.
  */
 
-const W = 280;
-const H = 96;
-const PAD = { l: 6, r: 6, t: 10, b: 6 };
-/** The graph shows this much room above the mark, in units of the
- *  move: a bounce of 0.8 overshoots by about a third. */
-const HEADROOM = 0.5;
+const GRAPH_CSS = `
+.sg-graph { display: grid; gap: 4px; }
+.sg-graph svg { display: block; width: 100%; height: auto; border-radius: 8px; background: rgba(128, 128, 128, .08); cursor: crosshair; touch-action: none; user-select: none; }
+.sg-grid { stroke: currentColor; stroke-opacity: .1; stroke-width: 1; }
+.sg-rest { stroke: currentColor; stroke-opacity: .4; stroke-width: 1; stroke-dasharray: 3 3; }
+.sg-settle { stroke: ${BLUE}; stroke-width: 1.5; }
+.sg-curve { fill: none; stroke: currentColor; stroke-width: 1.75; stroke-linejoin: round; }
+.sg-handle { fill: ${BLUE}; stroke: #faf9f6; stroke-width: 2; cursor: grab; }
+.sg-tick { font-size: 8px; fill: currentColor; fill-opacity: .5; }
+.sg-note { font-size: 11px; opacity: .65; }
+`;
 
-const PERIOD = { min: 150, max: 1400 };
-const BOUNCE = { min: 0, max: 0.8 };
-const clamp = (v: number, lo: number, hi: number) =>
-  Math.min(hi, Math.max(lo, v));
+/** The graph's box and scales: time across (0 to GRAPH_MS), how far
+ *  along (0 the start, 1 the mark, up to GRAPH_TOP). */
+const GW = 292;
+const GH = 150;
+const PAD = 10;
+const GRAPH_MS = 1600;
+const GRAPH_TOP = 1.6;
+const GRAPH_BOTTOM = -0.08;
+const gx = (ms: number) => PAD + (ms / GRAPH_MS) * (GW - 2 * PAD);
+const gy = (v: number) =>
+  PAD + ((GRAPH_TOP - v) / (GRAPH_TOP - GRAPH_BOTTOM)) * (GH - 2 * PAD);
+
+/** Where the handle sits: on the curve's first peak; with no bounce, at
+ *  half the period on the line of rest. */
+function peakOf(period: number, bounce: number) {
+  const z = 1 - bounce;
+  if (bounce < 0.01) return { ms: period / 2, v: 1 };
+  const ms = period / (2 * Math.sqrt(1 - z * z));
+  return { ms, v: 1 + Math.exp((-z * Math.PI) / Math.sqrt(1 - z * z)) };
+}
 
 export function SpringGraph({
   label,
   period,
   bounce,
   onChange,
-  accent = BLUE,
 }: {
-  label: string;
+  /** What the spring moves, over the graph — for a bench with more than
+   *  one. */
+  label?: string;
   period: number;
   bounce: number;
-  onChange: (next: { period: number; bounce: number }) => void;
-  /** The curve's colour; the rest is the panel's own ink. */
-  accent?: string;
+  /** Called with the new bounce and period (ms) as the peak is dragged. */
+  onChange: (next: { bounce: number; period: number }) => void;
 }) {
+  const svg = useRef<SVGSVGElement>(null);
   const { at, settle } = spring(period, bounce);
-  const { easing } = springEasing(period, bounce);
-  const x = (ms: number) => PAD.l + (ms / settle) * (W - PAD.l - PAD.r);
-  const y = (v: number) =>
-    PAD.t + (1 + HEADROOM - v) * ((H - PAD.t - PAD.b) / (1 + HEADROOM));
-  const pts: string[] = [];
-  for (let i = 0; i <= 120; i++) {
-    const ms = (settle * i) / 120;
-    pts.push(`${x(ms).toFixed(1)},${y(at(ms)).toFixed(1)}`);
-  }
-  // The furthest past the mark, and when.
-  let peak = 1;
-  let peakAt = settle;
-  for (let ms = 0; ms <= settle; ms += 4) {
-    const v = at(ms);
-    if (v > peak) {
-      peak = v;
-      peakAt = ms;
+  const peak = peakOf(period, bounce);
+  let d = "";
+  for (let ms = 0; ms <= GRAPH_MS; ms += 10)
+    d += `${ms ? "L" : "M"}${gx(ms).toFixed(1)} ${gy(at(ms)).toFixed(1)}`;
+
+  function drag(e: PointerEvent<SVGSVGElement>) {
+    if (!(e.buttons & 1) || !svg.current) return;
+    const r = svg.current.getBoundingClientRect();
+    const x = ((e.clientX - r.left) / r.width) * GW;
+    const y = ((e.clientY - r.top) / r.height) * GH;
+    const ms = Math.max(
+      30,
+      Math.min(GRAPH_MS / 2, ((x - PAD) / (GW - 2 * PAD)) * GRAPH_MS),
+    );
+    const v =
+      GRAPH_TOP - ((y - PAD) / (GH - 2 * PAD)) * (GRAPH_TOP - GRAPH_BOTTOM);
+    // How far past 1 the peak is → the damping ratio → the bounce.
+    const over = Math.min(0.55, Math.max(0, v - 1));
+    let next = 0;
+    if (over > 0.002) {
+      const l = Math.log(over);
+      next = Math.min(0.8, 1 - -l / Math.sqrt(Math.PI ** 2 + l * l));
     }
+    // When the peak is → the period.
+    const z = 1 - next;
+    const p = next < 0.01 ? ms * 2 : ms * 2 * Math.sqrt(1 - z * z);
+    onChange({
+      bounce: Math.round(next * 100) / 100,
+      period: Math.round(Math.min(1200, Math.max(90, p)) / 5) * 5,
+    });
   }
-
-  // The drag: the values as they were when it started, and the pointer.
-  function onDown(ev: ReactPointerEvent<SVGSVGElement>) {
-    if (ev.button !== 0) return;
-    ev.preventDefault();
-    const start = { x: ev.clientX, y: ev.clientY, period, bounce };
-    const move = (m: PointerEvent) => {
-      const dx = m.clientX - start.x;
-      const dy = m.clientY - start.y;
-      onChange({
-        period:
-          Math.round(
-            clamp(start.period + dx * 4, PERIOD.min, PERIOD.max) / 10,
-          ) * 10,
-        bounce:
-          Math.round(
-            clamp(start.bounce - dy * 0.005, BOUNCE.min, BOUNCE.max) * 50,
-          ) / 50,
-      });
-    };
-    const up = () => {
-      window.removeEventListener("pointermove", move);
-      window.removeEventListener("pointerup", up);
-      window.removeEventListener("pointercancel", up);
-    };
-    window.addEventListener("pointermove", move);
-    window.addEventListener("pointerup", up);
-    window.addEventListener("pointercancel", up);
-  }
-
-  // Play: the dot goes to the other end on the spring's own easing.
-  const [end, setEnd] = useState(false);
 
   return (
-    <div style={{ display: "grid", gap: 4 }}>
-      <div
-        style={{
-          display: "flex",
-          justifyContent: "space-between",
-          alignItems: "baseline",
-          gap: 8,
-          fontSize: 12,
-        }}
-      >
-        <span>{label}</span>
-        <span
-          style={{
-            fontFamily: "ui-monospace, SFMono-Regular, Menlo, monospace",
-            fontSize: 11,
-            opacity: 0.75,
-          }}
-        >
-          {period}ms · {bounce} · settles {settle}ms
-          {peak > 1.005 ? ` · +${Math.round((peak - 1) * 100)}%` : ""}
-        </span>
-      </div>
+    <div className="sg-graph">
+      <style>{GRAPH_CSS}</style>
+      {label && <div style={{ fontSize: 12 }}>{label}</div>}
       <svg
-        viewBox={`0 0 ${W} ${H}`}
-        width="100%"
-        style={{
-          display: "block",
-          height: "auto",
-          borderRadius: 8,
-          background: "rgba(128, 128, 128, .08)",
-          border: "1px solid rgba(128, 128, 128, .3)",
-          cursor: "move",
-          touchAction: "none",
-          userSelect: "none",
+        ref={svg}
+        viewBox={`0 0 ${GW} ${GH}`}
+        aria-label={`${label ?? "Spring"}: drag the dot, up for the bounce, across for the swing`}
+        onPointerDown={(e) => {
+          e.currentTarget.setPointerCapture(e.pointerId);
+          drag(e);
         }}
-        onPointerDown={onDown}
-        aria-label={`${label}: drag across for the period, up for the bounce`}
+        onPointerMove={drag}
       >
-        {/* The mark, the floor, the peak. */}
+        {[0, 400, 800, 1200, 1600].map((ms) => (
+          <g key={ms}>
+            <line
+              x1={gx(ms)}
+              x2={gx(ms)}
+              y1={PAD}
+              y2={GH - PAD}
+              className="sg-grid"
+            />
+            <text x={gx(ms) + 3} y={GH - PAD - 3} className="sg-tick">
+              {ms}
+            </text>
+          </g>
+        ))}
         <line
-          x1={PAD.l}
-          x2={W - PAD.r}
-          y1={y(1)}
-          y2={y(1)}
-          stroke="currentColor"
-          strokeOpacity={0.45}
-          strokeDasharray="3 3"
+          x1={PAD}
+          x2={GW - PAD}
+          y1={gy(0)}
+          y2={gy(0)}
+          className="sg-grid"
         />
         <line
-          x1={PAD.l}
-          x2={W - PAD.r}
-          y1={y(0)}
-          y2={y(0)}
-          stroke="currentColor"
-          strokeOpacity={0.2}
+          x1={PAD}
+          x2={GW - PAD}
+          y1={gy(1)}
+          y2={gy(1)}
+          className="sg-rest"
         />
-        {peak > 1.005 && (
-          <line
-            x1={x(peakAt)}
-            x2={x(peakAt)}
-            y1={y(1)}
-            y2={y(peak)}
-            stroke={accent}
-            strokeOpacity={0.5}
-          />
-        )}
-        {/* One period, ticked, so the swing can be read. */}
-        {period < settle && (
-          <line
-            x1={x(period)}
-            x2={x(period)}
-            y1={y(0) - 4}
-            y2={y(0) + 4}
-            stroke="currentColor"
-            strokeOpacity={0.5}
-          />
-        )}
-        <polyline
-          points={pts.join(" ")}
-          fill="none"
-          stroke={accent}
-          strokeWidth={2}
-          strokeLinejoin="round"
-          strokeLinecap="round"
+        <line
+          x1={gx(settle)}
+          x2={gx(settle)}
+          y1={gy(1) - 6}
+          y2={gy(1) + 6}
+          className="sg-settle"
+        />
+        <path d={d} className="sg-curve" />
+        <circle
+          cx={gx(Math.min(peak.ms, GRAPH_MS))}
+          cy={gy(peak.v)}
+          r={6}
+          className="sg-handle"
         />
       </svg>
-      {/* The bar: the dot runs on the site's easing when played. */}
-      <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
-        <button
-          type="button"
-          onClick={() => setEnd((e) => !e)}
-          style={{
-            font: "inherit",
-            fontSize: 11,
-            color: "inherit",
-            background: "rgba(128, 128, 128, .12)",
-            border: "1px solid rgba(128, 128, 128, .35)",
-            borderRadius: 6,
-            padding: "2px 8px",
-            cursor: "pointer",
-          }}
-        >
-          Play
-        </button>
-        <div
-          style={{
-            position: "relative",
-            flex: 1,
-            height: 14,
-            borderRadius: 7,
-            background: "rgba(128, 128, 128, .12)",
-            containerType: "inline-size",
-          }}
-        >
-          <div
-            style={{
-              position: "absolute",
-              top: 2,
-              left: 2,
-              width: 10,
-              height: 10,
-              borderRadius: 5,
-              background: accent,
-              // To the bar's far end (its width less the dot's own).
-              translate: end ? "calc(100cqw - 14px) 0" : "0 0",
-              transition: `translate ${settle}ms ${easing}`,
-            }}
-          />
-        </div>
+      <div className="sg-note">
+        bounce {bounce.toFixed(2)} · swing {period}ms · settles{" "}
+        {Math.round(settle)}ms
       </div>
     </div>
   );

@@ -247,7 +247,7 @@ ${wordsCss(t)}
   .tape-open .tape-word, .tape-close .tape-word { animation-duration: 1ms; }
   .tape-idle { animation: none; }
   .tape-hit { transition: none !important; }
-  .tape-exit, .tape-open *, .tape-close * { animation-duration: 1ms; }
+  .tape-exit, .tape-open, .tape-close, .tape-open *, .tape-close * { animation-duration: 1ms; }
 }
 `;
 };

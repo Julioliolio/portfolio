@@ -17,7 +17,7 @@ import {
   useCueTuning,
   type CueTuning,
 } from "../../cue";
-import { SpringGraph } from "./graph";
+import { SpringGraph } from "../../spring-graph";
 import { FramerBench } from "./framer";
 import { HomeScreen } from "./home";
 import { PillBench } from "./pill";

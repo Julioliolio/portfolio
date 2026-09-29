@@ -15,7 +15,6 @@ import {
 } from "react";
 import { loaders } from "./loaders";
 import { loadSounds, playLater } from "./play-later";
-import { BLUE } from "./style";
 import {
   clipTimeNow,
   type WindowPreview,
@@ -83,9 +82,9 @@ import {
  * box is edge to edge and the slot is never filled.
  *
  * `WindowTuning` (window-tuning.ts, shared with the landing so the
- * signs move on the same clock) is the set of knobs; /lab/paper,
- * /lab/sheet and /lab/window are its benches, and <ProjectWindow> regenerates its stylesheet on every
- * change. The window is only the chrome: the page inside is the
+ * signs move on the same clock) is the set of knobs; /lab/paper and
+ * /lab/sheet are its benches, and <ProjectWindow> regenerates its
+ * stylesheet on every change. The window is only the chrome: the page inside is the
  * caller's (`children`), which can find the box's scroller through
  * `useWindowScroller()` for anything scroll-driven.
  */
@@ -95,8 +94,6 @@ import {
 /** From this viewport width there is a rail and a margin; under it the
  *  box is the whole screen. */
 const RAIL_FROM = 701;
-/** A hairline round the clip: the box starts with it on the grow. */
-const CLIP_EDGE = `inset 0 0 0 1px ${BLUE}`;
 /** The sheet in the air, mid-lift: a wide soft shadow, the same six
  *  layers in the same order as the paper's at rest (paperShadow(), the
  *  print's and the sheet's alike), so the move interpolates layer by
@@ -306,7 +303,7 @@ function windowCss(t: WindowTuning): string {
     .filter(Boolean)
     .join(", ");
   return `
-.pw { --pw-rail: ${n(t.rail)}vw; --pw-inset: 24px; --pw-foot: 0px; --pw-margin: 0px; --pw-over: 0px; --pw-corner: 0px; --pw-x: 0px; --pw-y: 0px; --pw-w: 100vw; --pw-h: 100dvh; position: fixed; inset: 0; z-index: 80; }
+.pw { --pw-margin: 0px; --pw-over: 0px; --pw-corner: 0px; --pw-x: 0px; --pw-y: 0px; --pw-w: 100vw; --pw-h: 100dvh; position: fixed; inset: 0; z-index: 80; }
 .pw-box { position: absolute; left: var(--pw-x); top: var(--pw-y); width: var(--pw-w); height: var(--pw-h); overflow: hidden; isolation: isolate; border-radius: var(--pw-corner); background: ${paper}; box-shadow: ${paperShadow(t)}; transform: rotate(${n(t.tilt, 2)}deg); transform-origin: 50% 50%; }
 .pw-box:focus { outline: none; }
 .pw-under { display: none; position: absolute; left: var(--pw-x); top: var(--pw-y); width: var(--pw-w); height: var(--pw-h); pointer-events: none; transform: rotate(${n(t.tilt, 2)}deg); transform-origin: 50% 50%; filter: drop-shadow(${n(contact.x, 1)}px ${n(contact.y, 1)}px ${n(t.contactBlur / 2, 2)}px rgba(0, 0, 0, ${n(t.contactAlpha)})) drop-shadow(${n(soft.x, 1)}px ${n(soft.y, 1)}px ${n(t.softBlur / 2, 2)}px rgba(0, 0, 0, ${n(t.softAlpha)})) drop-shadow(0 1px 0 rgba(43, 39, 34, ${n(t.lip)})); }
@@ -356,7 +353,7 @@ ${
   .pw-rail-slot:empty { display: none; }
 }
 .pw.is-leaving .pw-scroll { opacity: 0; transition: opacity ${reveal}ms ${outEase}; }
-.pw.is-leaving .pw-rail-in { pointer-events: none; }
+.pw.is-leaving .pw-rail-in > * { pointer-events: none; }
 @media (prefers-reduced-motion: reduce) {
   .pw-scroll, .pw.is-in .pw-scroll, .pw.is-leaving .pw-scroll, .pw-rail-in, .pw-clip, .pw.is-in .pw-clip, .pw.is-leaving .pw-clip, .pw-lift, .pw.is-in .pw-lift, .pw.is-leaving .pw-lift, .pw-light, .pw.is-in .pw-light, .pw.is-leaving .pw-light, .pw.is-leaving .pw-rail-in { transition-duration: 1ms; transition-delay: 0ms; }
 }
@@ -469,55 +466,51 @@ function move(
   const cs = getComputedStyle(box);
   const own = place(box);
   const r = from.rect;
+  // Either way the box starts as the print — the same paper, its
+  // corners and its shadow, turned by its lean, the clip inset by its
+  // frame — and ends as the sheet.
+  const inset = from.inset ?? { top: 0, right: 0, bottom: 0, left: 0 };
+  const print: Keyframe = {
+    transform: `rotate(${from.tilt ?? 0}deg)`,
+    borderRadius: `${t.corner}px`,
+    boxShadow: paperShadow(t),
+  };
+  const sheet: Keyframe = {
+    transform: `rotate(${t.tilt}deg)`,
+    borderRadius: cs.borderRadius,
+    boxShadow: paperShadow(t),
+  };
+  const framed: Keyframe = {
+    left: `${inset.left}px`,
+    top: `${inset.top}px`,
+    width: `calc(100% - ${inset.left + inset.right}px)`,
+    height: `calc(100% - ${inset.top + inset.bottom}px)`,
+  };
   if (lift) {
-    const inset = from.inset ?? { top: 0, right: 0, bottom: 0, left: 0 };
     const start: Keyframe = {
+      ...print,
       left: `${r.x}px`,
       top: `${r.y}px`,
       width: `${r.w}px`,
       height: `${r.h}px`,
-      transform: `rotate(${from.tilt ?? 0}deg)`,
-      // The print is the same paper: its corners and its shadow.
-      borderRadius: `${t.corner}px`,
-      boxShadow: paperShadow(t),
     };
     const mid: Keyframe = { offset: 0.45, boxShadow: LIFT_SHADOW };
     const end: Keyframe = {
+      ...sheet,
       left: `${own.x}px`,
       top: `${own.y}px`,
       width: `${own.w}px`,
       height: `${own.h}px`,
-      transform: `rotate(${t.tilt}deg)`,
-      borderRadius: cs.borderRadius,
-      boxShadow: paperShadow(t),
     };
     const list = [box.animate([start, mid, end], timing(LIFT_EASE))];
-    if (clip) {
-      const framed: Keyframe = {
-        left: `${inset.left}px`,
-        top: `${inset.top}px`,
-        width: `calc(100% - ${inset.left + inset.right}px)`,
-        height: `calc(100% - ${inset.top + inset.bottom}px)`,
-      };
-      list.push(clip.animate([framed, CLIP_FULL], timing(LIFT_EASE)));
-    }
+    if (clip) list.push(clip.animate([framed, CLIP_FULL], timing(LIFT_EASE)));
     return together(list);
   }
-  // Each axis as [at the clip, at the box's place]; the skin rides on
-  // the width.
+  // Each axis as [at the print, at the box's place]; the skin, the lean
+  // and the clip's frame ride on the width.
   const x: Keyframe[] = [
-    {
-      left: `${r.x}px`,
-      width: `${r.w}px`,
-      borderRadius: "0px",
-      boxShadow: CLIP_EDGE,
-    },
-    {
-      left: `${own.x}px`,
-      width: `${own.w}px`,
-      borderRadius: cs.borderRadius,
-      boxShadow: paperShadow(t),
-    },
+    { ...print, left: `${r.x}px`, width: `${r.w}px` },
+    { ...sheet, left: `${own.x}px`, width: `${own.w}px` },
   ];
   const y: Keyframe[] = [
     { top: `${r.y}px`, height: `${r.h}px` },
@@ -525,10 +518,13 @@ function move(
   ];
   // In, the width at 0 and the height after `lag`; backwards, the
   // height at 0 and the width after `lag`.
-  return together([
-    box.animate(x, timing(WINDOW_EASE, open ? 0 : wait)),
+  const across = timing(WINDOW_EASE, open ? 0 : wait);
+  const list = [
+    box.animate(x, across),
     box.animate(y, timing(WINDOW_EASE, open ? wait : 0)),
-  ]);
+  ];
+  if (clip) list.push(clip.animate([framed, CLIP_FULL], across));
+  return together(list);
 }
 
 // --------------------------------------------------------- the component
@@ -537,11 +533,11 @@ function move(
  *  they follow what it keeps in the rail. */
 export type WindowLayout = {
   /** The rail's width: where the box's left edge is. */
-  rail?: string;
+  rail: string;
   /** The rail's content, from the screen's left edge. */
-  inset?: string;
+  inset: string;
   /** Kept free at the rail's bottom. */
-  foot?: string;
+  foot: string;
 };
 
 type ProjectWindowProps = {
@@ -561,7 +557,7 @@ type ProjectWindowProps = {
   from?: WindowPreview | null;
   /** For the dialog's name: the open project's title. */
   label: string;
-  layout?: WindowLayout;
+  layout: WindowLayout;
   /** Page mode: where the brand plate goes — home. */
   closeHref?: string;
   /** Modal mode: the window asks to close. */
@@ -797,18 +793,19 @@ export function ProjectWindow({
 
   if (!mounted) return null;
 
-  // The cut as drawn this render: off from the commit the shrink
-  // starts in (the effect that clears it runs a frame later).
-  const cut = shrinking ? null : shape;
+  // The cut as drawn this render: only on a box that has landed and is
+  // not yet shrinking — the effect that clears it runs a frame later, so
+  // a reopen would otherwise draw the last landing's cut.
+  const cut = landed && !shrinking ? shape : null;
 
   const close = () => {
     playLater("knock", 1, "click");
     onClose?.();
   };
   const vars = {
-    ...(layout?.rail && { "--pw-rail": layout.rail }),
-    ...(layout?.inset && { "--pw-inset": layout.inset }),
-    ...(layout?.foot && { "--pw-foot": layout.foot }),
+    "--pw-rail": layout.rail,
+    "--pw-inset": layout.inset,
+    "--pw-foot": layout.foot,
     ...(cut && { "--pw-shape": `path("${cut}")` }),
   } as CSSProperties;
   // The margins are the rail's kind of empty: a click on them closes.

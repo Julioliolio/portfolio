@@ -13,7 +13,7 @@ import {
 import { springEasing } from "../../spring";
 import { MEDIUM } from "../../style";
 import { createTuningStore } from "../../tuning-store";
-import { SpringGraph } from "./graph";
+import { SpringGraph } from "../../spring-graph";
 import { HomeScreen } from "./home";
 
 /**

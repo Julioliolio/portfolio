@@ -91,7 +91,7 @@ const pieces = [
     slug: "sign-travel",
     title: "Sign travel",
     description:
-      "The home page cut down to the sign's travel: the two screens, snapped, the sign in its row and the brand plate in its corner — scroll, and the sign leaves for the corner and becomes the plate, seven poses on a spring, on the beat, or squashed by the scroll itself; the feel, the path, each pose's size and place, tuned live.",
+      "The home page cut down to the sign's travel: the two screens, snapped, the sign in its row and the brand plate in its corner — scroll, and the page squashes the sign and slides it into the corner, where it becomes the plate; where it pins, how much squashes, where it cuts to the plate and how it trails the scroll, tuned live.",
   },
   {
     slug: "road-signs",
@@ -116,12 +116,6 @@ const pieces = [
     title: "Ink",
     description:
       "Parked: the type treated as printed on the sheet — the grain thinning the strokes, the edges bleeding, the hand bearing down, the ink soaking in, the impression — each a switch, and whether the photos, films and demos are printed too. Only this page puts it on; the site's sheet is paper alone.",
-  },
-  {
-    slug: "window",
-    title: "Project window",
-    description:
-      "The case study's window beside the signs — the box growing out of a card's clip, the margin round it, the hairline on its edge — tuned live.",
   },
   {
     slug: "ransom-note",

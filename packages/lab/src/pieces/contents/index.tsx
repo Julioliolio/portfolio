@@ -11,7 +11,7 @@ import {
   type Field,
 } from "../../bench";
 import { BLUE } from "../../style";
-import { SpringGraph } from "../cue/graph";
+import { SpringGraph } from "../../spring-graph";
 import {
   Contents,
   resetContentsTuning,

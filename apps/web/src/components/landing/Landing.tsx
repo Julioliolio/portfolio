@@ -21,7 +21,7 @@ import {
   useState,
   type MouseEvent,
 } from "react";
-import type { TravelHandle, TravelPhase } from "@portfolio/lab/sign-travel";
+import type { TravelPhase } from "@portfolio/lab/sign-travel";
 import type { WindowPreview } from "@portfolio/lab/window-preview";
 import { paperCss, useWindowTuning } from "@portfolio/lab/window-tuning";
 import { PRINTS, printPreview } from "@portfolio/lab/prints";
@@ -63,26 +63,15 @@ import { ProjectWindowMount, warmWindow } from "./ProjectWindowMount";
  * letter — the wave, its notes and the bed — as @portfolio/lab/greeting
  * says it, tuned on /lab/greeting.
  *
- * The sign goes with the page: as the projects screen arrives the sign
- * leaves its row for the upper-left corner and becomes the brand plate
- * there — the travel (@portfolio/lab/sign-travel, tuned on
- * /lab/sign-travel). On the site the travel is on the scroll: its layer
+ * The sign goes with the page: as the page scrolls to the projects the
+ * sign leaves its row for the upper-left corner and becomes the brand
+ * plate there — the travel (@portfolio/lab/sign-travel, tuned on
+ * /lab/sign-travel), which follows the scroll both ways. Its layer
  * drives itself from the scroll position and says which of the three
- * the sign is (`onPhase`), and a return by the scroll skips the stamp
- * the words would otherwise call, the line and the cue following as
- * they would one. The plate is the way back up.
- *
- * The bench's other two modes play the travel instead (held cuts, or
- * smooth), on a fixed layer from the sign's box to the plate's, and the
- * two effects below run them: as the hello screen comes back the plate
- * leaves and the sign returns the same way, backwards, landing where
- * the row will have it once the snap has settled; the line and the cue
- * then follow as they would a stamp. `sign` is where it is: on the
- * wall, going, in the corner (the plate, pieces/brand-sign), coming, or
- * off. A page opened on the projects, or a return before the sign had
- * stamped, has no sign to take: the plate drops in on its own. A travel
- * caught by the scroll turning round is cut short and the other way
- * starts from its own ends.
+ * the sign is (`onPhase`); the page keeps the sign's slot and the plate
+ * in step. A return by the scroll skips the stamp the words would
+ * otherwise call, the line and the cue following as they would one.
+ * The plate is the way back up.
  *
  * Every arrival on a screen plays that screen's entrance, with no dead
  * frames: both pieces are mounted once, at load, and stay mounted. An
@@ -135,23 +124,6 @@ const TravelLayer = lazy(() =>
 const IN = 0.4;
 const OUT = 0.2;
 const HELD = 0.6;
-
-/** Resolves once `el` has settled at the top of the viewport (the snap
- *  is done), or after a moment regardless. */
-function settled(el: Element): Promise<void> {
-  return new Promise((resolve) => {
-    const start = performance.now();
-    const check = () => {
-      if (
-        Math.abs(el.getBoundingClientRect().top) < 1 ||
-        performance.now() - start > 700
-      )
-        resolve();
-      else requestAnimationFrame(check);
-    };
-    check();
-  });
-}
 
 /** Words in each speech, for its timers. */
 const HELLO_WORDS = countWords(GREETING_HELLO);
@@ -275,21 +247,18 @@ export function Landing() {
   const [signRuns, setSignRuns] = useState(0);
   const [signSaid, setSignSaid] = useState(0);
   const [said, setSaid] = useState(false);
-  // The sign's travel (see above): where the sign is, its slot in the
-  // row, the plate in the corner, the layer it travels on, and whether
-  // the plate is up — with `runs` counting the times it dropped in on
-  // its own, which is its entrance.
-  const sign = useRef<"off" | "wall" | "going" | "corner" | "coming">("off");
+  // The sign's travel (see above): its slot in the row, the plate in
+  // the corner, whether the sign has left the slot and whether the
+  // plate is up.
   const helloSign = useRef<HTMLDivElement>(null);
   const plateRef = useRef<HTMLAnchorElement>(null);
-  const travel = useRef<TravelHandle>(null);
   const [gone, setGone] = useState(false);
-  const [plate, setPlate] = useState({ shown: false, runs: 0 });
-  // The next words' end must not stamp the sign: it is coming back by
-  // the travel instead.
+  const [plateShown, setPlateShown] = useState(false);
+  // The next words' end must not stamp the sign: it is back by the
+  // scroll instead.
   const skipStamp = useRef(false);
   // Whether the cartel has ever been released (stamped): a sign that
-  // never was cannot come back by travel — it stamps in as on a load.
+  // never was has nothing to come back to — it stamps as on a load.
   const released = useRef(false);
   useEffect(() => {
     if (signRuns > 0) released.current = true;
@@ -344,11 +313,6 @@ export function Landing() {
       },
     );
   }, [ready, screens.hello.runs]);
-  // The travel's frames, decoded once the sign has stamped (its own
-  // frames are in by then), so the first travel never waits.
-  useEffect(() => {
-    if (signSaid > 0) travel.current?.warm();
-  }, [signSaid]);
 
   // On the scroll: the layer says where the sign is; the page keeps
   // its slot and the plate in step. Back by the scroll, the sign is
@@ -357,14 +321,14 @@ export function Landing() {
   const onPhase = (phase: TravelPhase, was: TravelPhase | null) => {
     if (phase === "before") {
       setGone(false);
-      setPlate((p) => ({ ...p, shown: false }));
-      if (was === "during") {
+      setPlateShown(false);
+      if (was === "during" && released.current) {
         skipStamp.current = true;
         setSignSaid((n) => (n === 0 ? 1 : n));
       }
     } else {
       setGone(true);
-      setPlate((p) => ({ ...p, shown: phase === "after" }));
+      setPlateShown(phase === "after");
     }
   };
   const signBox = () => {
@@ -387,87 +351,6 @@ export function Landing() {
     };
   };
 
-  // Down: the projects screen arriving takes the sign with it.
-  useEffect(() => {
-    if (screens.projects.away) return;
-    const layer = travel.current;
-    if (layer?.scrolls()) return;
-    const slot = helloSign.current;
-    const to = plateRef.current;
-    if (sign.current === "coming") {
-      // Turned round mid-way: the plate is simply back.
-      layer?.cancel();
-      sign.current = "corner";
-      setPlate((p) => ({ ...p, shown: true }));
-      return;
-    }
-    if (sign.current !== "wall" || !layer || !slot || !to) {
-      // No sign on the wall to take: the plate drops in on its own.
-      sign.current = "corner";
-      setPlate((p) => ({ shown: true, runs: p.runs + 1 }));
-      return;
-    }
-    sign.current = "going";
-    setGone(true);
-    let live = true;
-    void layer.play(helloSignRect(slot), rectOf(to), "down").then(() => {
-      if (!live) return;
-      sign.current = "corner";
-      setPlate((p) => ({ ...p, shown: true }));
-      layer.cancel();
-    });
-    return () => {
-      live = false;
-    };
-  }, [screens.projects.away]);
-
-  // Up: the hello screen arriving brings the sign back.
-  useEffect(() => {
-    if (screens.hello.away || screens.hello.runs === 0) return;
-    skipStamp.current = false;
-    const layer = travel.current;
-    if (layer?.scrolls()) return;
-    const slot = helloSign.current;
-    const to = plateRef.current;
-    const screen = helloScreen.current;
-    if (sign.current === "going") {
-      // Turned round mid-way: the sign stamps in as on any arrival.
-      layer?.cancel();
-      sign.current = "off";
-      setGone(false);
-      return;
-    }
-    if (sign.current !== "corner" || !layer || !slot || !to || !screen) return;
-    if (!released.current) {
-      // The plate dropped in on a page opened on the projects: the
-      // sign has never stamped, so it does now, and the plate just goes.
-      sign.current = "off";
-      setPlate((p) => ({ ...p, shown: false }));
-      return;
-    }
-    sign.current = "coming";
-    skipStamp.current = true;
-    setPlate((p) => ({ ...p, shown: false }));
-    // Where the sign will be once the snap has settled: its place in
-    // the screen, the screen at the top.
-    const r = helloSignRect(slot);
-    const s = screen.getBoundingClientRect();
-    const dest = { ...r, x: r.x - s.left, y: r.y - s.top };
-    let live = true;
-    void layer
-      .play(dest, rectOf(to), "up")
-      .then(() => (live ? settled(screen) : undefined))
-      .then(() => {
-        if (!live) return;
-        sign.current = "wall";
-        setGone(false);
-        setSignSaid((n) => n + 1);
-        layer.cancel();
-      });
-    return () => {
-      live = false;
-    };
-  }, [screens.hello.away, screens.hello.runs]);
   useEffect(() => {
     if (signSaid === 0) return;
     const m = motionRef.current;
@@ -608,9 +491,19 @@ export function Landing() {
     if (history.state?.pw) history.back();
     else setOpen(null);
   }
+  // Back and Forward measure the print as a click does: the box grows
+  // out of, or shrinks back onto, where it is now.
+  const latest = useRef({ open, measure });
+  useEffect(() => {
+    latest.current = { open, measure };
+  });
   useEffect(() => {
     const onPop = (e: PopStateEvent) => {
-      setOpen((e.state as { pw?: string } | null)?.pw ?? null);
+      const next = (e.state as { pw?: string } | null)?.pw ?? null;
+      const { open: was, measure: measureNow } = latest.current;
+      const slug = next ?? was;
+      if (slug) setFrom((f) => measureNow(slug) ?? f);
+      setOpen(next);
     };
     window.addEventListener("popstate", onPop);
     return () => window.removeEventListener("popstate", onPop);
@@ -687,10 +580,7 @@ export function Landing() {
                 radius="page"
                 placeholder={false}
                 entrance="held"
-                onEntrance={() => {
-                  sign.current = "wall";
-                  setSignSaid((n) => n + 1);
-                }}
+                onEntrance={() => setSignSaid((n) => n + 1)}
                 replay={signRuns}
               />
             </Suspense>
@@ -799,9 +689,8 @@ export function Landing() {
         <BrandSign
           ref={plateRef}
           controls={false}
-          shown={plate.shown}
-          entrance={plate.runs > 0}
-          replay={plate.runs}
+          shown={plateShown}
+          entrance={false}
           href={asset("/")}
           onClick={(e) => {
             if (modified(e)) return;
@@ -814,7 +703,6 @@ export function Landing() {
       </Suspense>
       <Suspense fallback={null}>
         <TravelLayer
-          ref={travel}
           from={signBox}
           to={plateBox}
           onPhase={onPhase}

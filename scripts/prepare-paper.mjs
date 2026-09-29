@@ -34,7 +34,7 @@
  *   node scripts/prepare-paper.mjs
  */
 import { existsSync, mkdirSync, readdirSync, statSync } from "node:fs";
-import { dirname, join } from "node:path";
+import { dirname, join, relative } from "node:path";
 import { fileURLToPath } from "node:url";
 import sharp from "sharp";
 
@@ -285,7 +285,7 @@ async function prepareMat() {
           .join("");
     }
     console.log(
-      `  ${out.replace(ROOT + "/", "")}: ${oi.width}x${oi.height}, ${kb(out)}`,
+      `  ${relative(ROOT, out)}: ${oi.width}x${oi.height}, ${kb(out)}`,
     );
   }
   console.log(`mat: mean colour ${meanHex} (for the first paint)`);

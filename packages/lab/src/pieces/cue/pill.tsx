@@ -14,7 +14,7 @@ import { play } from "../../sound";
 import { springEasing } from "../../spring";
 import { MEDIUM, SETTLE_EASE } from "../../style";
 import { createTuningStore } from "../../tuning-store";
-import { SpringGraph } from "./graph";
+import { SpringGraph } from "../../spring-graph";
 import { HomeScreen } from "./home";
 
 /**
@@ -235,10 +235,8 @@ function Pill({ t, hold }: { t: PillTuning; hold: boolean }) {
     return () => window.clearTimeout(timer);
   }, [state, t.cut]);
   const open = () => {
-    setState((s) => {
-      if (s !== "open") play("tap", 1, { at: "cue" });
-      return "open";
-    });
+    if (state !== "open") play("tap", 1, { at: "cue" });
+    setState("open");
   };
   const close = () => setState((s) => (s === "open" ? "closing" : s));
   const shown = hold ? "open" : state;

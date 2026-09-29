@@ -40,7 +40,7 @@ import {
  * which corner is off the mat and by how much. The knobs write the
  * window store, what the home page and every project page read in
  * this browser until Reset; Reset and "Copy values" cover the paper's
- * knobs alone — the window's clocks are /lab/window's — and the copy
+ * knobs alone — the window's clocks are /lab/paper's — and the copy
  * is the object to paste over the paper's part of WINDOW_DEFAULTS in
  * window-tuning.ts.
  *

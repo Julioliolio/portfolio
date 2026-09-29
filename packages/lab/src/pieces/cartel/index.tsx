@@ -796,7 +796,7 @@ const GLOW_FIELDS: Field<GlowParams>[] = [
   { key: "strength", label: "Strength", min: 0, max: 1, step: 0.05, unit: "" },
   { key: "blur", label: "Blur", min: 0, max: 8, step: 0.25, unit: "%" },
   { key: "boost", label: "Boost", min: 1, max: 2, step: 0.05, unit: "×" },
-  { key: "warmth", label: "Warmth", min: 0, max: 0.6, step: 0.05, unit: "" },
+  { key: "warmth", label: "Warmth", min: 0, max: 1, step: 0.05, unit: "" },
 ];
 
 /** One slider per field, writing the key into a params state. */

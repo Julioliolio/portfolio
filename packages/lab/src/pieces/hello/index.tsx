@@ -133,10 +133,12 @@ const WORDS: Field<HelloTuning>[] = [
   },
 ];
 
-/* The stage, the floating panel, and the panel's tighter take on the
-   shared bench rows: it is 340px wide. */
+/* The stage — bare, so the row stands on the mat as on the landing,
+   the lab page's title out of its way — the floating panel, and the panel's tighter take on the shared bench
+   rows: it is 340px wide. */
 const STAGE_CSS = `
-.hb-stage { position: fixed; inset: 0; z-index: 1; display: grid; place-items: center; background: #faf9f6; color: #171717; overflow: hidden; }
+main > h1 { visibility: hidden; }
+.hb-stage { position: fixed; inset: 0; z-index: 1; display: grid; place-items: center; overflow: hidden; }
 .hb-panel { position: fixed; left: 16px; bottom: 16px; z-index: 2; display: grid; gap: 10px; width: min(340px, calc(100vw - 32px)); max-height: calc(100vh - 32px); overflow: auto; padding: 14px 16px; background: rgba(255, 255, 255, .92); color: #171717; border: 1px solid rgba(23, 23, 23, .12); border-radius: 12px; box-shadow: 0 10px 30px rgba(0, 0, 0, .1); backdrop-filter: blur(8px); }
 .hb-panel .bench-group { gap: 6px; }
 .hb-panel .bench-title { margin-top: 4px; }

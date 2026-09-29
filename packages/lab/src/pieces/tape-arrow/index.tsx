@@ -18,7 +18,7 @@ import {
   useTapeTuning,
   type TapeTuning,
 } from "../../tape";
-import { SpringGraph } from "../cue/graph";
+import { SpringGraph } from "../../spring-graph";
 
 /**
  * The tape arrow bench: the landing's scroll cue as paper tape

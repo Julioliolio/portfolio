@@ -1,10 +1,9 @@
 "use client";
 
-import { Suspense, lazy, useEffect, useRef, useState } from "react";
+import { Suspense, lazy, useRef, useState } from "react";
 import { asset } from "../../asset";
 import {
   BENCH_CSS,
-  Choice,
   CopyValues,
   Group,
   Knobs,
@@ -25,7 +24,6 @@ import {
   resetTravelTuning,
   setTravelTuning,
   useTravelTuning,
-  type TravelHandle,
   type TravelPhase,
   type TravelTuning,
 } from "../../sign-travel";
@@ -35,11 +33,11 @@ import {
  * the two screens, snapped, the hello row with the sign's front photo
  * standing still in it, the second screen bare, the brand plate in
  * its corner — with the travel wired as the landing wires it, so the
- * real scroll plays it: on the way down the sign leaves for the corner
- * as the second screen arrives, on the way up it comes back; on the
- * scroll, the squash follows the page. The knobs float over it: the
- * feel, its spring or its beat, the path, each pose's size and its
- * place along the path. Values write the travel store, so what you set
+ * real scroll plays it: the squash follows the page down to the corner
+ * and back. The knobs float over it: where the sign pins, how soon the
+ * way is done, how much of it squashes, how far it widens, where the
+ * photo cuts to the plate, and how much it trails the scroll. Values
+ * write the travel store, so what you set
  * here is what the landing does — in this browser, until Reset; "Copy
  * values" exports them for TRAVEL_DEFAULTS in
  * packages/lab/src/sign-travel.tsx. Nothing else of the landing is
@@ -49,43 +47,6 @@ import {
 const BrandSign = lazy(() => import("../brand-sign"));
 
 const FRONT = asset("/cartel/julio/front.webp");
-
-/** The landing's thresholds (Landing.tsx): a screen arrives at IN,
- *  leaves below OUT. */
-const IN = 0.4;
-const OUT = 0.2;
-
-const BEAT: Field<TravelTuning>[] = [
-  {
-    key: "fps",
-    label: "Beat",
-    min: 4,
-    max: 24,
-    step: 1,
-    unit: "/s",
-    hint: "cuts a second",
-  },
-];
-
-const SPRING: Field<TravelTuning>[] = [
-  {
-    key: "period",
-    label: "Period",
-    min: 150,
-    max: 1500,
-    step: 10,
-    unit: "ms",
-    hint: "the spring's period: shorter is quicker",
-  },
-  {
-    key: "bounce",
-    label: "Bounce",
-    min: 0,
-    max: 0.9,
-    step: 0.01,
-    hint: "0 settles without passing the plate; more swings past and back",
-  },
-];
 
 const SCROLL: Field<TravelTuning>[] = [
   {
@@ -139,103 +100,6 @@ const SCROLL: Field<TravelTuning>[] = [
   },
 ];
 
-const PATH: Field<TravelTuning>[] = [
-  {
-    key: "rise",
-    label: "Up first",
-    min: 0,
-    max: 0.95,
-    step: 0.05,
-    hint: "the share of the way spent going straight up before going across; 0 is one straight line to the corner",
-  },
-  {
-    key: "arc",
-    label: "Arc",
-    min: -0.4,
-    max: 0.6,
-    step: 0.01,
-    hint: "how far the path bows upward, as a share of the way",
-  },
-  {
-    key: "lean",
-    label: "Lean",
-    min: 0,
-    max: 40,
-    step: 1,
-    unit: "°",
-    hint: "the launch's lean toward the corner",
-  },
-];
-
-const SIZES: Field<TravelTuning>[] = [
-  {
-    key: "sink",
-    label: "Sink",
-    min: 0.3,
-    max: 1.5,
-    step: 0.01,
-    unit: "×",
-    hint: "the anticipation's height, of the sign's",
-  },
-  {
-    key: "launch",
-    label: "Launch",
-    min: 0.3,
-    max: 2,
-    step: 0.01,
-    unit: "×",
-    hint: "the stretch's height, of the sign's",
-  },
-  {
-    key: "smear1",
-    label: "Smear",
-    min: 0.05,
-    max: 1.5,
-    step: 0.01,
-    unit: "×",
-    hint: "the first smear's height, of the sign's",
-  },
-  {
-    key: "smear2",
-    label: "Smear 2",
-    min: 0.05,
-    max: 1.5,
-    step: 0.01,
-    unit: "×",
-    hint: "the second smear's height, of the sign's",
-  },
-  {
-    key: "land",
-    label: "Land",
-    min: 0.5,
-    max: 3,
-    step: 0.01,
-    unit: "×",
-    hint: "the landing squash's height, of the plate's",
-  },
-];
-
-const PLACES: Field<TravelTuning>[] = [
-  {
-    key: "at1",
-    label: "Launch",
-    min: -0.2,
-    max: 1.2,
-    step: 0.01,
-    hint: "where along the path, 0 the sign, 1 the plate",
-  },
-  { key: "at2", label: "Smear", min: 0, max: 1.2, step: 0.01 },
-  { key: "at3", label: "Smear 2", min: 0, max: 1.2, step: 0.01 },
-  {
-    key: "at4",
-    label: "Land",
-    min: 0.5,
-    max: 1.4,
-    step: 0.01,
-    hint: "past 1 is past the slot: the overshoot",
-  },
-];
-
 /* The two screens as the landing has them (Landing.tsx: 100dvh, snapped
    on the root), the words white on the mat, the lab page's title and
    its column out of the way. */
@@ -254,98 +118,17 @@ export default function SignTravelBench() {
   useWholeScreen();
   const values = useTravelTuning();
   const motion = useMotionTuning();
-  const travel = useRef<TravelHandle>(null);
   const hello = useRef<HTMLElement>(null);
   const projects = useRef<HTMLElement>(null);
   const slot = useRef<HTMLDivElement>(null);
   const plate = useRef<HTMLAnchorElement>(null);
   const [gone, setGone] = useState(false);
   const [plateShown, setPlateShown] = useState(false);
-  // Where the sign is, for the played travels: on the wall, in the
-  // corner, or on its way (the landing's `sign`).
-  const sign = useRef<"wall" | "going" | "corner" | "coming">("wall");
-  // The second screen has arrived (the landing's observer, its
-  // thresholds).
-  const [seen, setSeen] = useState(false);
-  const [cut, setCut] = useState(6);
-  const scrolls = values.mode === "scroll";
 
-  useEffect(() => {
-    const el = projects.current;
-    if (!el) return;
-    let was = false;
-    const io = new IntersectionObserver(
-      (entries) => {
-        for (const e of entries) {
-          const now =
-            e.intersectionRatio >= IN
-              ? true
-              : e.intersectionRatio < OUT
-                ? false
-                : was;
-          if (now === was) continue;
-          was = now;
-          setSeen(now);
-        }
-      },
-      { threshold: [OUT, IN] },
-    );
-    io.observe(el);
-    return () => io.disconnect();
-  }, []);
-
-  // The played travels, as the landing plays them: down as the second
-  // screen arrives, up as it leaves — to where the sign will be once
-  // the snap has settled. On the scroll the layer drives itself.
-  useEffect(() => {
-    const layer = travel.current;
-    const s = slot.current;
-    const p = plate.current;
-    const screen = hello.current;
-    if (!layer || !s || !p || !screen || layer.scrolls()) return;
-    let live = true;
-    if (seen) {
-      if (sign.current === "corner") return;
-      if (sign.current === "coming") layer.cancel();
-      sign.current = "going";
-      setGone(true);
-      setPlateShown(false);
-      void layer.play(helloSignRect(s), rectOf(p), "down").then(() => {
-        if (!live) return;
-        sign.current = "corner";
-        setPlateShown(true);
-        layer.cancel();
-      });
-    } else {
-      if (sign.current === "wall") return;
-      if (sign.current === "going") {
-        layer.cancel();
-        sign.current = "wall";
-        setGone(false);
-        return;
-      }
-      sign.current = "coming";
-      setPlateShown(false);
-      const r = helloSignRect(s);
-      const b = screen.getBoundingClientRect();
-      const dest = { ...r, x: r.x - b.left, y: r.y - b.top };
-      void layer.play(dest, rectOf(p), "up").then(() => {
-        if (!live) return;
-        sign.current = "wall";
-        setGone(false);
-        layer.cancel();
-      });
-    }
-    return () => {
-      live = false;
-    };
-  }, [seen]);
-
-  // On the scroll: the layer says where the sign is.
+  // The layer says where the sign is.
   const onPhase = (phase: TravelPhase) => {
     setGone(phase !== "before");
     setPlateShown(phase === "after");
-    sign.current = phase === "before" ? "wall" : "corner";
   };
   const signBox = () => {
     if (!slot.current) return null;
@@ -353,18 +136,6 @@ export default function SignTravelBench() {
     return { ...r, y: r.y + window.scrollY };
   };
   const plateBox = () => (plate.current ? rectOf(plate.current) : null);
-
-  // Hold one cut of the way down, in place, for a look.
-  function hold(c: number) {
-    const s = slot.current;
-    const p = plate.current;
-    if (!s || !p || !travel.current) return;
-    setCut(c);
-    sign.current = "going";
-    setGone(true);
-    setPlateShown(false);
-    travel.current.seek(helloSignRect(s), rectOf(p), c);
-  }
 
   const go = (ref: React.RefObject<HTMLElement | null>) =>
     ref.current?.scrollIntoView({ behavior: "smooth", block: "start" });
@@ -417,12 +188,7 @@ export default function SignTravelBench() {
           }}
         />
       </Suspense>
-      <TravelLayer
-        ref={travel}
-        from={signBox}
-        to={plateBox}
-        onPhase={onPhase}
-      />
+      <TravelLayer from={signBox} to={plateBox} onPhase={onPhase} />
 
       <Knobs
         className="st-knobs"
@@ -437,75 +203,12 @@ export default function SignTravelBench() {
           </>
         }
       >
-        <Choice
-          label="Feel"
-          value={values.mode}
-          options={[
-            { value: "cuts", label: "Held cuts" },
-            { value: "smooth", label: "Smooth" },
-            { value: "scroll", label: "On the scroll" },
-          ]}
-          pick={(mode) => setTravelTuning({ mode })}
+        <Group
+          title="On the scroll"
+          fields={SCROLL}
+          values={values}
+          set={setTravelTuning}
         />
-        {scrolls ? (
-          <Group
-            title="On the scroll"
-            fields={SCROLL}
-            values={values}
-            set={setTravelTuning}
-          />
-        ) : (
-          <>
-            {values.mode === "smooth" ? (
-              <Group
-                title="Spring"
-                fields={SPRING}
-                values={values}
-                set={setTravelTuning}
-              />
-            ) : (
-              <Group
-                title="Beat"
-                fields={BEAT}
-                values={values}
-                set={setTravelTuning}
-              />
-            )}
-            <label
-              className="bench-row"
-              title="hold one cut of the way down, in place"
-            >
-              <span>Hold cut</span>
-              <input
-                type="range"
-                min={0}
-                max={6}
-                step={1}
-                value={cut}
-                onChange={(e) => hold(Number(e.target.value))}
-              />
-              <span className="bench-value">{cut}</span>
-            </label>
-            <Group
-              title="Path"
-              fields={PATH}
-              values={values}
-              set={setTravelTuning}
-            />
-            <Group
-              title="Sizes"
-              fields={SIZES}
-              values={values}
-              set={setTravelTuning}
-            />
-            <Group
-              title="Along the way"
-              fields={PLACES}
-              values={values}
-              set={setTravelTuning}
-            />
-          </>
-        )}
         <div
           style={{
             display: "flex",
@@ -522,8 +225,7 @@ export default function SignTravelBench() {
         <p style={{ margin: 0, fontSize: 11, opacity: 0.6, lineHeight: 1.5 }}>
           Scroll, or Down and Up. Applies to the landing in this browser until
           Reset; lock it in by pasting into TRAVEL_DEFAULTS in
-          packages/lab/src/sign-travel.tsx. The frames are stand-ins until the
-          drawn ones are in source-assets/sign-travel.
+          packages/lab/src/sign-travel.tsx.
         </p>
       </Knobs>
     </>

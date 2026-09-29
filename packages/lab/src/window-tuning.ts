@@ -7,7 +7,7 @@ import { createTuningStore } from "./tuning-store";
  * them without the window's chunk: the signs step back on the same
  * clock and curve as the box grows (Julio, 2026-09-22: coordinated,
  * nothing popping into place). The window (window.tsx) and its benches
- * (/lab/window for the box and its clocks, /lab/sheet for the paper,
+ * (/lab/paper for the box and its clocks, /lab/sheet for the paper,
  * /lab/paper for the whole flow) share this store; the benches' knobs
  * write it.
  *
@@ -52,8 +52,6 @@ export type WindowTuning = {
   overhang: number;
   /** The box's corner radius, px — the prints' too. */
   corner: number;
-  /** The rail's width, vw, when the caller does not give one. */
-  rail: number;
   /** The sheet's lean on the mat, degrees: a real sheet is never quite
    *  square to the table. The lift ends on it. */
   tilt: number;
@@ -142,7 +140,6 @@ export const WINDOW_DEFAULTS: Readonly<WindowTuning> = Object.freeze({
   margin: 24,
   overhang: 3.5,
   corner: 5.5,
-  rail: 27,
   tilt: 0.05,
   sheetW: 1,
   sheetH: 1,

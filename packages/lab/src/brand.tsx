@@ -7,8 +7,7 @@ import { createTuningStore } from "./tuning-store";
  * site's home mark, fixed in the upper-left of the projects screen and
  * of every project page. It is what the hello screen's tall sign
  * becomes when the page scrolls down to the projects (sign-travel.tsx);
- * a page that opens on the projects, or a project page, has it stamp
- * in on its own. The piece is pieces/brand-sign; /lab/brand-sign is
+ * a project page has it stamp in on its own. The piece is pieces/brand-sign; /lab/brand-sign is
  * its bench. Where it sits and how big are the knobs here — a tuning
  * store like the hello one, regenerated into a stylesheet by
  * <BrandStyles> — and the window's rail reads the plate's foot
@@ -21,7 +20,7 @@ import { createTuningStore } from "./tuning-store";
  */
 
 /** The plate's width over its height, printed by
- *  scripts/prepare-sign-travel.mjs — sizes the box before the photo
+ *  scripts/prepare-brand.mjs — sizes the box before the photo
  *  decodes. */
 export const BRAND_ASPECT = 2.703;
 

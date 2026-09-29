@@ -7,7 +7,7 @@ import { MONO } from "./style";
  * The chrome the light benches share (/lab/motion, /lab/greeting,
  * /lab/hello): a titled group of slider rows over a tuning store, the
  * button style, and the Copy-values button; and, for the benches that
- * float their knobs over a full-screen stage (/lab/window, /lab/contents,
+ * float their knobs over a full-screen stage (/lab/paper, /lab/contents,
  * /lab/cue), the panel itself (.bench-panel) with a row of buttons, a
  * choice between a few words (<Choice>) and a colour (<Colour>); and,
  * for the benches whose stage is the whole screen (/lab/sheet, /lab/ink),
