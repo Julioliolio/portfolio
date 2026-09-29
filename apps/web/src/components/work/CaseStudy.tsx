@@ -38,7 +38,8 @@ import { projectAfter } from "@/content/projects/list";
  * the title, one unit of space, twelve columns, and no rules, eyebrows,
  * capitals or section numbers. The page has two left edges: the sheet's
  * (the title, a section's small grey note, the hero) and the text's,
- * three columns in (everything a section says or shows).
+ * two columns in (everything a section says or shows) — the middle
+ * eight of the twelve, so what is read sits in the middle of the sheet.
  *
  *   header    the first screen, one blue field: the name fitted to the
  *             width at its top; the tagline, the summary and the facts
@@ -91,8 +92,8 @@ const BEAT = 70;
  *   shows (--cs-vh), and its foot clears the blur.
  * - The way home, on a phone (.cs-bar); with a rail (the window's 701px
  *   line) Home is there, and so are the contents.
- * - Sections: the note on the sheet's edge, everything else on the
- *   text's. The text keeps a column free on its right; media takes it.
+ * - Sections: the note on the sheet's edge, everything else in the
+ *   middle eight columns, as much margin on its right as on its left.
  * - One weight: a list's title is told by its ink. (globals.css hands
  *   <b> the Medium family.)
  * - Media: square and frameless, each with its caption under it, the
@@ -100,7 +101,8 @@ const BEAT = 70;
  * - The grey box (.cs-ph): what goes here, said in the box. Dashed so it
  *   never passes for a finished frame.
  * - The timeline: months across the top, a bar per phase.
- * - The carousel: a row wider than the text, out to the sheet's edge,
+ * - The carousel: a row wider than the text, out to the sheet's edge
+ *   (--cs-bleed: the two columns and the padding to its right),
  *   dragged through. Each figure sits in its entrance wrapper, which is
  *   the row's item.
  * - The foot: the way on, and the way home.
@@ -127,10 +129,9 @@ const CSS = `
 .cs-body { padding-bottom: calc(8 * var(--ty-u)); }
 .cs-section { margin-top: calc(8 * var(--ty-u)); scroll-margin-top: calc(2 * var(--ty-u)); }
 .cs-section:first-of-type { margin-top: calc(4 * var(--ty-u)); }
-.cs-note { grid-column: 1 / span 3; padding-top: .5em; }
-.cs-main { grid-column: 4 / -1; min-width: 0; }
+.cs-note { grid-column: 1 / span 2; padding-top: .5em; }
+.cs-main { grid-column: 3 / span 8; min-width: 0; --cs-bleed: calc((100% - 7 * var(--ty-u)) / 4 + 2 * var(--ty-u) + var(--cs-pad)); }
 .cs-main > * + * { margin-top: calc(2 * var(--ty-u)); }
-.cs-text { width: calc((100% - 8 * var(--ty-u)) / 9 * 8 + 7 * var(--ty-u)); }
 .cs-text > :first-child { margin-top: 0; }
 .cs-text > :last-child { margin-bottom: 0; }
 .cs-text h2, .cs-text h3 { font: inherit; letter-spacing: inherit; }
@@ -148,7 +149,7 @@ const CSS = `
   .cs-intro, .cs-facts, .cs-note, .cs-main { grid-column: 1 / -1; }
   .cs-facts { margin-top: calc(2 * var(--ty-u)); }
   .cs-note { padding: 0 0 var(--ty-u); }
-  .cs-text { width: auto; }
+  .cs-main { --cs-bleed: var(--cs-pad); }
 }
 
 .cs-figs { display: grid; grid-template-columns: repeat(auto-fit, minmax(min(100%, 220px), 1fr)); gap: var(--ty-u); align-items: start; }
@@ -168,7 +169,7 @@ const CSS = `
 .cs-tl-bar { position: absolute; top: 0; bottom: 0; background: var(--ty-blue); }
 .cs-tl-note { margin-top: var(--ty-u); }
 
-.cs-carousel-row { display: flex; gap: var(--ty-u); align-items: flex-start; width: calc(100% + var(--cs-pad)); padding-right: var(--cs-pad); overflow-x: auto; scroll-snap-type: x proximity; scrollbar-width: none; cursor: grab; touch-action: pan-y; }
+.cs-carousel-row { display: flex; gap: var(--ty-u); align-items: flex-start; width: calc(100% + var(--cs-bleed)); padding-right: var(--cs-pad); overflow-x: auto; scroll-snap-type: x proximity; scrollbar-width: none; cursor: grab; touch-action: pan-y; }
 .cs-carousel-row::-webkit-scrollbar { display: none; }
 .cs-carousel-row.is-dragging { cursor: grabbing; scroll-snap-type: none; }
 .cs-carousel-row.is-dragging * { pointer-events: none; }
