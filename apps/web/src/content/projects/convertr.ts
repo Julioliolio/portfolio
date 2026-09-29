@@ -11,14 +11,14 @@ export const convertr: Project = {
   title: "Convertr",
   tagline: "A video converter where the box is the whole interface.",
   summary:
-    "A desktop app that turns any video into a GIF, MP4, WebM, MOV, AVI, MKV or MP3. Drop it, trim it, drag the result out. Designed and built solo, and the real interface runs on this page.",
+    "A desktop app that turns any video into a GIF, MP4, WebM, MOV, AVI, MKV or MP3. Drop it, trim it, drag the result out. Designed and built on my own, and the real interface runs on this page.",
   meta: [
     { label: "Type", value: "Side project · 2026" },
     {
       label: "Fields",
       value: "Product design, interaction design, desktop, build",
     },
-    { label: "Role", value: "Design and build, solo" },
+    { label: "Role", value: "Design and build" },
     { label: "Stack", value: "Solid.js, Electron, FFmpeg, yt-dlp" },
   ],
   hero: {
@@ -27,26 +27,18 @@ export const convertr: Project = {
     title: "Convertr",
     variant: "desktop",
     caption:
-      "The real interface. Drop a video or a GIF on it, trim, convert, drag the result out. On this page the engine is simulated, so the flow is real and the file that comes out is a stand-in.",
+      "The real interface. Drop a video or a GIF on it, trim, convert, drag the result out. The conversion is simulated on this page, so the file you get is a stand-in; everything you see and touch is the app.",
   },
   contents: false,
   sections: [
     {
       id: "overview",
       label: "Overview",
-      heading: "A desktop app I designed and built alone",
+      heading: "A little desktop app I designed and built on my own",
       blocks: [
         {
-          type: "lede",
-          text: "Convertr takes any video, dropped in or pasted as a link, and gives you back a GIF, an MP4, a WebM, whatever you need, trimmed to the bit you wanted.",
-        },
-        {
           type: "p",
-          text: "I made it because I was doing this by hand every week. Moodboards need a lot of motion, and most of it has to become a GIF or a smaller MP4 before it's useful. Online tools give no control over size, frame rate or the exact cut; Premiere gives all the control and turns a ten-second job into a project. Convertr is the thing in between: paste the video, convert, drag the result onto the desktop, done. [fill in — one line of use: how many files you've run through it since June.]",
-        },
-        {
-          type: "p",
-          text: "It is also my first app built with AI, and the test was whether the interface could keep an idea that a normal handoff would have simplified away.",
+          text: "Convertr takes any video, dropped in or pasted as a link, and gives you back a GIF, an MP4, a WebM or whatever you need, trimmed to the bit you wanted. I made it because I was doing this by hand every week for moodboards: online tools gave no control over size, frame rate or the exact cut, and Premiere turned a ten-second job into a project. [fill in — one line of use: how many files you've run through it since June.] It's also the first app I built with AI, and a bit of an experiment: could the interface keep an idea that would normally get simplified away in a handoff?",
         },
         {
           // Spring 2026 as the copy tells it: the design, the build, then
@@ -70,7 +62,20 @@ export const convertr: Project = {
       blocks: [
         {
           type: "p",
-          text: "The whole design is one box. Idle, it sits in the middle of the window, drawn by four guide lines and corner crosshairs, cycling through the shapes a video can be: widescreen, vertical, four-by-three, square. Drop a file and the box becomes a loading bar. Then it becomes the video, at the video's own proportions. Open the settings and the box gives up one side to make room, cropping the video instead of shrinking it, so it stays big. Press convert and it collapses into a bar again, with a row of bricks carrying the progress. When the result lands, the box steps outward, a dotted grid appears around it, and three chips hang off the corners: the output size, how much smaller it got, and download, which you drag.",
+          text: "The whole design is one box. Empty, it sits in the middle of the window drawn by four guide lines, cycling through the shapes a video can have. Drop a file and it becomes the video, at the video's own proportions. Open the settings and the box gives up one side to make room, cropping the video instead of shrinking it.",
+        },
+        {
+          type: "figure",
+          figure: {
+            kind: "placeholder",
+            aspect: 21 / 9,
+            need: "Two screens side by side: a vertical video loaded with settings under it, a landscape one with settings to the right.",
+            caption: "Portrait and landscape get different apps",
+          },
+        },
+        {
+          type: "p",
+          text: "Press convert and it collapses into a bar with a row of little bricks carrying the progress. When the result is ready the box steps outward and three chips hang off the corners: output size, how much smaller it got, and download, which you drag.",
         },
         {
           type: "carousel",
@@ -79,41 +84,20 @@ export const convertr: Project = {
             {
               kind: "placeholder",
               aspect: 16 / 10,
-              need: "Idle: the box drawn by guide lines and crosshairs, the 'DROP A FILE OR PASTE A URL' hint.",
-              caption: "Idle: four lines, cycling through the shapes.",
-            },
-            {
-              kind: "placeholder",
-              aspect: 16 / 10,
-              need: "The editor with a vertical video loaded, the box narrow and tall, the format dropdown open.",
-              caption: "Loaded: the box takes the video's own shape.",
-            },
-            {
-              kind: "placeholder",
-              aspect: 16 / 10,
               need: "Converting: the box collapsed into a bar with the bricks mid-run.",
-              caption: "Converting: a bar again, bricks carrying the progress.",
+              caption: "Converting",
             },
             {
               kind: "placeholder",
               aspect: 16 / 10,
-              need: "The result: the box stepped out, the dotted grid visible, size, delta and DOWNLOAD chips on the corners.",
-              caption: "Done: stepped out, chips on the corners.",
+              need: "The result: the box stepped out, the dotted grid visible, the three chips on the corners.",
+              caption: "Done",
             },
           ],
         },
         {
           type: "p",
-          text: "Every state is the same four lines moving, so you always know where the thing you're looking at came from and what it will become. Nothing appears from nowhere and no panel slides over another. A portrait video and a landscape one get different apps: the settings sit to the right of one and under the other. Everything else follows the box: one accent, a hot pink on warm grey, a dotted paper grid, mono labels that scramble into place, and a spring on anything you touch.",
-        },
-        {
-          type: "figure",
-          figure: {
-            kind: "placeholder",
-            aspect: 21 / 9,
-            need: "Side by side: the same vertical video loaded in a typical converter (fixed panels, the video shrunk into a preview corner) and in Convertr (the box takes the video's shape). No product names needed.",
-            caption: "Same file, two ideas of what a converter is.",
-          },
+          text: "Every state is the same four lines moving, so you always know where what you're looking at came from and what it's about to become. Nothing appears out of nowhere and no panel slides over another. Everything else follows the box: one accent colour, a dotted paper grid, mono labels that scramble into place, and a little spring on anything you touch.",
         },
         {
           type: "figure",
@@ -121,7 +105,17 @@ export const convertr: Project = {
             kind: "placeholder",
             awaits: "video",
             aspect: 16 / 10,
-            need: "The box morphing through all six states: idle, bar, video, settings open, converting, result. One continuous screen recording.",
+            need: "The box morphing through all its states in one continuous recording.",
+            caption: "One box, every state",
+          },
+        },
+        {
+          type: "figure",
+          figure: {
+            kind: "placeholder",
+            aspect: 21 / 9,
+            need: "Side by side: the same vertical video in a typical converter (fixed panels, the video shrunk into a preview corner) and in Convertr. No product names needed.",
+            caption: "Same file, two ideas of what a converter is",
           },
         },
       ],
@@ -141,47 +135,37 @@ export const convertr: Project = {
             },
             {
               title: "Trim on the timeline.",
-              body: "A scrubbable timeline with in and out handles, because the bit you want is almost never the whole clip.",
+              body: "In and out handles, because the bit you want is almost never the whole clip.",
             },
             {
               title: "Seven formats, one picker.",
-              body: "GIF, MP4, WebM, MOV, AVI, MKV and MP3. Picking MP3 keeps the sound and drops the video. GIF exposes width and frame rate, and the estimated output size updates as you change them.",
+              body: "MP3 keeps the sound and drops the video. GIF lets you set width and frame rate, and the estimated size updates as you change them.",
             },
             {
               title: "FFmpeg underneath.",
-              body: "The desktop app wraps FFmpeg through a local server and ships as an Electron build for Windows and Mac. The version on this page swaps that engine for a simulation, so the whole flow runs in the browser with nothing to install.",
+              body: "Wrapped through a local server, shipped as an Electron build for Windows and Mac. This page swaps the engine for a simulation so it runs with nothing to install.",
             },
           ],
         },
         {
-          type: "figures",
-          figures: [
-            {
-              kind: "placeholder",
-              aspect: 16 / 10,
-              need: "The timeline with in and out handles set.",
-            },
-            {
-              kind: "placeholder",
-              aspect: 16 / 10,
-              need: "The GIF settings with width, frame rate and the size estimate.",
-            },
-          ],
+          type: "figure",
+          figure: {
+            kind: "placeholder",
+            aspect: 16 / 10,
+            need: "The timeline with in and out handles set, the GIF settings open.",
+            caption: "Trimming",
+          },
         },
       ],
     },
     {
       id: "learnings",
       label: "Learnings",
-      heading: "The box only exists because the designer was the developer",
+      heading: "The box only survived because I was also the one building it",
       blocks: [
         {
           type: "p",
-          text: "Holding the code meant the box never got flattened into a normal layout, which is what happens to this kind of idea in a handoff. It also showed me where the design actually lives: half of the feel is in numbers tuned by watching it move (spring stiffness, stagger delays, how far the result steps out), and none of that was in the design file.",
-        },
-        {
-          type: "p",
-          text: "If I did it again I'd build the simulated engine first. Having the whole flow run without FFmpeg, which I only did to put it on this page, would have made every iteration on the interface ten times faster from the start.",
+          text: "Holding the code meant the box never got flattened into a normal layout. It also taught me where the design actually lives: half of the feel is in numbers tuned by watching it move, like spring stiffness and how far the result steps out, and none of that was in the design file. If I did it again I'd build the simulated engine first; it would have made every iteration much faster. Any questions? Write me, I'm always up for talking about this one.",
         },
       ],
     },
