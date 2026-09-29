@@ -17,6 +17,9 @@ export type Figure =
       aspect: number;
       /** What goes here, in plain words — shown inside the box. */
       need: string;
+      /** What the box stands in for, if not a photo: a clip, or a link
+       *  still to be made (the thesis PDF). */
+      awaits?: "video" | "link";
       /** Caption under the box once the real image is in; optional
        *  while it is a placeholder. */
       caption?: string;
@@ -49,7 +52,10 @@ export type Figure =
     };
 
 export type Block =
-  | { type: "p"; text: string }
+  /** A paragraph; `lead` is a run-in title set in ink before it. */
+  | { type: "p"; text: string; lead?: string }
+  /** A heading inside a section, where one part turns into the next. */
+  | { type: "subhead"; text: string }
   /** A short lead paragraph, set larger than body text. */
   | { type: "lede"; text: string }
   /** Numbered or bulleted items, each with a bold title and a body. */

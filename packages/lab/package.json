@@ -7,6 +7,7 @@
     "./asset": "./src/asset.ts",
     "./sign-travel": "./src/sign-travel.tsx",
     "./contents": "./src/contents.tsx",
+    "./contents-goo": "./src/pieces/contents/goo.tsx",
     "./registry": "./src/registry.ts",
     "./loaders": "./src/loaders.ts",
     "./cursor-tuning": "./src/cursor-tuning.ts",

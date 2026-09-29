@@ -1,7 +1,7 @@
 "use client";
 
 import { asset } from "@portfolio/lab/asset";
-import { Contents } from "@portfolio/lab/contents";
+import { ContentsGoo } from "@portfolio/lab/contents-goo";
 import { MONO } from "@portfolio/lab/style";
 import {
   Arrow,
@@ -53,7 +53,7 @@ import { projectAfter } from "@/content/projects/list";
  *             indented, not spaced; media sits on the text's edge.
  *   foot      blue again: the next project's name, as big as a title.
  *
- * The contents are a path of stops (@portfolio/lab/contents) — the
+ * The contents are a column of stops (@portfolio/lab/contents-goo) — the
  * chapters on a long page, the sections on a short one — and not in the
  * page: it stands in the window's rail, beside the sheet
  * (`useWindowRail()`), where it follows the reading; on a phone, where
@@ -133,14 +133,15 @@ const CSS = `
 .cs-text { width: calc((100% - 8 * var(--ty-u)) / 9 * 8 + 7 * var(--ty-u)); }
 .cs-text > :first-child { margin-top: 0; }
 .cs-text > :last-child { margin-bottom: 0; }
-.cs-text h2 { font: inherit; letter-spacing: inherit; }
+.cs-text h2, .cs-text h3 { font: inherit; letter-spacing: inherit; }
+.cs-text h3 { margin: var(--ty-u) 0 0; }
 .cs-list { list-style: none; margin: var(--ty-u) 0; padding: 0; display: grid; gap: calc(.5 * var(--ty-u)); counter-reset: cs-li; color: var(--ty-dim); }
 .cs-list li { display: grid; grid-template-columns: 2.2em minmax(0, 1fr); }
 .cs-list li::before { padding-top: .42em; font-family: ${MONO}; font-size: 13px; line-height: 1; letter-spacing: 0; }
 .cs-list.is-numbered li { counter-increment: cs-li; }
 .cs-list.is-numbered li::before { content: counter(cs-li, decimal-leading-zero); }
 .cs-list.is-bulleted li::before { content: "—"; }
-.cs-list b { font-family: inherit; font-weight: inherit; color: var(--ty-fg); }
+.cs-text b { font-family: inherit; font-weight: inherit; color: var(--ty-fg); }
 .cs-quote { margin: var(--ty-u) 0; padding-left: 2.2em; }
 .cs-quote cite { display: block; margin-top: calc(.5 * var(--ty-u)); font-style: normal; }
 @container (max-width: 700px) {
@@ -179,9 +180,13 @@ const CSS = `
 `;
 
 /** Blocks that are read, not looked at: neighbours are set as one run. */
-type TextBlock = Extract<Block, { type: "p" | "lede" | "list" | "quote" }>;
+type TextBlock = Extract<
+  Block,
+  { type: "p" | "subhead" | "lede" | "list" | "quote" }
+>;
 const isText = (b: Block): b is TextBlock =>
   b.type === "p" ||
+  b.type === "subhead" ||
   b.type === "lede" ||
   b.type === "list" ||
   b.type === "quote";
@@ -230,7 +235,7 @@ export function CaseStudy({
       )}
 
       {rail &&
-        createPortal(<Contents stops={stops} scroller={scroller} />, rail)}
+        createPortal(<ContentsGoo stops={stops} scroller={scroller} />, rail)}
 
       <header
         className={
@@ -301,7 +306,7 @@ export function CaseStudy({
       <div className="ty-ground cs-body">
         {project.contents && (
           <div className="cs-toc">
-            <Contents stops={stops} scroller={scroller} pinned />
+            <ContentsGoo stops={stops} scroller={scroller} pinned />
           </div>
         )}
 
@@ -396,7 +401,14 @@ function SectionView({ section }: { section: Section }) {
 function TextView({ block }: { block: TextBlock }) {
   switch (block.type) {
     case "p":
-      return <p className="ty-dim">{block.text}</p>;
+      return (
+        <p className="ty-dim">
+          {block.lead && <b>{block.lead} </b>}
+          {block.text}
+        </p>
+      );
+    case "subhead":
+      return <h3>{block.text}</h3>;
     case "lede":
       return <p>{block.text}</p>;
     case "list":
@@ -551,6 +563,9 @@ function Carousel({ figures, hint }: { figures: Figure[]; hint?: string }) {
   );
 }
 
+/** What a placeholder is holding the place of, as its box names it. */
+const AWAITS = { photo: "Photo", video: "Video", link: "Link" } as const;
+
 function FigureView({ figure }: { figure: Figure }) {
   const cap = figure.caption && (
     <figcaption className="ty-small ty-dim cs-cap">{figure.caption}</figcaption>
@@ -563,9 +578,11 @@ function FigureView({ figure }: { figure: Figure }) {
             className="cs-media cs-ph"
             style={{ aspectRatio: figure.aspect }}
             role="img"
-            aria-label={`Image to come: ${figure.need}`}
+            aria-label={`${AWAITS[figure.awaits ?? "photo"]} to come: ${figure.need}`}
           >
-            <p className="ty-small ty-dim">Photo needed: {figure.need}</p>
+            <p className="ty-small ty-dim">
+              {AWAITS[figure.awaits ?? "photo"]} needed: {figure.need}
+            </p>
           </div>
           {cap}
         </figure>

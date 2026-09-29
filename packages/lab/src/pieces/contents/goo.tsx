@@ -1,6 +1,13 @@
 "use client";
 
-import { useEffect, useId, useRef, useState, type MouseEvent } from "react";
+import {
+  useEffect,
+  useId,
+  useLayoutEffect,
+  useRef,
+  useState,
+  type MouseEvent,
+} from "react";
 import {
   BEAT,
   glideTo,
@@ -16,8 +23,9 @@ import { BLUE, INK, MEDIUM } from "../../style";
 import { createTuningStore } from "../../tuning-store";
 
 /**
- * The goo column: the contents index as it stood on the site from
- * 2026-09-22 to 2026-09-23, kept as the bench's other column. Stops in
+ * The goo column: the site's contents index (2026-09-22 to -23, and
+ * again since 2026-09-29, when it took the rail back from the text
+ * selection in contents.tsx, which stays on the bench). Stops in
  * white Medium type, each on a tall squircle of the ink, the one being
  * read on a squircle of the blue pushed apart from its neighbours —
  * @drawsgood's gooey pill nav (are.na/block/35111734) stood on end. The
@@ -34,11 +42,13 @@ import { createTuningStore } from "../../tuning-store";
  *
  * `GooTuning` is its own set of knobs (contents-goo); the type, the
  * colours, the sweep's speed and the spring are the contents tuning's,
- * shared with the site's column. Nothing on the site reads this.
+ * with the selection column. The work pages (CaseStudy.tsx) read it
+ * through @portfolio/lab/contents-goo.
  */
 
 export type GooTuning = {
-  /** Which column the bench shows: the site's, or this. */
+  /** Which column the bench shows: the selection ("site", its key
+   *  from when that was the site's), or this. */
   column: "site" | "goo";
   /** A row's height, em, and the room beside the words. */
   row: number;
@@ -52,17 +62,32 @@ export type GooTuning = {
   blur: number;
   /** The neighbours' slide, ms. */
   slide: number;
+  /** The column's drop shadow on the mat, em of the type: its offset,
+   *  its blur, and its darkness (0 is none). It falls the way the brand
+   *  plate's does, down and to the right. */
+  shadowX: number;
+  shadowY: number;
+  shadowBlur: number;
+  shadowAlpha: number;
+  /** What the bench's page stands on: the site's mat, or plain paper. */
+  ground: "mat" | "paper";
 };
 
+// Julio's values off the bench (2026-09-29), shadow and all.
 const GOO_DEFAULTS: Readonly<GooTuning> = Object.freeze({
-  column: "site",
+  column: "goo",
   row: 2.2,
   side: 1.4,
-  corner: 0.2,
+  corner: 0.65,
   shape: "squircle",
   gap: 0.5,
-  blur: 3,
-  slide: 0,
+  blur: 5,
+  slide: 210,
+  shadowX: 0.23,
+  shadowY: 0.37,
+  shadowBlur: 0.1,
+  shadowAlpha: 0.34,
+  ground: "mat",
 });
 
 const store = createTuningStore("contents-goo", GOO_DEFAULTS);
@@ -71,6 +96,22 @@ export const resetGooTuning = store.reset;
 export const useGooTuning = store.useTuning;
 
 const n = (v: number, d = 3) => Number(v.toFixed(d)).toString();
+
+/** The smallest the type is fitted down to, px; a stop still too long
+ *  for its room at this size goes onto a second line. */
+const FLOOR = 14;
+
+/** How far the shadow reaches past the shapes on the right, em. */
+const reach = (g: GooTuning) =>
+  g.shadowAlpha > 0 ? Math.max(0, g.shadowX) + 2 * g.shadowBlur : 0;
+
+/** The shadow, after the goo: it falls from the fused shape, not from
+ *  each squircle under it. */
+function gooFilter(id: string, g: GooTuning) {
+  const goo = `url(#${id})`;
+  if (g.shadowAlpha <= 0) return goo;
+  return `${goo} drop-shadow(${n(g.shadowX)}em ${n(g.shadowY)}em ${n(g.shadowBlur)}em rgba(0, 0, 0, ${n(g.shadowAlpha)}))`;
+}
 
 /**
  * The rows and, under them, their shapes are two columns of the same
@@ -82,6 +123,10 @@ const n = (v: number, d = 3) => Number(v.toFixed(d)).toString();
  * spring the way back has no bounce. An ink squircle reaches a corner's
  * worth into any flush neighbour, so a run of them is one straight-sided
  * bar rather than a string of beads.
+ *
+ * A row is as tall as its words: one line at the row's height, or,
+ * where a stop has no room on one line, two. The shapes hold the same
+ * words, unseen, so they grow with it.
  */
 function gooCss(t: ContentsTuning, g: GooTuning): string {
   const slide = timing(t, g.slide);
@@ -94,11 +139,13 @@ function gooCss(t: ContentsTuning, g: GooTuning): string {
   // point the way the cue's label does.
   const from = t.motion === "spring" ? 0.15 : 0.7;
   return `
-.cg { position: relative; display: block; width: max-content; max-width: 100%; color: #fff; font-family: ${MEDIUM}; font-weight: 500; font-size: ${n(t.size)}px; line-height: 1; letter-spacing: -.01em; }
+.cg { position: relative; display: block; width: max-content; max-width: calc(100% - ${n(reach(g))}em); color: #fff; font-family: ${MEDIUM}; font-weight: 500; font-size: var(--cg-size, ${n(t.size)}px); line-height: 1; letter-spacing: -.01em; }
+.cg.is-measuring { max-width: none; }
+.cg.is-measuring a, .cg.is-measuring .cg-goo span { white-space: nowrap; }
 .cg ol, .cg-goo { display: flex; flex-direction: column; margin: 0; padding: 0; list-style: none; }
 .cg ol { position: relative; }
 .cg-goo { position: absolute; inset: 0; pointer-events: none; }
-.cg li, .cg-goo i { display: block; flex: none; height: ${n(g.row)}em; transition: margin ${slide}; }
+.cg li, .cg-goo i { display: block; flex: none; transition: margin ${slide}; }
 .cg li.is-here, .cg-goo i.is-here { margin: ${n(g.gap)}em 0; }
 .cg-goo i { position: relative; }
 .cg-goo i::before, .cg-goo i::after { content: ""; position: absolute; inset: 0; ${corners} transition: transform ${back}, opacity ${n(t.swap / 2, 0)}ms; }
@@ -110,7 +157,9 @@ function gooCss(t: ContentsTuning, g: GooTuning): string {
 .cg-goo i::after { background: ${tint}; transform: scale(${from}); opacity: 0; }
 .cg-goo i.is-here::before { transform: scale(.82); }
 .cg-goo i.is-here::after { transform: none; opacity: 1; }
-.cg a { display: flex; align-items: center; height: 100%; padding: 0 ${n(g.side)}em; white-space: nowrap; color: #fff; text-decoration: none; outline: none; }
+.cg a, .cg-goo span { display: flex; align-items: center; box-sizing: border-box; min-height: ${n(g.row)}em; padding: .35em ${n(g.side)}em; line-height: 1.05; text-wrap: balance; }
+.cg-goo span { position: relative; visibility: hidden; }
+.cg a { color: #fff; text-decoration: none; outline: none; }
 .cg a:focus-visible { text-decoration: underline; text-underline-offset: .2em; }
 @media (prefers-reduced-motion: reduce) { .cg li, .cg-goo i, .cg-goo i::before, .cg-goo i::after { transition: none !important; } }
 `;
@@ -137,6 +186,41 @@ export function ContentsGoo({
   const [hover, setHover] = useState<number | null>(null);
   const [going, setGoing] = useState<number | null>(null);
   const glide = useRef<() => void>(null);
+
+  // The type, fitted to the room the column stands in (the rail is as
+  // wide as the screen is tall): the tuning's size where the widest
+  // stop fits on one line with its shadow, less where it doesn't, down
+  // to the floor.
+  const nav = useRef<HTMLElement>(null);
+  const labels = stops.map((s) => s.label).join("|");
+  useLayoutEffect(() => {
+    const el = nav.current;
+    const room = el?.parentElement;
+    if (!el || !room) return;
+    // Measured at the size it has, the words on one line, and scaled:
+    // the width goes with the type. Setting the size to measure would
+    // restart every transition in em (the gap's slide) each time. And
+    // only when the room's width changes — its height moves with the
+    // gap on every frame of a slide.
+    let wide = -1;
+    const fit = (force = false) => {
+      const w = room.clientWidth;
+      if (!force && w === wide) return;
+      wide = w;
+      const now = parseFloat(getComputedStyle(el).fontSize);
+      el.classList.add("is-measuring");
+      const one = el.offsetWidth / now + reach(g);
+      el.classList.remove("is-measuring");
+      // A pixel spare, or rounding can still break a line.
+      const size = Math.min(t.size, (w - 1) / one);
+      el.style.setProperty("--cg-size", `${n(Math.max(FLOOR, size), 2)}px`);
+    };
+    fit(true);
+    const ro = new ResizeObserver(() => fit());
+    ro.observe(room);
+    document.fonts?.ready.then(() => fit(true));
+    return () => ro.disconnect();
+  }, [t.size, g, labels]);
   useEffect(() => () => glide.current?.(), []);
 
   function jump(e: MouseEvent<HTMLAnchorElement>, id: string, i: number) {
@@ -172,6 +256,7 @@ export function ContentsGoo({
       delay={MOTION_DEFAULTS.lead}
     >
       <nav
+        ref={nav}
         className={pinned ? "cg is-pinned" : "cg"}
         aria-label="Contents"
         onPointerLeave={() => setHover(null)}
@@ -195,9 +280,11 @@ export function ContentsGoo({
             />
           </filter>
         </svg>
-        <div className="cg-goo" style={{ filter: `url(#${goo})` }}>
+        <div className="cg-goo" style={{ filter: gooFilter(goo, g) }}>
           {stops.map((s, i) => (
-            <i key={s.id} className={i === here ? "is-here" : undefined} />
+            <i key={s.id} className={i === here ? "is-here" : undefined}>
+              <span>{s.label}</span>
+            </i>
           ))}
         </div>
         <ol>

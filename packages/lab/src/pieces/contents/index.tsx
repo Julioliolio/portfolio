@@ -64,14 +64,14 @@ import {
 const LOOK_KEYS = ["corner", "shape", "row", "side", "gap", "blur"] as const;
 type Look = Pick<GooTuning, (typeof LOOK_KEYS)[number]>;
 
-/** The site's, as it was. */
+/** The site's (GOO_DEFAULTS, 2026-09-29). */
 const SITE_LOOK: Look = {
-  corner: 0.2,
+  corner: 0.65,
   shape: "squircle",
   row: 2.2,
   side: 1.4,
   gap: 0.5,
-  blur: 3,
+  blur: 5,
 };
 
 /** The Framer original's (2026-09-23): words as if highlighted — sharp,
@@ -195,6 +195,20 @@ const GOO_ROWS: Field<GooTuning>[] = [
   },
 ];
 
+const SHADOW: Field<GooTuning>[] = [
+  { key: "shadowX", label: "Across", min: -1, max: 1, step: 0.01, unit: "em" },
+  { key: "shadowY", label: "Down", min: -1, max: 1, step: 0.01, unit: "em" },
+  { key: "shadowBlur", label: "Blur", min: 0, max: 1, step: 0.01, unit: "em" },
+  {
+    key: "shadowAlpha",
+    label: "Dark",
+    min: 0,
+    max: 1,
+    step: 0.01,
+    hint: "0 is no shadow",
+  },
+];
+
 const MOVE: Field<ContentsTuning>[] = [
   { key: "size", label: "Type", min: 11, max: 24, step: 0.5, unit: "px" },
   {
@@ -244,6 +258,8 @@ ${BENCH_CSS}
 .cb-section { margin-top: 96px; scroll-margin-top: 24px; }
 .cb-section h2 { margin: 0 0 18px; max-width: 620px; font-weight: 600; font-size: 24px; line-height: 1.2; letter-spacing: -.02em; color: #2b2722; }
 .cb-block { border-radius: 12px; background: #ecebe8; }
+.cb-stage.is-mat { background: transparent; }
+.cb-stage.is-mat main { padding: 32px; border-radius: 4px; background: #faf9f6; }
 `;
 
 export default function ContentsBench() {
@@ -254,7 +270,10 @@ export default function ContentsBench() {
   const Column = g.column === "goo" ? ContentsGoo : Contents;
 
   return (
-    <div className="cb-stage" ref={setScroller}>
+    <div
+      className={g.ground === "mat" ? "cb-stage is-mat" : "cb-stage"}
+      ref={setScroller}
+    >
       <style>{CSS}</style>
       <div className="bench-panel">
         <div className="bench-buttons">
@@ -268,7 +287,7 @@ export default function ContentsBench() {
           >
             Reset
           </button>
-          <CopyValues values={t} />
+          <CopyValues values={g.column === "goo" ? g : t} />
         </div>
         <div className="bench-group">
           <div className="bench-title">The look</div>
@@ -276,10 +295,19 @@ export default function ContentsBench() {
             label="Column"
             value={g.column}
             options={[
-              { value: "site", label: "The site's" },
-              { value: "goo", label: "The goo's" },
+              { value: "site", label: "The selection" },
+              { value: "goo", label: "The goo (the site's)" },
             ]}
             pick={(column) => setGooTuning({ column })}
+          />
+          <Choice
+            label="Ground"
+            value={g.ground}
+            options={[
+              { value: "mat", label: "The mat" },
+              { value: "paper", label: "Paper" },
+            ]}
+            pick={(ground) => setGooTuning({ ground })}
           />
           <Colour
             label="Blue"
@@ -319,6 +347,12 @@ export default function ContentsBench() {
               pick={(shape) => setGooTuning({ shape })}
             />
             <Group title="" fields={GOO_ROWS} values={g} set={setGooTuning} />
+            <Group
+              title="The shadow"
+              fields={SHADOW}
+              values={g}
+              set={setGooTuning}
+            />
           </div>
         ) : (
           <div className="bench-group">

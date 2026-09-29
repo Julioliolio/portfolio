@@ -20,8 +20,9 @@ import { createTuningStore } from "./tuning-store";
  * blue box hugging each word's line, the words white inside it. It is
  * the language of Julio's Framer site (extended-cues-365152.framer.app),
  * where everything that moves looks like text being selected, brought
- * to the project window's rail (2026-09-23; the goo column it replaces
- * lives on as the bench's other column, pieces/contents/goo.tsx).
+ * to the project window's rail (2026-09-23 to -29; since then it is
+ * stowed on the bench and the goo column, pieces/contents/goo.tsx, is
+ * the site's again).
  *
  * A chapter is selected as a drag would select it: the blue sweeps
  * across it from its left edge and stops at the last letter, the

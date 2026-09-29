@@ -350,6 +350,11 @@ ${
   .pw-rail-in > * { flex: none; max-width: 100%; pointer-events: auto; }
   /* The contents stand on the mat: white. */
   .pw-rail-slot { --ct-ink: #fff; }
+  /* The whole rail's width, for the contents to fit their type to;
+     only the contents themselves take the pointer. */
+  .pw-rail-slot { align-self: stretch; pointer-events: none; }
+  .pw-rail-slot nav { pointer-events: auto; }
+  .pw.is-leaving .pw-rail-slot nav { pointer-events: none; }
   .pw-rail-slot:empty { display: none; }
 }
 .pw.is-leaving .pw-scroll { opacity: 0; transition: opacity ${reveal}ms ${outEase}; }
