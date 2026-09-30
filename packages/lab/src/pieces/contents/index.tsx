@@ -28,6 +28,7 @@ import {
 } from "../../sound";
 import {
   ContentsGoo,
+  matchEnds,
   resetGooTuning,
   setGooTuning,
   useGooTuning,
@@ -174,6 +175,15 @@ const GOO_ROWS: Field<GooTuning>[] = [
     step: 0.05,
     unit: "em",
     hint: "the room above and below the words",
+  },
+  {
+    key: "ends",
+    label: "Ends",
+    min: 0,
+    max: 1.5,
+    step: 0.05,
+    unit: "em",
+    hint: "extra room at the bar's top and foot only; Match Side sets it to stand as far off the words as the side does",
   },
   {
     key: "corner",
@@ -365,6 +375,18 @@ export default function ContentsBench() {
               pick={(shape) => setGooTuning({ shape })}
             />
             <Group title="" fields={GOO_ROWS} values={g} set={setGooTuning} />
+            <div className="bench-row is-wide">
+              <span>Ends</span>
+              <div className="bench-choice">
+                <button
+                  type="button"
+                  aria-pressed={g.ends === matchEnds(g)}
+                  onClick={() => setGooTuning({ ends: matchEnds(g) })}
+                >
+                  Match Side
+                </button>
+              </div>
+            </div>
             <Group
               title="The shadow"
               fields={SHADOW}

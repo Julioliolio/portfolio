@@ -56,6 +56,11 @@ export type GooTuning = {
   /** The room above and below the words, em: the side's, top and
    *  bottom — each row grows by twice this. */
   pad: number;
+  /** The room at the ink bar's two ends, em, over what the rows give:
+   *  the top of a run's first row and the foot of its last, so the bar
+   *  can stand as far off the words above and below as beside them
+   *  (`matchEnds`) without the rows inside it spreading. */
+  ends: number;
   /** The squircles' corners, em, and their shape. */
   corner: number;
   shape: "squircle" | "round";
@@ -82,6 +87,7 @@ const GOO_DEFAULTS: Readonly<GooTuning> = Object.freeze({
   row: 2.2,
   side: 1.4,
   pad: 0,
+  ends: 0.45,
   corner: 0.65,
   shape: "squircle",
   gap: 0.5,
@@ -105,6 +111,22 @@ const n = (v: number, d = 3) => Number(v.toFixed(d)).toString();
  *  for its room at this size goes onto a second line. */
 const FLOOR = 14;
 
+/** Neue Montreal Medium, em, measured in the browser: from a row's
+ *  middle to the top of its capitals (0.715 tall, their tops 0.745
+ *  under a 2.2em row's top), and the room a capital's side bearing
+ *  leaves before the first letter. */
+const CAP_HALF = 0.355;
+const BEARING = 0.07;
+
+/** The ends that stand the bar as far off the capitals above and below
+ *  as the side stands it off the first letter: at 2.2em rows and a
+ *  1.4em side, 0.725em, on the knob's step 0.7. */
+export function matchEnds(g: GooTuning) {
+  const across = g.side + BEARING;
+  const down = (g.row + 2 * g.pad) / 2 - CAP_HALF;
+  return Math.max(0, Math.round((across - down) * 20) / 20);
+}
+
 /** How far the shadow reaches past the shapes on the right, em. */
 const reach = (g: GooTuning) =>
   g.shadowAlpha > 0 ? Math.max(0, g.shadowX) + 2 * g.shadowBlur : 0;
@@ -126,7 +148,9 @@ function gooFilter(id: string, g: GooTuning) {
  * ink grows back, so the ink is seen inside it for a moment, and on the
  * spring the way back has no bounce. An ink squircle reaches a corner's
  * worth into any flush neighbour, so a run of them is one straight-sided
- * bar rather than a string of beads.
+ * bar rather than a string of beads. A run's first and last rows take
+ * the ends' room on their outer side, so the bar's top and foot stand
+ * off the words without the rows between them spreading.
  *
  * A row is as tall as its words: one line at the row's height, or,
  * where a stop has no room on one line, two. The shapes hold the same
@@ -149,7 +173,9 @@ function gooCss(t: ContentsTuning, g: GooTuning): string {
 .cg ol, .cg-goo { display: flex; flex-direction: column; margin: 0; padding: 0; list-style: none; }
 .cg ol { position: relative; }
 .cg-goo { position: absolute; inset: 0; pointer-events: none; }
-.cg li, .cg-goo i { display: block; flex: none; transition: margin ${slide}; }
+.cg li, .cg-goo i { display: block; flex: none; transition: margin ${slide}, padding ${slide}; }
+.cg li:first-child:not(.is-here), .cg li.is-here + li, .cg-goo i:first-child:not(.is-here), .cg-goo i.is-here + i { padding-top: ${n(g.ends)}em; }
+.cg li:last-child:not(.is-here), .cg li:has(+ li.is-here), .cg-goo i:last-child:not(.is-here), .cg-goo i:has(+ i.is-here) { padding-bottom: ${n(g.ends)}em; }
 .cg li.is-here, .cg-goo i.is-here { margin: ${n(g.gap)}em 0; }
 .cg-goo i { position: relative; }
 .cg-goo i::before, .cg-goo i::after { content: ""; position: absolute; inset: 0; ${corners} transition: transform ${back}, opacity ${n(t.swap / 2, 0)}ms; }
