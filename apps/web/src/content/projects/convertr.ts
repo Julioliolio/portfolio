@@ -44,6 +44,7 @@ export const convertr: Project = {
     demo: "convertr",
     title: "Convertr",
     variant: "desktop",
+    label: "Live: the real app. Drop a video, or try the sample",
     caption:
       "The real interface. Drop a video or a GIF on it, trim, convert, drag the result out. The conversion is simulated on this page, so the file you get is a stand-in; everything you see and touch is the app.",
   },
@@ -69,13 +70,6 @@ export const convertr: Project = {
             { label: "Web demo", from: 3, to: 4 },
           ],
           note: "A side project over a spring.",
-        },
-        {
-          type: "field",
-          aspect: 16 / 9,
-          device: "laptop",
-          need: "the Convertr window on a laptop, on a soft neutral.",
-          screens: [cv("portrait-settings", "Convertr on a laptop: a vertical video loaded, its settings open beside it", 1.6)],
         },
       ],
     },
@@ -127,7 +121,13 @@ export const convertr: Project = {
           row: 1,
           cells: [
             cell(12, 3, cv("converting", "Convert pressed: the video collapses into a bar and pink bricks carry the progress across", 1100 / 306, { frame: "bare" })),
-            cell(12, 6, cv("result-drag", "The result: the box steps out, chips on the corners, and the converted file dragged out by its download chip", 1.25, { fit: "contain" }), PAPER),
+            cell(12, 6, cv("result-drag", "Convert: the bricks run, the box steps out with chips on its corners, and the converted file is dragged out by its download chip", 1.25, { fit: "contain" }), PAPER),
+            {
+              kind: "slot",
+              w: 12,
+              h: 4,
+              need: "In the desktop app: the result chip dragged out of Convertr and dropped into a Figma canvas, where the GIF starts playing.",
+            },
           ],
         },
         {
@@ -140,7 +140,7 @@ export const convertr: Project = {
           items: [
             {
               title: "Crop, don't shrink.",
-              body: "When the settings open, the preview gives up part of the frame rather than getting smaller, because the size you see is the decision you're making. The file itself is never cropped.",
+              body: "When the settings open, the preview gives up part of the frame rather than getting smaller, because the size you see is the decision you're making. The file itself is never cropped. The cost: with the settings open you may lose the edge you cared about; close them and it's back.",
             },
             {
               title: "No second screen.",
@@ -160,7 +160,14 @@ export const convertr: Project = {
           type: "bento",
           row: 1,
           cells: [
-            cell(12, 8, cv("every-state", "One continuous take: the empty box, a file dropped in, the settings, a format, convert, the bricks, the result stepping out", 1.6)),
+            {
+              kind: "slot",
+              w: 12,
+              h: 4,
+              awaits: "photo",
+              label: "Tried first",
+              need: "Two or three early layouts from the design file that didn't survive, with a line on why each one died.",
+            },
           ],
         },
       ],
@@ -196,16 +203,18 @@ export const convertr: Project = {
           type: "bento",
           row: 1,
           cells: [
-            cell(12, 3, cv("trim", "The in handle dragged right and the out handle left on the timeline", 4, { frame: "bare" })),
-            cell(5, 4, cv("format", "The format picker opening, the cursor running down the list, GIF picked", 300 / 225, { frame: "bare" })),
-            cell(7, 2, cv("gif-width", "Dragging the GIF's width: the expected size on the video follows", 3.2, { frame: "bare" })),
-            {
-              kind: "slot",
-              w: 7,
-              h: 2,
-              need: "Pasting an X link in the desktop app: yt-dlp fetches it and it lands in the box like a file.",
-            },
+            cell(12, 2, cv("trim", "The in handle dragged right and the out handle left on the timeline", 6, { frame: "bare" })),
+            cell(6, 3, cv("format", "The format picker opening, the cursor running down the list, GIF picked", 1200 / 660, { frame: "bare" })),
+            cell(6, 3, cv("gif-size", "The expected size on the video changing as the GIF's width is dragged", 600 / 330, { frame: "bare" })),
+            cell(12, 1, cv("gif-width", "The GIF width slider dragged from 640 up to 1252 pixels and back", 1600 / 150, { frame: "bare" })),
           ],
+        },
+        {
+          type: "field",
+          aspect: 16 / 9,
+          device: "laptop",
+          need: "the Convertr window on a laptop, on a soft neutral.",
+          screens: [cv("every-state", "Convertr on a laptop, going through every state: drop, settings, a format, convert, the result", 1.6)],
         },
       ],
     },
@@ -216,7 +225,15 @@ export const convertr: Project = {
       blocks: [
         {
           type: "p",
-          text: "Holding the code meant the box never got flattened into a normal layout. It also taught me where the design actually lives: half of the feel is in numbers tuned by watching it move, like spring stiffness and how far the result steps out, and none of that was in the design file. If I did it again I'd build the simulated engine first; it would have made every iteration much faster. Any questions? Write me, I'm always up for talking about this one.",
+          text: "Holding the code meant the box never got flattened into a normal layout. It also taught me where the design actually lives: half of the feel is in numbers tuned by watching it move, like spring stiffness and how far the result steps out, and none of that was in the design file.",
+        },
+        {
+          type: "p",
+          text: "If I did it again I'd build the simulated engine first. It's what runs this page, and having it from day one would have made every iteration much faster.",
+        },
+        {
+          type: "p",
+          text: "Any questions? Write me, I'm always up for talking about this one.",
         },
       ],
     },

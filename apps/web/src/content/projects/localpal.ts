@@ -82,11 +82,9 @@ export const localpal: Project = {
     type: "field",
     aspect: 16 / 9,
     device: "phone",
-    need: "three phones on a soft neutral: a search, a venue's plans, the profile with its QR.",
+    need: "one phone in hand on a Madrid street, the map on screen.",
     screens: [
-      lp("search", "phone", "A search in a sentence, with the results that fit", { aspect: 600 / 1298, still: true }),
-      lp("venue", "phone", "A venue and the plans of the people going", { aspect: 600 / 1298, still: true }),
-      lp("profile", "phone", "The profile", { aspect: 600 / 1298, still: true }),
+      lp("map-zoom", "phone", "LocalPal's map of Madrid, venues and people as pins", { aspect: 600 / 1298, still: true }),
     ],
   },
   contents: true,
@@ -105,6 +103,15 @@ export const localpal: Project = {
           text: "A city is much more than its obvious plans. The best ones don't exist until someone makes them happen. LocalPal is where they happen.",
           source: "The brand claim",
         },
+        {
+          // The reel: the prototype in use, recorded from it, silent.
+          type: "bento",
+          row: 1,
+          cells: [
+            phone(12, 7, "reel", "Thirty seconds of the prototype: searching in a sentence, a venue's plans, confirming on the day, picking interests, flying into the map"),
+          ],
+        },
+
       ],
     },
     {
@@ -125,14 +132,6 @@ export const localpal: Project = {
             { label: "Brand and design system", from: 1, to: 3 },
             { label: "Screens and flows", from: 2, to: 4 },
             { label: "React prototype", from: 2, to: 4 },
-          ],
-        },
-        {
-          // The reel: the prototype in use, recorded from it, silent.
-          type: "bento",
-          row: 1,
-          cells: [
-            phone(12, 7, "reel", "Thirty seconds of the prototype: searching in a sentence, a venue's plans, confirming on the day, picking interests, flying into the map"),
           ],
         },
       ],
@@ -164,9 +163,8 @@ export const localpal: Project = {
           figure: {
             kind: "image",
             src: `${M}/fig-platforms.webp`,
-            aspect: 16 / 9,
-            minWidth: 720,
-            alt: "Five platforms that tried, scored 0 to 5 on ten factors. The gap: niche plans, anyone can propose, and trust; no one does all three.",
+            aspect: 4 / 3,
+            alt: "Five platforms that tried, scored 0 to 5 on niche plans, anyone can propose, and trust and safety. Each gets one or two of the three; none gets all of them.",
           },
         },
       ],
@@ -195,7 +193,11 @@ export const localpal: Project = {
         },
         {
           type: "p",
-          text: "The first month in a new city is covered. Welcome weeks, flatmate dinners, the big bars; everyone is new and everyone is available, and an app for niche plans has nothing to add. Somewhere between week six and week twelve that runs out. The novelty wears off, the friend group has settled, and people start wanting the specific things: a climbing partner, a small gallery show, a run on Sunday. That is the moment nothing serves, and it's where LocalPal lives.",
+          text: "The first month in a new city is covered. Welcome weeks, flatmate dinners, the big bars; everyone is new and everyone is available, and an app for niche plans has nothing to add. Somewhere between week six and week twelve that runs out. The novelty wears off, the friend group has settled, and people start wanting the specific things: a climbing partner, a small gallery show, a run on Sunday. That is the moment nothing serves.",
+        },
+        {
+          type: "lede",
+          text: "Around week nine, what everyone does stops being enough, and what you'd specifically like to do takes over. That's where LocalPal lives.",
         },
         {
           type: "figure",
@@ -249,25 +251,7 @@ export const localpal: Project = {
         },
         {
           type: "p",
-          text: "Three people to design for, one per problem:",
-        },
-        {
-          type: "list",
-          style: "bulleted",
-          items: [
-            {
-              title: "Giovanna, 22, from Bologna.",
-              body: "Three weeks in and never a free night, but always the same plans. At home she played football twice a week; here she's waiting for an invite.",
-            },
-            {
-              title: "Martim, 21, from Porto.",
-              body: "A bouldering video hooked him a month ago. He's looked at two gyms, doesn't know where to start, and the interest is fading.",
-            },
-            {
-              title: "Beatrice, 23, from Belfast.",
-              body: "Left out of her host university's activity group, she never joins plans: she doesn't know who she'd meet, and doesn't feel safe finding out.",
-            },
-          ],
+          text: "Three people to design for, one per problem: Giovanna, who has plenty of plans and keeps doing the same ones; Martim, who wants to start climbing and doesn't know where; and Beatrice, who doesn't feel safe joining strangers.",
         },
         {
           type: "p",
@@ -277,11 +261,9 @@ export const localpal: Project = {
           type: "bento",
           row: 1,
           cells: [
-            { ...pic(4, 4, "storyboard-1", 1400 / 1233, "Marco dancing alone to music in his room.", "#ffffff"), label: "1 · Wants to do something" },
-            { ...pic(4, 4, "storyboard-2", 1400 / 1843, "His phone lights up with something.", "#ffffff"), label: "2 · Something comes up" },
-            { ...pic(4, 4, "storyboard-3", 1400 / 1108, "Scrolling on a cushion, looking for it.", "#ffffff"), label: "3 · Looks for it" },
-            { ...pic(5, 4, "storyboard-4", 1400 / 1287, "A shrug under a cloud of question marks.", "#ffffff"), label: "4 · Can't pin it down" },
-            { ...pic(7, 4, "storyboard-5", 1400 / 782, "Three people sitting together with drinks: the plan happened.", "#ffffff"), label: "5 · With LocalPal, he goes" },
+            { ...pic(4, 4, "storyboard-1", 1400 / 1233, "Marco dancing alone to music in his room.", "#ffffff"), label: "Wants to do something" },
+            { ...pic(4, 4, "storyboard-4", 1400 / 1287, "A shrug under a cloud of question marks.", "#ffffff"), label: "Can't pin it down" },
+            { ...pic(4, 4, "storyboard-5", 1400 / 782, "Three people sitting together with drinks: the plan happened.", "#ffffff"), label: "With LocalPal, he goes" },
           ],
         },
         {
@@ -322,18 +304,16 @@ export const localpal: Project = {
           type: "bento",
           row: 1,
           cells: [
-            pic(8, 5, "fig-brand-colours", 16 / 9, "The colours: the brand blue, its deep and pressed shades, lavender and ink; and the map, inverted: land, water, park, road.", "#f4f2ee"),
-            bare(4, 5, "ds-squircle", 720 / 342, "#4031fc", "A squircle's corner radius dragged up and down: every surface in the app is the same superellipse."),
+            pic(12, 6, "fig-brand-colours", 16 / 9, "The colours: the brand blue, its deep and pressed shades, lavender and ink; and the map, inverted: land, water, park, road.", "#f4f2ee"),
           ],
         },
         {
           type: "bento",
           row: 1,
           cells: [
-            { ...bare(3, 3, "ds-press", 4 / 3, "#f0f3fd", "Press: a tile squishes on touch and springs back."), label: "Press · pins, buttons" },
-            { ...bare(3, 3, "ds-pop", 4 / 3, "#f0f3fd", "Pop: a circle bumps when tapped."), label: "Pop · interest bubbles" },
-            { ...bare(3, 3, "ds-snap", 4 / 3, "#f0f3fd", "Snap: a tile clicks into its new place with a small overshoot."), label: "Snap · glyphs, the slider" },
-            { ...bare(3, 3, "ds-inform", 4 / 3, "#f0f3fd", "Inform: a progress line fills with no bounce at all."), label: "Inform · progress, never bounces" },
+            { ...bare(4, 2, "ds-press", 4 / 3, "#f0f3fd", "Press: a tile squishes on touch and springs back."), label: "Press · pins, buttons" },
+            { ...bare(4, 2, "ds-snap", 720 / 374, "#f0f3fd", "Snap: a tile clicks into its new place with a small overshoot."), label: "Snap · glyphs, the slider" },
+            { ...bare(4, 2, "ds-inform", 4 / 3, "#f0f3fd", "Inform: a progress line fills with no bounce at all."), label: "Inform · progress, never bounces" },
           ],
         },
       ],
@@ -350,16 +330,15 @@ export const localpal: Project = {
         { type: "subhead", text: "01 · The map is the feed" },
         {
           type: "p",
-          text: "There is no list. Cards and sheets sit on top of the map and turn into each other when you touch them, so you never lose where you are. Zoom out and the city gathers into a count; zoom in and the pins come apart.",
+          text: "The map is never gone. Lists are sheets laid over it that pull down to it, and pins and cards turn into each other when you touch them, so you never lose where you are. Zoom out and the city gathers into a count; zoom in and the pins come apart.",
         },
         {
           type: "bento",
           row: 1,
           cells: [
-            phone(4, 7, "map-zoom", "Zooming out of Madrid until the pins gather into one count, then back in as they come apart."),
-            bare(4, 7, "bottom-bar", 900 / 1598, "#ecf0f1", "The search pill grows into the full sheet and back; its magnifier bends into a cross."),
-            bare(4, 4, "venue-pin", 720 / 902, "#eee8df", "A venue pin grows into a labelled pill, then floats over its shadow."),
-            bare(4, 3, "locate", 1, "#ecf0f1", "The locate button twists when pressed and the blue dot answers with a pulse."),
+            phone(7, 8, "map-zoom", "Zooming out of Madrid until the pins gather into one count, then back in as they come apart."),
+            bare(5, 4, "venue-pin", 720 / 902, "#eee8df", "A venue pin grows into a labelled pill, then floats over its shadow."),
+            bare(5, 4, "locate", 1, "#ecf0f1", "The locate button twists when pressed and the blue dot answers with a pulse."),
           ],
         },
         { type: "subhead", text: "02 · Search in a sentence" },
@@ -371,9 +350,7 @@ export const localpal: Project = {
           type: "bento",
           row: 1,
           cells: [
-            phone(7, 7, "search", "Typing “I want something chill tonight”: it becomes Chill, Music and Today filters, and the best matches each say why they fit."),
-            bare(5, 4, "search-morph", 1, "#eee8df", "The magnifier bends into a cross, point by point, with no crossfade."),
-            bare(5, 3, "cta-morph", 1, "#f3f0e6", "The card's button scrambles its label and swaps its glyph through every state."),
+            phone(12, 7, "search", "Typing “I want something chill tonight”: it becomes Chill, Music and Today filters, and the best matches each say why they fit."),
           ],
         },
         { type: "subhead", text: "03 · Going together" },
@@ -385,8 +362,7 @@ export const localpal: Project = {
           type: "bento",
           row: 1,
           cells: [
-            bare(5, 8, "venue-flow", 900 / 1598, "#ecf0f1", "The whole chain: the pin grows into the venue, a party card rises out of it, Join, confirm, joined."),
-            phone(7, 8, "venue", "Opening Rita's, then its live music night, then the plans of the people going together."),
+            phone(12, 7, "venue", "Opening Rita's, then its live music night, then the plans of the people going together."),
           ],
         },
         { type: "subhead", text: "04 · The confirm slider" },
@@ -398,8 +374,8 @@ export const localpal: Project = {
           type: "bento",
           row: 1,
           cells: [
-            bare(6, 7, "rsvp", 900 / 1126, "#eee8df", "Dragging the knob across: the chevron turns into a check, and the list of people on their way opens."),
-            phone(6, 7, "dayof", "The day of a plan: sliding to RSVP on the plans sheet, in the app."),
+            bare(7, 8, "rsvp", 900 / 1126, "#eee8df", "Dragging the knob across: the chevron turns into a check, the countdown lands, and the list of people on their way opens."),
+            phone(5, 8, "dayof", "The day of a plan: sliding to RSVP on the plans sheet, in the app."),
           ],
         },
         { type: "subhead", text: "05 · Onboarding you play" },
@@ -450,19 +426,6 @@ export const localpal: Project = {
         {
           type: "p",
           text: "Any questions? Write me, I love talking about this one.",
-        },
-        {
-          type: "bento",
-          row: 1,
-          cells: [
-            {
-              kind: "slot",
-              w: 12,
-              h: 4,
-              awaits: "photo",
-              need: "A photo from the defence, or of the project on screen at UDIT.",
-            },
-          ],
         },
       ],
     },

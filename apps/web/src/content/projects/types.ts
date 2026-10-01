@@ -52,6 +52,8 @@ export type Figure =
       variant: "phone" | "desktop";
       query?: string;
       caption?: string;
+      /** A small tag on the demo's corner, saying it's the real thing. */
+      label?: string;
     };
 
 export type Block =

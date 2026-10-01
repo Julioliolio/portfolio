@@ -219,11 +219,11 @@ const PORTRAIT = "1781307652368117760.mp4"; // 576×1024
 const LANDSCAPE = "1882250851328086016.mp4";
 const WIDE = "2000815677498687494.mp4"; // 720×504
 
-function desk(name, { prep, act, crop, start = 0.2, tail = 0.3, fade = 0, width = 1280, posterAt = 0 }) {
+function desk(name, { prep, act, crop, start = 0.2, tail = 0.3, fade = 0, width = 1280, posterAt = 0, dpr = 2 }) {
   return {
     name: `convertr/${name}`,
     async run(browser) {
-      const page = await open(browser, { width: 1280, height: 800 }, clayCursor(BASE), 2);
+      const page = await open(browser, { width: 1280, height: 800 }, clayCursor(BASE), dpr);
       await page.route("**/__footage/*", (route) =>
         route.fulfill({ path: FOOTAGE + route.request().url().split("/").pop(), contentType: "video/mp4" }),
       );
@@ -277,11 +277,8 @@ async function open(browser, viewport, init, dpr = DPR) {
 const JOBS = [
   stage("venue-pin", { aspect: "4x5", bg: "EFE9E1", seconds: 9.4, boxH: 400, dpr: 5, zoom: 2.6, width: 720 }),
   stage("bubbles", { aspect: "4x5", bg: "F4EFE7", seconds: 9, boxH: 560, dpr: 3 }),
-  stage("bottom-bar", { aspect: "9x16", bg: "ECEEF2", seconds: 12.6 }),
-  stage("search-morph", { aspect: "1x1", bg: "EFE9E1", seconds: 7, boxH: 200, dpr: 4, width: 720 }),
-  stage("cta-morph", { aspect: "1x1", bg: "F4EFE7", seconds: 9, boxH: 260, dpr: 4, width: 720, posterAt: 1 }),
-  stage("venue-flow", { aspect: "9x16", bg: "ECEEF2", seconds: 14, posterAt: 5 }),
-  stage("rsvp", { aspect: "4x5", bg: "EFE9E1", seconds: 9, boxH: 460, dpr: 3 }),
+  // Tight on the card, and only the drag and the list opening.
+  stage("rsvp", { aspect: "4x5", bg: "EFE9E1", seconds: 9, boxH: 460, dpr: 4, zoom: 1.35, start: 0.4, posterAt: 1.6 }),
   stage("locate", { aspect: "1x1", bg: "ECEEF2", seconds: 6, boxH: 360, dpr: 5, zoom: 2.2, cy: 0.52, width: 640 }),
   phone("onboarding-interests", "onboarding", {
     posterAt: 5.5,
@@ -375,40 +372,10 @@ const JOBS = [
     },
   }),
   ds("ds-press", { find: (p) => motionTile(p, "Press"), act: (f, c) => tapCrop(f, c) }),
-  ds("ds-pop", { find: (p) => motionTile(p, "Pop"), act: (f, c) => tapCrop(f, c) }),
   // Snap slides the tile across: the whole tile, or it leaves the frame.
   ds("ds-snap", { find: (p) => motionTile(p, "Snap", true), act: (f, c) => tapCrop(f, c) }),
   ds("ds-inform", { find: (p) => motionTile(p, "Inform"), act: (f, c) => tapCrop(f, c, 2, 2600) }),
-  ds("ds-squircle", {
-    // The squircle demo: the shape left of its two sliders.
-    find: async (p) => {
-      const ctl = p.locator(".dsw-sq-controls").first();
-      await ctl.scrollIntoViewIfNeeded();
-      await p.waitForTimeout(600);
-      const c = await ctl.boundingBox();
-      const box = await ctl.evaluate((el) => {
-        const r = el.parentElement.getBoundingClientRect();
-        return { x: r.x, y: r.y, h: r.height };
-      });
-      return [c.x - box.x - 24, box.h - 2, box.x + 1, box.y + 1].map(Math.round);
-    },
-    act: async (f) => {
-      const sliders = f.page.locator(".dsw-sq-controls input[type=range]");
-      const smooth = await sliders.nth(1).boundingBox();
-      const radius = await sliders.nth(0).boundingBox();
-      const y = smooth.y + smooth.height / 2;
-      const ry = radius.y + radius.height / 2;
-      await f.wait(400);
-      await f.drag(smooth.x + smooth.width - 4, y, smooth.x + 4, y, 1400);
-      await f.wait(500);
-      await f.drag(smooth.x + 4, y, smooth.x + smooth.width - 4, y, 1400);
-      await f.wait(500);
-      await f.drag(radius.x + radius.width * 0.5, ry, radius.x + radius.width * 0.95, ry, 900);
-      await f.wait(300);
-      await f.drag(radius.x + radius.width * 0.95, ry, radius.x + radius.width * 0.5, ry, 900);
-      await f.wait(600);
-    },
-  }),
+
 ];
 
 JOBS.push(
@@ -489,16 +456,16 @@ JOBS.push(
   // The result: the box steps out, chips on the corners; the download
   // dragged out of the window, the way the desktop app hands it over.
   desk("result-drag", {
-    posterAt: 1.5,
+    posterAt: 5.5,
     prep: async (f) => {
       await dropFile(f, PORTRAIT, "clouds.mp4");
       await f.wait(7000);
-      await press(f, "text=PROCESS");
-      await f.glide(900, 640, 400);
-      await f.wait(3000);
     },
     act: async (f) => {
-      await f.wait(2400);
+      // From convert: the bricks, the box stepping out, then the drag.
+      await press(f, "text=PROCESS");
+      await f.glide(900, 640, 400);
+      await f.wait(5600);
       // A native link drag would swallow the mouse moves (and the clay
       // cursor with them): play the drag-out with the pointer instead.
       await f.page.evaluate(() => {
@@ -537,7 +504,8 @@ JOBS.push(
         );
         const [a, z] = hs;
         const w = z[0] - a[0] + 120;
-        box = [w, w / 4, a[0] - 60, a[1] - w / 4 + 40].map(Math.round);
+        // The timeline and a sliver of the video above it.
+        box = [w, w / 6, a[0] - 60, a[1] - w / 6 + 34].map(Math.round);
         await f.wait(300);
         await f.drag(a[0], a[1], a[0] + (z[0] - a[0]) * 0.28, a[1], 900);
         await f.wait(500);
@@ -545,7 +513,9 @@ JOBS.push(
         await f.wait(1400);
       },
       crop: async () => box,
-      width: 1200,
+      // Native: the crop is ~600 CSS px at 4×, so nothing is upscaled.
+      dpr: 4,
+      width: 1600,
     });
   })(),
   // Picking a format, then the GIF's width with the estimate following —
@@ -553,7 +523,7 @@ JOBS.push(
   {
     name: "convertr/format-gif",
     async run(browser) {
-      const page = await open(browser, { width: 1280, height: 800 }, clayCursor(BASE), 2);
+      const page = await open(browser, { width: 1280, height: 800 }, clayCursor(BASE), 3);
       await page.route("**/__footage/*", (route) =>
         route.fulfill({ path: FOOTAGE + route.request().url().split("/").pop(), contentType: "video/mp4" }),
       );
@@ -565,11 +535,14 @@ JOBS.push(
       await f.wait(7000);
       await press(f, "[title=Settings]");
       await f.wait(1800);
-      let picker, slider, tPick, tSlide;
+      let picker, slider, chip, tPick, tSlide;
       const rec = await screencast(page, async () => {
         const t0 = Date.now();
         const fmt = await page.locator("[title='Output format']").first().boundingBox();
-        picker = [300, 225, fmt.x - 30, fmt.y - 20].map(Math.round);
+        const proc = await page.getByText("PROCESS").first().boundingBox();
+        // From the format chip to past PROCESS, down to the list's end.
+        const pw = proc.x + proc.width + 24 - (fmt.x - 24);
+        picker = [pw, 200, fmt.x - 24, fmt.y - 16].map(Math.round);
         await press(f, "[title='Output format']");
         await f.wait(700);
         for (const t of ["text=WEBM", "text=MOV", "text=AVI"]) {
@@ -587,13 +560,11 @@ JOBS.push(
           return r && { x: r.x, y: r.y, width: r.width, height: r.height };
         });
         const y = range.y + range.height / 2;
-        const chip = await page.getByText(/expected size/i).first().boundingBox();
-        // The slider and, to its left, the expected-size chip on the video.
-        const x0 = Math.min(chip?.x ?? range.x, range.x) - 20;
-        slider = [range.x + range.width - x0 + 20, 0, x0, 0];
-        slider[1] = Math.round(slider[0] / 3.2);
-        slider[3] = Math.round(Math.min(chip?.y ?? y, y) - 30);
-        slider = slider.map(Math.round);
+        const c = await page.getByText(/expected size/i).first().boundingBox();
+        // The width slider alone, and the expected-size chip alone: two
+        // cells side by side, cut from the same seconds so they agree.
+        slider = [range.width + 40, 80, range.x - 20, range.y - 16].map(Math.round);
+        chip = [200, 110, c.x - 30, c.y - 30].map(Math.round);
         await f.wait(300);
         await f.drag(range.x + range.width * 0.2, y, range.x + range.width * 0.62, y, 1300);
         await f.wait(900);
@@ -603,9 +574,12 @@ JOBS.push(
       });
       await page.close();
       const master = await encode(rec, { out: `${MASTERS}convertr-format-gif.mp4` });
-      const px = (c) => c.map((v) => v * 2).join(":");
-      await loopClip({ src: master, start: 0, dur: tPick, fade: 0, width: 900, crop: px(picker), posterAt: 1.6, out: `${MEDIA}convertr/format.mp4` });
-      return loopClip({ src: master, start: tPick - 0.2, dur: tSlide - tPick, fade: 0, width: 1200, crop: px(slider), posterAt: 2, out: `${MEDIA}convertr/gif-width.mp4` });
+      // CSS px → the master's pixels (Chrome caps the screencast's scale).
+      const mw = Number(spawnSync("ffprobe", ["-v", "error", "-show_entries", "stream=width", "-of", "csv=p=0", master]).stdout);
+      const px = (c) => c.map((v) => Math.round((v * mw) / 1280)).join(":");
+      await loopClip({ src: master, start: 0, dur: tPick, fade: 0, width: 1200, crop: px(picker), posterAt: 1.6, out: `${MEDIA}convertr/format.mp4` });
+      await loopClip({ src: master, start: tPick - 0.2, dur: tSlide - tPick, fade: 0, width: 600, crop: px(chip), posterAt: 2, out: `${MEDIA}convertr/gif-size.mp4` });
+      return loopClip({ src: master, start: tPick - 0.2, dur: tSlide - tPick, fade: 0, width: 1600, crop: px(slider), posterAt: 2, out: `${MEDIA}convertr/gif-width.mp4` });
     },
   },
 );

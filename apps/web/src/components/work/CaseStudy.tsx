@@ -637,7 +637,10 @@ function FigureView({ figure }: { figure: Figure }) {
       );
     case "demo":
       return (
-        <figure>
+        <figure style={{ position: "relative" }}>
+          {figure.label && (
+            <span className="bn-label ty-small">{figure.label}</span>
+          )}
           <DemoShell
             demo={figure.demo}
             title={figure.title}

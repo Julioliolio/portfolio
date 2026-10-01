@@ -31,8 +31,7 @@ export const camper: Project = {
       label: "Fields",
       value: "Concept, art direction, AI image and video generation, edit",
     },
-    { label: "Role", value: "Concept, storyboard, image and video generation, edit" },
-    // Draft: only Flora is from the copy; Julio to correct.
+      // Draft: only Flora is from the copy; Julio to correct.
     { label: "Tools", value: "Flora, After Effects, Premiere" },
     { label: "Length", value: "60 seconds" },
   ],
@@ -53,7 +52,11 @@ export const camper: Project = {
       blocks: [
         {
           type: "p",
-          text: "A spec film for Camper, made at 2894 Studio, my last job. Camper is a brand that everyone can wear and everyone does wear: a kid fastening their velcro, a waitress in heels, a man sweeping a terrace, someone reading on the pavement, two kids on a doorstep, bare feet at the water's edge. The film keeps cutting between people who would never share a frame, and the one thing that stays constant is what they're standing in.",
+          text: "Camper is a brand that everyone can wear and everyone does wear: a kid fastening their velcro, a waitress in heels, a man sweeping a terrace, someone reading on the pavement, two kids on a doorstep. The film keeps cutting between people who would never share a frame, and the one thing that stays constant is what they're standing in.",
+        },
+        {
+          type: "p",
+          text: "Three rules make that true on screen. The camera stays at shin height. It never shows a face, so no one is the star. And every shot shares one light and one grain, a sunny afternoon on 35mm, so the cuts feel like one street. It ends with the shoes off: bare feet in the water beside a pair of Campers, the one frame where everyone really is equal.",
         },
         {
           // The cast, one loop per person, cut from the film
@@ -62,14 +65,14 @@ export const camper: Project = {
           type: "bento",
           row: 2.25,
           cells: [
+            cast("beach", 8, 2, "Bare feet at the water's edge, a pair of red Camper sandals beside them, the film's last shot"),
             cast("velcro", 4, 1, "A kid's hand pressing the velcro of a white sneaker shut"),
             cast("heels", 4, 1, "Black heels at the foot of a café bar"),
             cast("broom", 4, 1, "Green sneakers and a broom on a terrace"),
-            cast("reader", 8, 2, "Green suede sneakers under someone reading on the pavement"),
+            cast("reader", 4, 1, "Green suede sneakers under someone reading on the pavement"),
             cast("sofa", 4, 1, "Black sandals, feet up on a sofa by an open window"),
             cast("market", 4, 1, "Sandals at a market stall"),
             cast("kitchen", 4, 1, "Black shoes on a tiled kitchen floor"),
-            cast("arcade", 4, 1, "Someone walking through a sunlit arcade"),
             cast("step", 4, 1, "Two kids' sneakers on a doorstep"),
           ],
         },
@@ -85,8 +88,20 @@ export const camper: Project = {
           text: "The full minute was storyboarded first, so every generation had a target. Each frame became a still, prompted across a few image models on a Flora canvas until the person, the light and the shoe matched the drawing. The stills that held up went through video models to become shots.",
         },
         {
-          // Board → still → shot, for one moment of the film: the arcade
-          // walk, where the shot visibly does what the still can't.
+          type: "bento",
+          cells: [
+            {
+              kind: "slot",
+              w: 12,
+              h: 2,
+              awaits: "photo",
+              need: "The whole storyboard as one strip, every frame in order: the film's structure at a glance.",
+            },
+          ],
+        },
+        {
+          // Board → still → shot, for one moment of the film: the kick at
+          // the crates, where the shot visibly does what the still can't.
           type: "bento",
           row: 2.25,
           cells: [
@@ -96,7 +111,7 @@ export const camper: Project = {
               h: 1,
               awaits: "photo",
               label: "Board",
-              need: "The storyboard frame for the arcade walk.",
+              need: "The storyboard frame for the kick at the crates.",
             },
             {
               kind: "shot",
@@ -104,9 +119,9 @@ export const camper: Project = {
               h: 1,
               label: "Still",
               frame: "bare",
-              src: "/media/camper/still-arcade.webp",
+              src: "/media/camper/still-kick.webp",
               aspect: 16 / 9,
-              alt: "The still: someone in black trousers walking into a sunlit arcade, a hat in hand",
+              alt: "The still: someone in shorts and grey trainers, a stack of crates on a pallet behind",
             },
             {
               kind: "shot",
@@ -114,10 +129,10 @@ export const camper: Project = {
               h: 1,
               label: "Shot",
               frame: "bare",
-              src: "/media/camper/shot-arcade.mp4",
-              poster: "/media/camper/shot-arcade.webp",
+              src: "/media/camper/shot-kick.mp4",
+              poster: "/media/camper/shot-kick.webp",
               aspect: 16 / 9,
-              alt: "The shot: the same moment moving, the walk carrying on down the arcade through bars of light",
+              alt: "The shot: the same moment moving, a leg swinging back to kick the crates",
             },
           ],
         },
@@ -127,9 +142,9 @@ export const camper: Project = {
             {
               kind: "slot",
               w: 12,
-              h: 3,
+              h: 2,
               awaits: "photo",
-              need: "The Flora canvas, zoomed out enough to show the scale, with the branch that became each shot marked.",
+              need: "The Flora canvas: one branch close, from prompt to the still that became a shot, with the whole canvas small beside it for scale.",
             },
           ],
         },
@@ -149,7 +164,7 @@ export const camper: Project = {
               h: 2,
               awaits: "photo",
               label: "Rejected",
-              need: "Eight to twelve generations of the reader that didn't make it, each with a word on why: too model-like, the strap's wrong, the light's off.",
+              need: "Eight to twelve generations of the man on the ledge that didn't make it, each with a word on why: too model-like, the shoe's wrong, the light's off.",
             },
             {
               kind: "shot",
@@ -157,21 +172,9 @@ export const camper: Project = {
               h: 2,
               label: "Kept",
               frame: "bare",
-              src: "/media/camper/still-reader.webp",
+              src: "/media/camper/still-ledge.webp",
               aspect: 16 / 9,
-              alt: "The one that was kept: green suede Campers under someone reading on the pavement",
-            },
-          ],
-        },
-        {
-          type: "bento",
-          cells: [
-            {
-              kind: "slot",
-              w: 12,
-              h: 2,
-              awaits: "photo",
-              need: "The whole storyboard as one strip, every frame in order: the film's structure at a glance.",
+              alt: "The one that was kept: black trousers and polished black shoes, someone sitting on a ledge with a phone",
             },
           ],
         },
@@ -184,7 +187,7 @@ export const camper: Project = {
       blocks: [
         {
           type: "p",
-          text: "Every time a shot drifted, it was because I had lost the sentence, not because the model was wrong. Generative tools reward the same thing a real shoot does: knowing what you want before anything is generated, and being ruthless with everything that isn't it.",
+          text: "The sentence was the tagline: everyone is equal in their feet. Every time a shot drifted, it was because I had lost it, not because the model was wrong. Generative tools reward the same thing a real shoot does: knowing what you want before anything is generated, and being ruthless with everything that isn't it.",
         },
       ],
     },

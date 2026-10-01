@@ -115,37 +115,37 @@ function moment() {
 }
 
 /**
- * Five platforms that tried, scored 0–5 on ten factors (Julio's May
- * radar, from the research). LocalPal isn't scored against them — the
- * chart shows the gap: three columns nobody fills at once.
+ * Five platforms that tried, on the three things LocalPal needs at once
+ * (scores 0–5 from Julio's May radar, from the research). LocalPal isn't
+ * scored against them: the chart is the gap, small enough for a phone.
  */
 function platforms() {
-  const factors = ["Mainstream plans", "Niche plans", "Both, layered", "Anyone can propose", "Short notice", "Trust and safety", "Locals and newcomers", "People nearby", "Polish", "Your account lasts"];
-  const gap = new Set([1, 3, 5]);
+  const factors = ["Niche plans", "Anyone can propose", "Trust and safety"];
   const rows = [
-    ["Nomadtable", [1, 1, 0, 4, 4, 1, 0, 3, 3, 2], "drifted into dating"],
-    ["Spontacts", [2, 2, 1, 5, 4, 2, 3, 1, 2, 1], "German-speaking only"],
-    ["Couchsurfing Hangouts", [3, 1, 0, 5, 5, 3, 5, 3, 2, 0], "closed, 2020 paywall"],
-    ["Timeleft", [2, 0, 1, 0, 1, 3, 3, 4, 4, 2], "dinners assigned by algorithm"],
-    ["Luma", [3, 3, 1, 2, 3, 1, 3, 4, 5, 3], "organisers, not people"],
+    ["Nomadtable", [1, 4, 1], "drifted into dating"],
+    ["Spontacts", [2, 5, 2], "German-speaking only"],
+    ["Couchsurfing Hangouts", [1, 5, 3], "closed, 2020 paywall"],
+    ["Timeleft", [0, 0, 3], "dinners assigned by algorithm"],
+    ["Luma", [3, 2, 1], "organisers, not people"],
   ];
-  const cell = (v, i) => `<td class="${gap.has(i) ? "g" : ""}"><span class="d" style="width:${8 + v * 9}px;height:${8 + v * 9}px;opacity:${v ? 0.8 : 0.12}"></span></td>`;
-  return [1600, 900, `<style>
-  .w { position: absolute; inset: 48px 56px 44px; display: flex; flex-direction: column; justify-content: center; }
+  const cell = (v) => `<td><span class="d" style="width:${14 + v * 14}px;height:${14 + v * 14}px;opacity:${v ? 0.85 : 0.14}"></span><span class="v">${v}</span></td>`;
+  return [1200, 900, `<style>
+  .w { position: absolute; inset: 52px 60px 48px; display: flex; flex-direction: column; justify-content: center; }
   table { border-collapse: separate; border-spacing: 0; width: 100%; }
-  th { font-size: 19px; font-weight: 500; color: ${C.muted}; text-align: center; vertical-align: bottom; padding: 0 4px 20px; line-height: 1.1; width: 7.6%; }
-  th:first-child { width: 24%; }
-  th.g { color: ${C.brand}; }
-  td { height: 96px; text-align: center; border-top: 1px solid rgba(0,29,51,.1); }
-  td.g { background: rgba(165,159,255,.2); }
-  td:first-child { text-align: left; font-size: 26px; padding-left: 4px; }
-  td:first-child small { display: block; font-size: 18px; color: ${C.muted}; margin-top: 4px; }
+  th { font-size: 26px; font-weight: 500; color: ${C.brand}; text-align: center; vertical-align: bottom; padding: 0 6px 22px; line-height: 1.1; width: 18%; }
+  th:first-child { width: 46%; }
+  td { height: 112px; text-align: center; border-top: 1px solid rgba(0,29,51,.1); position: relative; }
+  td:not(:first-child) { background: rgba(165,159,255,.16); }
+  td:first-child { text-align: left; font-size: 34px; letter-spacing: -0.02em; }
+  td:first-child small { display: block; font-size: 22px; color: ${C.muted}; margin-top: 4px; letter-spacing: 0; }
   .d { display: inline-block; border-radius: 50%; vertical-align: middle; background: ${C.ink}; }
-  .k { margin-top: 26px; font-size: 28px; line-height: 1.2; }
+  .v { position: absolute; right: 12px; bottom: 8px; font-size: 18px; color: ${C.muted}; }
+  .k { margin-top: 30px; font-size: 34px; line-height: 1.18; letter-spacing: -0.015em; }
   .k b { color: ${C.brand}; font-weight: 600; }
-  </style><div class="fig"><div class="w"><table><tr><th></th>${factors.map((f, i) => `<th class="${gap.has(i) ? "g" : ""}">${f}</th>`).join("")}</tr>
+  .k small { display: block; margin-top: 10px; font-size: 21px; color: ${C.muted}; letter-spacing: 0; }
+  </style><div class="fig"><div class="w"><table><tr><th></th>${factors.map((f) => `<th>${f}</th>`).join("")}</tr>
   ${rows.map(([n, vs, note]) => `<tr><td>${n}<small>${note}</small></td>${vs.map(cell).join("")}</tr>`).join("")}
-  </table><div class="k"><b>The gap:</b> niche plans, anyone can propose, and trust. No one does all three. Scored 0–5 from the research; bigger dot, better.</div></div></div>`];
+  </table><div class="k"><b>The gap.</b> Each gets one or two of the three. None gets all of them.<small>Scored 0–5 from the research; bigger dot, better.</small></div></div></div>`];
 }
 
 function quote(i) {
@@ -258,7 +258,7 @@ const FIGURES = {
 
 // The thesis's own pictures, as they are: [out name, source, width].
 const STILLS = [
-  ...[1, 2, 3, 4, 5].map((n) => [`storyboard-${n}`, `storyboard-frame${n}.png`, 1400]),
+  ...[1, 4, 5].map((n) => [`storyboard-${n}`, `storyboard-frame${n}.png`, 1400]),
   ["brand-sample", "fig11-brand-sample.png", 972],
   ["moodboard", "fig09-moodboard.png", 1600],
 ];
