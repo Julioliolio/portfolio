@@ -60,10 +60,6 @@ const PLACEHOLDER_WIDE = {
   src: asset("/media/placeholder-wide.mp4"),
   aspect: 1056 / 720,
 };
-const PLACEHOLDER_TALL = {
-  src: asset("/media/placeholder-tall.mp4"),
-  aspect: 720 / 826,
-};
 
 /** The three projects, in the signs' order. */
 export const PRINTS: readonly PrintSpec[] = [
@@ -72,7 +68,10 @@ export const PRINTS: readonly PrintSpec[] = [
     title: "LocalPal",
     href: asset("/work/localpal"),
     media: "tall",
-    ...PLACEHOLDER_TALL,
+    // The drawn phone on the LocalPal blue, a montage of the prototype
+    // (scripts/make-cover.mjs).
+    src: asset("/media/localpal/cover.mp4"),
+    aspect: 800 / 918,
     blurb:
       "A phone-first companion for meeting people nearby — plans, venues and friends on one live map. Designed and built end-to-end.",
     tags: ["iOS", "Design System", "End-to-end"],
