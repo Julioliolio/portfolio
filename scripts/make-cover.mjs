@@ -65,21 +65,29 @@ try {
     <path fill-rule="evenodd" fill="#16130f" d="
       M${X + R},${Y} h${PW - 2 * R} a${R},${R} 0 0 1 ${R},${R} v${PH - 2 * R} a${R},${R} 0 0 1 -${R},${R} h-${PW - 2 * R} a${R},${R} 0 0 1 -${R},-${R} v-${PH - 2 * R} a${R},${R} 0 0 1 ${R},-${R} z
       M${X + PAD + Ri},${Y + PAD} h${SW - 2 * Ri} a${Ri},${Ri} 0 0 1 ${Ri},${Ri} v${SCR_H - 2 * Ri} a${Ri},${Ri} 0 0 1 -${Ri},${Ri} h-${SW - 2 * Ri} a${Ri},${Ri} 0 0 1 -${Ri},-${Ri} v-${SCR_H - 2 * Ri} a${Ri},${Ri} 0 0 1 ${Ri},-${Ri} z"/></svg>`);
+  // The screen's own rounded mask: its square corners would otherwise
+  // poke out past the bezel's rounder outer corners.
+  const mask = Buffer.from(`<svg xmlns="http://www.w3.org/2000/svg" width="${SW}" height="${SCR_H}">
+    <rect width="${SW}" height="${SCR_H}" fill="#000"/>
+    <rect width="${SW}" height="${SCR_H}" rx="${Ri}" fill="#fff"/></svg>`);
   const shadowPng = join(dir, "shadow.png");
   const bezelPng = join(dir, "bezel.png");
+  const maskPng = join(dir, "mask.png");
   await sharp(shadow).png().toFile(shadowPng);
   await sharp(bezel).png().toFile(bezelPng);
+  await sharp(mask).grayscale().png().toFile(maskPng);
 
-  // Ground, shadow, the screen, the bezel on top (it hides the screen's
-  // square corners under its rounded cut-out).
+  // Ground, shadow, the screen (rounded), the bezel on top.
   const comp = join(dir, "comp.mp4");
   ff([
     "-f", "lavfi", "-i", `color=c=${GROUND}:s=${W}x${H}:r=30:d=${dur.toFixed(3)}`,
     "-i", shadowPng,
     "-ss", String(START), "-t", dur.toFixed(3), "-i", MASTER,
     "-i", bezelPng,
+    "-loop", "1", "-i", maskPng,
     "-filter_complex",
-    `[2:v]scale=${SW}:${SCR_H}:flags=lanczos:in_color_matrix=bt709:in_range=tv:out_color_matrix=bt709:out_range=tv,fps=30,setsar=1[s];` +
+    `[2:v]scale=${SW}:${SCR_H}:flags=lanczos:in_color_matrix=bt709:in_range=tv:out_color_matrix=bt709:out_range=tv,fps=30,setsar=1,format=yuva444p[raw];` +
+      `[4:v]format=gray,scale=${SW}:${SCR_H}[m];[raw][m]alphamerge[s];` +
       `[0:v][1:v]overlay=0:0[a];[a][s]overlay=${X + PAD}:${Y + PAD}:shortest=1[b];[b][3:v]overlay=0:0,format=yuv420p[v]`,
     "-map", "[v]", "-c:v", "libx264", "-crf", "14", "-pix_fmt", "yuv420p",
     "-colorspace", "bt709", "-color_primaries", "bt709", "-color_trc", "bt709", "-color_range", "tv",
