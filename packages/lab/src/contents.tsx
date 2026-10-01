@@ -422,6 +422,13 @@ export function useReadingPosition(
     if (!live) return;
     const target: HTMLElement | Window = scroller ?? window;
     let timer = 0;
+    // Each stop's scroll margin, read once and again after a resize (it
+    // is in the type's unit, which follows the width) — not a style
+    // lookup per stop on every beat of a scroll.
+    let leads: number[] | null = null;
+    const forget = () => {
+      leads = null;
+    };
     const read = () => {
       timer = 0;
       const root = scroller ?? document.documentElement;
@@ -429,13 +436,17 @@ export function useReadingPosition(
       const edge = scroller ? scroller.getBoundingClientRect().top : 0;
       const left = Math.max(0, root.scrollHeight - height - root.scrollTop);
       const sweep = Math.max(0, 1 - left / height);
+      const els = ids.map((id) => document.getElementById(id));
+      leads ??= els.map(
+        (el) =>
+          (el ? parseFloat(getComputedStyle(el).scrollMarginTop) || 0 : 0) +
+          SLACK,
+      );
 
       let index = 0;
-      ids.forEach((id, k) => {
-        const el = document.getElementById(id);
+      els.forEach((el, k) => {
         if (!el) return;
-        const lead =
-          (parseFloat(getComputedStyle(el).scrollMarginTop) || 0) + SLACK;
+        const lead = leads![k]!;
         const line = edge + lead + (height - lead) * sweep;
         if (el.getBoundingClientRect().top <= line) index = k;
       });
@@ -446,8 +457,10 @@ export function useReadingPosition(
     };
     read();
     target.addEventListener("scroll", onScroll, { passive: true });
+    window.addEventListener("resize", forget);
     return () => {
       target.removeEventListener("scroll", onScroll);
+      window.removeEventListener("resize", forget);
       window.clearTimeout(timer);
     };
     // eslint-disable-next-line react-hooks/exhaustive-deps -- the ids as one key

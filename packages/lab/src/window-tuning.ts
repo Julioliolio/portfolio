@@ -59,7 +59,9 @@ export type WindowTuning = {
   /** The box's corner radius, px — the prints' too. */
   corner: number;
   /** The sheet's lean on the mat, degrees: a real sheet is never quite
-   *  square to the table. The lift ends on it. */
+   *  square to the table. The lift ends on it. The paper leans; the page
+   *  printed on it stays square (window.tsx), so keep it to a fraction
+   *  of a degree — past that the page reads as laid on, not printed. */
   tilt: number;
   /** The sheet's size, as shares of the room it has (right of the rail
    *  and inside the margins): 1 fills it; less is a smaller sheet,
@@ -307,6 +309,35 @@ export const paperLight = (t: WindowTuning) =>
   `linear-gradient(${n(t.lightAngle, 0)}deg, rgba(255, 255, 255, ${n(t.light)}), rgba(128, 128, 128, 0) 50%, rgba(0, 0, 0, ${n(t.light)}))`;
 export const paperCurl = (t: WindowTuning) =>
   `inset 0 0 ${n(t.curl, 0)}px rgba(0, 0, 0, ${n(t.curlShade)})`;
+
+/**
+ * The light and the curl as plain alpha, for the sheet: a soft-light
+ * layer over the scrolling page made the GPU read back and re-blend the
+ * whole sheet on every frame of a scroll (2026-10-01), where plain alpha
+ * is drawn once and laid on. Matched to soft-light on the paper's own
+ * ground c (each channel, 0 to 1): soft-light's white lifts it by
+ * α·(√c − c) and its black takes α·c·(1 − c); a plain white of alpha a
+ * lifts it by a·(1 − c) and a plain black takes a·c. So the paper looks
+ * as it did; what is printed on it takes a little less of the shade.
+ */
+function flatAlphas(t: WindowTuning) {
+  const m = /^#?([0-9a-f]{6})$/i.exec(t.ground.trim());
+  const v = m ? parseInt(m[1]!, 16) : 0xffffff;
+  const cs = [v >> 16, (v >> 8) & 255, v & 255].map((x) => x / 255);
+  const avg = (f: (c: number) => number) =>
+    cs.reduce((s, c) => s + f(c), 0) / cs.length;
+  return {
+    // (√c − c) / (1 − c) tends to ½ as the paper tends to white.
+    white: avg((c) => (1 - c < 1e-3 ? 0.5 : (Math.sqrt(c) - c) / (1 - c))),
+    black: avg((c) => 1 - c),
+  };
+}
+export const paperLightFlat = (t: WindowTuning) => {
+  const a = flatAlphas(t);
+  return `linear-gradient(${n(t.lightAngle, 0)}deg, rgba(255, 255, 255, ${n(t.light * a.white, 4)}), rgba(128, 128, 128, 0) 50%, rgba(0, 0, 0, ${n(t.light * a.black, 4)}))`;
+};
+export const paperCurlFlat = (t: WindowTuning) =>
+  `inset 0 0 ${n(t.curl, 0)}px rgba(0, 0, 0, ${n(t.curlShade * flatAlphas(t).black, 4)})`;
 
 /** The paper's look as page-wide variables, for the prints to read
  *  off :root (PRINT_CSS falls back to the defaults' where a page sets

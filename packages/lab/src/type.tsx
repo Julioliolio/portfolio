@@ -3,7 +3,6 @@
 import {
   createElement,
   useCallback,
-  useEffect,
   useLayoutEffect,
   useRef,
   type CSSProperties,
@@ -60,12 +59,15 @@ const BEARING = 0.04;
 /** How far the last letter's ink stands past the measured line, in em:
  *  the tracking taken off after it, less its own side bearing. */
 const OVERHANG = 0.035;
-/** The scroller's foot: "fade" masks what scrolls so it fades into the
- *  paper; "blur" is the layers of backdrop blur below. The blur is the
- *  look the foot was tuned with, but a backdrop filter makes the GPU read
- *  back and blur the sheet on every frame: on the project sheets it was
- *  most of what still dropped frames once the loops held still while
- *  scrolling (2026-10-01, Chrome at 2×: frames late 38% → 1–11%). */
+/** The scroller's foot: "fade" lays a band of the paper's ground over
+ *  what scrolls, so it fades into the paper; "blur" is the layers of
+ *  backdrop blur below. The blur is the look the foot was tuned with,
+ *  but a backdrop filter makes the GPU read back and blur the sheet on
+ *  every frame: on the project sheets it was most of what still dropped
+ *  frames once the loops held still while scrolling (2026-10-01, Chrome
+ *  at 2×: frames late 38% → 1–11%). The fade was a mask on the scroller
+ *  at first, which had the GPU redraw the whole scroller through it on
+ *  every frame; the band is drawn once and laid on. */
 const FOOT: "fade" | "blur" = "fade";
 
 /** The bottom blur's layers: [blur in px, where its mask starts, where it
@@ -93,8 +95,11 @@ const BLUR = [
  * - The foot of the scroller (.ty-blur): layers of blur, each masked to
  *   start lower than the last, so focus falls away instead of stopping
  *   at a line. Stuck to the bottom of whatever scrolls; it has no height
- *   of its own. As a fade (FOOT) its layers only measure the band, and
- *   the mask goes on the scroller (BottomBlur).
+ *   of its own. As a fade (FOOT) it is one band of --ty-foot (the
+ *   paper's ground; the project window sets the sheet's) easing in from
+ *   clear: what a mask on the scroller fading to the paper under it
+ *   looked like, a fifth in by a third of the way down, three fifths by
+ *   two thirds.
  */
 export const TYPE_CSS = `
 .ty { --ty-blue: ${BLUE}; --ty-u: clamp(20px, 2.5cqw, 28px); --ty-fg: ${INK}; --ty-dim: #77716a; --ty-bg: transparent; container-type: inline-size; color: var(--ty-fg); background: var(--ty-bg); }
@@ -138,6 +143,7 @@ export const TYPE_CSS = `
 
 .ty-blur { position: sticky; bottom: 0; z-index: 5; height: 0; pointer-events: none; }
 .ty-blur > i { position: absolute; left: 0; right: 0; bottom: 0; height: calc(4 * var(--ty-u)); }
+.ty-blur.is-fade > i { background: linear-gradient(transparent, color-mix(in srgb, var(--ty-foot, #faf9f6) 20%, transparent) 32%, color-mix(in srgb, var(--ty-foot, #faf9f6) 60%, transparent) 66%, var(--ty-foot, #faf9f6)); }
 ${BLUR.map(
   ([px, from, to], i) =>
     `.ty-blur:not(.is-fade) > i:nth-child(${i + 1}) { -webkit-backdrop-filter: blur(${px}px); backdrop-filter: blur(${px}px); -webkit-mask-image: linear-gradient(transparent ${from}%, #000 ${to}%); mask-image: linear-gradient(transparent ${from}%, #000 ${to}%); }`,
@@ -162,6 +168,48 @@ type RevealProps = {
 };
 
 /**
+ * What waits to arrive, watched together: one observer for the page,
+ * not one each. The ones a commit mounts are read together just after
+ * it — all the reads, then all the writes, so a page of them costs one
+ * layout — and those already on screen play at once, with no observer
+ * round-trip; the rest arrive as they scroll in.
+ */
+const arrivals = (() => {
+  if (typeof window === "undefined") return null;
+  const show = (el: Element) => el.classList.replace("ty-wait", "ty-in");
+  const io = new IntersectionObserver(
+    (entries) =>
+      entries.forEach((e) => {
+        if (!e.isIntersecting) return;
+        io.unobserve(e.target);
+        show(e.target);
+      }),
+    { rootMargin: "0px 0px -8% 0px" },
+  );
+  const fresh = new Set<HTMLElement>();
+  const settle = () => {
+    const els = [...fresh];
+    fresh.clear();
+    const h = window.innerHeight;
+    const on = els.map((el) => {
+      const r = el.getBoundingClientRect();
+      return r.top < h && r.bottom > 0;
+    });
+    els.forEach((el, i) => (on[i] ? show(el) : io.observe(el)));
+  };
+  return {
+    add(el: HTMLElement) {
+      if (!fresh.size) queueMicrotask(settle);
+      fresh.add(el);
+      return () => {
+        fresh.delete(el);
+        io.unobserve(el);
+      };
+    },
+  };
+})();
+
+/**
  * How a thing arrives on a project page: once, a fade and a small rise.
  * The same call as the stop-motion <Enter>, without the cuts.
  */
@@ -174,21 +222,8 @@ export function Reveal({
   children,
 }: RevealProps) {
   const attach = useCallback((el: HTMLElement | null) => {
-    if (!el || !el.classList.contains("ty-wait")) return;
-    const show = () => el.classList.replace("ty-wait", "ty-in");
-    // Already on screen at mount: play now, no observer round-trip.
-    const r = el.getBoundingClientRect();
-    if (r.top < window.innerHeight && r.bottom > 0) return void show();
-    const io = new IntersectionObserver(
-      (entries) => {
-        if (!entries.some((e) => e.isIntersecting)) return;
-        show();
-        io.disconnect();
-      },
-      { rootMargin: "0px 0px -8% 0px" },
-    );
-    io.observe(el);
-    return () => io.disconnect();
+    if (!el || !arrivals || !el.classList.contains("ty-wait")) return;
+    return arrivals.add(el);
   }, []);
 
   const cls = [gate === "mount" ? "ty-in" : "ty-wait", className]
@@ -206,38 +241,12 @@ export function Reveal({
 }
 
 /** The scroller's foot, out of focus (FOOT). Put it last in whatever
- *  scrolls (inside `.ty`, for the unit). As a fade it masks its scroller:
- *  opaque down to the band's top, easing out to nothing at the edge. */
+ *  scrolls (inside `.ty`, for the unit, and where --ty-foot is the
+ *  paper it fades into). */
 export function BottomBlur() {
-  const ref = useRef<HTMLDivElement>(null);
-  useEffect(() => {
-    const el = ref.current;
-    const band = el?.firstElementChild as HTMLElement | null;
-    if (FOOT !== "fade" || !el || !band) return;
-    let sc = el.parentElement;
-    while (sc && !/(auto|scroll)/.test(getComputedStyle(sc).overflowY)) sc = sc.parentElement;
-    if (!sc) return;
-    const scroller = sc;
-    const set = () => {
-      const b = band.offsetHeight;
-      const mask = `linear-gradient(#000 calc(100% - ${b}px), rgba(0, 0, 0, .8) calc(100% - ${0.68 * b}px), rgba(0, 0, 0, .4) calc(100% - ${0.34 * b}px), transparent)`;
-      scroller.style.setProperty("-webkit-mask-image", mask);
-      scroller.style.setProperty("mask-image", mask);
-    };
-    set();
-    const ro = new ResizeObserver(set);
-    ro.observe(band);
-    return () => {
-      ro.disconnect();
-      scroller.style.removeProperty("-webkit-mask-image");
-      scroller.style.removeProperty("mask-image");
-    };
-  }, []);
   return (
-    <div ref={ref} className={FOOT === "fade" ? "ty-blur is-fade" : "ty-blur"} aria-hidden="true">
-      {BLUR.map((_, i) => (
-        <i key={i} />
-      ))}
+    <div className={FOOT === "fade" ? "ty-blur is-fade" : "ty-blur"} aria-hidden="true">
+      {FOOT === "fade" ? <i /> : BLUR.map((_, i) => <i key={i} />)}
     </div>
   );
 }

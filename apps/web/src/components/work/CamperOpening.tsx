@@ -13,8 +13,9 @@ import type { OpeningProps } from "./openings";
  * foot, the landing's own (@portfolio/lab/tape) a size smaller, to say
  * the case study is underneath (Julio, 2026-09-18: keep it simple;
  * 2026-09-29: the tape in place of the drawn arrow). The page scrolls
- * as any page does; the film holds once it is mostly out of sight, so
- * its sound doesn't play under the reading, and carries on when it is
+ * as any page does; the film holds once half of it is out of sight, so
+ * its sound doesn't play under the reading and the sheet isn't scrolled
+ * over a playing film for long (2026-10-01), and carries on when it is
  * back.
  *
  * It is never taller than three quarters of its width: on a wide window
@@ -43,13 +44,18 @@ export default function CamperOpening({ project }: OpeningProps) {
 
   useEffect(() => {
     const target: HTMLElement | Window = scroller ?? window;
+    let was = false;
     const read = () => {
       const el = film.current;
       if (!el) return;
       const top = scroller ? scroller.scrollTop : window.scrollY;
       // Two lines, not one, so resting near either doesn't flicker the
-      // film on and off.
-      setAway((was) => top > el.offsetHeight * (was ? 0.35 : 0.65));
+      // film on and off; and the page hears of it only when it flips,
+      // not on every scroll event.
+      const now = top > el.offsetHeight * (was ? 0.25 : 0.5);
+      if (now === was) return;
+      was = now;
+      setAway(now);
     };
     read();
     target.addEventListener("scroll", read, { passive: true });

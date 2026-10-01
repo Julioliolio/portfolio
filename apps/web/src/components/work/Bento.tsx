@@ -2,6 +2,7 @@
 
 import { asset } from "@portfolio/lab/asset";
 import { Reveal } from "@portfolio/lab/type";
+import { useWindowScroller } from "@portfolio/lab/window";
 import { useEffect, useRef, type CSSProperties } from "react";
 import type { Cell, Shot } from "@/content/projects";
 
@@ -20,8 +21,14 @@ import type { Cell, Shot } from "@/content/projects";
  *   itself, and an unresolved --ty-u would measure it instead.
  * - A clip plays only while it is on screen, and not at all for readers
  *   who asked for reduced motion (they get the poster).
+ * - A bento arrives as one (<Reveal> round the grid): a cell fading on
+ *   its own over a clip is an offscreen pass of its own for as long as
+ *   it fades, and they fade as the page scrolls (2026-10-01).
  * - An app recording (`screen`) is set as a window: rounded, a hairline
  *   edge, on the app's own off-white, so it never runs into the paper.
+ *   The hairline is the cell's, drawn under the clip, which sits a
+ *   pixel in from it: a line drawn over a clip has to be a layer of its
+ *   own over every frame of it.
  *   Explanations are the text's job, not labels on the pictures (Julio,
  *   2026-10-01: pills broke the type-led page).
  * - A phone is drawn here, not recorded: the clip is the screen alone,
@@ -40,8 +47,8 @@ export const BENTO_CSS = `
 .bn-grid { --bn-c: calc((100cqw - 11 * var(--bn-g)) / 12); display: grid; grid-template-columns: repeat(12, minmax(0, 1fr)); grid-auto-rows: calc(var(--bn-row) * var(--bn-c) + (var(--bn-row) - 1) * var(--bn-g)); gap: var(--bn-g); }
 .bn-cell { position: relative; grid-column: var(--bn-start, auto) / span var(--bn-w); grid-row: span var(--bn-h); overflow: hidden; border-radius: calc(.5 * var(--ty-u)); background: var(--bn-ground, #ecebe8); }
 .bn-cell > video, .bn-cell > img { position: absolute; inset: 0; display: block; width: 100%; height: 100%; object-fit: cover; }
-.bn-cell.is-screen { background: var(--bn-ground, #f6f6f4); }
-.bn-cell.is-screen::after { content: ""; position: absolute; inset: 0; z-index: 1; border-radius: inherit; box-shadow: inset 0 0 0 1px rgba(43, 39, 34, .2); pointer-events: none; }
+.bn-cell.is-screen { overflow: visible; background: var(--bn-ground, #f6f6f4); box-shadow: inset 0 0 0 1px rgba(43, 39, 34, .2); }
+.bn-cell.is-screen > video, .bn-cell.is-screen > img { inset: 1px; width: calc(100% - 2px); height: calc(100% - 2px); border-radius: calc(.5 * var(--ty-u) - 1px); }
 .bn-cell.is-phone, .bn-cell.is-plain { background: none; overflow: visible; border-radius: 0; box-shadow: none; }
 .bn-cell.is-phone .bn-phone { height: 100%; max-width: 100%; }
 .bn-center { position: absolute; inset: 0; display: grid; place-items: center; }
@@ -57,7 +64,7 @@ export const BENTO_CSS = `
 
 .bn-slot { position: absolute; inset: 0; display: grid; align-content: end; padding: calc(.75 * var(--ty-u)); outline: 1px dashed rgba(43, 39, 34, .28); outline-offset: -1px; border-radius: inherit; }
 .bn-mark { position: absolute; left: calc(.75 * var(--ty-u)); bottom: calc(.75 * var(--ty-u)); right: calc(.75 * var(--ty-u)); }
-.bn-mark span { display: inline-block; padding: .35em .6em; border: 1px dashed rgba(43, 39, 34, .35); border-radius: 6px; background: rgba(255, 255, 255, .7); backdrop-filter: blur(6px); }
+.bn-mark span { display: inline-block; padding: .35em .6em; border: 1px dashed rgba(43, 39, 34, .35); border-radius: 6px; background: rgba(255, 255, 255, .8); }
 
 .bn-field { position: relative; }
 .bn-field-row { position: absolute; inset: 8% 6% 16%; display: flex; justify-content: center; align-items: center; gap: 4%; }
@@ -89,15 +96,14 @@ function phoneSpans(cells: Cell[]) {
 export function Bento({ cells, row = 2 }: { cells: Cell[]; row?: number }) {
   const wm = phoneSpans(cells);
   return (
-    <div className="cs-wide bn">
+    <Reveal className="cs-wide bn">
       <div
         className="bn-grid"
         style={{ "--bn-row": row } as CSSProperties}
       >
         {cells.map((cell, i) => (
-          <Reveal
+          <div
             key={i}
-            delay={i * 50}
             className={[
               "bn-cell",
               cell.kind === "shot" && cell.frame !== "bare" && `is-${cell.frame}`,
@@ -118,10 +124,10 @@ export function Bento({ cells, row = 2 }: { cells: Cell[]; row?: number }) {
             }
           >
             <CellView cell={cell} />
-          </Reveal>
+          </div>
         ))}
       </div>
-    </div>
+    </Reveal>
   );
 }
 
@@ -169,24 +175,40 @@ function Media({ shot }: { shot: Shot }) {
   return <Loop src={shot.src} poster={shot.poster} alt={shot.alt} style={style} />;
 }
 
+/** Hold every loop still while its sheet scrolls (see `makeLoops`). */
+const HOLD_WHILE_SCROLLING = true;
+
+type Loops = { add(v: HTMLVideoElement): () => void };
+
 /**
- * The page's loops, played together: each plays only while a good part
- * of it is on screen, and none while the sheet is scrolling — a dozen
- * clips decoding under the paper's clip, blend and foot blur was what
- * made the sheets drop frames (measured, 2026-10-01: 46% of frames late
- * while scrolling, none with the loops held). They load a screen ahead,
- * so the first frame is there when they arrive, and pick up where they
- * stopped once the scroll settles.
+ * The loops of one scroller, played together: each plays only while a
+ * good part of it is on screen, and none while the sheet is scrolling —
+ * a dozen clips decoding under the paper's clip, blend and foot blur
+ * was what made the sheets drop frames (measured, 2026-10-01: 46% of
+ * frames late while scrolling, none with the loops held). They load a
+ * screen ahead, so the first frame is there when they arrive, and pick
+ * up where they stopped once the scroll settles.
+ *
+ * One set per scroller — the project window's (useWindowScroller()),
+ * or the page's where there is none — because the screen ahead is the
+ * scroller's: an observer's margin reaches only past its own root, and
+ * the window's scroller clips everything in it, so a margin on the
+ * viewport saw nothing early. And only that scroller's scrolling holds
+ * them: dragging a carousel across leaves them playing.
  */
-const loops = (() => {
-  if (typeof window === "undefined") return null;
+function makeLoops(root: HTMLElement | null): Loops {
   const seen = new Set<HTMLVideoElement>();
   let scrolling = false;
   let settle: number | undefined;
   const play = (v: HTMLVideoElement) => void v.play().catch(() => {});
   const near = new IntersectionObserver(
-    (es) => es.forEach((e) => e.isIntersecting && ((e.target as HTMLVideoElement).preload = "auto")),
-    { rootMargin: "100% 0px" },
+    (es) =>
+      es.forEach((e) => {
+        if (!e.isIntersecting) return;
+        (e.target as HTMLVideoElement).preload = "auto";
+        near.unobserve(e.target);
+      }),
+    { root, rootMargin: "100% 0px" },
   );
   const view = new IntersectionObserver(
     (es) =>
@@ -200,23 +222,24 @@ const loops = (() => {
           v.pause();
         }
       }),
-    { threshold: [0, 0.3] },
+    { root, threshold: [0, 0.3] },
   );
-  document.addEventListener(
-    "scroll",
-    () => {
-      if (!scrolling) {
-        scrolling = true;
-        seen.forEach((v) => v.pause());
-      }
-      window.clearTimeout(settle);
-      settle = window.setTimeout(() => {
-        scrolling = false;
-        seen.forEach(play);
-      }, 180);
-    },
-    { capture: true, passive: true },
-  );
+  if (HOLD_WHILE_SCROLLING)
+    (root ?? window).addEventListener(
+      "scroll",
+      () => {
+        if (!scrolling) {
+          scrolling = true;
+          seen.forEach((v) => v.pause());
+        }
+        window.clearTimeout(settle);
+        settle = window.setTimeout(() => {
+          scrolling = false;
+          seen.forEach(play);
+        }, 180);
+      },
+      { passive: true },
+    );
   return {
     add(v: HTMLVideoElement) {
       near.observe(v);
@@ -228,17 +251,27 @@ const loops = (() => {
       };
     },
   };
-})();
+}
 
-/** A muted loop that plays while it is on screen (see `loops`). */
+const scrollerLoops = new WeakMap<HTMLElement, Loops>();
+let pageLoops: Loops | null = null;
+function loopsIn(root: HTMLElement | null): Loops {
+  if (!root) return (pageLoops ??= makeLoops(null));
+  let made = scrollerLoops.get(root);
+  if (!made) scrollerLoops.set(root, (made = makeLoops(root)));
+  return made;
+}
+
+/** A muted loop that plays while it is on screen (see `makeLoops`). */
 export function Loop({ src, poster, alt, style }: { src: `/${string}`; poster?: `/${string}`; alt?: string; style?: CSSProperties }) {
   const ref = useRef<HTMLVideoElement>(null);
+  const scroller = useWindowScroller();
   useEffect(() => {
     const v = ref.current;
-    if (!v || !loops) return;
+    if (!v) return;
     if (window.matchMedia("(prefers-reduced-motion: reduce)").matches) return;
-    return loops.add(v);
-  }, []);
+    return loopsIn(scroller).add(v);
+  }, [scroller]);
   return (
     <video
       ref={ref}

@@ -444,6 +444,10 @@ const SettingsCanvas: Component<{
   // get" feed — same pan/zoom infrastructure, no dither, accurate scaled
   // resolution and frame rate. Stops when the format is GIF (the dither
   // pipeline above handles that case with its own debounced still render).
+  // Runs only while the video plays — paused, the frame can't change, so
+  // a seek draws the one it lands on instead (portfolio: the demo shares
+  // the page's main thread, and a loop drawing a still frame forever was
+  // paid for by the page around it).
   let videoLoopRaf = 0;
   let lastFrameTime = 0;
   const videoTick = (now: number) => {
@@ -457,14 +461,30 @@ const SettingsCanvas: Component<{
     lastFrameTime = now;
     drawVideoFrame();
   };
-  createEffect(() => {
-    const isGif = appState.outputFormat === "gif";
+  const startVideoLoop = () => {
+    if (videoLoopRaf) return;
+    lastFrameTime = 0;
+    videoLoopRaf = requestAnimationFrame(videoTick);
+  };
+  const stopVideoLoop = () => {
     cancelAnimationFrame(videoLoopRaf);
     videoLoopRaf = 0;
-    if (!isGif && props.videoEl) {
-      lastFrameTime = 0;
-      videoLoopRaf = requestAnimationFrame(videoTick);
-    }
+  };
+  createEffect(() => {
+    const isGif = appState.outputFormat === "gif";
+    const v = props.videoEl;
+    stopVideoLoop();
+    if (isGif || !v) return;
+    if (!v.paused) startVideoLoop();
+    v.addEventListener("play", startVideoLoop);
+    v.addEventListener("pause", stopVideoLoop);
+    v.addEventListener("seeked", drawVideoFrame);
+    onCleanup(() => {
+      v.removeEventListener("play", startVideoLoop);
+      v.removeEventListener("pause", stopVideoLoop);
+      v.removeEventListener("seeked", drawVideoFrame);
+      stopVideoLoop();
+    });
   });
 
   onCleanup(() => {

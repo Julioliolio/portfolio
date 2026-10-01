@@ -16,6 +16,7 @@ import {
 import { loaders } from "./loaders";
 import { loadSounds, playLater } from "./play-later";
 import { springEasing } from "./spring";
+import { UNDER_WINDOW } from "./under-window";
 import {
   clipTimeNow,
   type WindowPreview,
@@ -27,8 +28,8 @@ import {
   REVEAL_EASE,
   WINDOW_EASE,
   moveMs,
-  paperCurl,
-  paperLight,
+  paperCurlFlat,
+  paperLightFlat,
   paperShadow,
   paperSheet,
   paperVeil,
@@ -203,23 +204,31 @@ function sheetPath(w: number, h: number, t: WindowTuning): string {
  *
  * - The window: the whole screen, nothing painted; only what is in the
  *   rail takes the pointer, and the rest of it is the way out.
- * - The box: at its place (--pw-x/y/w/h), clipped to its corners, the
- *   sheet of paper: the ground, the scan over it as wide as the box
- *   and tiling downward (it is made seamless), and a veil of the
- *   ground over the scan as strong as the grain is weak — the paper's
- *   layers (window-tuning.ts), which the prints wear too, so the
- *   pick-up keeps its paper; a light on the lifted corner. The scroller lays the
- *   same paper stuck to its content, so the page scrolls through the
- *   sheet rather than over it. The move animates its edges, lean and shadow from
- *   the print's, by script (see move()), so nothing here moves it. Its
- *   hairline, contact shadow, soft shadow and lip are in its shadow,
- *   which the move animates from the print's. It isolates, so anything
- *   printed into it (a photo multiplied) blends with the paper and no
- *   further.
+ * - The box: at its place (--pw-x/y/w/h), clipped to its corners,
+ *   holding the sheet of paper (.pw-paper): the ground, the scan over
+ *   it as wide as the box and tiling downward (it is made seamless),
+ *   and a veil of the ground over the scan as strong as the grain is
+ *   weak — the paper's layers (window-tuning.ts), which the prints
+ *   wear too, so the pick-up keeps its paper; a light on the lifted
+ *   corner. The scroller lays the same paper stuck to its content, so
+ *   the page scrolls through the sheet rather than over it. The move
+ *   animates its edges, lean and shadow from the print's, by script
+ *   (see move()), so nothing here moves it. Its hairline, contact
+ *   shadow, soft shadow and lip are in its shadow, which the move
+ *   animates from the print's. It isolates, so anything printed into
+ *   it (a photo multiplied) blends with the paper and no further.
+ * - What scrolls is kept out of every effect the paper has (2026-10-01:
+ *   the sheets dropped frames on the GPU, re-drawing the whole page
+ *   through them on every frame of a scroll). The paper leans (`tilt`)
+ *   and is cut; the page on it is square, and set in from the box's
+ *   edge by --pw-in, just past the deepest the cut and the lean reach,
+ *   so nothing need clip it to the cut. Its foot fades under a band
+ *   (type.tsx, BottomBlur), not a mask, and the light over it is plain
+ *   alpha, not a blend.
  * - The shape (`has-shape`, once the box has landed on a screen with
  *   a rail): the sheet as cut, not drawn — its outline a path in px
- *   (sheetPath()) the box, the under-sheet and the edge all follow.
- *   The box is clipped to it (which takes its box-shadow with it), so
+ *   (sheetPath()) the paper, the under-sheet and the edge all follow.
+ *   The paper is clipped to it (and the clip, for the way back), so
  *   the shadows move to the under-sheet: the same rect, casting the
  *   contact, soft and lip shadows as drop-shadows of a child painted
  *   the ground's colour and clipped to the cut, so they follow the cut
@@ -230,28 +239,32 @@ function sheetPath(w: number, h: number, t: WindowTuning): string {
  *   sheet lost its shadow (2026-09-26). The edge is an SVG of the same path inside the
  *   box: the hairline, and the cut edge's light shifted down-right
  *   (so only its top and left show inside the clip) and its shade
- *   shifted up-left (bottom and right). Never during the move — the
- *   path is in px of the landed box — and never on a phone.
+ *   shifted up-left (bottom and right) — each drawn only if the
+ *   tuning gives it some ink. Never during the move — the path is in
+ *   px of the landed box — and never on a phone.
  * - The lift: the corner not quite flat. A sibling under the box (the
  *   box clips its own children), the box's rect grown by LIFT_ROOM all
  *   round, masked to fade out from that corner; inside it, the box's
  *   rect shifted toward the corner casts the corner's shadow, thrown
  *   further and softer than the sheet's own. Nothing until the box has
  *   landed (the move doesn't carry it), gone before the way back.
- * - The scroller: sized to the box's landed size, not the box, so the
- *   page lays out once, at full size, while the box grows round it.
- *   Nothing behind the page but the paper (transparent), so the page
- *   is printed on the sheet. Hidden until the box has landed, then
- *   dissolved in over `reveal` as the clip dissolves out (it would
- *   show through otherwise); out again on the quick `fade`. No
- *   scrollbar (Julio, 2026-09-22); it still scrolls. No z-index of its
- *   own — it paints over the clip by order — so it is no stacking
- *   context and a blend on the page reaches the paper.
- * - The light: over the page, one layer soft-lit onto it — the light
+ * - The scroller: sized to the box's landed size less --pw-in each
+ *   side, not the box, so the page lays out once, at full size, while
+ *   the box grows round it. Nothing behind the page but the paper
+ *   (transparent), so the page is printed on the sheet. Hidden until
+ *   the box has landed, then dissolved in over `reveal` as the clip
+ *   dissolves out (it would show through otherwise); out again on the
+ *   quick `fade`. No scrollbar (Julio, 2026-09-22); it still scrolls.
+ *   No z-index of its own — it paints over the clip by order — so it
+ *   is no stacking context and a blend on the page reaches the paper.
+ * - The light: over the page, one layer laid on it — the light
  *   falling across the sheet from `lightAngle` (a touch brighter where
  *   it comes from, darker across), and the sheet's edges darkening
- *   as they curl down to the mat (`curl`). Static, the compositor's
- *   work; in with the page, out with it, so the lift is not lit twice.
+ *   as they curl down to the mat (`curl`); as plain alpha matched to
+ *   the prints' soft-light (window-tuning.ts), and as far in as the
+ *   page, so none of it falls on the mat past the cut. Static, the
+ *   compositor's work; in with the page, out with it, so the lift is
+ *   not lit twice.
  * - The page's entrances (type.tsx's <Reveal>, `.ty-in`) are held on
  *   their first frame until the box has landed, so the title and the
  *   intro rise as the page dissolves in rather than having played,
@@ -311,16 +324,26 @@ function windowCss(t: WindowTuning): string {
   ]
     .filter(Boolean)
     .join(", ");
+  const tilt = `${n(t.tilt, 2)}deg`;
+  // --pw-in, on a screen with a rail: how far in the page is set from
+  // the box's edge — past the deepest the cut wanders in (twice the
+  // wobble, and the rough), and past the deepest the lean takes the
+  // paper's edges in from the square page (half the longer side, by
+  // the lean's sine), with a pixel over for the antialiasing.
+  const cutIn = 2 * Math.max(0, t.wobble) + Math.max(0, t.rough) + 1;
+  const leanIn = Math.abs(Math.sin((t.tilt * Math.PI) / 180)) / 2;
   return `
-.pw { --pw-margin: 0px; --pw-over: 0px; --pw-corner: 0px; --pw-x: 0px; --pw-y: 0px; --pw-w: 100vw; --pw-h: 100dvh; position: fixed; inset: 0; z-index: 80; }
+.pw { --pw-margin: 0px; --pw-over: 0px; --pw-corner: 0px; --pw-in: 0px; --pw-x: 0px; --pw-y: 0px; --pw-w: 100vw; --pw-h: 100dvh; position: fixed; inset: 0; z-index: 80; }
 .pw-sheet { position: absolute; inset: 0; pointer-events: none; }
-.pw-box { position: absolute; left: var(--pw-x); top: var(--pw-y); width: var(--pw-w); height: var(--pw-h); pointer-events: auto; overflow: hidden; isolation: isolate; border-radius: var(--pw-corner); background: ${paper}; box-shadow: ${paperShadow(t)}; transform: rotate(${n(t.tilt, 2)}deg); transform-origin: 50% 50%; }
+.pw-box { position: absolute; left: var(--pw-x); top: var(--pw-y); width: var(--pw-w); height: var(--pw-h); pointer-events: auto; overflow: hidden; isolation: isolate; border-radius: var(--pw-corner); box-shadow: ${paperShadow(t)}; transform-origin: 50% 50%; }
 .pw-box:focus { outline: none; }
+.pw-paper { position: absolute; inset: 0; border-radius: inherit; background: ${paper}; rotate: ${tilt}; }
 .pw-under { display: none; position: absolute; left: var(--pw-x); top: var(--pw-y); width: var(--pw-w); height: var(--pw-h); pointer-events: none; transform: rotate(${n(t.tilt, 2)}deg); transform-origin: 50% 50%; filter: drop-shadow(${n(contact.x, 1)}px ${n(contact.y, 1)}px ${n(t.contactBlur / 2, 2)}px rgba(0, 0, 0, ${n(t.contactAlpha)})) drop-shadow(${n(soft.x, 1)}px ${n(soft.y, 1)}px ${n(t.softBlur / 2, 2)}px rgba(0, 0, 0, ${n(t.softAlpha)})) drop-shadow(0 1px 0 rgba(43, 39, 34, ${n(t.lip)})); }
 .pw-under::before { content: ""; position: absolute; inset: 0; background: ${t.ground}; clip-path: var(--pw-shape); }
 .pw.has-shape .pw-under { display: block; }
-.pw.has-shape .pw-box { clip-path: var(--pw-shape); box-shadow: none; }
-.pw-edge { display: none; position: absolute; inset: 0; width: 100%; height: 100%; overflow: visible; pointer-events: none; fill: none; stroke-linejoin: round; }
+.pw.has-shape .pw-box { box-shadow: none; }
+.pw.has-shape .pw-paper, .pw.has-shape .pw-clip { clip-path: var(--pw-shape); }
+.pw-edge { display: none; position: absolute; inset: 0; width: 100%; height: 100%; overflow: visible; pointer-events: none; fill: none; stroke-linejoin: round; rotate: ${tilt}; }
 .pw.has-shape .pw-edge { display: block; }
 .pw-edge-hair { stroke: rgba(43, 39, 34, ${n(t.hairline)}); stroke-width: 2; }
 .pw-edge-light { stroke: rgba(255, 255, 255, ${n(t.cutLight)}); stroke-width: 1.4; transform: translate(.7px, .7px); }
@@ -336,21 +359,21 @@ ${
 .pw.is-leaving .pw-lift { opacity: 0; transition: opacity ${reveal}ms ${outEase}; }`
     : ""
 }
-.pw-scroll { position: absolute; top: 0; left: 0; width: var(--pw-w); height: var(--pw-h); overflow-y: auto; overscroll-behavior: contain; scrollbar-width: none; background: ${veil}, ${sheet}, ${t.ground}; background-attachment: local; opacity: 0; transition: opacity ${fade}ms ease; }
+.pw-scroll { position: absolute; top: var(--pw-in); left: var(--pw-in); width: calc(var(--pw-w) - 2 * var(--pw-in)); height: calc(var(--pw-h) - 2 * var(--pw-in)); overflow-y: auto; overscroll-behavior: contain; scrollbar-width: none; --ty-foot: ${t.ground}; background: ${veil}, ${sheet}, ${t.ground}; background-attachment: local; opacity: 0; transition: opacity ${fade}ms ease; }
 .pw-scroll::-webkit-scrollbar { display: none; }
 .pw.is-in .pw-scroll { opacity: 1; transition: opacity ${reveal}ms ${inEase}; }
 .pw.is-page .pw-scroll { transition: none; }
-.pw-light { position: absolute; inset: 0; pointer-events: none; border-radius: var(--pw-corner); background: ${paperLight(t)}; box-shadow: ${paperCurl(t)}; mix-blend-mode: soft-light; opacity: 0; transition: opacity ${fade}ms ease; }
+.pw-light { position: absolute; inset: var(--pw-in); pointer-events: none; border-radius: max(0px, var(--pw-corner) - var(--pw-in)); background: ${paperLightFlat(t)}; box-shadow: ${paperCurlFlat(t)}; opacity: 0; transition: opacity ${fade}ms ease; }
 .pw.is-in .pw-light { opacity: 1; transition: opacity ${reveal}ms ${inEase}; }
 .pw.is-page .pw-light { transition: none; }
 .pw.is-leaving .pw-light { opacity: 0; transition: opacity ${reveal}ms ${outEase}; }
 .pw:not(.is-in) .pw-scroll .ty-in { animation-play-state: paused; }
-.pw-clip { position: absolute; inset: 0; z-index: 0; display: block; width: 100%; height: 100%; object-fit: cover; background: #ecebe8; transition: filter ${fade}ms ease, transform ${fade}ms ease, opacity ${fade}ms ease; }
+.pw-clip { position: absolute; inset: 0; z-index: 0; display: block; width: 100%; height: 100%; object-fit: cover; background: #ecebe8; rotate: ${tilt}; transition: filter ${fade}ms ease, transform ${fade}ms ease, opacity ${fade}ms ease; }
 .pw.is-in .pw-clip { filter: blur(8px); transform: scale(1.03); opacity: 0; transition: filter ${reveal}ms ${inEase}, transform ${reveal}ms ${inEase}, opacity ${reveal}ms ${inEase}; }
 .pw.is-leaving .pw-clip { filter: none; transform: none; opacity: 1; transition: filter ${reveal}ms ${outEase}, transform ${reveal}ms ${outEase}, opacity ${reveal}ms ${outEase}; }
 .pw-rail { display: none; }
 @media (min-width: ${RAIL_FROM}px) {
-  .pw { --pw-margin: ${n(t.margin, 0)}px; --pw-over: ${n(t.overhang, 2)}vh; --pw-corner: ${n(t.corner, 0)}px; --pw-left: calc(var(--pw-rail) - var(--pw-over)); --pw-x: calc(var(--pw-left) + ${n(t.sheetX, 2)}vw); --pw-w: calc((100vw - var(--pw-left) - var(--pw-margin)) * ${n(t.sheetW)}); --pw-h: calc((100dvh - 2 * var(--pw-margin)) * ${n(t.sheetH)}); --pw-y: calc(var(--pw-margin) + (100dvh - 2 * var(--pw-margin)) * ${n((1 - t.sheetH) / 2)} + ${n(t.sheetY, 2)}vh); }
+  .pw { --pw-margin: ${n(t.margin, 0)}px; --pw-over: ${n(t.overhang, 2)}vh; --pw-corner: ${n(t.corner, 0)}px; --pw-in: calc(${n(cutIn, 2)}px + max(var(--pw-w), var(--pw-h)) * ${n(leanIn, 6)}); --pw-left: calc(var(--pw-rail) - var(--pw-over)); --pw-x: calc(var(--pw-left) + ${n(t.sheetX, 2)}vw); --pw-w: calc((100vw - var(--pw-left) - var(--pw-margin)) * ${n(t.sheetW)}); --pw-h: calc((100dvh - 2 * var(--pw-margin)) * ${n(t.sheetH)}); --pw-y: calc(var(--pw-margin) + (100dvh - 2 * var(--pw-margin)) * ${n((1 - t.sheetH) / 2)} + ${n(t.sheetY, 2)}vh); }
   .pw-rail { display: block; position: absolute; top: 0; bottom: 0; left: 0; width: var(--pw-rail); }
   .pw-rail-in { position: absolute; top: var(--brand-foot, 3.5vh); bottom: var(--pw-foot); left: var(--pw-inset); right: calc(20px + var(--pw-over)); display: flex; flex-direction: column; align-items: flex-start; gap: 22px; overflow-y: auto; scrollbar-width: none; pointer-events: none; opacity: 0; transition: opacity ${fade}ms ease; }
   .pw.is-in .pw-rail-in { opacity: 1; }
@@ -483,15 +506,17 @@ function move(
   const r = from.rect;
   // Either way the box starts as the print — the same paper, its
   // corners and its shadow, turned by its lean, the clip inset by its
-  // frame — and ends as the sheet.
+  // frame — and ends as the sheet. The paper and the clip carry the
+  // sheet's own lean (the stylesheet), so the box turns by the rest
+  // and ends square.
   const inset = from.inset ?? { top: 0, right: 0, bottom: 0, left: 0 };
   const print: Keyframe = {
-    transform: `rotate(${from.tilt ?? 0}deg)`,
+    transform: `rotate(${(from.tilt ?? 0) - t.tilt}deg)`,
     borderRadius: `${t.corner}px`,
     boxShadow: paperShadow(t),
   };
   const sheet: Keyframe = {
-    transform: `rotate(${t.tilt}deg)`,
+    transform: "rotate(0deg)",
     borderRadius: cs.borderRadius,
     boxShadow: paperShadow(t),
   };
@@ -693,6 +718,7 @@ function Sheet({
         // No tag over the box: the window's own is for the empty wall.
         data-cursor-label=""
       >
+        <div className="pw-paper" aria-hidden />
         {preview && (
           <video
             key={preview.src}
@@ -727,11 +753,11 @@ function Sheet({
         </div>
         {/* The light across the sheet, and its edges curling down. */}
         <div className="pw-light" aria-hidden />
-        {cut && (
+        {cut && (t.hairline > 0 || t.cutLight > 0 || t.edgeShade > 0) && (
           <svg className="pw-edge" aria-hidden>
-            <path className="pw-edge-hair" d={cut} />
-            <path className="pw-edge-light" d={cut} />
-            <path className="pw-edge-shade" d={cut} />
+            {t.hairline > 0 && <path className="pw-edge-hair" d={cut} />}
+            {t.cutLight > 0 && <path className="pw-edge-light" d={cut} />}
+            {t.edgeShade > 0 && <path className="pw-edge-shade" d={cut} />}
           </svg>
         )}
       </div>
@@ -998,17 +1024,20 @@ export function ProjectWindow({
     };
   }, [landed, shrinking, t, leaf.id]);
 
-  // The page behind holds still, Esc closes, and focus is kept: on the
-  // box while the window is up, back where it was after.
+  // The page behind holds still — its scroll, and its ambient motion
+  // (UNDER_WINDOW) — Esc closes, and focus is kept: on the box while the
+  // window is up, back where it was after.
   useEffect(() => {
     if (!mounted || page) return;
     const root = document.documentElement;
     const was = root.style.overflow;
     root.style.overflow = "hidden";
+    root.classList.add(UNDER_WINDOW);
     const before = document.activeElement as HTMLElement | null;
     box.current?.focus({ preventScroll: true });
     return () => {
       root.style.overflow = was;
+      root.classList.remove(UNDER_WINDOW);
       before?.focus?.({ preventScroll: true });
     };
   }, [mounted, page]);

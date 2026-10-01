@@ -171,6 +171,13 @@ export function ClayCursor() {
       pointer: -1,
       text: -1,
     };
+    // What each layer and the root were last drawn with.
+    const drawnPose: Record<Variant, string> = {
+      arrow: "",
+      pointer: "",
+      text: "",
+    };
+    let drawnAt = "";
     // The tag beside the hand; null while the pointer is over nothing
     // labelled.
     let label: string | null = null;
@@ -225,6 +232,10 @@ export function ClayCursor() {
 
     function applyFrames() {
       for (const v of VARIANTS) {
+        // Only the shapes that show: a hidden one re-posed in the dark
+        // was a repaint for nothing, three a beat (2026-10-01). It
+        // catches up on the first beat it shows on.
+        if (weight[v] <= 0) continue;
         const { img, frames } = layers[v];
         const next = frames[frameIdx % frames.length];
         if (next && !img.src.endsWith(next)) img.src = next;
@@ -493,13 +504,22 @@ export function ClayCursor() {
         shownScale = scale * morph;
       }
 
-      root!.style.transform = `translate3d(${pos.x}px, ${pos.y}px, 0)`;
+      const at = `translate3d(${pos.x}px, ${pos.y}px, 0)`;
+      if (at !== drawnAt) root!.style.transform = drawnAt = at;
       // Each layer is pinned by its own hotspot: the percent translate is
       // relative to that image's box, so no measuring is needed and the
       // rotate/scale (origin 0 0, applied after) pivot exactly on the tip.
+      // Rounded, and written only when it changes: the springs settle
+      // toward rest forever, and a pose rewritten on every beat was a
+      // repaint ten times a second, each one having the page re-layer
+      // itself under the cursor (2026-10-01, the project sheets).
+      const pose = `rotate(${shownAngle.toFixed(2)}deg) scale(${shownScale.toFixed(4)})`;
       for (const v of VARIANTS) {
         const { img, hotspot } = layers[v];
-        img.style.transform = `rotate(${shownAngle}deg) scale(${shownScale}) translate(${-hotspot.x * 100}%, ${-hotspot.y * 100}%)`;
+        if (pose !== drawnPose[v]) {
+          drawnPose[v] = pose;
+          img.style.transform = `${pose} translate(${-hotspot.x * 100}%, ${-hotspot.y * 100}%)`;
+        }
         const w = weight[v];
         if (w !== drawnWeight[v]) {
           drawnWeight[v] = w;

@@ -7,6 +7,7 @@ import { play } from "./sound";
 import { springEasing } from "./spring";
 import { MEDIUM, SETTLE_EASE } from "./style";
 import { createTuningStore } from "./tuning-store";
+import { UNDER_WINDOW } from "./under-window";
 
 /**
  * The landing's scroll cue as a strip of paper tape: torn, folded into
@@ -241,6 +242,9 @@ ${idleCss(t)}
 .tape-img { display: block; width: 100%; height: 100%; user-select: none; opacity: ${between(t.stuck, 1)}; filter: ${shadow}; }
 .is-up .tape-img { transform: rotate(180deg); }
 .tape-open .tape-idle, .tape-close .tape-idle { animation: none; }
+/* Under a project window it holds; one in the window (an opening's)
+   carries on. */
+html.${UNDER_WINDOW} .tape-idle:not(.pw .tape-idle) { animation-play-state: paused; }
 ${t.motion === "cuts" ? cutsCss(t) : smoothCss(t)}
 ${wordsCss(t)}
 @media (prefers-reduced-motion: reduce) {

@@ -20,12 +20,18 @@ function ffmpeg(args) {
   if (r.status !== 0) throw new Error(`ffmpeg failed: ${args.join(" ")}`);
 }
 
-/** H.264, no sound, small: what a muted loop in a bento needs. */
+/** H.264, no sound, small: what a muted loop in a bento needs. A
+ *  keyframe every two seconds (-g 60 at the clips' 30 fps): with x264's
+ *  default of 250 most clips were one keyframe long, so a player picked
+ *  up again after the browser had let it go (or any seek) decoded from
+ *  the first frame to where it was, all at once (2026-10-01). Every
+ *  second instead cost the busiest clips half their size again. */
 const X264 = [
   "-an",
   "-c:v", "libx264",
   "-preset", "slow",
   "-crf", "25",
+  "-g", "60", "-keyint_min", "60",
   "-pix_fmt", "yuv420p",
   "-movflags", "+faststart",
   // Tagged BT.709 (and converted to it below), so the browser decodes

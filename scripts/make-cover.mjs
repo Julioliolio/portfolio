@@ -174,7 +174,7 @@ try {
     "-v", "error", "-y",
     "-f", "rawvideo", "-pix_fmt", "rgb24", "-s", `${W}x${H}`, "-r", String(FPS), "-i", "-",
     "-vf", "scale=out_color_matrix=bt709:out_range=tv,format=yuv420p",
-    "-c:v", "libx264", "-preset", "slow", "-crf", "14", ...BT709, comp,
+    "-c:v", "libx264", "-preset", "slow", "-crf", "14", "-g", String(2 * FPS), "-keyint_min", String(2 * FPS), ...BT709, comp,
   ], { stdio: ["pipe", "inherit", "inherit"] });
 
   const cams = camera(frames);

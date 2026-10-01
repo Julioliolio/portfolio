@@ -212,6 +212,7 @@ export default function FilmPlayer({
 }: Props) {
   const root = useRef<HTMLDivElement>(null);
   const video = useRef<HTMLVideoElement>(null);
+  const line = useRef<HTMLDivElement>(null);
   /** A drag in progress, and whether the film was playing when it
    *  began. */
   const drag = useRef<{ resume: boolean } | null>(null);
@@ -230,12 +231,21 @@ export default function FilmPlayer({
   const [dragging, setDragging] = useState(false);
 
   // The beat: while the film plays, the line is read off it twelve
-  // times a second and no oftener.
+  // times a second and no oftener — written straight onto the line, so
+  // the player isn't rendered again twelve times a second under a
+  // scrolling page. A pause, a seek or a drag hands it back to `time`
+  // (onTimeUpdate, seek()).
   useEffect(() => {
     if (!playing) return;
     const id = window.setInterval(() => {
       const v = video.current;
-      if (v && !drag.current) setTime(v.currentTime);
+      const el = line.current;
+      if (!v || !el || drag.current) return;
+      const t = v.currentTime;
+      const d = v.duration;
+      el.style.setProperty("--fp-at", String(d > 0 ? Math.min(1, t / d) : 0));
+      el.setAttribute("aria-valuenow", String(Math.round(t)));
+      el.setAttribute("aria-valuetext", `${clock(t)} of ${clock(d)}`);
     }, 1000 / BEAT);
     return () => window.clearInterval(id);
   }, [playing]);
@@ -311,9 +321,12 @@ export default function FilmPlayer({
     void v.play().catch(() => {});
   }
 
+  /** Where the film is now: playing, `time` lags it (see the beat). */
+  const now = () => pending.current ?? video.current?.currentTime ?? time;
+
   function skip() {
     playLater("tap", 1, "click");
-    seek((pending.current ?? time) + STEP);
+    seek(now() + STEP);
   }
 
   function toggleMute() {
@@ -391,8 +404,7 @@ export default function FilmPlayer({
   /** On the line: the arrows step. */
   function keys(e: ReactKeyboardEvent<HTMLDivElement>) {
     if (e.key !== "ArrowLeft" && e.key !== "ArrowRight") return;
-    const now = pending.current ?? time;
-    seek(now + (e.key === "ArrowLeft" ? -STEP : STEP));
+    seek(now() + (e.key === "ArrowLeft" ? -STEP : STEP));
     e.preventDefault();
     wake();
   }
@@ -505,6 +517,7 @@ export default function FilmPlayer({
       </div>
       {children}
       <div
+        ref={line}
         className={dragging ? "fp-seek is-dragging" : "fp-seek"}
         role="slider"
         tabIndex={0}

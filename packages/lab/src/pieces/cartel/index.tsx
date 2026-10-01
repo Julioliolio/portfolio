@@ -31,6 +31,7 @@ import {
   type SpinExposure,
   type SpinParams,
 } from "../../spin-sheet";
+import { underWindow } from "../../under-window";
 import {
   SOUND_FIELDS,
   getSoundTuning,
@@ -1228,6 +1229,8 @@ export default function Cartel({
       if (bob != null) return;
       const step = () => {
         bob = window.setTimeout(step, 1000 / bobFpsRef.current);
+        // Under a project window nobody sees it: no write, no restyle.
+        if (underWindow()) return;
         if (ticker != null) {
           // Mid-cut: ease the offset flat in diminishing steps so the bob
           // is absorbed by the move instead of chopped by it. Only actual
@@ -1621,15 +1624,28 @@ export default function Cartel({
 
     function onPointerMove(event: PointerEvent) {
       pointerLast = { x: event.clientX, y: event.clientY };
+      // Under a project window the sign holds; it catches up on the next
+      // move once the window is gone.
+      if (underWindow()) return;
       requestProcess();
     }
 
     // Layout moved under the pointer (scroll/resize): re-measure lazily and
     // re-evaluate the last known pointer, so scrolling past the sign drives
-    // it without waiting for pointer motion.
-    function onLayoutShift() {
+    // it without waiting for pointer motion. Only a scroll that can move
+    // the sign: the page's, or a container holding it — not a project
+    // sheet scrolling over it, frame after frame.
+    function onLayoutShift(event: Event) {
+      const t = event.target;
+      if (
+        event.type === "scroll" &&
+        t instanceof Node &&
+        t !== document &&
+        !(stackRef.current && t.contains(stackRef.current))
+      )
+        return;
       measureDirty = true;
-      if (pointerLast) requestProcess();
+      if (pointerLast && !underWindow()) requestProcess();
     }
 
     function processPointer() {

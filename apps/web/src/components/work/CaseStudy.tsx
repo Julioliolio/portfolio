@@ -566,6 +566,7 @@ function Carousel({ figures }: { figures: Figure[] }) {
 const AWAITS = { photo: "Photo", video: "Video", link: "Link" } as const;
 
 function FigureView({ figure }: { figure: Figure }) {
+  const scroller = useWindowScroller();
   switch (figure.kind) {
     case "placeholder":
       return (
@@ -663,6 +664,7 @@ function FigureView({ figure }: { figure: Figure }) {
             variant={figure.variant}
             query={figure.query}
             autoload
+            root={scroller}
           />
         </figure>
       );
