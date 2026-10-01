@@ -10,7 +10,7 @@
  * 2×, and writes a master to source-assets/recordings/<name>.mp4; the
  * loop that ships is cut from it into apps/web/public/media/<project>/.
  */
-import { mkdirSync } from "node:fs";
+import { mkdirSync, writeFileSync } from "node:fs";
 import { chromium } from "playwright";
 import { spawnSync } from "node:child_process";
 import { kb, loopClip } from "./lib/media.mjs";
@@ -68,9 +68,11 @@ function stage(id, { aspect, bg, seconds, start = 0.6, fade = 0.4, width = 900, 
  * A LocalPal screen, whole (…?embed=<intent>), at an iPhone's 390×844 —
  * the clip that goes in a drawn phone. `prep` walks to the starting
  * point unrecorded; `act` is the take. Taps go through the mouse so the
- * touch dot shows them.
+ * touch dot shows them. `masterOnly` keeps just the master (with the
+ * take's marks, `f.mark()`, beside it as JSON: seconds into the master),
+ * for a clip that is cut elsewhere — the cover (scripts/make-cover.mjs).
  */
-function phone(name, intent, { prep, act, start = 0.2, tail = 0.3, fade = 0, width = 600, posterAt = 0 }) {
+function phone(name, intent, { prep, act, start = 0.2, tail = 0.3, fade = 0, width = 600, posterAt = 0, fps = 30, masterOnly = false }) {
   return {
     name: `localpal/${name}`,
     async run(browser) {
@@ -81,7 +83,13 @@ function phone(name, intent, { prep, act, start = 0.2, tail = 0.3, fade = 0, wid
       if (prep) await prep(f);
       const rec = await screencast(page, () => act(f));
       await page.close();
-      const master = await encode(rec, { out: `${MASTERS}localpal-${name}.mp4`, crop: [390, 844, 0, 0] });
+      const master = await encode(rec, { out: `${MASTERS}localpal-${name}.mp4`, crop: [390, 844, 0, 0], fps });
+      if (masterOnly) {
+        const t0 = rec.frames[0].ts;
+        const marks = Object.fromEntries(f.marks.map(([k, t]) => [k, +(t - t0).toFixed(3)]));
+        writeFileSync(`${MASTERS}localpal-${name}.marks.json`, JSON.stringify(marks, null, 1));
+        return master;
+      }
       return loopClip({
         src: master,
         start,
@@ -103,8 +111,12 @@ function fingers(page) {
     await page.mouse.move(x, y, { steps: Math.max(2, Math.round(ms / 16)) });
     at = [x, y];
   };
+  const marks = [];
   return {
     page,
+    marks,
+    /** Names this moment of the take (wall clock, seconds). */
+    mark: (name) => marks.push([name, Date.now() / 1000]),
     wait: (ms) => page.waitForTimeout(ms),
     async tap(x, y, hold = 110) {
       await glide(x, y);
@@ -338,55 +350,71 @@ const JOBS = [
     },
   }),
 
-  // One continuous session, for LocalPal's cover (scripts/make-cover.mjs):
-  // someone using the app — a venue, its event, who's going together,
-  // back to the map, a search in a sentence, a plan joined, a message in
-  // its group chat. The plans sheet is put away before the take.
+  // One continuous session, for LocalPal's cover (scripts/make-cover.mjs,
+  // which points a camera at each mark): someone using the app — sliding
+  // to RSVP and seeing who's on their way, the map gathering its pins as
+  // it zooms out, a venue and its event, a search in a sentence, a plan
+  // joined, a message in its group chat. 60 fps.
   phone("course", "dayOfPlan", {
-    posterAt: 2,
-    prep: async (f) => {
-      await f.wait(600);
-      await f.drag(195, 137, 195, 640, 500);
-      await f.wait(1500);
-    },
+    fps: 60,
+    masterOnly: true,
     act: async (f) => {
       const label = async (name) => {
         const b = await f.page.getByLabel(name, { exact: true }).first().boundingBox();
         return [b.x + b.width / 2, b.y + b.height / 2];
       };
-      await f.wait(700);
-      await f.tap(74, 342); // Rita's
-      await f.wait(1700);
-      await f.tap(187, 687); // its event
-      await f.wait(1700);
-      await f.tap(...(await f.text("Going together")));
-      await f.wait(2300);
-      await f.tap(311, 741); // back to the event
-      await f.wait(1100);
-      await f.tap(311, 741); // back to the venue
-      await f.wait(1100);
-      await f.tap(...(await label("Close venue")));
-      await f.wait(1300);
-      await f.tap(156, 761);
       await f.wait(900);
-      await f.type("I want something chill tonight", 60);
-      await f.wait(300);
-      await f.key("Enter");
-      await f.wait(3400);
-      await f.tap(197, 340); // the first result
-      await f.wait(2400);
-      await f.tap(158, 741); // Join
-      await f.wait(1100);
-      await f.tap(195, 674); // Join plan
+      f.mark("rsvp");
+      await f.drag(75, 354, 342, 354, 900);
       await f.wait(2200);
-      await f.tap(158, 741); // Enter groupchat
+      f.mark("dismiss");
+      await f.drag(195, 137, 195, 640, 450);
+      await f.wait(800);
+      f.mark("mapzoom");
+      await f.zoom(2600, 800);
+      await f.wait(500);
+      await f.zoom(-2600, 800);
+      await f.wait(500);
+      f.mark("pin");
+      await f.tap(74, 342); // Rita's
+      await f.wait(1500);
+      f.mark("event");
+      await f.tap(187, 687); // its event
+      await f.wait(1500);
+      f.mark("back");
+      await f.tap(311, 741); // back to the venue
+      await f.wait(800);
+      await f.tap(...(await label("Close venue")));
+      await f.wait(900);
+      f.mark("search");
+      await f.tap(156, 761);
+      await f.wait(700);
+      f.mark("type");
+      await f.type("I want something chill tonight", 55);
+      await f.wait(250);
+      await f.key("Enter");
+      f.mark("think");
+      await f.wait(3100);
+      f.mark("result");
+      await f.tap(197, 340); // the first result
+      await f.wait(2100);
+      f.mark("join");
+      await f.tap(158, 741); // Join
+      await f.wait(1000);
+      await f.tap(195, 674); // Join plan
+      f.mark("joined");
       await f.wait(1900);
+      f.mark("chat");
+      await f.tap(158, 741); // Enter groupchat
+      await f.wait(1600);
+      f.mark("message");
       await f.tap(166, 781); // the message field
-      await f.wait(400);
-      await f.type("count me in!", 85);
       await f.wait(350);
+      await f.type("count me in!", 80);
+      await f.wait(300);
       await f.tap(346, 781); // Send
-      await f.wait(2600);
+      f.mark("sent");
+      await f.wait(2400);
     },
   }),
   phone("profile", "profile", {

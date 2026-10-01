@@ -49,14 +49,15 @@ const X264 = [
  * @param {number} [o.posterAt] seconds into the clip for the poster (a
  *   take that starts empty shows what it's about instead)
  */
-export async function loopClip({ src, start = 0, dur, crop, width, fade = 0.4, fps = 30, out, posterAt = 0 }) {
+export async function loopClip({ src, start = 0, dur, crop, width, fade = 0.4, fps = 30, out, posterAt = 0, crf }) {
+  const x264 = crf ? X264.map((v, i) => (X264[i - 1] === "-crf" ? String(crf) : v)) : X264;
   mkdirSync(dirname(out), { recursive: true });
   const look = [crop && `crop=${crop}`, `scale=${width}:-2:flags=lanczos:in_color_matrix=bt709:in_range=tv:out_color_matrix=bt709:out_range=tv`, `fps=${fps}`, "setsar=1"]
     .filter(Boolean)
     .join(",");
   const input = ["-ss", String(start), ...(dur ? ["-t", String(dur)] : []), "-i", src];
   if (!fade || !dur) {
-    ffmpeg([...input, "-vf", look, ...X264, out]);
+    ffmpeg([...input, "-vf", look, ...x264, out]);
   } else {
     const body = dur - fade;
     ffmpeg([
@@ -67,7 +68,7 @@ export async function loopClip({ src, start = 0, dur, crop, width, fade = 0.4, f
         `[b]trim=end=${fade},setpts=PTS-STARTPTS[head];` +
         `[main][head]xfade=transition=fade:duration=${fade}:offset=${body - fade}[v]`,
       "-map", "[v]",
-      ...X264,
+      ...x264,
       out,
     ]);
   }
