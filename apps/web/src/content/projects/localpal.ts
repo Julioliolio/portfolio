@@ -193,15 +193,15 @@ export const localpal: Project = {
         },
         {
           type: "p",
-          text: "The storyboard follows Marco, six weeks into an Erasmus in Madrid.",
+          text: "The storyboard follows Marco, six weeks into an Erasmus in Madrid: he wants to do something, can't pin it down, and with LocalPal, goes.",
         },
         {
           type: "bento",
           row: 1,
           cells: [
-            { ...drawing(4, 4, "storyboard-1", 1400 / 1233, "Marco dancing alone to music in his room."), label: "Wants to do something" },
-            { ...drawing(4, 4, "storyboard-4", 1400 / 1287, "A shrug under a cloud of question marks."), label: "Can't pin it down" },
-            { ...drawing(4, 4, "storyboard-5", 1400 / 782, "Three people sitting together with drinks: the plan happened."), label: "With LocalPal, he goes" },
+            drawing(4, 4, "storyboard-1", 1400 / 1233, "Marco dancing alone to music in his room."),
+            drawing(4, 4, "storyboard-4", 1400 / 1287, "A shrug under a cloud of question marks."),
+            drawing(4, 4, "storyboard-5", 1400 / 782, "Three people sitting together with drinks: the plan happened."),
           ],
         },
         {
@@ -224,7 +224,7 @@ export const localpal: Project = {
       blocks: [
         {
           type: "p",
-          text: "It talks like a friend with good judgement. The blue is the colour of a web link: connection.",
+          text: "It talks like a friend with good judgement. The blue is the colour of a web link: connection. The first moodboard, darker and angular, was dropped.",
         },
         {
           type: "bento",
@@ -232,19 +232,19 @@ export const localpal: Project = {
           cells: [
             drawing(5, 8, "brand-sample", 972 / 1501, "The brand sample: a portrait with the LocalPal sticker and the line, map stickers, the mark on blue, the type."),
             pic(7, 5, "fig-brand-type", 4 / 3, "“Stop scrolling. Start showing up.” set in PP Neue Montreal on the blue."),
-            { ...drawing(7, 3, "moodboard", 1600 / 886, "The first moodboard, darker and more angular than where the brand ended up."), label: "First direction, dropped" },
+            drawing(7, 3, "moodboard", 1600 / 886, "The first moodboard, darker and more angular than where the brand ended up."),
           ],
         },
         {
           type: "p",
-          text: "Things you tap bounce. Things that load never do: a bouncy loading bar would lie.",
+          text: "Things you tap bounce, like the tile on the left. Things that load never do, like the bar on the right: a bouncy loading bar would lie.",
         },
         {
           type: "bento",
           row: 1,
           cells: [
-            { ...bare(6, 4, "ds-press", 4 / 3, "#f0f3fd", "A tile pressed: it squishes and springs back."), label: "Tap" },
-            { ...bare(6, 4, "ds-inform", 4 / 3, "#f0f3fd", "A progress line filling, calm, with no bounce at all."), label: "Loading" },
+            bare(6, 4, "ds-press", 4 / 3, "#f0f3fd", "A tile pressed: it squishes and springs back."),
+            bare(6, 4, "ds-inform", 4 / 3, "#f0f3fd", "A progress line filling, calm, with no bounce at all."),
             drawing(12, 5, "fig-brand-colours", 16 / 9, "The colours: the brand blue, its deep and pressed shades, lavender and ink; and the map, inverted: land, water, park, road."),
           ],
         },
@@ -337,11 +337,15 @@ export const localpal: Project = {
         },
         { type: "subhead", text: "07 · Small things" },
         {
+          type: "p",
+          text: "Pull the screen's edge to zoom with one thumb. Your profile leads with a QR, for the people you just met.",
+        },
+        {
           type: "bento",
           row: 1,
           cells: [
-            { ...phone(6, 7, "edge", "A thumb at the right edge pulls a black goo out of it and slides up and down to zoom the map."), label: "Pull the edge to zoom, one thumb" },
-            { ...phone(6, 7, "profile", "The own profile: the tag card, friends, plans, and the QR that opens to add someone."), label: "A QR for people you just met" },
+            phone(6, 7, "edge", "A thumb at the right edge pulls a black goo out of it and slides up and down to zoom the map."),
+            phone(6, 7, "profile", "The own profile: the tag card, friends, plans, and the QR that opens to add someone."),
           ],
         },
       ],

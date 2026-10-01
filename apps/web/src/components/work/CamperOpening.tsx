@@ -24,7 +24,6 @@ import type { OpeningProps } from "./openings";
  */
 
 const CSS = `
-.co-tag { z-index: 3; pointer-events: none; }
 .co { position: relative; height: min(var(--cs-vh, 100dvh), 56.25cqw); margin: 0 calc(-1 * var(--cs-gutter)); overflow: hidden; background: #000; }
 /* The tape arrow, a size under the landing's (whose least, 40px, would
    hold it there on most windows). It is the film's company, not the
@@ -80,9 +79,6 @@ export default function CamperOpening({ project }: OpeningProps) {
     <div ref={film} className="co">
       <style>{CSS}</style>
       <TapeStyles />
-      {/* Says it's the film, not another muted loop, while the controls
-          wait for the pointer. */}
-      <span className="bn-label ty-small co-tag">The film · 1:00 · sound on</span>
       <FilmPlayer
         src={hero.src}
         poster={hero.poster}

@@ -18,8 +18,6 @@ function cv(name: string, alt: string, aspect: number, more: Partial<Shot> = {})
   return { src: `${M}/${name}.mp4`, poster: `${M}/${name}.webp`, frame: "screen", alt, aspect, ...more };
 }
 const cell = (w: number, h: number, shot: Shot, ground?: string): Cell => ({ kind: "shot", w, h, ground, ...shot });
-/** An app recording with its own screen as its edge: no cell around it. */
-const plain = (c: Cell): Cell => ({ ...c, plain: true });
 
 
 export const convertr: Project = {
@@ -27,7 +25,7 @@ export const convertr: Project = {
   title: "Convertr",
   tagline: "A video converter that takes the shape of your video.",
   summary:
-    "A desktop app that turns any video into the GIF or file you need. Drop it, trim it, drag the result out. I designed and built it, and the real app runs on this page.",
+    "A desktop app that turns any video into the GIF or file you need. Drop it, trim it, drag the result out. I designed and built it, and the real app runs at the top of this page; only the conversion is pretend.",
   meta: [
     { label: "Type", value: "Side project · spring 2026" },
     { label: "Role", value: "Design and build" },
@@ -41,7 +39,6 @@ export const convertr: Project = {
     title: "Convertr",
     variant: "desktop",
     query: "?autosample",
-    label: "Live: the real app, with a pretend conversion",
     caption:
       "The real interface. Drop a video or a GIF on it, trim, convert, drag the result out. The conversion is simulated on this page, so the file you get is a stand-in; everything you see and touch is the app.",
   },
@@ -76,13 +73,12 @@ export const convertr: Project = {
           type: "bento",
           row: 1,
           cells: [
-            plain({ ...cell(12, 6, cv("drop", "A file carried in and dropped on the empty box; a row of bricks loads it, and the box snaps to the video's own shape", 1100 / 826, { frame: "bare", fit: "contain" })), label: "Drop a file: the box takes its shape" }),
+            cell(12, 6, cv("drop", "A file carried in and dropped on the empty box; a row of bricks loads it, and the box snaps to the video's own shape", 1100 / 826, { fit: "contain" })),
             {
               kind: "slot",
               w: 12,
               h: 4,
               awaits: "photo",
-              label: "Tried first",
               need: "Two or three early layouts from the design file that didn't survive, with a line on why each one died.",
             },
           ],
@@ -99,17 +95,25 @@ export const convertr: Project = {
           },
         },
         {
-          type: "bento",
-          row: 1,
-          cells: [
-            { ...cell(12, 7, cv("landscape-settings", "A landscape video dropped in; the settings open below it", 1.6)), label: "Landscape: the settings go underneath" },
-          ],
+          type: "p",
+          text: "Open the settings and the video doesn't shrink: it crops, and the settings take the space. A landscape video gets them underneath.",
         },
         {
           type: "bento",
           row: 1,
           cells: [
-            { ...cell(7, 6, cv("result-drag", "The last bricks land, the box steps out with chips on its corners, and the converted file is dragged out by its download chip", 1.25)), label: "The download is a drag" },
+            cell(12, 7, cv("landscape-settings", "A landscape video dropped in; the settings open below it", 1.6)),
+          ],
+        },
+        {
+          type: "p",
+          text: "Convert, and the box steps out with the result. The download is a drag: pull the file straight into a folder, Figma or a chat.",
+        },
+        {
+          type: "bento",
+          row: 1,
+          cells: [
+            cell(7, 6, cv("result-drag", "The last bricks land, the box steps out with chips on its corners, and the converted file is dragged out by its download chip", 1.25)),
             {
               kind: "slot",
               w: 5,
@@ -126,6 +130,10 @@ export const convertr: Project = {
       heading: "The small things",
       blocks: [
         {
+          type: "p",
+          text: "Three ways in: drop a file, paste a video, or paste a link. Seven formats in one picker. And a trim, because the bit you want is never the whole clip.",
+        },
+        {
           type: "bento",
           row: 0.5,
           cells: [
@@ -133,11 +141,10 @@ export const convertr: Project = {
               kind: "slot",
               w: 6,
               h: 7,
-              label: "Three ways in: drop it, paste it, or paste a link",
               need: "Pasting an X link in the desktop app: yt-dlp fetches it and it lands in the box like a file.",
             },
-            { ...cell(6, 7, cv("format", "The format picker opening, the cursor running down the list, GIF picked", 1200 / 660, { frame: "bare" })), label: "Seven formats, one picker" },
-            { ...cell(12, 3, cv("trim", "The in handle dragged right and the out handle left on the timeline", 8, { frame: "bare" })), label: "Trim: the bit you want is never the whole clip" },
+            cell(6, 7, cv("format", "The format picker opening, the cursor running down the list, GIF picked", 1200 / 660)),
+            cell(12, 3, cv("trim", "The in handle dragged right and the out handle left on the timeline", 8)),
           ],
         },
       ],

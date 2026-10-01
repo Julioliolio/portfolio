@@ -56,8 +56,6 @@ export type Figure =
       variant: "phone" | "desktop";
       query?: string;
       caption?: string;
-      /** A small tag on the demo's corner, saying it's the real thing. */
-      label?: string;
     };
 
 export type Block =
@@ -120,9 +118,6 @@ export type Cell = {
   /** The cell's ground, behind a bare component or a phone. Matches the
    *  background the clip was recorded on, so the two read as one. */
   ground?: string;
-  /** A small label in the cell's corner: what this one shows, where the
-   *  cells only make sense named (Board / Still / Shot). */
-  label?: string;
   /** No cell at all: the picture already has its own edge (a drawing on
    *  transparency, an app's own screen), so it sits on the paper. */
   plain?: boolean;

@@ -64,13 +64,17 @@ export const camper: Project = {
           ],
         },
         {
+          type: "p",
+          text: "It ends with the shoes off: the one frame where everyone really is equal. Below that, every shot in order, to check the rules against.",
+        },
+        {
           // The cast, one loop per person, cut from the film
           // (scripts/prepare-camper-media.mjs). A row is 2.25 columns
           // tall, so a four-wide cell is the film's 16:9.
           type: "bento",
           row: 2.25,
           cells: [
-            { ...cast("beach", 8, 2, "Bare feet at the water's edge, a pair of red Camper sandals beside them"), label: "The last shots: shoes off, everyone equal" },
+            cast("beach", 8, 2, "Bare feet at the water's edge, a pair of red Camper sandals beside them"),
             cast("reader", 4, 1, "Green suede sneakers under someone reading on the pavement"),
             cast("step", 4, 1, "Two kids' sneakers on a doorstep"),
           ],
@@ -86,7 +90,6 @@ export const camper: Project = {
               w: 12,
               h: 7,
               plain: true,
-              label: "Every shot, in order. Check the rules",
               frame: "bare",
               fit: "contain",
               src: "/media/camper/every-shot.webp",
@@ -104,7 +107,7 @@ export const camper: Project = {
       blocks: [
         {
           type: "p",
-          text: "I drew a storyboard first, so every AI image had a target. Here's one:",
+          text: "I drew a storyboard first, so every AI image had a target. Here's one moment, from board to still to shot:",
         },
         {
           type: "bento",
@@ -122,14 +125,12 @@ export const camper: Project = {
               w: 4,
               h: 1,
               awaits: "photo",
-              label: "Board",
               need: "The storyboard frame for the velcro.",
             },
             {
               kind: "shot",
               w: 4,
               h: 1,
-              label: "Still",
               frame: "bare",
               src: "/media/camper/still-velcro.webp",
               aspect: 16 / 9,
@@ -139,7 +140,6 @@ export const camper: Project = {
               kind: "shot",
               w: 4,
               h: 1,
-              label: "Shot",
               frame: "bare",
               src: "/media/camper/shot-velcro.mp4",
               poster: "/media/camper/shot-velcro.webp",
@@ -157,7 +157,7 @@ export const camper: Project = {
         },
         {
           type: "p",
-          text: "AI gives you a hundred believable people. The job is picking the one who looks like a stranger on your street, in a shoe that's unmistakably Camper.",
+          text: "AI gives you a hundred believable people. The job is picking the one who looks like a stranger on your street, in a shoe that's unmistakably Camper. The rejects for one of them, and the one I kept:",
         },
         {
           // The choosing, made visible: the rejects for one person next
@@ -170,14 +170,12 @@ export const camper: Project = {
               w: 8,
               h: 2,
               awaits: "photo",
-              label: "Rejected",
               need: "Eight to twelve generations of the man on the ledge that didn't make it, each with a word on why: too model-like, the shoe's wrong, the light's off.",
             },
             {
               kind: "shot",
               w: 4,
               h: 2,
-              label: "Kept",
               frame: "bare",
               src: "/media/camper/still-ledge.webp",
               aspect: 16 / 9,
@@ -196,7 +194,6 @@ export const camper: Project = {
               w: 12,
               h: 2,
               awaits: "photo",
-              label: "The shoe",
               need: "Three frames side by side, a line under each: a Camper catalogue shot, the generated frame of the same shoe, and a generation where the sole or strap went wrong, with how it was fixed.",
             },
           ],

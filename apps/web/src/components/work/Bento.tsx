@@ -20,6 +20,10 @@ import type { Cell, Shot } from "@/content/projects";
  *   itself, and an unresolved --ty-u would measure it instead.
  * - A clip plays only while it is on screen, and not at all for readers
  *   who asked for reduced motion (they get the poster).
+ * - An app recording (`screen`) is set as a window: rounded, a hairline
+ *   edge, on the app's own off-white, so it never runs into the paper.
+ *   Explanations are the text's job, not labels on the pictures (Julio,
+ *   2026-10-01: pills broke the type-led page).
  * - A phone is drawn here, not recorded: the clip is the screen alone,
  *   so every phone on the site is the same phone. In a bento it sits
  *   straight on the paper — the phone is its own frame, so its cell has
@@ -35,7 +39,8 @@ export const BENTO_CSS = `
 .bn-grid { --bn-c: calc((100cqw - 11 * var(--bn-g)) / 12); display: grid; grid-template-columns: repeat(12, minmax(0, 1fr)); grid-auto-rows: calc(var(--bn-row) * var(--bn-c) + (var(--bn-row) - 1) * var(--bn-g)); gap: var(--bn-g); }
 .bn-cell { position: relative; grid-column: span var(--bn-w); grid-row: span var(--bn-h); overflow: hidden; border-radius: calc(.5 * var(--ty-u)); background: var(--bn-ground, #ecebe8); }
 .bn-cell > video, .bn-cell > img { position: absolute; inset: 0; display: block; width: 100%; height: 100%; object-fit: cover; }
-.bn-cell.is-screen { box-shadow: inset 0 0 0 1px rgba(43, 39, 34, .08); }
+.bn-cell.is-screen { background: var(--bn-ground, #f6f6f4); }
+.bn-cell.is-screen::after { content: ""; position: absolute; inset: 0; z-index: 1; border-radius: inherit; box-shadow: inset 0 0 0 1px rgba(43, 39, 34, .2); pointer-events: none; }
 .bn-cell.is-phone, .bn-cell.is-plain { background: none; overflow: visible; border-radius: 0; box-shadow: none; }
 .bn-cell.is-phone .bn-phone { height: 100%; max-width: 100%; }
 .bn-center { position: absolute; inset: 0; display: grid; place-items: center; }
@@ -49,7 +54,6 @@ export const BENTO_CSS = `
 .bn-bezel > .bn-screen { width: 100%; height: 100%; border-radius: 12cqw; overflow: hidden; background: #000; }
 .bn-screen video, .bn-screen img { display: block; width: 100%; height: 100%; object-fit: cover; }
 
-.bn-label { position: absolute; left: calc(.5 * var(--ty-u)); top: calc(.5 * var(--ty-u)); z-index: 1; padding: .3em .6em; border-radius: 999px; background: rgba(250, 249, 246, .92); color: #2b2722; box-shadow: 0 1px 2px rgba(0,0,0,.08); }
 .bn-slot { position: absolute; inset: 0; display: grid; align-content: end; padding: calc(.75 * var(--ty-u)); outline: 1px dashed rgba(43, 39, 34, .28); outline-offset: -1px; border-radius: inherit; }
 .bn-mark { position: absolute; left: calc(.75 * var(--ty-u)); bottom: calc(.75 * var(--ty-u)); right: calc(.75 * var(--ty-u)); }
 .bn-mark span { display: inline-block; padding: .35em .6em; border: 1px dashed rgba(43, 39, 34, .35); border-radius: 6px; background: rgba(255, 255, 255, .7); backdrop-filter: blur(6px); }
@@ -112,7 +116,6 @@ export function Bento({ cells, row = 2 }: { cells: Cell[]; row?: number }) {
             }
           >
             <CellView cell={cell} />
-            {cell.label && <span className="bn-label ty-small">{cell.label}</span>}
           </Reveal>
         ))}
       </div>
