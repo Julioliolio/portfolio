@@ -123,11 +123,15 @@ and scores the page out of 10 with a written critique.
 Four rounds, a fresh judge per page each time (head of design hiring a
 senior product designer). Scores:
 
-| Page | R1 | R2 | R3 | R4 |
-|---|---|---|---|---|
-| LocalPal | 6 | 7 | 7 | 7 |
-| Convertr | 6 | 7 | 7 | 7 |
-| Camper | 6 | 6.5 | 6.5 | 7 |
+| Page | R1 | R2 | R3 | R4 | R5 |
+|---|---|---|---|---|---|
+| LocalPal | 6 | 7 | 7 | 7 | 7 |
+| Convertr | 6 | 7 | 7 | 7 | 7 |
+| Camper | 6 | 6.5 | 6.5 | 7 | 6.5 |
+
+(R5 was an extra loop Julio asked for, after phones and anything with its
+own edge moved straight onto the paper; its rework is in c09582d and
+hasn't been re-scored.)
 
 None reached 8. In every final critique, what holds each page back is
 something only Julio can supply: real evidence (a usage number, a test,
@@ -157,7 +161,9 @@ Slots (each says what goes in it):
   dragged into Figma (desktop app); pasting an X link (desktop app).
 - Camper: the storyboard in 2–3 rows; the velcro board frame; rejected
   generations of the man on the ledge; the shoe (catalogue vs generated
-  vs a failed one); one Flora branch.
+  vs a failed one).
+- LocalPal: the loop (week nine) is drawn from the service blueprint;
+  a screen of the check-in, if one gets built, would replace it.
 - LocalPal's thesis PDF link.
 
 Facts:
