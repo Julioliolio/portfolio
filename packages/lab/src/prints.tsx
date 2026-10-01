@@ -53,7 +53,7 @@ export type PrintSpec = {
 };
 
 /** A tall print's width, as a share of a wide one's. */
-const TALL_SHARE = 0.62;
+const TALL_SHARE = 0.56;
 
 /** Placeholder clips, until each project has its own. */
 const PLACEHOLDER_WIDE = {
@@ -68,10 +68,10 @@ export const PRINTS: readonly PrintSpec[] = [
     title: "LocalPal",
     href: asset("/work/localpal"),
     media: "tall",
-    // The drawn phone on the LocalPal blue, a montage of the prototype
-    // (scripts/make-cover.mjs).
+    // One phone, tall in a light card, one continuous take of the app
+    // in use (scripts/make-cover.mjs).
     src: asset("/media/localpal/cover.mp4"),
-    aspect: 800 / 918,
+    aspect: 3 / 4,
     blurb:
       "A phone-first companion for meeting people nearby — plans, venues and friends on one live map. Designed and built end-to-end.",
     tags: ["iOS", "Design System", "End-to-end"],

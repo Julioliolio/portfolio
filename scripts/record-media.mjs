@@ -30,7 +30,7 @@ const wait = (ms) => new Promise((r) => setTimeout(r, ms));
  * stages scale their content with the box, so a small component is
  * cropped in on (`zoom`) from a capture at a high device scale.
  */
-function stage(id, { aspect, bg, seconds, start = 0.6, fade = 0.4, width = 900, boxH = 760, dpr = DPR, zoom = 1, cx = 0.5, cy = 0.5, posterAt = 0 }) {
+function stage(id, { aspect, bg, seconds, start = 0.6, fade = 0.4, width = 900, boxH = 760, dpr = DPR, zoom = 1, cx = 0.5, cy = 0.5, ar, posterAt = 0 }) {
   const ratio = { "4x5": 4 / 5, "9x16": 9 / 16, "1x1": 1 }[aspect];
   return {
     name: `localpal/${id}`,
@@ -45,9 +45,10 @@ function stage(id, { aspect, bg, seconds, start = 0.6, fade = 0.4, width = 900, 
       await page.close();
       const top = (vh - boxH - 64) / 2;
       // The stages scale with their box: zoom crops in on the subject,
-      // centred at (cx, cy) of the box.
+      // centred at (cx, cy) of the box; `ar` crops to the shape of the
+      // cell the clip goes in, so it isn't cropped again there.
       const cw = boxW / zoom;
-      const ch = boxH / zoom;
+      const ch = ar ? cw / ar : boxH / zoom;
       const crop = [cw, ch, 16 + Math.min(boxW - cw, Math.max(0, cx * boxW - cw / 2)), top + Math.min(boxH - ch, Math.max(0, cy * boxH - ch / 2))];
       const master = await encode(rec, { out: `${MASTERS}localpal-${id}.mp4`, crop });
       return loopClip({
@@ -240,10 +241,12 @@ async function open(browser, viewport, init, dpr = DPR) {
 }
 
 const JOBS = [
-  stage("venue-pin", { aspect: "4x5", bg: "EFE9E1", seconds: 9.4, boxH: 400, dpr: 5, zoom: 2.6, width: 720 }),
+  // Both go in wide 8 × 4 cells: a big stage (the screencast tops out
+  // near 2×, so the size has to come from CSS pixels, not zoom), cut 2:1.
+  stage("venue-pin", { aspect: "1x1", bg: "EFE9E1", seconds: 9.4, boxH: 1000, dpr: 2, zoom: 1.4, ar: 2, width: 1400 }),
   // Tight on the card, and only the drag and the list opening.
   stage("rsvp", { aspect: "4x5", bg: "EFE9E1", seconds: 9, boxH: 460, dpr: 4, zoom: 1.12, start: 0.4, posterAt: 1.6 }),
-  stage("locate", { aspect: "1x1", bg: "ECEEF2", seconds: 6, boxH: 360, dpr: 5, zoom: 2.2, cy: 0.52, width: 640 }),
+  stage("locate", { aspect: "1x1", bg: "ECEEF2", seconds: 6, boxH: 1000, dpr: 2, zoom: 1, cy: 0.515, ar: 2, width: 1400 }),
   phone("onboarding-interests", "onboarding", {
     posterAt: 5.5,
     prep: (f) => walkOnboarding(f, "interests"),
@@ -335,6 +338,57 @@ const JOBS = [
     },
   }),
 
+  // One continuous session, for LocalPal's cover (scripts/make-cover.mjs):
+  // someone using the app — a venue, its event, who's going together,
+  // back to the map, a search in a sentence, a plan joined, a message in
+  // its group chat. The plans sheet is put away before the take.
+  phone("course", "dayOfPlan", {
+    posterAt: 2,
+    prep: async (f) => {
+      await f.wait(600);
+      await f.drag(195, 137, 195, 640, 500);
+      await f.wait(1500);
+    },
+    act: async (f) => {
+      const label = async (name) => {
+        const b = await f.page.getByLabel(name, { exact: true }).first().boundingBox();
+        return [b.x + b.width / 2, b.y + b.height / 2];
+      };
+      await f.wait(700);
+      await f.tap(74, 342); // Rita's
+      await f.wait(1700);
+      await f.tap(187, 687); // its event
+      await f.wait(1700);
+      await f.tap(...(await f.text("Going together")));
+      await f.wait(2300);
+      await f.tap(311, 741); // back to the event
+      await f.wait(1100);
+      await f.tap(311, 741); // back to the venue
+      await f.wait(1100);
+      await f.tap(...(await label("Close venue")));
+      await f.wait(1300);
+      await f.tap(156, 761);
+      await f.wait(900);
+      await f.type("I want something chill tonight", 60);
+      await f.wait(300);
+      await f.key("Enter");
+      await f.wait(3400);
+      await f.tap(197, 340); // the first result
+      await f.wait(2400);
+      await f.tap(158, 741); // Join
+      await f.wait(1100);
+      await f.tap(195, 674); // Join plan
+      await f.wait(2200);
+      await f.tap(158, 741); // Enter groupchat
+      await f.wait(1900);
+      await f.tap(166, 781); // the message field
+      await f.wait(400);
+      await f.type("count me in!", 85);
+      await f.wait(350);
+      await f.tap(346, 781); // Send
+      await f.wait(2600);
+    },
+  }),
   phone("profile", "profile", {
     posterAt: 2.5,
     act: async (f) => {

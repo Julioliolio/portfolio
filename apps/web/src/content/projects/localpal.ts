@@ -265,8 +265,8 @@ export const localpal: Project = {
           row: 1,
           cells: [
             phone(4, 8, "map-zoom", "Zooming out of Madrid until the pins gather into one count, then back in as they come apart."),
-            bare(8, 4, "venue-pin", 720 / 902, "#eee8df", "A venue pin grows into a labelled pill, then floats over its shadow."),
-            bare(8, 4, "locate", 1, "#ecf0f1", "The locate button twists when pressed and the blue dot answers with a pulse."),
+            bare(8, 4, "venue-pin", 2, "#eee8df", "A venue pin grows into a labelled pill, then floats over its shadow."),
+            bare(8, 4, "locate", 2, "#ecf0f1", "The locate button twists when pressed and the blue dot answers with a pulse."),
           ],
         },
         { type: "subhead", text: "02 · Search in a sentence" },
