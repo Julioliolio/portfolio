@@ -528,7 +528,7 @@ JOBS.push(
 JOBS.push({
   name: "localpal/crops",
   async run() {
-    await loopClip({ src: `${MASTERS}localpal-search.mp4`, start: 0.6, crop: "716:700:32:260", width: 716, fade: 0, posterAt: 8.5, out: `${MEDIA}localpal/search-sheet.mp4` });
+    await loopClip({ src: `${MASTERS}localpal-search.mp4`, start: 3.2, crop: "716:700:32:260", width: 716, fade: 0, posterAt: 5.4, out: `${MEDIA}localpal/search-sheet.mp4` });
     return loopClip({ src: `${MASTERS}localpal-venue.mp4`, start: 4.4, dur: 3.2, crop: "716:900:32:680", width: 716, fade: 0, posterAt: 2.4, out: `${MEDIA}localpal/going-together.mp4` });
   },
 });

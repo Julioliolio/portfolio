@@ -115,3 +115,65 @@ and scores the page out of 10 with a written critique.
 
 - The final TFM file (LocalPal's problem, research, personas, storyboard,
   moodboard, and the thesis link). Everything else starts without it.
+
+---
+
+## After the judge loops (2026-10-01)
+
+Four rounds, a fresh judge per page each time (head of design hiring a
+senior product designer). Scores:
+
+| Page | R1 | R2 | R3 | R4 |
+|---|---|---|---|---|
+| LocalPal | 6 | 7 | 7 | 7 |
+| Convertr | 6 | 7 | 7 | 7 |
+| Camper | 6 | 6.5 | 6.5 | 7 |
+
+None reached 8. In every final critique, what holds each page back is
+something only Julio can supply: real evidence (a usage number, a test,
+generation counts, an outcome) and the process material in the slots.
+
+### What changed from the plan
+
+- No tray, no captions; cells carry a small corner label where they
+  need naming (Board / Still / Shot, Rejected / Kept, Tried first).
+- LocalPal: decisions as a list with "The cost:" each; personas, the
+  reel, the motion-tile row, the morph tiles and the defence slot were
+  cut; search and going-together appear as readable crops next to their
+  phones; the competitor chart shows only the gap (no LocalPal row); the
+  relevance curve and journey are labelled as a model / untested.
+- Convertr: a "try a sample" button in the demo (a vertical cut of the
+  Camper film, apps/demos/convertr/src/assets/sample.mp4); the timeline
+  and the laptop field were cut; three decisions with a cost.
+- Camper: the opening now plays at the film's own 16:9 (was 4:3, one
+  number in CamperOpening.tsx and CaseStudy.tsx); the shoe grid became a
+  rejected/kept slot and a shoe-fidelity slot.
+
+### Waiting on Julio
+
+Slots (each says what goes in it):
+- LocalPal: hero mockup (one phone in hand on a Madrid street).
+- Convertr: early layouts that died ("Tried first"); the result chip
+  dragged into Figma (desktop app); pasting an X link (desktop app).
+- Camper: the storyboard in 2–3 rows; the velcro board frame; rejected
+  generations of the man on the ledge; the shoe (catalogue vs generated
+  vs a failed one); one Flora branch.
+- LocalPal's thesis PDF link.
+
+Facts:
+- Convertr: the "[fill in — how many files since June]" line.
+- Camper: generations, days, models, how the shoe stayed accurate, what
+  the film led to; Tools is still a draft.
+- LocalPal: Tools now says "Figma; React and MapLibre, built with Claude
+  Code" — inferred from the repo, confirm the wording.
+
+Words I wrote that are interpretations, to check:
+- Camper: the three camera rules; "its last shots take the shoes off";
+  "the sentence was the tagline".
+- LocalPal: the week-nine answer is from the thesis's service
+  blueprint (check-in, "want to go again?"), not a built screen.
+
+Judges' notes outside these pages (site chrome, not touched): on phone
+the fixed Back sign covers text; gaps after the meta row and before the
+Next band read long; grey body text is light for long reads; "Any
+questions? Write me" has no link.

@@ -21,21 +21,23 @@ const SRC =
   join(homedir(), "Downloads/_organized/2894_/Campers/video campers.mp4");
 const OUT = new URL("../apps/web/public/media/camper/", import.meta.url).pathname;
 
-// One person each, in the film's order.
+// One person each, in the film's order: [name, start, seconds], every
+// window a few frames inside its shot, so a loop never reaches the cut
+// (the fold would dissolve the next shot into it).
 const CAST = [
-  ["heels", 7.9],
-  ["broom", 11.2],
-  ["reader", 23.6],
-  ["sofa", 39.0],
-  ["beach", 47.2],
-  ["step", 51.0],
-];
+  ["heels", 7.75, 2.55],
+  ["broom", 10.7, 3.4],
+  ["reader", 23.35, 3.6],
+  ["sofa", 38.95, 2.45],
+  ["beach", 47.1, 3.35],
+  ["step", 50.9, 3.5],
+]
 
 
 const made = [];
-for (const [name, start] of CAST)
-  made.push(await loopClip({ src: SRC, start, dur: 2.8, width: 768, out: `${OUT}cast-${name}.mp4` }));
-made.push(await loopClip({ src: SRC, start: 0.3, dur: 3.6, fade: 0.4, width: 1280, out: `${OUT}shot-velcro.mp4` }));
+for (const [name, start, dur] of CAST)
+  made.push(await loopClip({ src: SRC, start, dur, width: 768, out: `${OUT}cast-${name}.mp4` }));
+made.push(await loopClip({ src: SRC, start: 0.3, dur: 3.6, fade: 0.4, width: 1280, posterAt: 2.6, out: `${OUT}shot-velcro.mp4` }));
 made.push(await still({ src: SRC, at: 0.4, width: 1280, out: `${OUT}still-velcro.webp` }));
 made.push(await still({ src: SRC, at: 28.6, width: 1280, out: `${OUT}still-ledge.webp` }));
 

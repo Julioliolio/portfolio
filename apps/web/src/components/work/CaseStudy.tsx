@@ -583,9 +583,10 @@ function FigureView({ figure }: { figure: Figure }) {
       const media = (
         <div className="cs-media" style={{ aspectRatio: figure.aspect }}>
           {/* Plain <img>: the static export has no image optimizer, and
-              every public/ path goes through asset() for the basePath. */}
+              every public/ path goes through asset() for the basePath.
+              Lazy, or React preloads it in the page head (the budget). */}
           {/* eslint-disable-next-line @next/next/no-img-element */}
-          <img src={asset(figure.src)} alt={figure.alt} />
+          <img src={asset(figure.src)} alt={figure.alt} loading="lazy" decoding="async" />
         </div>
       );
       return (

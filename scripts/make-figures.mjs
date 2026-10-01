@@ -181,11 +181,11 @@ function journey() {
   <text x="${L - 24}" y="${T + 8}" text-anchor="end" class="t">great</text>
   <text x="${L - 24}" y="${B + 8}" text-anchor="end" class="t">awful</text>
   <path d="${line(asis)}" fill="none" stroke="${C.ink}" stroke-opacity=".55" stroke-width="6" stroke-dasharray="2 14" stroke-linecap="round" stroke-linejoin="round"/>
-  <path d="${line(tobe)}" fill="none" stroke="${C.brand}" stroke-width="7" stroke-linecap="round" stroke-linejoin="round"/>
+  <path d="${line(tobe)}" fill="none" stroke="${C.brand}" stroke-width="7" stroke-dasharray="18 12" stroke-linecap="round" stroke-linejoin="round"/>
   ${asis.map((v, i) => `<circle cx="${x(i)}" cy="${y(v)}" r="9" fill="${C.paper}" stroke="${C.ink}" stroke-opacity=".55" stroke-width="5"/>`).join("")}
   ${tobe.map((v, i) => `<circle cx="${x(i)}" cy="${y(v)}" r="10" fill="${C.brand}"/>`).join("")}
   <text x="${x(4) - 36}" y="${y(1.25)}" text-anchor="end" class="l" fill="${C.ink}" fill-opacity=".6">Today: the plan dies in the chat</text>
-  <text x="${x(5) - 24}" y="${y(5) - 26}" text-anchor="end" class="l" fill="${C.brand}">With LocalPal: they go</text>
+  <text x="${x(5) - 24}" y="${y(5) - 26}" text-anchor="end" class="l" fill="${C.brand}">With LocalPal: they go (designed for, untested)</text>
 </svg></div>`];
 }
 
