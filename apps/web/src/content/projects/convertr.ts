@@ -30,10 +30,6 @@ export const convertr: Project = {
     "A desktop app that turns any video into the GIF or file you need. Drop it, trim it, drag the result out. I designed and built it, and the real app runs on this page.",
   meta: [
     { label: "Type", value: "Side project · spring 2026" },
-    {
-      label: "Fields",
-      value: "Product design, interaction design, desktop, build",
-    },
     { label: "Role", value: "Design and build" },
     { label: "Stack", value: "Solid.js, Electron, FFmpeg, yt-dlp" },
     // Draft, a guess; Julio to correct.
@@ -58,11 +54,11 @@ export const convertr: Project = {
       blocks: [
         {
           type: "p",
-          text: "Every week I turned clips into GIFs for moodboards. Online tools gave me no control, and Premiere turned a ten-second job into a project. So I built my own. [fill in — I've run N files through it since June.]",
+          text: "Every week I turned clips into GIFs for moodboards. Online tools gave me no control, and Adobe Premiere turned a ten-second job into a project. So I built my own. [fill in — I've run N files through it since June.]",
         },
         {
           type: "p",
-          text: "It was also my first app built with AI, and a test: does an odd design idea last longer when the designer writes the code?",
+          text: "It was also my first app built with AI, and a test: if the designer writes the code, does the weird idea survive?",
         },
       ],
     },
@@ -74,7 +70,7 @@ export const convertr: Project = {
       blocks: [
         {
           type: "p",
-          text: "The whole app is one box. Empty, it cycles through the shapes a video can have. Drop a file and it becomes the video.",
+          text: "The whole app is one box. No settings page, no results page. Empty, it cycles through the shapes a video can have; drop a file and it becomes the video.",
         },
         {
           type: "bento",
@@ -122,27 +118,13 @@ export const convertr: Project = {
             },
           ],
         },
-        {
-          type: "p",
-          text: "Nothing pops in or slides over. There's no settings page and no results page: every screen is the same box changing shape.",
-        },
       ],
     },
     {
       id: "details",
       label: "Details",
-      heading: "The small things it does",
+      heading: "The small things",
       blocks: [
-        {
-          type: "list",
-          style: "bulleted",
-          items: [
-            {
-              title: "Three ways in.",
-              body: "Drop a file, paste a video, or paste a YouTube or X link.",
-            },
-          ],
-        },
         {
           type: "bento",
           row: 0.5,
@@ -151,6 +133,7 @@ export const convertr: Project = {
               kind: "slot",
               w: 6,
               h: 7,
+              label: "Three ways in: drop it, paste it, or paste a link",
               need: "Pasting an X link in the desktop app: yt-dlp fetches it and it lands in the box like a file.",
             },
             { ...cell(6, 7, cv("format", "The format picker opening, the cursor running down the list, GIF picked", 1200 / 660, { frame: "bare" })), label: "Seven formats, one picker" },
@@ -162,15 +145,15 @@ export const convertr: Project = {
     {
       id: "learnings",
       label: "Learnings",
-      heading: "The box only survived because I was also the one building it",
+      heading: "Writing the code kept the idea alive",
       blocks: [
         {
           type: "p",
-          text: "If I did it again I'd build the fake converter first, the one running on this page, so every idea could be tried in seconds.",
+          text: "Nobody could quietly turn the box back into a normal layout. Half the feel came from tweaking timings while watching it move, and none of that was in the design file.",
         },
         {
           type: "p",
-          text: "Because I wrote the code, nobody could quietly turn the box back into a normal layout. Half the feel came from tweaking timings while watching it move, and none of that was in the design file.",
+          text: "Next time I'd build the pretend version first, so every idea could be tried in seconds.",
         },
       ],
     },

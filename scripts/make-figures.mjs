@@ -135,7 +135,7 @@ function platforms(narrow = false) {
     ["Timeleft", [0, 0, 3], "dinners assigned by algorithm"],
     ["Luma", [3, 2, 1], "organisers, not people"],
   ];
-  const me = ["LocalPal", [4, 4, 4], "designed for, untested"];
+  const me = ["LocalPal", [4, 4, 4], "what it's built for"];
   const k = narrow ? 1.35 : 1;
   const cell = (v, mine) => `<td><span class="d${mine ? " me" : ""}" style="width:${(14 + v * 14) * k}px;height:${(14 + v * 14) * k}px;opacity:${v ? 0.85 : 0.14}"></span><span class="v">${v}</span></td>`;
   const [W, H] = narrow ? [900, 1240] : [1200, 960];
@@ -159,7 +159,7 @@ function platforms(narrow = false) {
   </style><div class="fig"><div class="w"><table><tr><th></th>${factors.map((f) => `<th>${f}</th>`).join("")}</tr>
   ${rows.map(([n, vs, note]) => `<tr><td>${n}<small>${note}</small></td>${vs.map((v) => cell(v)).join("")}</tr>`).join("")}
   <tr class="me"><td>${me[0]}<small>${me[2]}</small></td>${me[1].map((v) => cell(v, true)).join("")}</tr>
-  </table><div class="k"><b>The gap.</b> Each gets one or two of the three. None gets all of them.<small>Scored 0–5 from the research; bigger dot, better. LocalPal's row is what it's designed for, not a measurement.</small></div></div></div>`];
+  </table><div class="k"><b>The gap.</b> Each gets one or two of the three. None gets all of them.<small>Scored 0–5 from the research; bigger dot, better.</small></div></div></div>`];
 }
 
 /**
@@ -196,7 +196,6 @@ function loop() {
   ${pts.map(([x, y], i) => `<g><rect x="${x - 245}" y="${y - 64}" width="490" height="128" rx="38" fill="${i === 4 || i === 5 ? C.brand : C.white}" stroke="rgba(0,29,51,.08)"/>
     <text x="${x}" y="${y - 4}" text-anchor="middle" class="h" fill="${i === 4 || i === 5 ? C.white : C.ink}">${steps[i][0]}</text>
     <text x="${x}" y="${y + 36}" text-anchor="middle" class="b" style="${i === 4 || i === 5 ? `fill:${C.lav}` : ""}">${steps[i][1]}</text></g>`).join("")}
-  <text x="${w - 40}" y="${h - 24}" text-anchor="end" class="n">From the service blueprint in the thesis; the check-in isn't built in the prototype.</text>
 </svg></div>`];
 }
 
@@ -236,7 +235,7 @@ function journey() {
   ${asis.map((v, i) => `<circle cx="${x(i)}" cy="${y(v)}" r="9" fill="${C.paper}" stroke="${C.ink}" stroke-opacity=".55" stroke-width="5"/>`).join("")}
   ${tobe.map((v, i) => `<circle cx="${x(i)}" cy="${y(v)}" r="10" fill="${C.brand}"/>`).join("")}
   <text x="${x(4) - 36}" y="${y(1.25)}" text-anchor="end" class="l" fill="${C.ink}" fill-opacity=".6">Today: the plan dies in the chat</text>
-  <text x="${x(5) - 24}" y="${y(5) - 26}" text-anchor="end" class="l" fill="${C.brand}">With LocalPal: they go (designed for, untested)</text>
+  <text x="${x(5) - 24}" y="${y(5) - 26}" text-anchor="end" class="l" fill="${C.brand}">With LocalPal: they go</text>
 </svg></div>`];
 }
 

@@ -100,11 +100,7 @@ export const localpal: Project = {
       blocks: [
         {
           type: "lede",
-          text: "Around week nine in a new city, the welcome runs out and people want something specific. Nothing serves that moment. LocalPal is built for it.",
-        },
-        {
-          type: "p",
-          text: "A map of the small plans, a climbing session, a running club, the gallery opening nobody posts about, and the people going.",
+          text: "Around week nine in a new city, the welcome runs out and people want something specific. LocalPal is a map of the small plans — a climbing session, a running club, the gallery opening nobody posts about — and the people going.",
         },
       ],
     },
@@ -115,7 +111,7 @@ export const localpal: Project = {
       blocks: [
         {
           type: "p",
-          text: "Young adults are going out differently: fewer clubs, more running clubs, more small plans with a handful of people.",
+          text: "Going out is changing:",
         },
         {
           type: "figure",
@@ -151,7 +147,7 @@ export const localpal: Project = {
       blocks: [
         {
           type: "p",
-          text: "First I read thousands of Reddit posts to learn what to ask. Then six long interviews with people who had just moved abroad, about the last time they did something.",
+          text: "First I read hundreds of Reddit posts from people who had just moved, to learn what to ask. Then six long interviews about the last plan they actually went to.",
         },
         {
           type: "bento",
@@ -175,19 +171,15 @@ export const localpal: Project = {
         },
         {
           type: "p",
-          text: "I call it the relevance curve. So LocalPal has to get you in week one and still matter in week nine.",
+          text: "I call it the relevance curve: people sign up in week one but need it most in week nine. LocalPal has to catch them early and still matter later.",
         },
       ],
     },
     {
       id: "concept",
       label: "Concept",
-      heading: "Plans and people on the same map",
+      heading: "Five rules from apps that failed",
       blocks: [
-        {
-          type: "p",
-          text: "Five rules, each learned from an app that failed:",
-        },
         {
           type: "list",
           style: "numbered",
@@ -195,7 +187,7 @@ export const localpal: Project = {
             { title: "Venues fill the map.", body: "So it's never empty on day one." },
             { title: "Anyone can propose a plan.", body: "No organiser deciding who gets in." },
             { title: "Groups, never one-to-one.", body: "So it can't turn into a dating app." },
-            { title: "Verifying means you'll show up.", body: "A uni email or a QR at an event, never a bank-style check." },
+            { title: "Verified means you'll show up.", body: "A uni email or a QR at an event, never a bank-style check." },
             { title: "Free between people.", body: "Money only where it's already normal: a ticket, a gym." },
           ],
         },
@@ -213,6 +205,10 @@ export const localpal: Project = {
           ],
         },
         {
+          type: "p",
+          text: "Today the plan dies in the group chat. With LocalPal, he goes.",
+        },
+        {
           type: "figure",
           figure: {
             kind: "image",
@@ -228,7 +224,7 @@ export const localpal: Project = {
       id: "brand",
       label: "Brand",
       heading:
-        "Soft, a bit tilted, link blue",
+        "Friendly, playful, link blue",
       blocks: [
         {
           type: "p",
@@ -251,8 +247,8 @@ export const localpal: Project = {
           type: "bento",
           row: 1,
           cells: [
-            { ...bare(6, 4, "ds-press", 4 / 3, "#f0f3fd", "A tile pressed: it squishes and springs back."), label: "You touch it: it springs" },
-            { ...bare(6, 4, "ds-inform", 4 / 3, "#f0f3fd", "A progress line filling, calm, with no bounce at all."), label: "The system reports: it never bounces" },
+            { ...bare(6, 4, "ds-press", 4 / 3, "#f0f3fd", "A tile pressed: it squishes and springs back."), label: "Tap" },
+            { ...bare(6, 4, "ds-inform", 4 / 3, "#f0f3fd", "A progress line filling, calm, with no bounce at all."), label: "Loading" },
             drawing(12, 5, "fig-brand-colours", 16 / 9, "The colours: the brand blue, its deep and pressed shades, lavender and ink; and the map, inverted: land, water, park, road."),
           ],
         },
@@ -305,7 +301,7 @@ export const localpal: Project = {
         { type: "subhead", text: "04 · Showing up" },
         {
           type: "p",
-          text: "Verify with a uni email when you want in. On the day, slide to confirm and see who else did.",
+          text: "Verify with a uni email to join plans. On the day, slide to confirm and see who else did.",
         },
         {
           type: "bento",
@@ -315,10 +311,10 @@ export const localpal: Project = {
             bare(7, 8, "rsvp", 900 / 1126, "#eee8df", "Dragging the knob across: the chevron turns into a check, the countdown lands, and the list of people on their way opens."),
           ],
         },
-        { type: "subhead", text: "05 · Onboarding you play" },
+        { type: "subhead", text: "05 · Sign-up as a game" },
         {
           type: "p",
-          text: "Pick interests as bubbles; each drops a sticker on your profile. Then the camera flies out of the toy city into the real map.",
+          text: "Pick interests as bubbles; each drops a sticker on your profile. Then the camera flies out of the cartoon city into the real map.",
         },
         {
           type: "bento",
@@ -343,6 +339,7 @@ export const localpal: Project = {
             alt: "The loop: week one, sign up through the university or ESN; the map, venues from day one; join a plan, a group; go, confirm on the day; check in, did you go; again, want to go again tunes the map. In the middle: week nine, the map already knows what you like. From the service blueprint, not built in the prototype.",
           },
         },
+        { type: "subhead", text: "07 · Small things" },
         {
           type: "bento",
           row: 1,
@@ -375,7 +372,7 @@ export const localpal: Project = {
     {
       id: "try",
       label: "Try it",
-      heading: "Everything you've seen is real, go try it",
+      heading: "It's live. Go try it",
       blocks: [
         {
           type: "figure",

@@ -26,7 +26,7 @@ export const camper: Project = {
   summary:
     "An unofficial one-minute ad for Camper, made entirely with AI.",
   meta: [
-    { label: "Type", value: "Unofficial ad, made at 2894 Studio · 2026" },
+    { label: "Type", value: "Unofficial ad, made solo at 2894 Studio · 2026" },
     {
       label: "Fields",
       value: "Concept, art direction, AI image and video generation, edit",
@@ -52,7 +52,7 @@ export const camper: Project = {
       blocks: [
         {
           type: "p",
-          text: "The premise: everyone wears Camper. The film cuts between people who'd never share a frame, and the only constant is their shoes. Three rules:",
+          text: "Everyone wears Camper. The film cuts between people who'd never share a frame. Only the shoes stay the same. Three rules:",
         },
         {
           type: "list",
@@ -60,7 +60,7 @@ export const camper: Project = {
           items: [
             { title: "Shin height.", body: "Always, so the shoes lead." },
             { title: "No faces.", body: "So no one is the star." },
-            { title: "One afternoon.", body: "The same light and grain in every shot, like 35mm." },
+            { title: "One afternoon.", body: "The same light and grain in every shot, like it was all shot on old film." },
           ],
         },
         {
@@ -86,7 +86,7 @@ export const camper: Project = {
               w: 12,
               h: 7,
               plain: true,
-              label: "Every shot, in order: same height, no faces, one afternoon",
+              label: "Every shot, in order. Check the rules",
               frame: "bare",
               fit: "contain",
               src: "/media/camper/every-shot.webp",
@@ -104,19 +104,12 @@ export const camper: Project = {
       blocks: [
         {
           type: "p",
-          text: "Storyboard first, so every generation had a target. Each moment went from sketch, to still, to moving shot. Here's one:",
+          text: "I drew a storyboard first, so every AI image had a target. Each moment went from sketch, to still, to moving shot. Here's one:",
         },
         {
           type: "bento",
           cells: [
-            {
-              kind: "slot",
-              w: 12,
-              h: 2,
-              awaits: "photo",
-              need: "The whole storyboard in two or three rows, every frame in order: the film's structure at a glance.",
-            },
-          ],
+              ],
         },
         {
           // Board → still → shot, for one moment of the film: the velcro,
@@ -153,11 +146,18 @@ export const camper: Project = {
               aspect: 16 / 9,
               alt: "The shot: the same moment moving, the hand at the strap and the socked foot swinging beside the shoes",
             },
+        {
+              kind: "slot",
+              w: 12,
+              h: 2,
+              awaits: "photo",
+              need: "The whole storyboard in two or three rows, every frame in order: the film's structure at a glance.",
+            },
           ],
         },
         {
           type: "p",
-          text: "AI gives you a hundred believable people. The job is picking the one you'd pass on the street, in a shoe that's unmistakably Camper.",
+          text: "AI gives you a hundred believable people. The job is picking the one who looks like a stranger on your street, in a shoe that's unmistakably Camper.",
         },
         {
           // The choosing, made visible: the rejects for one person next
@@ -210,7 +210,7 @@ export const camper: Project = {
       blocks: [
         {
           type: "p",
-          text: "Every time a shot felt off, it was because I'd lost sight of the tagline, not because the AI got it wrong.",
+          text: "When a shot felt off, it was never the AI. I'd lost sight of “everyone is equal in their feet.”",
         },
         {
           type: "p",
