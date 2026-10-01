@@ -3,6 +3,7 @@
 import {
   createElement,
   useCallback,
+  useEffect,
   useLayoutEffect,
   useRef,
   type CSSProperties,
@@ -59,6 +60,14 @@ const BEARING = 0.04;
 /** How far the last letter's ink stands past the measured line, in em:
  *  the tracking taken off after it, less its own side bearing. */
 const OVERHANG = 0.035;
+/** The scroller's foot: "fade" masks what scrolls so it fades into the
+ *  paper; "blur" is the layers of backdrop blur below. The blur is the
+ *  look the foot was tuned with, but a backdrop filter makes the GPU read
+ *  back and blur the sheet on every frame: on the project sheets it was
+ *  most of what still dropped frames once the loops held still while
+ *  scrolling (2026-10-01, Chrome at 2×: frames late 38% → 1–11%). */
+const FOOT: "fade" | "blur" = "fade";
+
 /** The bottom blur's layers: [blur in px, where its mask starts, where it
  *  is full], in % of the band from its top. They stack, so the foot is
  *  the sum. */
@@ -84,7 +93,8 @@ const BLUR = [
  * - The foot of the scroller (.ty-blur): layers of blur, each masked to
  *   start lower than the last, so focus falls away instead of stopping
  *   at a line. Stuck to the bottom of whatever scrolls; it has no height
- *   of its own.
+ *   of its own. As a fade (FOOT) its layers only measure the band, and
+ *   the mask goes on the scroller (BottomBlur).
  */
 export const TYPE_CSS = `
 .ty { --ty-blue: ${BLUE}; --ty-u: clamp(20px, 2.5cqw, 28px); --ty-fg: ${INK}; --ty-dim: #77716a; --ty-bg: transparent; container-type: inline-size; color: var(--ty-fg); background: var(--ty-bg); }
@@ -130,7 +140,7 @@ export const TYPE_CSS = `
 .ty-blur > i { position: absolute; left: 0; right: 0; bottom: 0; height: calc(4 * var(--ty-u)); }
 ${BLUR.map(
   ([px, from, to], i) =>
-    `.ty-blur > i:nth-child(${i + 1}) { -webkit-backdrop-filter: blur(${px}px); backdrop-filter: blur(${px}px); -webkit-mask-image: linear-gradient(transparent ${from}%, #000 ${to}%); mask-image: linear-gradient(transparent ${from}%, #000 ${to}%); }`,
+    `.ty-blur:not(.is-fade) > i:nth-child(${i + 1}) { -webkit-backdrop-filter: blur(${px}px); backdrop-filter: blur(${px}px); -webkit-mask-image: linear-gradient(transparent ${from}%, #000 ${to}%); mask-image: linear-gradient(transparent ${from}%, #000 ${to}%); }`,
 ).join("\n")}
 `;
 
@@ -195,11 +205,36 @@ export function Reveal({
   );
 }
 
-/** The progressive blur at the scroller's foot. Put it last in whatever
- *  scrolls (inside `.ty`, for the unit). */
+/** The scroller's foot, out of focus (FOOT). Put it last in whatever
+ *  scrolls (inside `.ty`, for the unit). As a fade it masks its scroller:
+ *  opaque down to the band's top, easing out to nothing at the edge. */
 export function BottomBlur() {
+  const ref = useRef<HTMLDivElement>(null);
+  useEffect(() => {
+    const el = ref.current;
+    const band = el?.firstElementChild as HTMLElement | null;
+    if (FOOT !== "fade" || !el || !band) return;
+    let sc = el.parentElement;
+    while (sc && !/(auto|scroll)/.test(getComputedStyle(sc).overflowY)) sc = sc.parentElement;
+    if (!sc) return;
+    const scroller = sc;
+    const set = () => {
+      const b = band.offsetHeight;
+      const mask = `linear-gradient(#000 calc(100% - ${b}px), rgba(0, 0, 0, .8) calc(100% - ${0.68 * b}px), rgba(0, 0, 0, .4) calc(100% - ${0.34 * b}px), transparent)`;
+      scroller.style.setProperty("-webkit-mask-image", mask);
+      scroller.style.setProperty("mask-image", mask);
+    };
+    set();
+    const ro = new ResizeObserver(set);
+    ro.observe(band);
+    return () => {
+      ro.disconnect();
+      scroller.style.removeProperty("-webkit-mask-image");
+      scroller.style.removeProperty("mask-image");
+    };
+  }, []);
   return (
-    <div className="ty-blur" aria-hidden="true">
+    <div ref={ref} className={FOOT === "fade" ? "ty-blur is-fade" : "ty-blur"} aria-hidden="true">
       {BLUR.map((_, i) => (
         <i key={i} />
       ))}

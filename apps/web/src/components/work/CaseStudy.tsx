@@ -21,7 +21,7 @@ import {
 } from "react";
 import { createPortal } from "react-dom";
 import { DemoShell } from "@/components/demo/DemoShell";
-import { BENTO_CSS, Bento, Field } from "./Bento";
+import { BENTO_CSS, Bento, Field, Loop } from "./Bento";
 import { OPENINGS } from "./openings";
 import type { Block, Figure, Project, Section } from "@/content/projects";
 import { projectAfter } from "@/content/projects/list";
@@ -649,15 +649,7 @@ function FigureView({ figure }: { figure: Figure }) {
             </Suspense>
           ) : (
             <div className="cs-media" style={{ aspectRatio: figure.aspect }}>
-              <video
-                src={asset(figure.src)}
-                poster={figure.poster && asset(figure.poster)}
-                autoPlay
-                muted
-                loop
-                playsInline
-                preload="metadata"
-              />
+              <Loop src={figure.src} poster={figure.poster} />
             </div>
           )}
         </figure>

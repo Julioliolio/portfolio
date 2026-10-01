@@ -166,34 +166,85 @@ function Media({ shot }: { shot: Shot }) {
   if (!shot.src.endsWith(".mp4"))
     // eslint-disable-next-line @next/next/no-img-element
     return <img src={asset(shot.src)} alt={shot.alt} style={style} loading="lazy" />;
-  return <Loop shot={shot} style={style} />;
+  return <Loop src={shot.src} poster={shot.poster} alt={shot.alt} style={style} />;
 }
 
-/** A muted loop that plays while it is on screen. */
-function Loop({ shot, style }: { shot: Shot; style?: CSSProperties }) {
+/**
+ * The page's loops, played together: each plays only while a good part
+ * of it is on screen, and none while the sheet is scrolling — a dozen
+ * clips decoding under the paper's clip, blend and foot blur was what
+ * made the sheets drop frames (measured, 2026-10-01: 46% of frames late
+ * while scrolling, none with the loops held). They load a screen ahead,
+ * so the first frame is there when they arrive, and pick up where they
+ * stopped once the scroll settles.
+ */
+const loops = (() => {
+  if (typeof window === "undefined") return null;
+  const seen = new Set<HTMLVideoElement>();
+  let scrolling = false;
+  let settle: number | undefined;
+  const play = (v: HTMLVideoElement) => void v.play().catch(() => {});
+  const near = new IntersectionObserver(
+    (es) => es.forEach((e) => e.isIntersecting && ((e.target as HTMLVideoElement).preload = "auto")),
+    { rootMargin: "100% 0px" },
+  );
+  const view = new IntersectionObserver(
+    (es) =>
+      es.forEach((e) => {
+        const v = e.target as HTMLVideoElement;
+        if (e.intersectionRatio >= 0.3) {
+          seen.add(v);
+          if (!scrolling) play(v);
+        } else {
+          seen.delete(v);
+          v.pause();
+        }
+      }),
+    { threshold: [0, 0.3] },
+  );
+  document.addEventListener(
+    "scroll",
+    () => {
+      if (!scrolling) {
+        scrolling = true;
+        seen.forEach((v) => v.pause());
+      }
+      window.clearTimeout(settle);
+      settle = window.setTimeout(() => {
+        scrolling = false;
+        seen.forEach(play);
+      }, 180);
+    },
+    { capture: true, passive: true },
+  );
+  return {
+    add(v: HTMLVideoElement) {
+      near.observe(v);
+      view.observe(v);
+      return () => {
+        near.unobserve(v);
+        view.unobserve(v);
+        seen.delete(v);
+      };
+    },
+  };
+})();
+
+/** A muted loop that plays while it is on screen (see `loops`). */
+export function Loop({ src, poster, alt, style }: { src: `/${string}`; poster?: `/${string}`; alt?: string; style?: CSSProperties }) {
   const ref = useRef<HTMLVideoElement>(null);
   useEffect(() => {
     const v = ref.current;
-    if (!v) return;
+    if (!v || !loops) return;
     if (window.matchMedia("(prefers-reduced-motion: reduce)").matches) return;
-    const io = new IntersectionObserver(
-      ([e]) => {
-        if (e?.isIntersecting) {
-          v.preload = "auto";
-          void v.play().catch(() => {});
-        } else v.pause();
-      },
-      { rootMargin: "200px 0px" },
-    );
-    io.observe(v);
-    return () => io.disconnect();
+    return loops.add(v);
   }, []);
   return (
     <video
       ref={ref}
-      src={asset(shot.src)}
-      poster={shot.poster && asset(shot.poster)}
-      aria-label={shot.alt}
+      src={asset(src)}
+      poster={poster && asset(poster)}
+      aria-label={alt}
       muted
       loop
       playsInline
