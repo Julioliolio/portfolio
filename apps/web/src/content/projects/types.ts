@@ -31,6 +31,9 @@ export type Figure =
       alt: string;
       aspect: number;
       caption?: string;
+      /** A chart too fine to shrink: below this width (px) it keeps the
+       *  width and scrolls sideways instead. */
+      minWidth?: number;
     }
   | {
       kind: "video";
@@ -111,6 +114,9 @@ export type Cell = {
   /** The cell's ground, behind a bare component or a phone. Matches the
    *  background the clip was recorded on, so the two read as one. */
   ground?: string;
+  /** A small label in the cell's corner: what this one shows, where the
+   *  cells only make sense named (Board / Still / Shot). */
+  label?: string;
 } & (
   | ({ kind: "shot" } & Shot)
   | { kind: "slot"; need: string; awaits?: "video" | "photo" }

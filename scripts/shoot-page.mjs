@@ -46,8 +46,14 @@ await page.evaluate(() => {
   best.setAttribute("data-shoot-scroller", "");
 });
 const scroller = page.locator("[data-shoot-scroller]");
-const box = await scroller.boundingBox();
-const { sh, ch } = await scroller.evaluate((el) => ({ sh: el.scrollHeight, ch: el.clientHeight }));
+// The document itself (on a phone the sheet is the page): the viewport.
+const isDoc = await scroller.evaluate((el) => el === document.scrollingElement);
+const vp = page.viewportSize();
+const box = isDoc ? { x: 0, y: 0, width: vp.width, height: vp.height } : await scroller.boundingBox();
+const { sh, ch } = await scroller.evaluate((el) => ({
+  sh: el.scrollHeight,
+  ch: el === document.scrollingElement ? innerHeight : el.clientHeight,
+}));
 
 // Walk down a screen at a time, so things arrive and loops start; keep
 // the scroller's part of each screen to stitch the sheet.
@@ -67,13 +73,16 @@ for (let y = 0; ; y += ch) {
 const scale = phone ? 3 : 1;
 const W = Math.round(box.width * scale);
 const crops = await Promise.all(
-  parts.map(async ({ file, top }) => ({
-    input: await sharp(file)
-      .extract({ left: Math.round(box.x * scale), top: Math.round(box.y * scale), width: W, height: Math.round(ch * scale) })
-      .toBuffer(),
-    top: Math.round(top * scale),
-    left: 0,
-  })),
+  parts.map(async ({ file, top }) => {
+    // Clamped to the screenshot: rounding at 3× can step a pixel past it.
+    const img = sharp(file);
+    const { width: iw, height: ih } = await img.metadata();
+    const left = Math.max(0, Math.min(Math.round(box.x * scale), iw - 1));
+    const y = Math.max(0, Math.min(Math.round(box.y * scale), ih - 1));
+    const width = Math.min(W, iw - left);
+    const height = Math.min(Math.round(ch * scale), ih - y);
+    return { input: await img.extract({ left, top: y, width, height }).toBuffer(), top: Math.round(top * scale), left: 0 };
+  }),
 );
 await sharp({ create: { width: W, height: Math.round(sh * scale), channels: 3, background: "#fff" } })
   .composite(crops)

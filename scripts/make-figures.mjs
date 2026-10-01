@@ -114,33 +114,38 @@ function moment() {
   </style><div class="fig"><div class="g">${cards.map(([n, d, s, bg, fg]) => `<div class="c${bg === C.brand ? " blue" : ""}" style="background:${bg};color:${fg}"><div class="n">${n}</div><div><div class="d">${d}</div><div class="src">${s}</div></div></div>`).join("")}</div></div>`];
 }
 
+/**
+ * Five platforms that tried, scored 0–5 on ten factors (Julio's May
+ * radar, from the research). LocalPal isn't scored against them — the
+ * chart shows the gap: three columns nobody fills at once.
+ */
 function platforms() {
   const factors = ["Mainstream plans", "Niche plans", "Both, layered", "Anyone can propose", "Short notice", "Trust and safety", "Locals and newcomers", "People nearby", "Polish", "Your account lasts"];
+  const gap = new Set([1, 3, 5]);
   const rows = [
-    ["LocalPal", [3, 4, 4, 4, 4, 4, 4, 1, 4, 3]],
-    ["Nomadtable", [1, 1, 0, 4, 4, 1, 0, 3, 3, 2]],
-    ["Spontacts", [2, 2, 1, 5, 4, 2, 3, 1, 2, 1]],
-    ["Couchsurfing Hangouts", [3, 1, 0, 5, 5, 3, 5, 3, 2, 0]],
-    ["Timeleft", [2, 0, 1, 0, 1, 3, 3, 4, 4, 2]],
-    ["Luma", [3, 3, 1, 2, 3, 1, 3, 4, 5, 3]],
+    ["Nomadtable", [1, 1, 0, 4, 4, 1, 0, 3, 3, 2], "drifted into dating"],
+    ["Spontacts", [2, 2, 1, 5, 4, 2, 3, 1, 2, 1], "German-speaking only"],
+    ["Couchsurfing Hangouts", [3, 1, 0, 5, 5, 3, 5, 3, 2, 0], "closed, 2020 paywall"],
+    ["Timeleft", [2, 0, 1, 0, 1, 3, 3, 4, 4, 2], "dinners assigned by algorithm"],
+    ["Luma", [3, 3, 1, 2, 3, 1, 3, 4, 5, 3], "organisers, not people"],
   ];
-  const cell = (v, me) => `<td><span class="d" style="width:${8 + v * 9}px;height:${8 + v * 9}px;background:${me ? C.brand : C.ink};opacity:${v ? (me ? 1 : 0.78) : 0.12}"></span></td>`;
+  const cell = (v, i) => `<td class="${gap.has(i) ? "g" : ""}"><span class="d" style="width:${8 + v * 9}px;height:${8 + v * 9}px;opacity:${v ? 0.8 : 0.12}"></span></td>`;
   return [1600, 900, `<style>
-  .w { position: absolute; inset: 56px 56px 48px; display: flex; flex-direction: column; justify-content: center; }
+  .w { position: absolute; inset: 48px 56px 44px; display: flex; flex-direction: column; justify-content: center; }
   table { border-collapse: separate; border-spacing: 0; width: 100%; }
-  th { font-size: 19px; font-weight: 500; color: ${C.muted}; text-align: center; vertical-align: bottom; padding: 0 4px 22px; line-height: 1.1; width: 9%; }
-  th:first-child { width: 19%; }
-  td { height: 92px; text-align: center; border-top: 1px solid rgba(0,29,51,.1); }
-  td:first-child { text-align: left; font-size: 25px; }
-  tr.me td { background: rgba(165,159,255,.22); border-top-color: transparent; }
-  tr.me td:first-child { color: ${C.brand}; font-weight: 600; border-radius: 22px 0 0 22px; padding-left: 22px; }
-  tr.me td:last-child { border-radius: 0 22px 22px 0; }
-  tr:not(.me) td:first-child { padding-left: 22px; }
-  .d { display: inline-block; border-radius: 50%; vertical-align: middle; }
-  .k { margin-top: 26px; display: flex; gap: 28px; align-items: center; }
-  </style><div class="fig"><div class="w"><table><tr><th></th>${factors.map((f) => `<th>${f}</th>`).join("")}</tr>
-  ${rows.map(([n, vs]) => `<tr class="${n === "LocalPal" ? "me" : ""}"><td>${n}</td>${vs.map((v) => cell(v, n === "LocalPal")).join("")}</tr>`).join("")}
-  </table><div class="k src"><span>Scored 0–5 from the research. Bigger dot, better.</span><span>LocalPal is weakest on people nearby: a new map starts empty, which is why venues fill it first.</span></div></div></div>`];
+  th { font-size: 19px; font-weight: 500; color: ${C.muted}; text-align: center; vertical-align: bottom; padding: 0 4px 20px; line-height: 1.1; width: 7.6%; }
+  th:first-child { width: 24%; }
+  th.g { color: ${C.brand}; }
+  td { height: 96px; text-align: center; border-top: 1px solid rgba(0,29,51,.1); }
+  td.g { background: rgba(165,159,255,.2); }
+  td:first-child { text-align: left; font-size: 26px; padding-left: 4px; }
+  td:first-child small { display: block; font-size: 18px; color: ${C.muted}; margin-top: 4px; }
+  .d { display: inline-block; border-radius: 50%; vertical-align: middle; background: ${C.ink}; }
+  .k { margin-top: 26px; font-size: 28px; line-height: 1.2; }
+  .k b { color: ${C.brand}; font-weight: 600; }
+  </style><div class="fig"><div class="w"><table><tr><th></th>${factors.map((f, i) => `<th class="${gap.has(i) ? "g" : ""}">${f}</th>`).join("")}</tr>
+  ${rows.map(([n, vs, note]) => `<tr><td>${n}<small>${note}</small></td>${vs.map(cell).join("")}</tr>`).join("")}
+  </table><div class="k"><b>The gap:</b> niche plans, anyone can propose, and trust. No one does all three. Scored 0–5 from the research; bigger dot, better.</div></div></div>`];
 }
 
 function quote(i) {
@@ -159,52 +164,7 @@ function quote(i) {
   </style><div class="fig"><div class="w"><div class="m">“</div><div class="q">${q[0]}</div><div class="who">${q[1]}</div></div></div>`];
 }
 
-/** Line icons for the five decisions, 64-unit grid, 4-unit stroke. */
-const ICONS = {
-  layers: `<path d="M32 10 L56 22 L32 34 L8 22 Z"/><path d="M8 32 L32 44 L56 32"/><path d="M8 42 L32 54 L56 42"/>`,
-  propose: `<circle cx="32" cy="32" r="22"/><path d="M32 22 V42 M22 32 H42"/>`,
-  group: `<circle cx="20" cy="24" r="7"/><circle cx="44" cy="24" r="7"/><circle cx="32" cy="18" r="7"/><path d="M8 50 C10 38 30 38 32 50 M32 50 C34 38 54 38 56 50"/>`,
-  verify: `<path d="M32 8 L52 16 V30 C52 44 42 52 32 56 C22 52 12 44 12 30 V16 Z"/><path d="M23 32 L30 39 L42 26"/>`,
-  free: `<rect x="10" y="18" width="44" height="28" rx="8"/><path d="M10 28 H54"/><path d="M14 54 L50 10"/>`,
-};
-function decision(i) {
-  const d = [
-    ["layers", "Venues fill the map from day one.", "People's own plans are why you stay."],
-    ["propose", "Anyone can propose a plan.", "No organiser who approves who comes."],
-    ["group", "Groups, never one-to-one.", "Every plan has a minimum size. It's not a dating app."],
-    ["verify", "Verifying is a sign you'll show up.", "A uni email or a QR at an event, never a bank-style check."],
-    ["free", "Free between people.", "Money only where paying is already normal: a ticket, a gym."],
-  ][i];
-  const blue = i === 0;
-  return [800, 600, `<style>
-  body { background: ${blue ? C.brand : C.white}; color: ${blue ? C.white : C.ink}; }
-  .w { position: absolute; inset: 52px; display: flex; flex-direction: column; justify-content: space-between; }
-  svg { width: 96px; height: 96px; fill: none; stroke: ${blue ? C.white : C.brand}; stroke-width: 4; stroke-linecap: round; stroke-linejoin: round; }
-  .n { font-size: 22px; color: ${blue ? C.lav : C.muted}; margin-bottom: 14px; }
-  .h { font-size: 46px; line-height: 1.05; letter-spacing: -0.025em; font-weight: 600; }
-  .b { margin-top: 14px; font-size: 28px; line-height: 1.2; color: ${blue ? C.lav : C.muted}; }
-  </style><div class="fig"><div class="w"><svg viewBox="0 0 64 64">${ICONS[d[0]]}</svg><div><div class="n">0${i + 1}</div><div class="h">${d[1]}</div><div class="b">${d[2]}</div></div></div></div>`];
-}
 
-function persona(i) {
-  const p = [
-    ["Giovanna", "22, product design, from Bologna", "The initiator", "Three weeks in and never a free night. At home she played football twice a week; here she hasn't touched a ball. She's waiting for an invite.", "Plans keep repeating. Too many WhatsApp groups.", "Miss nothing, and go home with stories."],
-    ["Martim", "21, maths, from Porto", "The enthusiast", "A bouldering video hooked him a month ago. He's looked at two climbing gyms and doesn't know where to start; his friends aren't keen.", "Going alone intimidates him. Plans die in the group chat.", "Try new things and find the good spots."],
-    ["Beatrice", "23, game design, from Belfast", "The cautious one", "Left out of her host university's activity group. Her social life is three people from her corridor, and she never joins plans.", "The plans she sees don't feel safe. She doesn't know who she'd meet.", "Do things on her own terms, and feel safe."],
-  ][i];
-  const tint = [C.brand, C.lav, C.ink][i];
-  return [900, 1125, `<style>
-  body { background: ${C.white}; }
-  .w { position: absolute; inset: 60px; display: flex; flex-direction: column; }
-  .av { width: 150px; height: 150px; border-radius: 46px; background: ${tint}; color: ${C.white}; font-weight: 600; font-size: 84px; display: grid; place-items: center; letter-spacing: -0.04em; }
-  .tag { margin-top: 40px; display: inline-block; align-self: flex-start; font-size: 24px; padding: 8px 18px; border-radius: 999px; background: rgba(165,159,255,.28); color: ${C.brand}; }
-  .n { margin-top: 22px; font-size: 76px; font-weight: 600; letter-spacing: -0.035em; line-height: 1; }
-  .a { margin-top: 10px; font-size: 27px; color: ${C.muted}; }
-  .s { margin-top: 44px; font-size: 40px; line-height: 1.16; letter-spacing: -0.02em; }
-  .f { display: grid; grid-template-columns: 150px 1fr; gap: 6px 16px; font-size: 28px; line-height: 1.22; color: ${C.muted}; padding-top: 22px; border-top: 1px solid rgba(0,29,51,.12); }
-  .f + .f { margin-top: 18px; } .first { margin-top: auto; } .f b { font-weight: 500; color: ${C.ink}; }
-  </style><div class="fig"><div class="w"><div class="av">${p[0][0]}</div><div class="tag">${p[2]}</div><div class="n">${p[0]}</div><div class="a">${p[1]}</div><div class="s">${p[3]}</div><div class="f first"><b>Wants</b><span>${p[5]}</span></div><div class="f"><b>Stuck on</b><span>${p[4]}</span></div></div></div>`];
-}
 
 function journey() {
   const steps = ["Feels like doing something", "Looks for it", "Works out the logistics", "Looks for company", "Pins it down", "Goes, or doesn't"];
@@ -228,11 +188,6 @@ function journey() {
 </svg></div>`];
 }
 
-function logo() {
-  const file = `${TFM}brand-logo-mark.svg`;
-  const svg = existsSync(file) ? `<img src="data:image/svg+xml;base64,${readFileSync(file).toString("base64")}">` : "";
-  return [1200, 900, `<style>body{background:${C.brand}} img{position:absolute;left:50%;top:50%;width:46%;transform:translate(-50%,-50%) rotate(-4deg);filter:brightness(0) invert(1)}</style><div class="fig">${svg}</div>`];
-}
 
 function colours() {
   const sw = [["Brand", C.brand, C.white], ["Deep", C.deep, C.white], ["Pressed", C.pressed, C.white], ["Lavender", C.lav, C.ink], ["Ink", C.ink, C.white]];
@@ -268,7 +223,7 @@ function compare() {
   body { background: #f4f2ee; font-family: M; }
   .w { position: absolute; inset: 48px; display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); gap: 40px; }
   .p { display: flex; flex-direction: column; gap: 18px; }
-  .t { font-size: 28px; color: #77716a; } .t b { color: #2b2722; font-weight: 500; }
+  .t { font-size: 38px; line-height: 1.15; color: #77716a; } .t b { color: #2b2722; font-weight: 500; }
   .win { flex: 1; min-height: 0; border-radius: 18px; overflow: hidden; background: #fff; box-shadow: 0 0 0 1px rgba(0,0,0,.08), 0 18px 40px -20px rgba(0,0,0,.3); display: flex; flex-direction: column; }
   .bar { height: 34px; background: ${g2}; display: flex; gap: 8px; align-items: center; padding: 0 14px; }
   .bar i { width: 11px; height: 11px; border-radius: 50%; background: ${g}; }
@@ -296,12 +251,9 @@ const FIGURES = {
   "fig-moment": moment,
   "fig-platforms": platforms,
   "fig-journey": journey,
-  "fig-brand-logo": logo,
   "fig-brand-colours": colours,
   "fig-brand-type": type,
   ...Object.fromEntries([0, 1, 2].map((i) => [`fig-quote-${i + 1}`, () => quote(i)])),
-  ...Object.fromEntries([0, 1, 2, 3, 4].map((i) => [`fig-decision-${i + 1}`, () => decision(i)])),
-  ...Object.fromEntries([0, 1, 2].map((i) => [`fig-persona-${i + 1}`, () => persona(i)])),
 };
 
 // The thesis's own pictures, as they are: [out name, source, width].

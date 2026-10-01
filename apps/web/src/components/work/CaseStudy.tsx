@@ -162,6 +162,8 @@ const CSS = `
 .cs-media { position: relative; width: 100%; overflow: hidden; border-radius: calc(.5 * var(--ty-u)); background: ${GREY}; }
 .cs-media img, .cs-media video { display: block; width: 100%; height: 100%; object-fit: cover; }
 .cs-media video { background: #000; }
+.cs-scroll { overflow-x: auto; scrollbar-width: none; }
+.cs-scroll::-webkit-scrollbar { display: none; }
 .cs-ph { display: grid; align-content: end; padding: calc(.75 * var(--ty-u)); outline: 1px dashed rgba(43, 39, 34, .28); outline-offset: -1px; }
 
 .cs-tl-months, .cs-tl-row { display: grid; grid-template-columns: minmax(96px, 1fr) 3fr; column-gap: var(--ty-u); align-items: center; }
@@ -577,17 +579,27 @@ function FigureView({ figure }: { figure: Figure }) {
           </div>
         </figure>
       );
-    case "image":
+    case "image": {
+      const media = (
+        <div className="cs-media" style={{ aspectRatio: figure.aspect }}>
+          {/* Plain <img>: the static export has no image optimizer, and
+              every public/ path goes through asset() for the basePath. */}
+          {/* eslint-disable-next-line @next/next/no-img-element */}
+          <img src={asset(figure.src)} alt={figure.alt} />
+        </div>
+      );
       return (
         <figure>
-          <div className="cs-media" style={{ aspectRatio: figure.aspect }}>
-            {/* Plain <img>: the static export has no image optimizer, and
-                every public/ path goes through asset() for the basePath. */}
-            {/* eslint-disable-next-line @next/next/no-img-element */}
-            <img src={asset(figure.src)} alt={figure.alt} />
-          </div>
+          {figure.minWidth ? (
+            <div className="cs-scroll">
+              <div style={{ minWidth: figure.minWidth }}>{media}</div>
+            </div>
+          ) : (
+            media
+          )}
         </figure>
       );
+    }
     case "video":
       // A film has sound and the site's player; a loop plays itself,
       // muted.

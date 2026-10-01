@@ -52,7 +52,7 @@ export const convertr: Project = {
     {
       id: "overview",
       label: "Overview",
-      heading: "A little desktop app I designed and built on my own",
+      heading: "Ten seconds of video shouldn't need Premiere",
       blocks: [
         {
           type: "p",
@@ -75,7 +75,7 @@ export const convertr: Project = {
           aspect: 16 / 9,
           device: "laptop",
           need: "the Convertr window on a laptop, on a soft neutral.",
-          screens: [cv("every-state", "Convertr on a laptop, going through every state", 1.6)],
+          screens: [cv("portrait-settings", "Convertr on a laptop: a vertical video loaded, its settings open beside it", 1.6)],
         },
       ],
     },
@@ -93,9 +93,18 @@ export const convertr: Project = {
           type: "bento",
           row: 1,
           cells: [
-            cell(6, 4, cv("idle", "The empty box, drawn by four guide lines, cycling through the shapes a video can have", 1100 / 650, { frame: "bare" })),
-            cell(6, 4, cv("drop", "A file carried in and dropped on the box; a row of bricks loads it", 1100 / 650, { frame: "bare" })),
+            cell(12, 4, cv("drop", "A file carried in and dropped on the empty box; a row of bricks loads it", 1100 / 650, { frame: "bare", fit: "contain" }), PAPER),
           ],
+        },
+        {
+          type: "figure",
+          figure: {
+            kind: "image",
+            src: `${M}/fig-compare.webp`,
+            aspect: 2000 / 900,
+            minWidth: 640,
+            alt: "The same vertical video in a typical converter, shrunk into a preview between fixed panels, and in Convertr, where the box is the video and the settings take its other side.",
+          },
         },
         {
           type: "p",
@@ -118,13 +127,34 @@ export const convertr: Project = {
           row: 1,
           cells: [
             cell(12, 3, cv("converting", "Convert pressed: the video collapses into a bar and pink bricks carry the progress across", 1100 / 306, { frame: "bare" })),
-            cell(6, 6, cv("result-drag", "The result: the box steps out, chips on the corners, and the download dragged out of the window", 1)),
-            cell(6, 6, cv("format-gif", "Picking GIF from the format list, then dragging the width: the expected size follows", 1.6, { fit: "contain" }), PAPER),
+            cell(12, 6, cv("result-drag", "The result: the box steps out, chips on the corners, and the converted file dragged out by its download chip", 1.25, { fit: "contain" }), PAPER),
           ],
         },
         {
           type: "p",
-          text: "Every state is the same four lines moving, so you always know where what you're looking at came from and what it's about to become. Nothing appears out of nowhere and no panel slides over another. Everything else follows the box: one accent colour, a dotted paper grid, mono labels that scramble into place, and a little spring on anything you touch.",
+          text: "Every state is the same four lines moving, so you always know where what you're looking at came from and what it's about to become. Nothing appears out of nowhere and no panel slides over another. Three decisions hold it together:",
+        },
+        {
+          type: "list",
+          style: "numbered",
+          items: [
+            {
+              title: "Crop, don't shrink.",
+              body: "When the settings open, the preview gives up part of the frame rather than getting smaller, because the size you see is the decision you're making. The file itself is never cropped.",
+            },
+            {
+              title: "No second screen.",
+              body: "There is no settings page and no results page. Every feature has to be a state the four lines can move into, which is the hardest rule to keep and the reason it feels like one thing.",
+            },
+            {
+              title: "The download is a drag.",
+              body: "The result is a chip you drag to wherever it's going: a folder, a Figma file, a chat. It says DOWNLOAD on it, so it's never a mystery; dragging is just the short way.",
+            },
+          ],
+        },
+        {
+          type: "p",
+          text: "Everything else follows the box: one accent colour, a dotted paper grid, mono labels that scramble into place, and a little spring on anything you touch.",
         },
         {
           type: "bento",
@@ -132,15 +162,6 @@ export const convertr: Project = {
           cells: [
             cell(12, 8, cv("every-state", "One continuous take: the empty box, a file dropped in, the settings, a format, convert, the bricks, the result stepping out", 1.6)),
           ],
-        },
-        {
-          type: "figure",
-          figure: {
-            kind: "image",
-            src: `${M}/fig-compare.webp`,
-            aspect: 2000 / 900,
-            alt: "The same vertical video in a typical converter, shrunk into a preview between fixed panels, and in Convertr, where the box is the video and the settings take its other side.",
-          },
         },
       ],
     },
@@ -175,11 +196,13 @@ export const convertr: Project = {
           type: "bento",
           row: 1,
           cells: [
-            cell(8, 3, cv("trim", "Dragging the in handle right and the out handle left on the timeline", 1100 / 412, { frame: "bare" })),
+            cell(12, 3, cv("trim", "The in handle dragged right and the out handle left on the timeline", 4, { frame: "bare" })),
+            cell(5, 4, cv("format", "The format picker opening, the cursor running down the list, GIF picked", 300 / 225, { frame: "bare" })),
+            cell(7, 2, cv("gif-width", "Dragging the GIF's width: the expected size on the video follows", 3.2, { frame: "bare" })),
             {
               kind: "slot",
-              w: 4,
-              h: 3,
+              w: 7,
+              h: 2,
               need: "Pasting an X link in the desktop app: yt-dlp fetches it and it lands in the box like a file.",
             },
           ],

@@ -30,7 +30,7 @@ const wait = (ms) => new Promise((r) => setTimeout(r, ms));
  * stages scale their content with the box, so a small component is
  * cropped in on (`zoom`) from a capture at a high device scale.
  */
-function stage(id, { aspect, bg, seconds, start = 0.6, fade = 0.4, width = 900, boxH = 760, dpr = DPR, zoom = 1, cx = 0.5, cy = 0.5 }) {
+function stage(id, { aspect, bg, seconds, start = 0.6, fade = 0.4, width = 900, boxH = 760, dpr = DPR, zoom = 1, cx = 0.5, cy = 0.5, posterAt = 0 }) {
   const ratio = { "4x5": 4 / 5, "9x16": 9 / 16, "1x1": 1 }[aspect];
   return {
     name: `localpal/${id}`,
@@ -56,6 +56,7 @@ function stage(id, { aspect, bg, seconds, start = 0.6, fade = 0.4, width = 900, 
         dur: seconds - start - 0.2,
         fade,
         width,
+        posterAt,
         out: `${MEDIA}localpal/${id}.mp4`,
       });
     },
@@ -185,7 +186,7 @@ function ds(name, { find, act, width = 720, start = 0.2, tail = 0.2 }) {
 }
 
 /** A motion tile's stage (the part above its caption), on screen. */
-async function motionTile(page, title) {
+async function motionTile(page, title, full = false) {
   const tile = page.locator("article.dsw-motion-tile", { has: page.getByText(title, { exact: true }) }).first();
   await tile.scrollIntoViewIfNeeded();
   await page.waitForTimeout(600);
@@ -193,7 +194,7 @@ async function motionTile(page, title) {
   const m = await tile.locator(".dsw-motion-tile-meta").boundingBox();
   // Its middle, 4:3: the tile is wide and the shape small.
   const h = m.y - t.y - 2;
-  const w = Math.min(t.width - 2, (h * 4) / 3);
+  const w = full ? t.width - 2 : Math.min(t.width - 2, (h * 4) / 3);
   return [w, h, t.x + (t.width - w) / 2, t.y + 1].map(Math.round);
 }
 
@@ -213,7 +214,9 @@ async function tapCrop(f, [w, h, x, y], n = 3, gap = 1700) {
  */
 const FOOTAGE = `${ROOT}source-assets/convertr-footage/`;
 const PORTRAIT = "1781307652368117760.mp4"; // 576×1024
-const LANDSCAPE = "2072712084895199232.mp4"; // 1280×720
+// 960×720: cooking, no trailer marks in frame (the 1280×720 one carries
+// the distributor's logos).
+const LANDSCAPE = "1882250851328086016.mp4";
 const WIDE = "2000815677498687494.mp4"; // 720×504
 
 function desk(name, { prep, act, crop, start = 0.2, tail = 0.3, fade = 0, width = 1280, posterAt = 0 }) {
@@ -276,8 +279,8 @@ const JOBS = [
   stage("bubbles", { aspect: "4x5", bg: "F4EFE7", seconds: 9, boxH: 560, dpr: 3 }),
   stage("bottom-bar", { aspect: "9x16", bg: "ECEEF2", seconds: 12.6 }),
   stage("search-morph", { aspect: "1x1", bg: "EFE9E1", seconds: 7, boxH: 200, dpr: 4, width: 720 }),
-  stage("cta-morph", { aspect: "1x1", bg: "F4EFE7", seconds: 9, boxH: 260, dpr: 4, width: 720 }),
-  stage("venue-flow", { aspect: "9x16", bg: "ECEEF2", seconds: 14 }),
+  stage("cta-morph", { aspect: "1x1", bg: "F4EFE7", seconds: 9, boxH: 260, dpr: 4, width: 720, posterAt: 1 }),
+  stage("venue-flow", { aspect: "9x16", bg: "ECEEF2", seconds: 14, posterAt: 5 }),
   stage("rsvp", { aspect: "4x5", bg: "EFE9E1", seconds: 9, boxH: 460, dpr: 3 }),
   stage("locate", { aspect: "1x1", bg: "ECEEF2", seconds: 6, boxH: 360, dpr: 5, zoom: 2.2, cy: 0.52, width: 640 }),
   phone("onboarding-interests", "onboarding", {
@@ -336,6 +339,24 @@ const JOBS = [
       await f.wait(2600);
     },
   }),
+  // The edge zoom, in the app: a thumb at the right edge pulls the goo
+  // out, then slides up to zoom in and down to zoom out.
+  phone("edge", "map", {
+    posterAt: 1.8,
+    act: async (f) => {
+      const { page } = f;
+      await f.wait(500);
+      await f.glide(386, 470, 300);
+      await page.mouse.down();
+      await page.mouse.move(318, 470, { steps: 18 });
+      await page.mouse.move(318, 300, { steps: 70 });
+      await f.wait(250);
+      await page.mouse.move(318, 600, { steps: 90 });
+      await page.mouse.move(380, 520, { steps: 14 });
+      await page.mouse.up();
+      await f.wait(1100);
+    },
+  }),
   // The day of a plan: drag the slider on the plans sheet to confirm.
   phone("dayof", "dayOfPlan", {
     posterAt: 3,
@@ -355,7 +376,8 @@ const JOBS = [
   }),
   ds("ds-press", { find: (p) => motionTile(p, "Press"), act: (f, c) => tapCrop(f, c) }),
   ds("ds-pop", { find: (p) => motionTile(p, "Pop"), act: (f, c) => tapCrop(f, c) }),
-  ds("ds-snap", { find: (p) => motionTile(p, "Snap"), act: (f, c) => tapCrop(f, c) }),
+  // Snap slides the tile across: the whole tile, or it leaves the frame.
+  ds("ds-snap", { find: (p) => motionTile(p, "Snap", true), act: (f, c) => tapCrop(f, c) }),
   ds("ds-inform", { find: (p) => motionTile(p, "Inform"), act: (f, c) => tapCrop(f, c, 2, 2600) }),
   ds("ds-squircle", {
     // The squircle demo: the shape left of its two sliders.
@@ -387,7 +409,6 @@ const JOBS = [
       await f.wait(600);
     },
   }),
-  stage("edge-zoom", { aspect: "9x16", bg: "101014", seconds: 9, width: 640 }),
 ];
 
 JOBS.push(
@@ -416,7 +437,7 @@ JOBS.push(
   desk("landscape-settings", {
     posterAt: 3,
     prep: async (f) => {
-      await dropFile(f, LANDSCAPE, "city.mp4");
+      await dropFile(f, LANDSCAPE, "noodles.mp4");
       await f.wait(7000);
     },
     act: async (f) => {
@@ -434,15 +455,10 @@ JOBS.push(
     act: async (f) => {
       await f.wait(400);
       await press(f, "[title=Settings]");
-      await f.wait(3200);
+      await f.wait(2000);
     },
   }),
-  // The empty box, cycling through the shapes a video can have.
-  desk("idle", {
-    act: (f) => f.wait(7600),
-    crop: async () => [880, 520, 200, 140],
-    width: 1100,
-  }),
+
   // A file carried in and dropped: the box takes it, the bricks load it.
   desk("drop", {
     act: async (f) => {
@@ -483,73 +499,115 @@ JOBS.push(
     },
     act: async (f) => {
       await f.wait(2400);
-      const b = await f.page.locator("[title=Download]").first().boundingBox();
+      // A native link drag would swallow the mouse moves (and the clay
+      // cursor with them): play the drag-out with the pointer instead.
+      await f.page.evaluate(() => {
+        for (const a of document.querySelectorAll("a")) a.draggable = false;
+        addEventListener("dragstart", (e) => e.preventDefault(), true);
+      });
+      const b = await f.page.locator("[title=Download]:visible").last().boundingBox();
       await f.glide(b.x + b.width / 2, b.y + b.height / 2, 700);
       await f.wait(300);
       await f.page.mouse.down();
-      await f.page.evaluate(() => window.__carry?.("clouds.gif"));
-      await f.glide(b.x + 260, b.y + 120, 900);
+      await f.page.evaluate(() => window.__carry?.("clouds-converted.mp4"));
+      await f.glide(b.x + 230, b.y + 50, 1500);
+      await f.wait(500);
       await f.page.mouse.up();
       await f.page.evaluate(() => window.__carry?.(""));
       await f.wait(900);
     },
-    crop: async () => [800, 800, 240, 0],
-    width: 900,
+    crop: async () => [1000, 800, 240, 0],
+    width: 1000,
   }),
-  // Trimming: the in and out handles on the timeline under the video.
-  desk("trim", {
-    prep: async (f) => {
-      await dropFile(f, LANDSCAPE, "city.mp4");
-      await f.wait(7000);
-    },
-    act: async (f) => {
-      const hs = await f.page.evaluate(() =>
-        [...document.querySelectorAll("*")]
-          .filter((e) => e.style?.cursor === "ew-resize")
-          .map((e) => { const r = e.getBoundingClientRect(); return [r.x + r.width / 2, r.y + r.height / 2]; }),
+  // Trimming: the in and out handles on the timeline under the video,
+  // cropped close so the handles read.
+  (() => {
+    let box;
+    return desk("trim", {
+      posterAt: 2.2,
+      prep: async (f) => {
+        await dropFile(f, LANDSCAPE, "noodles.mp4");
+        await f.wait(7000);
+      },
+      act: async (f) => {
+        const hs = await f.page.evaluate(() =>
+          [...document.querySelectorAll("*")]
+            .filter((e) => e.style?.cursor === "ew-resize")
+            .map((e) => { const r = e.getBoundingClientRect(); return [r.x + r.width / 2, r.y + r.height / 2]; }),
+        );
+        const [a, z] = hs;
+        const w = z[0] - a[0] + 120;
+        box = [w, w / 4, a[0] - 60, a[1] - w / 4 + 40].map(Math.round);
+        await f.wait(300);
+        await f.drag(a[0], a[1], a[0] + (z[0] - a[0]) * 0.28, a[1], 900);
+        await f.wait(500);
+        await f.drag(z[0], z[1], z[0] - (z[0] - a[0]) * 0.3, z[1], 900);
+        await f.wait(1400);
+      },
+      crop: async () => box,
+      width: 1200,
+    });
+  })(),
+  // Picking a format, then the GIF's width with the estimate following —
+  // one take, cut twice: the picker, and the slider with the size chip.
+  {
+    name: "convertr/format-gif",
+    async run(browser) {
+      const page = await open(browser, { width: 1280, height: 800 }, clayCursor(BASE), 2);
+      await page.route("**/__footage/*", (route) =>
+        route.fulfill({ path: FOOTAGE + route.request().url().split("/").pop(), contentType: "video/mp4" }),
       );
-      const [a, z] = hs;
-      await f.wait(300);
-      await f.drag(a[0], a[1], a[0] + 150, a[1], 900);
-      await f.wait(500);
-      await f.drag(z[0], z[1], z[0] - 170, z[1], 900);
-      await f.wait(1400);
-    },
-    crop: async () => [800, 300, 240, 480],
-    width: 1100,
-  }),
-  // Picking a format, then the GIF's width with the estimate following.
-  desk("format-gif", {
-    posterAt: 4,
-    prep: async (f) => {
+      await page.goto(`${BASE}/demos/convertr/index.html`);
+      await page.waitForTimeout(2000);
+      const f = fingers(page);
+      await f.glide(900, 640, 10);
       await dropFile(f, PORTRAIT, "clouds.mp4");
       await f.wait(7000);
       await press(f, "[title=Settings]");
       await f.wait(1800);
-    },
-    act: async (f) => {
-      await press(f, "[title='Output format']");
-      await f.wait(700);
-      for (const t of ["text=WEBM", "text=MOV", "text=AVI"]) {
-        const b = await f.page.locator(t).first().boundingBox();
-        await f.glide(b.x + b.width / 2, b.y + b.height / 2, 260);
-        await f.wait(220);
-      }
-      await press(f, "text=GIF");
-      await f.wait(1200);
-      // The width slider: the first wide pointer-cursor track (DesignSlider).
-      const range = await f.page.evaluate(() => {
-        const t = [...document.querySelectorAll("*")].find((e) => e.style?.cursor === "pointer" && e.getBoundingClientRect().width > 300);
-        const r = t?.getBoundingClientRect();
-        return r && { x: r.x, y: r.y, width: r.width, height: r.height };
-      });
-      if (range) {
+      let picker, slider, tPick, tSlide;
+      const rec = await screencast(page, async () => {
+        const t0 = Date.now();
+        const fmt = await page.locator("[title='Output format']").first().boundingBox();
+        picker = [300, 225, fmt.x - 30, fmt.y - 20].map(Math.round);
+        await press(f, "[title='Output format']");
+        await f.wait(700);
+        for (const t of ["text=WEBM", "text=MOV", "text=AVI"]) {
+          const b = await page.locator(t).first().boundingBox();
+          await f.glide(b.x + b.width / 2, b.y + b.height / 2, 260);
+          await f.wait(220);
+        }
+        await press(f, "text=GIF");
+        await f.wait(1000);
+        tPick = (Date.now() - t0) / 1000;
+        const range = await page.evaluate(() => {
+          // The width slider: the first track wider than the format list's rows.
+          const t = [...document.querySelectorAll("*")].find((e) => e.style?.cursor === "pointer" && e.getBoundingClientRect().width > 600);
+          const r = t?.getBoundingClientRect();
+          return r && { x: r.x, y: r.y, width: r.width, height: r.height };
+        });
         const y = range.y + range.height / 2;
+        const chip = await page.getByText(/expected size/i).first().boundingBox();
+        // The slider and, to its left, the expected-size chip on the video.
+        const x0 = Math.min(chip?.x ?? range.x, range.x) - 20;
+        slider = [range.x + range.width - x0 + 20, 0, x0, 0];
+        slider[1] = Math.round(slider[0] / 3.2);
+        slider[3] = Math.round(Math.min(chip?.y ?? y, y) - 30);
+        slider = slider.map(Math.round);
+        await f.wait(300);
         await f.drag(range.x + range.width * 0.2, y, range.x + range.width * 0.62, y, 1300);
-      }
-      await f.wait(1600);
+        await f.wait(900);
+        await f.drag(range.x + range.width * 0.62, y, range.x + range.width * 0.35, y, 1000);
+        await f.wait(1200);
+        tSlide = (Date.now() - t0) / 1000;
+      });
+      await page.close();
+      const master = await encode(rec, { out: `${MASTERS}convertr-format-gif.mp4` });
+      const px = (c) => c.map((v) => v * 2).join(":");
+      await loopClip({ src: master, start: 0, dur: tPick, fade: 0, width: 900, crop: px(picker), posterAt: 1.6, out: `${MEDIA}convertr/format.mp4` });
+      return loopClip({ src: master, start: tPick - 0.2, dur: tSlide - tPick, fade: 0, width: 1200, crop: px(slider), posterAt: 2, out: `${MEDIA}convertr/gif-width.mp4` });
     },
-  }),
+  },
 );
 
 // The reel: the phone takes back to back, a short dissolve between
@@ -557,7 +615,7 @@ JOBS.push(
 JOBS.push({
   name: "localpal/reel",
   async run() {
-    const parts = ["onboarding-interests", "onboarding-flythrough", "search", "venue", "profile"].map((n) => `${MEDIA}localpal/${n}.mp4`);
+    const parts = ["search", "venue", "dayof", "onboarding-interests", "onboarding-flythrough"].map((n) => `${MEDIA}localpal/${n}.mp4`);
     const durs = parts.map((p) => Number(spawnSync("ffprobe", ["-v", "error", "-show_entries", "format=duration", "-of", "csv=p=0", p]).stdout));
     const X = 0.35;
     let chain = "";

@@ -43,6 +43,7 @@ export const BENTO_CSS = `
 .bn-bezel > .bn-screen { width: 100%; height: 100%; border-radius: 12cqw; overflow: hidden; background: #000; }
 .bn-screen video, .bn-screen img { display: block; width: 100%; height: 100%; object-fit: cover; }
 
+.bn-label { position: absolute; left: calc(.5 * var(--ty-u)); top: calc(.5 * var(--ty-u)); z-index: 1; padding: .3em .6em; border-radius: 999px; background: rgba(250, 249, 246, .92); color: #2b2722; box-shadow: 0 1px 2px rgba(0,0,0,.08); }
 .bn-slot { position: absolute; inset: 0; display: grid; align-content: end; padding: calc(.75 * var(--ty-u)); outline: 1px dashed rgba(43, 39, 34, .28); outline-offset: -1px; border-radius: inherit; }
 .bn-mark { position: absolute; left: calc(.75 * var(--ty-u)); bottom: calc(.75 * var(--ty-u)); right: calc(.75 * var(--ty-u)); }
 .bn-mark span { display: inline-block; padding: .35em .6em; border: 1px dashed rgba(43, 39, 34, .35); border-radius: 6px; background: rgba(255, 255, 255, .7); backdrop-filter: blur(6px); }
@@ -70,7 +71,9 @@ export function Bento({ cells, row = 2 }: { cells: Cell[]; row?: number }) {
               {
                 "--bn-w": cell.w,
                 "--bn-h": cell.h,
-                "--bn-wm": cell.w >= 6 ? 2 : 1,
+                // A slot's words need the room; a cell half the grid or
+                // more stays wide.
+                "--bn-wm": cell.w >= 6 || cell.kind === "slot" ? 2 : 1,
                 // Its proportions on a phone, where rows are not shared.
                 "--bn-ar": `${cell.w} / ${cell.h * row}`,
                 "--bn-ground": cell.ground,
@@ -78,6 +81,7 @@ export function Bento({ cells, row = 2 }: { cells: Cell[]; row?: number }) {
             }
           >
             <CellView cell={cell} />
+            {cell.label && <span className="bn-label ty-small">{cell.label}</span>}
           </Reveal>
         ))}
       </div>

@@ -11,7 +11,7 @@ import type { PeerPlan } from "./peerPlans";
  *  card. Title matches the Figma frame (typo and all — it's the reference). */
 export const FOCUSED_PLAN: PeerPlan = {
   id: "my-pregame",
-  title: "Pregame and dinner before the match beggins",
+  title: "Pregame and dinner before the match begins",
   host: "Martin",
   hostLine: "Local - from Madrid",
   address: "C. de la Palma, 8, Madrid",

@@ -15,6 +15,9 @@ import { ACCENT, BG, DOT_BG_IMAGE } from "../../shared/tokens";
 import { Chip, Cross, CornerCrosshair, GuideLine } from "../../shared/ui";
 import { pct, scrambleText } from "../../shared/utils";
 import CarrierBricks from "../loading/CarrierBricks";
+// Web demo only: a clip to try it with, for visitors without a video at
+// hand — a vertical cut of Julio's Camper film, so the box goes portrait.
+import sampleUrl from "../../assets/sample.mp4?url";
 
 // ── Guide positions ───────────────────────────────────────────────────────────
 const SPLASH = { GL: "2.8%", GR: "97.2%", GT: "6.13%", GB: "92.4%" };
@@ -826,6 +829,36 @@ const IdleView: Component<{ onVideoSelected: (info: VideoInfo) => void }> = (
       >
         <CarrierBricks progress={loadingProgress()} height={LOADING_BAR_H_PX} />
       </div>
+
+      {/* ── Try a sample (web demo) ───────────────────────────────────────── */}
+      <Show when={isIdle() && !fetchStatus()}>
+        <button
+          type="button"
+          onClick={async (e) => {
+            e.stopPropagation();
+            const blob = await (await fetch(sampleUrl)).blob();
+            handleFile(new File([blob], "camper.mp4", { type: "video/mp4" }));
+          }}
+          style={{
+            position: "absolute",
+            bottom: "24px",
+            left: "50%",
+            translate: "-50% 0",
+            background: ACCENT,
+            color: BG,
+            border: "none",
+            "font-family": "'IBM Plex Mono', system-ui, monospace",
+            "font-size": "12px",
+            "line-height": "16px",
+            "font-weight": "500",
+            padding: "6px 14px",
+            cursor: "pointer",
+            "white-space": "nowrap",
+          }}
+        >
+          NO VIDEO AT HAND? TRY A SAMPLE
+        </button>
+      </Show>
 
       {/* ── URL fetch status ──────────────────────────────────────────────── */}
       <Show when={fetchStatus()}>
