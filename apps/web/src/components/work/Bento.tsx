@@ -27,7 +27,8 @@ import type { Cell, Shot } from "@/content/projects";
  * - A phone is drawn here, not recorded: the clip is the screen alone,
  *   so every phone on the site is the same phone. In a bento it sits
  *   straight on the paper — the phone is its own frame, so its cell has
- *   no ground (Julio, 2026-10-01). The same for anything with an edge of
+ *   no ground (Julio, 2026-10-01), and its cell is the phone's own
+ *   shape (4 × 8 on a row of 1), so phones sit as close as the grid's gap. The same for anything with an edge of
  *   its own (`plain`), and for a field: its devices stand on the paper,
  *   the tag under them marking the mockup to come. The phone is a size
  *   container and its bezel a child, so the bezel's cqw are the phone's.
@@ -37,7 +38,7 @@ export const BENTO_CSS = `
 @property --bn-g { syntax: "<length>"; inherits: true; initial-value: 12px; }
 .bn { --bn-g: calc(.5 * var(--ty-u)); container-type: inline-size; }
 .bn-grid { --bn-c: calc((100cqw - 11 * var(--bn-g)) / 12); display: grid; grid-template-columns: repeat(12, minmax(0, 1fr)); grid-auto-rows: calc(var(--bn-row) * var(--bn-c) + (var(--bn-row) - 1) * var(--bn-g)); gap: var(--bn-g); }
-.bn-cell { position: relative; grid-column: span var(--bn-w); grid-row: span var(--bn-h); overflow: hidden; border-radius: calc(.5 * var(--ty-u)); background: var(--bn-ground, #ecebe8); }
+.bn-cell { position: relative; grid-column: var(--bn-start, auto) / span var(--bn-w); grid-row: span var(--bn-h); overflow: hidden; border-radius: calc(.5 * var(--ty-u)); background: var(--bn-ground, #ecebe8); }
 .bn-cell > video, .bn-cell > img { position: absolute; inset: 0; display: block; width: 100%; height: 100%; object-fit: cover; }
 .bn-cell.is-screen { background: var(--bn-ground, #f6f6f4); }
 .bn-cell.is-screen::after { content: ""; position: absolute; inset: 0; z-index: 1; border-radius: inherit; box-shadow: inset 0 0 0 1px rgba(43, 39, 34, .2); pointer-events: none; }
@@ -46,7 +47,7 @@ export const BENTO_CSS = `
 .bn-center { position: absolute; inset: 0; display: grid; place-items: center; }
 @container (max-width: 520px) {
   .bn-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); grid-auto-rows: auto; }
-  .bn-cell { grid-column: span var(--bn-wm); grid-row: auto; aspect-ratio: var(--bn-ar); }
+  .bn-cell { grid-column: auto / span var(--bn-wm); grid-row: auto; aspect-ratio: var(--bn-ar); }
 }
 
 .bn-phone { container-type: inline-size; position: relative; height: 88%; aspect-ratio: calc(1 / (.936 / var(--bn-sa) + .064)); max-width: 88%; }
@@ -107,6 +108,7 @@ export function Bento({ cells, row = 2 }: { cells: Cell[]; row?: number }) {
             style={
               {
                 "--bn-w": cell.w,
+                "--bn-start": cell.start,
                 "--bn-h": cell.h,
                 "--bn-wm": wm[i],
                 // Its proportions on a phone, where rows are not shared.

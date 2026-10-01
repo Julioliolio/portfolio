@@ -207,11 +207,7 @@ export const camper: Project = {
       blocks: [
         {
           type: "p",
-          text: "When a shot felt off, it was never the AI. I'd lost sight of “everyone is equal in their feet.”",
-        },
-        {
-          type: "p",
-          text: "[fill in — roughly how many generations the 16 shots took, and what came of the film.]",
+          text: "When a shot felt off, it was never the AI. I'd lost sight of “everyone is equal in their feet.” [fill in — roughly how many generations the 16 shots took, and what came of the film.]",
         },
       ],
     },

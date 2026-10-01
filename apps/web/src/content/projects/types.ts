@@ -115,6 +115,9 @@ export type Block =
 export type Cell = {
   w: number;
   h: number;
+  /** The column it starts at (1–12), to place a cell off the left edge:
+   *  two phones side by side in the middle, say. Desktop only. */
+  start?: number;
   /** The cell's ground, behind a bare component or a phone. Matches the
    *  background the clip was recorded on, so the two read as one. */
   ground?: string;

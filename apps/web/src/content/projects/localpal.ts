@@ -264,9 +264,9 @@ export const localpal: Project = {
           type: "bento",
           row: 1,
           cells: [
-            phone(7, 8, "map-zoom", "Zooming out of Madrid until the pins gather into one count, then back in as they come apart."),
-            bare(5, 4, "venue-pin", 720 / 902, "#eee8df", "A venue pin grows into a labelled pill, then floats over its shadow."),
-            bare(5, 4, "locate", 1, "#ecf0f1", "The locate button twists when pressed and the blue dot answers with a pulse."),
+            phone(4, 8, "map-zoom", "Zooming out of Madrid until the pins gather into one count, then back in as they come apart."),
+            bare(8, 4, "venue-pin", 720 / 902, "#eee8df", "A venue pin grows into a labelled pill, then floats over its shadow."),
+            bare(8, 4, "locate", 1, "#ecf0f1", "The locate button twists when pressed and the blue dot answers with a pulse."),
           ],
         },
         { type: "subhead", text: "02 · Search in a sentence" },
@@ -278,8 +278,8 @@ export const localpal: Project = {
           type: "bento",
           row: 1,
           cells: [
-            phone(5, 7, "search", "Typing “I want something chill tonight” on the map."),
-            cell(7, 7, lp("search-sheet", "bare", "The sentence becomes Chill and Today filters, and each best match says why it fits: “Zero pressure, all mellow”.", { aspect: 716 / 700 })),
+            phone(4, 8, "search", "Typing “I want something chill tonight” on the map."),
+            cell(8, 8, lp("search-sheet", "bare", "The sentence becomes Chill and Today filters, and each best match says why it fits: “Zero pressure, all mellow”.", { aspect: 716 / 700 })),
           ],
         },
         { type: "subhead", text: "03 · Going together" },
@@ -291,7 +291,7 @@ export const localpal: Project = {
           type: "bento",
           row: 1,
           cells: [
-            phone(12, 8, "venue", "Opening Rita's, then its live music night, then the plans of the people going together."),
+            { ...phone(4, 8, "venue", "Opening Rita's, then its live music night, then the plans of the people going together."), start: 5 },
           ],
         },
         { type: "subhead", text: "04 · Showing up" },
@@ -303,8 +303,8 @@ export const localpal: Project = {
           type: "bento",
           row: 1,
           cells: [
-            phone(5, 8, "verify", "Verifying with a university email: the address typed, the code filled in, “You're verified”."),
-            bare(7, 8, "rsvp", 900 / 1126, "#eee8df", "Dragging the knob across: the chevron turns into a check, the countdown lands, and the list of people on their way opens."),
+            phone(4, 8, "verify", "Verifying with a university email: the address typed, the code filled in, “You're verified”."),
+            cell(8, 8, lp("rsvp", "bare", "Dragging the knob across: the chevron turns into a check, the countdown lands, and the list of people on their way opens.", { aspect: 900 / 1126, fit: "contain" }), "#eee8df"),
           ],
         },
         { type: "subhead", text: "05 · Sign-up as a game" },
@@ -316,8 +316,8 @@ export const localpal: Project = {
           type: "bento",
           row: 1,
           cells: [
-            phone(6, 7, "onboarding-interests", "Picking four interests: each one drops a sticker on the profile."),
-            phone(6, 7, "onboarding-flythrough", "Allowing location: the camera flies from the toy city into the real map and the tour starts."),
+            { ...phone(4, 8, "onboarding-interests", "Picking four interests: each one drops a sticker on the profile."), start: 3 },
+            phone(4, 8, "onboarding-flythrough", "Allowing location: the camera flies from the cartoon city into the real map and the tour starts."),
           ],
         },
         { type: "subhead", text: "06 · The loop" },
@@ -344,8 +344,8 @@ export const localpal: Project = {
           type: "bento",
           row: 1,
           cells: [
-            phone(6, 7, "edge", "A thumb at the right edge pulls a black goo out of it and slides up and down to zoom the map."),
-            phone(6, 7, "profile", "The own profile: the tag card, friends, plans, and the QR that opens to add someone."),
+            { ...phone(4, 8, "edge", "A thumb at the right edge pulls a black goo out of it and slides up and down to zoom the map."), start: 3 },
+            phone(4, 8, "profile", "The own profile: the tag card, friends, plans, and the QR that opens to add someone."),
           ],
         },
       ],
@@ -357,15 +357,7 @@ export const localpal: Project = {
       blocks: [
         {
           type: "p",
-          text: "The product was, and it only became real when I stopped writing about it and built it.",
-        },
-        {
-          type: "p",
-          text: "It's never been in a stranger's hands. The riskiest bet: do people who say yes actually turn up?",
-        },
-        {
-          type: "p",
-          text: "What I'm proudest of: it doesn't feel like a research project. It feels like something you'd want on your phone.",
+          text: "The product was, and it only became real when I stopped writing about it and built it. It's never been in a stranger's hands. The riskiest bet: do people who say yes actually turn up? What I'm proudest of: it doesn't feel like a research project. It feels like something you'd want on your phone.",
         },
       ],
     },

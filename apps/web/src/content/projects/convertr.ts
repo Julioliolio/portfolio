@@ -51,11 +51,7 @@ export const convertr: Project = {
       blocks: [
         {
           type: "p",
-          text: "Every week I turned clips into GIFs for moodboards. Online tools gave me no control, and Adobe Premiere turned a ten-second job into a project. So I built my own. [fill in — I've run N files through it since June.]",
-        },
-        {
-          type: "p",
-          text: "It was also my first app built with AI, and a test: if the designer writes the code, can an app with no screens, just one box that changes shape, survive?",
+          text: "Every week I turned clips into GIFs for moodboards. Online tools gave me no control, and Adobe Premiere turned a ten-second job into a project. So I built my own. [fill in — I've run N files through it since June.] It was also my first app built with AI, and a test: if the designer writes the code, can an app with no screens, just one box that changes shape, survive?",
         },
       ],
     },
@@ -156,11 +152,7 @@ export const convertr: Project = {
       blocks: [
         {
           type: "p",
-          text: "No handoff, so nobody could quietly swap the box for a standard layout. Half the feel came from tweaking timings while watching it move, and none of that was in the design file.",
-        },
-        {
-          type: "p",
-          text: "Next time I'd build a fake engine first, like the one running this page, so I could try every idea in seconds.",
+          text: "No handoff, so nobody could quietly swap the box for a standard layout. Half the feel came from tweaking timings while watching it move, and none of that was in the design file. Next time I'd build a fake engine first, like the one running this page, so I could try every idea in seconds.",
         },
       ],
     },
