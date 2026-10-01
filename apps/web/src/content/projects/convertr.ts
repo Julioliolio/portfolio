@@ -1,11 +1,27 @@
-import type { Project } from "./types";
+import type { Cell, Project, Shot } from "./types";
 
 /**
  * Convertr — the desktop video converter, spring 2026. Medium depth: the
  * live demo (apps/demos/convertr, the real UI over a mocked engine) sits
  * at the top and the text is about the one idea in the design, the
  * bounding box that morphs through every state.
+ *
+ * Media (docs/media-plan.md): recorded from the demo with the clay
+ * cursor (scripts/record-media.mjs); the videos dropped in are the X
+ * clips Julio picked (source-assets/convertr-footage/).
  */
+
+const M = "/media/convertr";
+
+/** A recording of the demo (scripts/record-media.mjs). */
+function cv(name: string, alt: string, aspect: number, more: Partial<Shot> = {}): Shot {
+  return { src: `${M}/${name}.mp4`, poster: `${M}/${name}.webp`, frame: "screen", alt, aspect, ...more };
+}
+const cell = (w: number, h: number, shot: Shot, ground?: string): Cell => ({ kind: "shot", w, h, ground, ...shot });
+
+/** The app's own paper, behind a recording fitted whole into its cell. */
+const PAPER = "#f6f6f4";
+
 export const convertr: Project = {
   slug: "convertr",
   title: "Convertr",
@@ -54,6 +70,13 @@ export const convertr: Project = {
           ],
           note: "A side project over a spring.",
         },
+        {
+          type: "field",
+          aspect: 16 / 9,
+          device: "laptop",
+          need: "the Convertr window on a laptop, on a soft neutral.",
+          screens: [cv("every-state", "Convertr on a laptop, going through every state", 1.6)],
+        },
       ],
     },
     {
@@ -64,37 +87,39 @@ export const convertr: Project = {
       blocks: [
         {
           type: "p",
-          text: "The whole design is one box. Empty, it sits in the middle of the window drawn by four guide lines, cycling through the shapes a video can have. Drop a file and it becomes the video, at the video's own proportions. Open the settings and the box gives up one side to make room, cropping the video instead of shrinking it.",
+          text: "The whole design is one box. Empty, it sits in the middle of the window drawn by four guide lines, cycling through the shapes a video can have. Drop a file and it becomes the video, at the video's own proportions.",
         },
         {
-          type: "figure",
-          figure: {
-            kind: "placeholder",
-            aspect: 21 / 9,
-            need: "Two screens side by side: a vertical video loaded with settings under it, a landscape one with settings to the right.",
-            caption: "Portrait and landscape get different apps",
-          },
+          type: "bento",
+          row: 1,
+          cells: [
+            cell(6, 4, cv("idle", "The empty box, drawn by four guide lines, cycling through the shapes a video can have", 1100 / 650, { frame: "bare" })),
+            cell(6, 4, cv("drop", "A file carried in and dropped on the box; a row of bricks loads it", 1100 / 650, { frame: "bare" })),
+          ],
+        },
+        {
+          type: "p",
+          text: "Open the settings and the box gives up a side to make room, cropping the video instead of shrinking it: a portrait video keeps its height and hands over its right, a landscape one hands over its bottom.",
+        },
+        {
+          type: "bento",
+          row: 1,
+          cells: [
+            cell(6, 4, cv("portrait-settings", "A vertical video dropped in; the settings open beside it", 1.6)),
+            cell(6, 4, cv("landscape-settings", "A landscape video dropped in; the settings open below it", 1.6)),
+          ],
         },
         {
           type: "p",
           text: "Press convert and it collapses into a bar with a row of little bricks carrying the progress. When the result is ready the box steps outward and three chips hang off the corners: output size, how much smaller it got, and download, which you drag.",
         },
         {
-          type: "carousel",
-          hint: "Drag through the states",
-          figures: [
-            {
-              kind: "placeholder",
-              aspect: 16 / 10,
-              need: "Converting: the box collapsed into a bar with the bricks mid-run.",
-              caption: "Converting",
-            },
-            {
-              kind: "placeholder",
-              aspect: 16 / 10,
-              need: "The result: the box stepped out, the dotted grid visible, the three chips on the corners.",
-              caption: "Done",
-            },
+          type: "bento",
+          row: 1,
+          cells: [
+            cell(12, 3, cv("converting", "Convert pressed: the video collapses into a bar and pink bricks carry the progress across", 1100 / 306, { frame: "bare" })),
+            cell(6, 6, cv("result-drag", "The result: the box steps out, chips on the corners, and the download dragged out of the window", 1)),
+            cell(6, 6, cv("format-gif", "Picking GIF from the format list, then dragging the width: the expected size follows", 1.6, { fit: "contain" }), PAPER),
           ],
         },
         {
@@ -102,22 +127,19 @@ export const convertr: Project = {
           text: "Every state is the same four lines moving, so you always know where what you're looking at came from and what it's about to become. Nothing appears out of nowhere and no panel slides over another. Everything else follows the box: one accent colour, a dotted paper grid, mono labels that scramble into place, and a little spring on anything you touch.",
         },
         {
-          type: "figure",
-          figure: {
-            kind: "placeholder",
-            awaits: "video",
-            aspect: 16 / 10,
-            need: "The box morphing through all its states in one continuous recording.",
-            caption: "One box, every state",
-          },
+          type: "bento",
+          row: 1,
+          cells: [
+            cell(12, 8, cv("every-state", "One continuous take: the empty box, a file dropped in, the settings, a format, convert, the bricks, the result stepping out", 1.6)),
+          ],
         },
         {
           type: "figure",
           figure: {
-            kind: "placeholder",
-            aspect: 21 / 9,
-            need: "Side by side: the same vertical video in a typical converter (fixed panels, the video shrunk into a preview corner) and in Convertr. No product names needed.",
-            caption: "Same file, two ideas of what a converter is",
+            kind: "image",
+            src: `${M}/fig-compare.webp`,
+            aspect: 2000 / 900,
+            alt: "The same vertical video in a typical converter, shrunk into a preview between fixed panels, and in Convertr, where the box is the video and the settings take its other side.",
           },
         },
       ],
@@ -150,13 +172,17 @@ export const convertr: Project = {
           ],
         },
         {
-          type: "figure",
-          figure: {
-            kind: "placeholder",
-            aspect: 16 / 10,
-            need: "The timeline with in and out handles set, the GIF settings open.",
-            caption: "Trimming",
-          },
+          type: "bento",
+          row: 1,
+          cells: [
+            cell(8, 3, cv("trim", "Dragging the in handle right and the out handle left on the timeline", 1100 / 412, { frame: "bare" })),
+            {
+              kind: "slot",
+              w: 4,
+              h: 3,
+              need: "Pasting an X link in the desktop app: yt-dlp fetches it and it lands in the box like a file.",
+            },
+          ],
         },
       ],
     },

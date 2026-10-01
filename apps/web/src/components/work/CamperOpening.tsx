@@ -67,7 +67,7 @@ export default function CamperOpening({ project }: OpeningProps) {
   }
 
   const hero = project.hero;
-  if (hero.kind !== "video") return null;
+  if ("type" in hero || hero.kind !== "video") return null;
   // Where the clip is now, not where it was at the click: this page
   // may have taken a moment to load while the box grew.
   const startAt =

@@ -4,7 +4,7 @@ import { localpal } from "./localpal";
 import { PROJECT_LIST } from "./list";
 import type { Project } from "./types";
 
-export type { Block, Figure, Project, Section } from "./types";
+export type { Block, Cell, Figure, Project, Section, Shot } from "./types";
 export { PROJECT_LIST } from "./list";
 export type { ProjectSlug } from "./list";
 

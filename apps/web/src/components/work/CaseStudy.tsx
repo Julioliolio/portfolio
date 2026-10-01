@@ -21,6 +21,7 @@ import {
 } from "react";
 import { createPortal } from "react-dom";
 import { DemoShell } from "@/components/demo/DemoShell";
+import { BENTO_CSS, Bento, Field } from "./Bento";
 import { OPENINGS } from "./openings";
 import type { Block, Figure, Project, Section } from "@/content/projects";
 import { projectAfter } from "@/content/projects/list";
@@ -224,7 +225,7 @@ export function CaseStudy({
 
   return (
     <article ref={page} className="ty cs">
-      <style>{TYPE_CSS + CSS}</style>
+      <style>{TYPE_CSS + CSS + BENTO_CSS}</style>
 
       {Opening && (
         <Suspense fallback={<div className="cs-opening-hold" />}>
@@ -252,7 +253,11 @@ export function CaseStudy({
           {/* A project's own opening stands in for the hero. */}
           {!Opening && (
             <Reveal gate="mount" className="cs-hero">
-              <FigureView figure={project.hero} />
+              {"type" in project.hero ? (
+                <MediaView block={project.hero} />
+              ) : (
+                <FigureView figure={project.hero} />
+              )}
             </Reveal>
           )}
         </div>
@@ -485,6 +490,10 @@ function MediaView({ block }: { block: Exclude<Block, TextBlock> }) {
     }
     case "carousel":
       return <Carousel figures={block.figures} />;
+    case "bento":
+      return <Bento cells={block.cells} row={block.row} />;
+    case "field":
+      return <Field {...block} />;
   }
 }
 

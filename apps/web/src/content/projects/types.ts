@@ -83,7 +83,57 @@ export type Block =
     }
   /** A row of figures wider than the column, dragged through
    *  sideways; each figure's caption sits under it. */
-  | { type: "carousel"; figures: Figure[]; hint?: string };
+  | { type: "carousel"; figures: Figure[]; hint?: string }
+  /** A bento, after wavn: cells of different sizes straight on the
+   *  paper, each a loop, a still or a marked slot on its own ground.
+   *  One cell is fine — a single clip set the same way. */
+  | { type: "bento"; cells: Cell[]; row?: number }
+  /** A screen on a field of colour: a marked slot for a photo-real
+   *  device mockup (Julio's), with the screen standing in until then. */
+  | {
+      type: "field";
+      aspect: number;
+      ground?: string;
+      need: string;
+      screens: Shot[];
+      device: "phone" | "laptop";
+    };
+
+/**
+ * A bento cell. `w` is its width in the bento's twelve columns, `h` its
+ * height in rows; a row is `row` columns tall (the bento's, default 2),
+ * so the cells keep their shapes at any width. On a phone the bento is
+ * two columns: cells six wide or more take both.
+ */
+export type Cell = {
+  w: number;
+  h: number;
+  /** The cell's ground, behind a bare component or a phone. Matches the
+   *  background the clip was recorded on, so the two read as one. */
+  ground?: string;
+} & (
+  | ({ kind: "shot" } & Shot)
+  | { kind: "slot"; need: string; awaits?: "video" | "photo" }
+);
+
+/**
+ * A recorded clip or still. `bare` fills the cell; `phone` sits a drawn
+ * phone in the middle of it, the screen inside; `screen` is a
+ * desktop recording, edge to edge.
+ */
+export type Shot = {
+  src: `/${string}`;
+  poster?: `/${string}`;
+  /** width / height of the recording itself. */
+  aspect: number;
+  frame: "bare" | "phone" | "screen";
+  alt: string;
+  /** Where the clip's subject sits if the cell crops it (object-position). */
+  focus?: string;
+  /** "contain": the whole recording, on the cell's ground (set it to the
+   *  recording's own background), for a cell shaped differently. */
+  fit?: "contain";
+};
 
 export type Section = {
   /** Anchor id, used by the table of contents. */
@@ -110,7 +160,9 @@ export type Project = {
   /** The label/value pairs beside the title: type, year, role… A value
    *  with an href renders as a link. */
   meta: { label: string; value: string; href?: string }[];
-  hero: Figure;
+  /** The picture the page opens on: a figure, or a field/bento set the
+   *  same way as one in a section. */
+  hero: Figure | Extract<Block, { type: "bento" | "field" }>;
   /** Long case studies get a table of contents; short ones do not. */
   contents: boolean;
   sections: Section[];
