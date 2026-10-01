@@ -183,3 +183,29 @@ Judges' notes outside these pages (site chrome, not touched): on phone
 the fixed Back sign covers text; gaps after the meta row and before the
 Next band read long; grey body text is light for long reads; "Any
 questions? Write me" has no link.
+
+## The copy, for a reader in a hurry (2026-10-01)
+
+Julio found the copy too information-heavy. Four rounds, two fresh
+recruiters per page each time — an in-house design recruiter and a
+generalist tech recruiter, averaged — judging only whether the copy is
+breezy and makes them want to keep reading (and where text should give
+way to a picture). Nothing protected; the recruiter wins over the
+design-lead critiques.
+
+| Page | R1 | R2 | R3 | R4 | Words before → after |
+|---|---|---|---|---|---|
+| LocalPal | 6 | 7 | 7.25 | 7.75 | 1,519 → 521 |
+| Convertr | 6 | 7 | 7 | 7.75 | 728 → 212 |
+| Camper | 7 | 7.75 | 7.25 | 7.75 | 330 → 159 |
+
+Each page got one 8 and one 7.5 in round four. The fixes both of its
+recruiters agreed on were applied after it, not re-scored. What every
+round-four reader still asked for is the same: the "[fill in]" facts
+(Convertr's usage number, Camper's generation count and outcome).
+
+Gone in the process, by the recruiters' call: the "The cost:" clause on
+each decision (Convertr's numbered decisions are gone entirely, folded
+into "no settings page, no results page"), most of the honesty notes on
+the charts (kept: "Designed, not built yet" and "never been in a
+stranger's hands"), the research numbers, the personas line.

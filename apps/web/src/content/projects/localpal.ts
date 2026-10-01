@@ -111,7 +111,7 @@ export const localpal: Project = {
       blocks: [
         {
           type: "p",
-          text: "Going out is changing:",
+          text: "People are swapping nightclubs for running clubs, and a third of Europe feels lonely:",
         },
         {
           type: "figure",
@@ -125,7 +125,7 @@ export const localpal: Project = {
         },
         {
           type: "p",
-          text: "The catch: there's nowhere to find them. Instagram and Google Maps cover the big bars; the climbing session on Thursday lives in a WhatsApp group you're not in. In the interviews, nobody named a single app for it.",
+          text: "The catch: these small plans are hard to find. Instagram and Google Maps cover the big bars; the climbing session on Thursday lives in a WhatsApp group you're not in. In the interviews, nobody named a single app for it.",
         },
         {
           type: "figure",
@@ -203,10 +203,6 @@ export const localpal: Project = {
             { ...drawing(4, 4, "storyboard-4", 1400 / 1287, "A shrug under a cloud of question marks."), label: "Can't pin it down" },
             { ...drawing(4, 4, "storyboard-5", 1400 / 782, "Three people sitting together with drinks: the plan happened."), label: "With LocalPal, he goes" },
           ],
-        },
-        {
-          type: "p",
-          text: "Today the plan dies in the group chat. With LocalPal, he goes.",
         },
         {
           type: "figure",
@@ -289,7 +285,7 @@ export const localpal: Project = {
         { type: "subhead", text: "03 · Going together" },
         {
           type: "p",
-          text: "Big events show the small plans of people going: join someone's plan, not a crowd of 62.",
+          text: "Every big event shows the small groups going. You join a few people, not a crowd of 62.",
         },
         {
           type: "bento",
@@ -327,7 +323,7 @@ export const localpal: Project = {
         { type: "subhead", text: "06 · The loop" },
         {
           type: "p",
-          text: "After every plan: did you go? Want to go again? By week nine, the map knows you. Designed, not built yet.",
+          text: "Designed, not built yet: after every plan, a check-in that tunes the map.",
         },
         {
           type: "figure",

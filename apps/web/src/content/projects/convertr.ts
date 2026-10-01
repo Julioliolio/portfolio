@@ -58,7 +58,7 @@ export const convertr: Project = {
         },
         {
           type: "p",
-          text: "It was also my first app built with AI, and a test: if the designer writes the code, does the weird idea survive?",
+          text: "It was also my first app built with AI, and a test: if the designer writes the code, can an app with no screens, just one box that changes shape, survive?",
         },
       ],
     },
@@ -70,7 +70,7 @@ export const convertr: Project = {
       blocks: [
         {
           type: "p",
-          text: "The whole app is one box. No settings page, no results page. Empty, it cycles through the shapes a video can have; drop a file and it becomes the video.",
+          text: "The whole app is one box. No settings page, no results page. Empty, it cycles through every shape a video can take. Drop a file and it becomes yours.",
         },
         {
           type: "bento",
@@ -149,11 +149,11 @@ export const convertr: Project = {
       blocks: [
         {
           type: "p",
-          text: "Nobody could quietly turn the box back into a normal layout. Half the feel came from tweaking timings while watching it move, and none of that was in the design file.",
+          text: "No handoff, so nobody could quietly swap the box for a standard layout. Half the feel came from tweaking timings while watching it move, and none of that was in the design file.",
         },
         {
           type: "p",
-          text: "Next time I'd build the pretend version first, so every idea could be tried in seconds.",
+          text: "Next time I'd build a fake engine first, like the one running this page, so I could try every idea in seconds.",
         },
       ],
     },

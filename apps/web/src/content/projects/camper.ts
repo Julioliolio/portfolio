@@ -24,9 +24,9 @@ export const camper: Project = {
   title: "Camper",
   tagline: "Everyone is equal in their feet.",
   summary:
-    "An unofficial one-minute ad for Camper, made entirely with AI.",
+    "An unofficial one-minute ad for Camper, made with AI. The work was in the choosing.",
   meta: [
-    { label: "Type", value: "Unofficial ad, made solo at 2894 Studio · 2026" },
+    { label: "Type", value: "Unofficial ad, made on my own while at 2894 Studio · 2026" },
     {
       label: "Fields",
       value: "Concept, art direction, AI image and video generation, edit",
@@ -52,7 +52,7 @@ export const camper: Project = {
       blocks: [
         {
           type: "p",
-          text: "Everyone wears Camper. The film cuts between people who'd never share a frame. Only the shoes stay the same. Three rules:",
+          text: "In the film, everyone wears Camper. It cuts between people who'd never share a frame. Only the shoes stay the same. Three rules:",
         },
         {
           type: "list",
@@ -60,7 +60,7 @@ export const camper: Project = {
           items: [
             { title: "Shin height.", body: "Always, so the shoes lead." },
             { title: "No faces.", body: "So no one is the star." },
-            { title: "One afternoon.", body: "The same light and grain in every shot, like it was all shot on old film." },
+            { title: "One afternoon.", body: "One warm light, like a single roll of old film." },
           ],
         },
         {
@@ -104,7 +104,7 @@ export const camper: Project = {
       blocks: [
         {
           type: "p",
-          text: "I drew a storyboard first, so every AI image had a target. Each moment went from sketch, to still, to moving shot. Here's one:",
+          text: "I drew a storyboard first, so every AI image had a target. Here's one:",
         },
         {
           type: "bento",
