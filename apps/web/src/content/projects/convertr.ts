@@ -27,7 +27,7 @@ export const convertr: Project = {
   title: "Convertr",
   tagline: "A video converter where the box is the whole interface.",
   summary:
-    "A desktop app that turns any video into a GIF, MP4, WebM, MOV, AVI, MKV or MP3. Drop it, trim it, drag the result out. Designed and built on my own, and the real interface runs on this page.",
+    "A desktop app that turns any video into the GIF or file you need. Drop it, trim it, drag the result out. I designed and built it, and the real app runs on this page.",
   meta: [
     { label: "Type", value: "Side project · spring 2026" },
     {
@@ -45,7 +45,7 @@ export const convertr: Project = {
     title: "Convertr",
     variant: "desktop",
     query: "?autosample",
-    label: "Live: the real app. It loads a sample; drop your own",
+    label: "Live: the real app. Only the conversion is faked",
     caption:
       "The real interface. Drop a video or a GIF on it, trim, convert, drag the result out. The conversion is simulated on this page, so the file you get is a stand-in; everything you see and touch is the app.",
   },
@@ -58,7 +58,15 @@ export const convertr: Project = {
       blocks: [
         {
           type: "p",
-          text: "Convertr takes any video, dropped in or pasted as a link, and gives you back a GIF, an MP4, a WebM or whatever you need, trimmed to the bit you wanted. I made it because I was doing this by hand every week for moodboards: online tools gave no control over size, frame rate or the exact cut, and Premiere turned a ten-second job into a project. [fill in — one line of use: how many files you've run through it since June.] It's also the first app I built with AI, and a bit of an experiment: could the interface keep an idea that would normally get simplified away in a handoff?",
+          text: "Every week I turned clips into GIFs for moodboards. Online tools gave me no control, and Premiere turned a ten-second job into a project. So I built my own.",
+        },
+        {
+          type: "p",
+          text: "[fill in — how many files you've run through it since June.]",
+        },
+        {
+          type: "p",
+          text: "It was also my first app built with AI, and a test: can a design idea survive when the designer also writes the code?",
         },
       ],
     },
@@ -70,13 +78,13 @@ export const convertr: Project = {
       blocks: [
         {
           type: "p",
-          text: "The whole design is one box. Empty, it sits in the middle of the window drawn by four guide lines, cycling through the shapes a video can have. Drop a file and it becomes the video, at the video's own proportions.",
+          text: "The whole app is one box. Empty, it cycles through the shapes a video can have. Drop a file and it becomes the video.",
         },
         {
           type: "bento",
           row: 1,
           cells: [
-            plain(cell(12, 6, cv("drop", "A file carried in and dropped on the empty box; a row of bricks loads it, and the box snaps to the video's own shape", 1100 / 826, { frame: "bare", fit: "contain" }))),
+            plain({ ...cell(12, 6, cv("drop", "A file carried in and dropped on the empty box; a row of bricks loads it, and the box snaps to the video's own shape", 1100 / 826, { frame: "bare", fit: "contain" })), label: "Drop a file: the box takes its shape" }),
             {
               kind: "slot",
               w: 12,
@@ -89,7 +97,7 @@ export const convertr: Project = {
         },
         {
           type: "p",
-          text: "Open the settings and the box gives up a side to make room, cropping the video instead of shrinking it: a portrait video keeps its height and hands over its right, a landscape one hands over its bottom. The small frame inside the settings is the output preview: the file at the size, frame rate and dithering it will have, before you convert.",
+          text: "Open the settings and the video doesn't shrink. It crops, and the settings take the space.",
         },
         {
           type: "figure",
@@ -106,18 +114,14 @@ export const convertr: Project = {
           type: "bento",
           row: 1,
           cells: [
-            cell(12, 7, cv("landscape-settings", "A landscape video dropped in; the settings open below it", 1.6)),
+            { ...cell(12, 7, cv("landscape-settings", "A landscape video dropped in; the settings open below it", 1.6)), label: "Landscape: the settings go underneath" },
           ],
-        },
-        {
-          type: "p",
-          text: "Press convert and it collapses into a bar with a row of little bricks carrying the progress. When the result is ready the box steps outward and three chips hang off the corners: output size, how much it changed against the original, and download, which you drag.",
         },
         {
           type: "bento",
           row: 1,
           cells: [
-            cell(7, 6, cv("result-drag", "The last bricks land, the box steps out with chips on its corners, and the converted file is dragged out by its download chip", 1.25)),
+            { ...cell(7, 6, cv("result-drag", "The last bricks land, the box steps out with chips on its corners, and the converted file is dragged out by its download chip", 1.25)), label: "Convert, then drag the file out" },
             {
               kind: "slot",
               w: 5,
@@ -128,7 +132,7 @@ export const convertr: Project = {
         },
         {
           type: "p",
-          text: "Every state is the same four lines moving, so you always know where what you're looking at came from and what it's about to become. Nothing appears out of nowhere and no panel slides over another. Three decisions hold it together:",
+          text: "Nothing pops in or slides over. Every screen is the same box changing shape.",
         },
         {
           type: "list",
@@ -136,21 +140,17 @@ export const convertr: Project = {
           items: [
             {
               title: "Crop, don't shrink.",
-              body: "When the settings open, the preview gives up part of the frame rather than getting smaller, because the size you see is the decision you're making. The file itself is never cropped. The cost: with the settings open you may lose the edge you cared about; close them and it's back.",
+              body: "The video keeps its size; the settings take the leftover space.",
             },
             {
               title: "No second screen.",
-              body: "There is no settings page and no results page. Every feature has to be a state the four lines can move into, which is the hardest rule to keep and the reason it feels like one thing.",
+              body: "No settings page, no results page. Just the box.",
             },
             {
               title: "The download is a drag.",
-              body: "The result is a chip you drag to wherever it's going: a folder, a Figma file, a chat. It says DOWNLOAD on it, so it's never a mystery; dragging is just the short way.",
+              body: "Pull the file straight into a folder, Figma or a chat.",
             },
           ],
-        },
-        {
-          type: "p",
-          text: "Everything else follows the box: one accent colour, a dotted paper grid, mono labels that scramble into place, and a little spring on anything you touch.",
         },
       ],
     },
@@ -165,19 +165,15 @@ export const convertr: Project = {
           items: [
             {
               title: "Three ways in.",
-              body: "Drop a file, paste a link, or paste a video from the clipboard. Links go through yt-dlp, so a YouTube or X link works like a file.",
+              body: "Drop a file, paste a video, or paste a YouTube or X link.",
             },
             {
               title: "Trim on the timeline.",
-              body: "In and out handles, because the bit you want is almost never the whole clip.",
+              body: "Because the bit you want is never the whole clip.",
             },
             {
               title: "Seven formats, one picker.",
-              body: "MP3 keeps the sound and drops the video. GIF lets you set width and frame rate, and the estimated size updates as you change them.",
-            },
-            {
-              title: "FFmpeg underneath,",
-              body: "in an Electron app for Windows and Mac; this page runs a simulation instead.",
+              body: "For a GIF, set the size and frame rate and watch the file size update.",
             },
           ],
         },
@@ -191,8 +187,8 @@ export const convertr: Project = {
               h: 7,
               need: "Pasting an X link in the desktop app: yt-dlp fetches it and it lands in the box like a file.",
             },
-            cell(6, 7, cv("format", "The format picker opening, the cursor running down the list, GIF picked", 1200 / 660, { frame: "bare" })),
-            cell(12, 3, cv("trim", "The in handle dragged right and the out handle left on the timeline", 8, { frame: "bare" })),
+            { ...cell(6, 7, cv("format", "The format picker opening, the cursor running down the list, GIF picked", 1200 / 660, { frame: "bare" })), label: "Seven formats, one picker" },
+            { ...cell(12, 3, cv("trim", "The in handle dragged right and the out handle left on the timeline", 8, { frame: "bare" })), label: "Trim" },
           ],
         },
       ],
@@ -204,15 +200,11 @@ export const convertr: Project = {
       blocks: [
         {
           type: "p",
-          text: "Holding the code meant the box never got flattened into a normal layout. It also taught me where the design actually lives: half of the feel is in numbers tuned by watching it move, like spring stiffness and how far the result steps out, and none of that was in the design file.",
+          text: "Holding the code meant the box never got flattened into a normal layout. Half the feel is in numbers tuned by watching it move, and none of that was in the design file.",
         },
         {
           type: "p",
-          text: "If I did it again I'd build the simulated engine first. It's what runs this page, and having it from day one would have made every iteration much faster.",
-        },
-        {
-          type: "p",
-          text: "Any questions? Write me, I'm always up for talking about this one.",
+          text: "If I did it again I'd build the simulated engine first. It's what runs this page, and it would have made every iteration faster.",
         },
       ],
     },

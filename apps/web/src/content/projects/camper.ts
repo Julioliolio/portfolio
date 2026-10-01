@@ -24,7 +24,7 @@ export const camper: Project = {
   title: "Camper",
   tagline: "Everyone is equal in their feet.",
   summary:
-    "A sixty-second spec film for Camper, made end to end with generative AI at 2894 Studio: concept, storyboard, every still, every shot and the edit.",
+    "An unofficial one-minute ad for Camper, made entirely with AI: the idea, the storyboard, every shot and the edit.",
   meta: [
     { label: "Type", value: "Spec film · 2894 Studio, 2026" },
     {
@@ -52,11 +52,20 @@ export const camper: Project = {
       blocks: [
         {
           type: "p",
-          text: "Camper is a brand that everyone can wear and everyone does wear: a kid fastening their velcro, a waitress in heels, a man sweeping a terrace, someone reading on the pavement, two kids on a doorstep. The film keeps cutting between people who would never share a frame, and the one thing that stays constant is what they're standing in.",
+          text: "Everyone wears Camper. The film cuts between people who'd never share a frame, and the only constant is their shoes. Three rules:",
+        },
+        {
+          type: "list",
+          style: "bulleted",
+          items: [
+            { title: "Shin height.", body: "Always, so the shoes lead." },
+            { title: "No faces.", body: "So no one is the star." },
+            { title: "One afternoon.", body: "The same light and grain in every shot, like 35mm." },
+          ],
         },
         {
           type: "p",
-          text: "Three rules make that true on screen. The camera stays at shin height. It never shows a face, so no one is the star. And every shot shares one light and one grain, a sunny afternoon on 35mm, so the cuts feel like one street. Its last shots take the shoes off, bare feet in the water and then in a doorway, a pair of Campers beside them: the frames where everyone really is equal.",
+          text: "It ends barefoot, the shoes set aside: the one frame where everyone really is equal.",
         },
         {
           // The cast, one loop per person, cut from the film
@@ -73,25 +82,33 @@ export const camper: Project = {
         {
           // Every shot of the cut, one frame each, in order: the rules,
           // checkable (scripts/prepare-camper-media.mjs).
-          type: "figure",
-          figure: {
-            kind: "image",
-            plain: true,
-            src: "/media/camper/every-shot.webp",
-            aspect: 1962 / 1122,
-            alt: "Every shot of the film, one frame each, in order: sixteen frames, all at shin height, no faces, the same warm afternoon light and grain.",
-          },
+          type: "bento",
+          row: 1,
+          cells: [
+            {
+              kind: "shot",
+              w: 12,
+              h: 7,
+              plain: true,
+              label: "Every shot, in order: same height, no faces, one afternoon",
+              frame: "bare",
+              fit: "contain",
+              src: "/media/camper/every-shot.webp",
+              aspect: 1962 / 1122,
+              alt: "Every shot of the film, one frame each, in order: sixteen frames, all at shin height, no faces, the same warm afternoon light and grain.",
+            },
+          ],
         },
       ],
     },
     {
       id: "made",
       label: "How it's made",
-      heading: "A storyboard, then a lot of prompts, then a lot of choosing",
+      heading: "The work is in the choosing",
       blocks: [
         {
           type: "p",
-          text: "The full minute was storyboarded first, so every generation had a target. Each frame became a still, prompted across a few image models on a Flora canvas until the person, the light and the shoe matched the drawing. The stills that held up went through video models to become shots.",
+          text: "Storyboard first, so every generation had a target. Then drawing, still, moving shot.",
         },
         {
           type: "bento",
@@ -144,7 +161,7 @@ export const camper: Project = {
         },
         {
           type: "p",
-          text: "The design work is in the choosing. A model gives you a hundred plausible people; the film only works if each one feels like someone you'd pass on the street, and if the shoe is unmistakably a Camper in every frame.",
+          text: "AI gives you a hundred believable people. The job is picking the one you'd pass on the street, in a shoe that's unmistakably Camper.",
         },
         {
           // The choosing, made visible: the rejects for one person next
@@ -197,7 +214,7 @@ export const camper: Project = {
       blocks: [
         {
           type: "p",
-          text: "The sentence was the tagline: everyone is equal in their feet. Every time a shot drifted, it was because I had lost it, not because the model was wrong. Generative tools reward the same thing a real shoot does: knowing what you want before anything is generated, and being ruthless with everything that isn't it.",
+          text: "The sentence was the tagline: everyone is equal in their feet. Every time a shot drifted, it was because I had lost it, not because the model was wrong.",
         },
       ],
     },

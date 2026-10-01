@@ -69,7 +69,7 @@ export const localpal: Project = {
   title: "LocalPal",
   tagline: "Finding and organising the plans a city doesn't show you.",
   summary:
-    "A map app for young adults in European cities, to find the small, niche things to do and the people to do them with. Research, concept, brand, design system and a working prototype, all done on my own.",
+    "A map app for finding the small plans a city doesn't show you, and the people to do them with. Research, brand, design and a working prototype, all on my own.",
   meta: [
     {
       label: "Fields",
@@ -100,11 +100,11 @@ export const localpal: Project = {
       blocks: [
         {
           type: "p",
-          text: "LocalPal is the app for young adults in European cities who want to do things, not just go out. The small climbing session, the running club, the gallery opening nobody posts about. It puts all of that on one map, and it puts the people going on the same map, so finding the plan and finding the company happen in one place.",
+          text: "LocalPal is a map for young adults in European cities who want to do things, not just go out: the small climbing session, the running club, the gallery opening nobody posts about. The plans and the people going are on the same map.",
         },
         {
           type: "lede",
-          text: "The research found the moment: around week nine in a new city, the welcome runs out and people start wanting specific things. Nothing serves that moment. LocalPal is built for it.",
+          text: "Around week nine in a new city, the welcome runs out and people want something specific. Nothing serves that moment. LocalPal is built for it.",
         },
       ],
     },
@@ -115,7 +115,7 @@ export const localpal: Project = {
       blocks: [
         {
           type: "p",
-          text: "Young adults in European cities are going out differently. Clubs are closing (the UK lost over a third of its nightclubs in four years), gyms and running clubs have never been fuller, and 35% of Europeans feel lonely at least some of the time. A new kind of going out has grown from this: small, niche activities, each with a handful of people, that together weigh more than the mass offer.",
+          text: "Young adults are going out differently: fewer clubs, more running clubs, more small plans with a handful of people.",
         },
         {
           type: "figure",
@@ -129,7 +129,7 @@ export const localpal: Project = {
         },
         {
           type: "p",
-          text: "The catch is that there is no concrete place to find any of it. Friends, Instagram and Google Maps cover the popular bars and the big concerts; the climbing session on Thursday lives in a WhatsApp group you're not in. The platforms that tried to fix it either turned into dating apps, turned semi-professional, or started charging and lost their people. In the interviews, nobody named a single one of them.",
+          text: "The catch: there's nowhere to find them. Instagram and Google Maps cover the big bars; the climbing session on Thursday lives in a WhatsApp group you're not in. The apps that tried turned into dating apps or businesses. In the interviews, nobody named a single one of them.",
         },
         {
           type: "figure",
@@ -151,7 +151,7 @@ export const localpal: Project = {
       blocks: [
         {
           type: "p",
-          text: "Before talking to anyone I went through 3,993 Reddit posts from people in fifteen city and hobby communities, and coded the 526 that mattered, to know what to ask. Then six long interviews: five Erasmus students in four countries and a volunteer from a local buddy programme, each asked about the last time they did something, so I'd get stories rather than opinions.",
+          text: "First I read thousands of Reddit posts to learn what to ask. Then six long interviews with people who had just moved abroad, about the last time they did something.",
         },
         {
           type: "bento",
@@ -164,11 +164,7 @@ export const localpal: Project = {
         },
         {
           type: "p",
-          text: "Three things came out that changed the project. People never think they have a coordination problem, they think the plan was bad. Meeting strangers worries them in very specific ways: whether people show up, how exposed you feel posting alone, and whether it turns into a dating app. And the one that changed it most: nobody needs this in their first weeks.",
-        },
-        {
-          type: "p",
-          text: "The first month in a new city is covered. Welcome weeks, flatmate dinners, the big bars; everyone is new and everyone is available, and an app for niche plans has nothing to add. Somewhere between week six and week twelve that runs out. The novelty wears off, the friend group has settled, and people start wanting the specific things: a climbing partner, a small gallery show, a run on Sunday. That is the moment nothing serves.",
+          text: "Three things came out. People blame the plan, never the coordination. Meeting strangers worries them in very specific ways. And nobody needs this in their first weeks.",
         },
         {
           type: "figure",
@@ -183,7 +179,7 @@ export const localpal: Project = {
         },
         {
           type: "p",
-          text: "I call it the relevance curve. It's a model, not a measurement, and it decided more than any other finding. It ruled out competing at arrival, when the app would lose to the welcome week. And it created the product's hardest problem: LocalPal has to be signed up for in week one, through the universities and student networks, and still be on the phone in week nine. Most of the decisions that follow come from that.",
+          text: "I call it the relevance curve. It means LocalPal has to be signed up for in week one, and still be on your phone in week nine.",
         },
       ],
     },
@@ -194,37 +190,22 @@ export const localpal: Project = {
       blocks: [
         {
           type: "p",
-          text: "An app where the plans and the people are on the same map. Venues and organisations post their events, so there's something to do from day one; people post their own plans, which is why you stay. Five decisions, each answering a way the apps before it failed, each with its cost:",
+          text: "Venues post their events, so there's something to do from day one; people post their own plans, which is why you stay. Five rules, each learned from an app that failed:",
         },
         {
           type: "list",
           style: "numbered",
           items: [
-            {
-              title: "Venues fill the map from day one.",
-              body: "A new map starts empty, and an empty map is uninstalled. The cost: the first map is commercial, and people's own plans have to outgrow it.",
-            },
-            {
-              title: "Anyone can propose a plan.",
-              body: "Meetup and Luma turned semi-professional once organisers approved who came. The cost: no gatekeeper, so trust has to come from somewhere else.",
-            },
-            {
-              title: "Groups, never one-to-one.",
-              body: "Every interviewee worried it would turn into a dating app, and Nomadtable did. Every plan has a minimum size. The cost: a plan for two isn't possible.",
-            },
-            {
-              title: "Verifying is a sign you'll show up.",
-              body: "“People say they go and then they don't.” A university email or a QR scanned at an event, never a bank-style ID check, which young users abandon. The cost: weaker proof, so it's offered, not forced.",
-            },
-            {
-              title: "Free between people.",
-              body: "Couchsurfing's 2020 paywall and Timeleft's subscription lost their people. Money comes only where paying is already normal, a ticket or a gym. The cost: the business depends on venues and universities.",
-            },
+            { title: "Venues fill the map.", body: "So it's never empty on day one." },
+            { title: "Anyone can propose a plan.", body: "No organiser deciding who gets in." },
+            { title: "Groups, never one-to-one.", body: "So it can't turn into a dating app." },
+            { title: "Verifying means you'll show up.", body: "A uni email or a QR at an event, never a bank-style check." },
+            { title: "Free between people.", body: "Money only where it's already normal: a ticket, a gym." },
           ],
         },
         {
           type: "p",
-          text: "The storyboard follows Marco, six weeks into an Erasmus in Madrid, from wanting to do something to doing it.",
+          text: "The storyboard follows Marco, six weeks into an Erasmus in Madrid.",
         },
         {
           type: "bento",
@@ -255,7 +236,7 @@ export const localpal: Project = {
       blocks: [
         {
           type: "p",
-          text: "The brand idea is the connector: LocalPal puts people in touch with their city and with each other, and it talks like a friend with good judgement. Its line is “Stop scrolling. Start showing up.” The blue comes from the web link, the colour of connection (and quietly, the European blue). The first moodboard was much more angular, but on a phone hard shapes read cold, so it moved toward soft shapes, stickers and things that are slightly tilted.",
+          text: "It talks like a friend with good judgement, and its blue is the colour of a web link: connection. The first moodboard was angular; on a phone that read cold, so it went soft, with stickers and things slightly tilted.",
         },
         {
           type: "bento",
@@ -268,7 +249,7 @@ export const localpal: Project = {
         },
         {
           type: "p",
-          text: "The design system is a set of rules more than screens: depth of blue for hierarchy, white for what you can tap, squircle corners, and one motion personality with one rule: animate what you touch, never what the system reports. A pin springs when you press it; a progress bar never bounces, because a bounce would lie about where it is.",
+          text: "One rule for motion: animate what you touch, never what the system reports. A bouncing progress bar would lie.",
         },
         {
           type: "bento",
@@ -286,14 +267,10 @@ export const localpal: Project = {
       label: "Solution",
       heading: "Everything happens on the map",
       blocks: [
+        { type: "subhead", text: "01 · The map is the feed" },
         {
           type: "p",
-          text: "How the decisions show up in the app, each as it works in the prototype, and at the end, the loop that answers week nine.",
-        },
-        { type: "subhead", text: "01 · The map is the feed (decision 1: venues fill it)" },
-        {
-          type: "p",
-          text: "The map is never gone. Lists are sheets laid over it that pull down to it, and pins and cards turn into each other when you touch them, so you never lose where you are. Zoom out and the city gathers into a count; zoom in and the pins come apart.",
+          text: "No list to scroll. Sheets sit on the map and pull down to it. Zoom out and the city gathers into a count.",
         },
         {
           type: "bento",
@@ -307,7 +284,7 @@ export const localpal: Project = {
         { type: "subhead", text: "02 · Search in a sentence" },
         {
           type: "p",
-          text: "“I want something chill tonight” works, because you have a mood and a moment, not a keyword. The sentence turns into filters you can see, and every result says why it fits.",
+          text: "“I want something chill tonight” works, because you have a mood, not a keyword. Every result says why it fits.",
         },
         {
           type: "bento",
@@ -317,10 +294,10 @@ export const localpal: Project = {
             cell(7, 7, lp("search-sheet", "bare", "The sentence becomes Chill and Today filters, and each best match says why it fits: “Zero pressure, all mellow”.", { aspect: 716 / 700 })),
           ],
         },
-        { type: "subhead", text: "03 · Going together (decision 3: groups, never one-to-one)" },
+        { type: "subhead", text: "03 · Going together" },
         {
           type: "p",
-          text: "Big venue events show the plans of people going, so you join someone's plan rather than an anonymous event of 62 people.",
+          text: "Big events show the small plans of people going, so you join someone's plan, not an anonymous crowd of 62.",
         },
         {
           type: "bento",
@@ -329,10 +306,10 @@ export const localpal: Project = {
             phone(12, 8, "venue", "Opening Rita's, then its live music night, then the plans of the people going together."),
           ],
         },
-        { type: "subhead", text: "04 · Showing up (decision 4: a sign you'll show up)" },
+        { type: "subhead", text: "04 · Showing up" },
         {
           type: "p",
-          text: "Verifying is a university email and a code, offered at the moment you want in, never forced. Then, on the day, you drag to confirm and see who else has. Only the confirmed ones show, which is the answer to “people say they go and then they don't”.",
+          text: "Verify with a university email, only when you want in. On the day, slide to confirm and see who else did.",
         },
         {
           type: "bento",
@@ -345,7 +322,7 @@ export const localpal: Project = {
         { type: "subhead", text: "05 · Onboarding you play" },
         {
           type: "p",
-          text: "Interests are bubbles you pick and stickers that build your profile as a collage, and then the camera flies out of the illustrated city into the real map, onto your first plan.",
+          text: "Pick interests as bubbles; each drops a sticker on your profile. Then the camera flies out of the toy city into the real map.",
         },
         {
           type: "bento",
@@ -355,10 +332,10 @@ export const localpal: Project = {
             phone(6, 7, "onboarding-flythrough", "Allowing location: the camera flies from the toy city into the real map and the tour starts."),
           ],
         },
-        { type: "subhead", text: "06 · The loop (the answer to week nine)" },
+        { type: "subhead", text: "06 · The loop" },
         {
           type: "p",
-          text: "The app has to be opened before it's needed. In the service blueprint every plan closes with a check-in, “did you go?” with no penalty for no, and “want to go again?”, and each answer tunes what the map shows you. By week nine it already knows what you'd go to. It's designed, not built: the prototype stops at the plan.",
+          text: "The app has to be opened before it's needed. After every plan: did you go? Want to go again? By week nine, the map knows you. Designed, not built yet.",
         },
         {
           type: "figure",
@@ -372,7 +349,7 @@ export const localpal: Project = {
         },
         {
           type: "p",
-          text: "And the small things nobody asks for: the edge of the screen you can pull to zoom with one thumb, the profile that leads with a QR to add people you've just met.",
+          text: "And the small things: pull the screen's edge to zoom with one thumb; your profile leads with a QR for the people you just met.",
         },
         {
           type: "bento",
@@ -391,19 +368,15 @@ export const localpal: Project = {
       blocks: [
         {
           type: "p",
-          text: "When I started I thought the product would be the easy part and the thesis the hard one. It was the other way round: the research gave me the decisions, but the product only became real when I stopped writing about it and built it, and most of what I'm proud of, the map, the slider, the onboarding, only exists because I could code it myself.",
+          text: "I thought the thesis would be the hard part. It was the product, and it only became real when I stopped writing about it and built it.",
         },
         {
           type: "p",
-          text: "The prototype has never been in a stranger's hands, and the riskiest bet is the one everything rests on: that seeing who has confirmed makes people show up. Six interviews found the pattern; they can't prove it. The first test I'd run is the slider with real plans: of the people who say they'll go, how many confirm on the day, and how many of those arrive.",
+          text: "It's never been in a stranger's hands. The riskiest bet is that seeing who confirmed makes people show up. The first test: of those who say they'll go, how many confirm, and how many arrive.",
         },
         {
           type: "p",
-          text: "What I'm most proud of is that the app doesn't feel like a research project. It feels like something you'd want on your phone.",
-        },
-        {
-          type: "p",
-          text: "Any questions? Write me, I love talking about this one.",
+          text: "What I'm proudest of: it doesn't feel like a research project. It feels like something you'd want on your phone.",
         },
       ],
     },
