@@ -24,7 +24,7 @@ import type { OpeningProps } from "./openings";
  */
 
 const CSS = `
-.co { position: relative; height: min(var(--cs-vh, 100dvh), 75cqw); margin: 0 calc(-1 * var(--cs-gutter)); overflow: hidden; background: #000; }
+.co { position: relative; height: min(var(--cs-vh, 100dvh), 56.25cqw); margin: 0 calc(-1 * var(--cs-gutter)); overflow: hidden; background: #000; }
 /* The tape arrow, a size under the landing's (whose least, 40px, would
    hold it there on most windows). It is the film's company, not the
    fullscreen film's. */

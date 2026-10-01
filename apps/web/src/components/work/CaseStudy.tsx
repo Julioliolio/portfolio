@@ -126,7 +126,7 @@ const CSS = `
 .cs-bar { display: inline-flex; align-items: center; gap: .5em; margin-bottom: calc(2 * var(--ty-u)); }
 @media (min-width: 701px) { .cs-bar, .cs-toc, .cs-top:not(:has(.cs-hero)) { display: none; } }
 .cs-toc { margin-top: calc(2 * var(--ty-u)); }
-.cs-opening-hold { height: min(var(--cs-vh, 100dvh), 75cqw); background: #000; }
+.cs-opening-hold { height: min(var(--cs-vh, 100dvh), 56.25cqw); background: #000; }
 
 .cs-body { padding-bottom: calc(8 * var(--ty-u)); }
 .cs-section { margin-top: calc(3 * var(--ty-u)); scroll-margin-top: calc(2 * var(--ty-u)); }

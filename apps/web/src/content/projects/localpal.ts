@@ -72,10 +72,11 @@ export const localpal: Project = {
       label: "Fields",
       value: "UX research, product design, interaction design, brand design",
     },
-    { label: "Year", value: "2026" },
+    { label: "When", value: "Mar–Jun 2026, solo" },
     { label: "Role", value: "Research, concept, brand, UI and prototype" },
-    // Draft, a guess; Julio to correct.
-    { label: "Tools", value: "Figma, Claude" },
+    // Draft from the repo (React + MapLibre, a CLAUDE.md in the
+    // prototype); Julio to confirm the wording.
+    { label: "Tools", value: "Figma; React and MapLibre, built with Claude Code" },
     { label: "Live", value: "localpal.co", href: "https://localpal.co" },
   ],
   hero: {
@@ -99,40 +100,8 @@ export const localpal: Project = {
           text: "LocalPal is the app for young adults in European cities who want to do things, not just go out. The small climbing session, the running club, the gallery opening nobody posts about. It puts all of that on one map, and it puts the people going on the same map, so finding the plan and finding the company happen in one place.",
         },
         {
-          type: "quote",
-          text: "A city is much more than its obvious plans. The best ones don't exist until someone makes them happen. LocalPal is where they happen.",
-          source: "The brand claim",
-        },
-        {
-          // The reel: the prototype in use, recorded from it, silent.
-          type: "bento",
-          row: 1,
-          cells: [
-            phone(12, 7, "reel", "Thirty seconds of the prototype: searching in a sentence, a venue's plans, confirming on the day, picking interests, flying into the map"),
-          ],
-        },
-
-      ],
-    },
-    {
-      id: "scope",
-      label: "Scope",
-      heading: "Four months, one person, a thesis and an app",
-      blocks: [
-        {
-          type: "p",
-          text: "The project was my master's thesis at UDIT, so the research, the writing and the defence ran alongside the design work, and toward the end everything was happening at once.",
-        },
-        {
-          type: "timeline",
-          months: ["Mar", "Apr", "May", "Jun"],
-          phases: [
-            { label: "Interviews and analysis", from: 0, to: 2 },
-            { label: "Concept and decisions", from: 1, to: 2 },
-            { label: "Brand and design system", from: 1, to: 3 },
-            { label: "Screens and flows", from: 2, to: 4 },
-            { label: "React prototype", from: 2, to: 4 },
-          ],
+          type: "lede",
+          text: "The research found the moment: around week nine in a new city, the welcome runs out and people start wanting specific things. Nothing serves that moment. LocalPal is built for it.",
         },
       ],
     },
@@ -210,14 +179,14 @@ export const localpal: Project = {
         },
         {
           type: "p",
-          text: "I call it the relevance curve, and it decided more than any other finding. It ruled out competing at arrival, when the app would lose to the welcome week. And it created the product's hardest problem: LocalPal has to be signed up for in week one, through the universities and student networks, and still be on the phone in week nine. Most of the decisions that follow come from that.",
+          text: "I call it the relevance curve. It's a model, not a measurement, and it decided more than any other finding. It ruled out competing at arrival, when the app would lose to the welcome week. And it created the product's hardest problem: LocalPal has to be signed up for in week one, through the universities and student networks, and still be on the phone in week nine. Most of the decisions that follow come from that.",
         },
       ],
     },
     {
       id: "concept",
       label: "Concept",
-      heading: "The proposed solution",
+      heading: "Plans and people on the same map",
       blocks: [
         {
           type: "p",
@@ -248,10 +217,6 @@ export const localpal: Project = {
               body: "Couchsurfing's 2020 paywall and Timeleft's subscription lost their people. Money comes only where paying is already normal, a ticket or a gym. The cost: the business depends on venues and universities.",
             },
           ],
-        },
-        {
-          type: "p",
-          text: "Three people to design for, one per problem: Giovanna, who has plenty of plans and keeps doing the same ones; Martim, who wants to start climbing and doesn't know where; and Beatrice, who doesn't feel safe joining strangers.",
         },
         {
           type: "p",
@@ -298,22 +263,13 @@ export const localpal: Project = {
         },
         {
           type: "p",
-          text: "The design system is a set of rules more than screens: depth of blue for hierarchy, white for what you can tap, squircle corners, and one motion personality with one rule. Animate what you touch, never what the system reports.",
+          text: "The design system is a set of rules more than screens: depth of blue for hierarchy, white for what you can tap, squircle corners, and one motion personality with one rule: animate what you touch, never what the system reports. A pin springs when you press it; a progress bar never bounces, because a bounce would lie about where it is.",
         },
         {
           type: "bento",
           row: 1,
           cells: [
             pic(12, 6, "fig-brand-colours", 16 / 9, "The colours: the brand blue, its deep and pressed shades, lavender and ink; and the map, inverted: land, water, park, road.", "#f4f2ee"),
-          ],
-        },
-        {
-          type: "bento",
-          row: 1,
-          cells: [
-            { ...bare(4, 2, "ds-press", 4 / 3, "#f0f3fd", "Press: a tile squishes on touch and springs back."), label: "Press · pins, buttons" },
-            { ...bare(4, 2, "ds-snap", 720 / 374, "#f0f3fd", "Snap: a tile clicks into its new place with a small overshoot."), label: "Snap · glyphs, the slider" },
-            { ...bare(4, 2, "ds-inform", 4 / 3, "#f0f3fd", "Inform: a progress line fills with no bounce at all."), label: "Inform · progress, never bounces" },
           ],
         },
       ],
@@ -325,9 +281,9 @@ export const localpal: Project = {
       blocks: [
         {
           type: "p",
-          text: "Some of the things that make LocalPal different from the apps that came before it, each as it works in the prototype.",
+          text: "How the decisions show up in the app, each as it works in the prototype. The answer to week nine lives in the service design more than in one screen: in the blueprint, every plan ends with a check-in (“did you go?”, then “want to go again?”) that tunes what the map shows you next, so the app earns a reason to be opened before you need it.",
         },
-        { type: "subhead", text: "01 · The map is the feed" },
+        { type: "subhead", text: "01 · The map is the feed (decision 1: venues fill it)" },
         {
           type: "p",
           text: "The map is never gone. Lists are sheets laid over it that pull down to it, and pins and cards turn into each other when you touch them, so you never lose where you are. Zoom out and the city gathers into a count; zoom in and the pins come apart.",
@@ -350,10 +306,11 @@ export const localpal: Project = {
           type: "bento",
           row: 1,
           cells: [
-            phone(12, 7, "search", "Typing “I want something chill tonight”: it becomes Chill, Music and Today filters, and the best matches each say why they fit."),
+            phone(5, 8, "search", "Typing “I want something chill tonight” on the map."),
+            cell(7, 8, lp("search-sheet", "bare", "The sentence becomes Chill and Today filters, and each best match says why it fits: “Zero pressure, all mellow”.", { aspect: 716 / 700 })),
           ],
         },
-        { type: "subhead", text: "03 · Going together" },
+        { type: "subhead", text: "03 · Going together (decision 3: groups, never one-to-one)" },
         {
           type: "p",
           text: "Big venue events show the plans of people going, so you join someone's plan rather than an anonymous event of 62 people.",
@@ -362,10 +319,11 @@ export const localpal: Project = {
           type: "bento",
           row: 1,
           cells: [
-            phone(12, 7, "venue", "Opening Rita's, then its live music night, then the plans of the people going together."),
+            phone(5, 8, "venue", "Opening Rita's, then its live music night, then the plans of the people going together."),
+            cell(7, 8, lp("going-together", "bare", "Going together: four small plans inside one big event, each with its host and how many are going.", { aspect: 716 / 900 })),
           ],
         },
-        { type: "subhead", text: "04 · The confirm slider" },
+        { type: "subhead", text: "04 · The confirm slider (decision 4: a sign you'll show up)" },
         {
           type: "p",
           text: "On the day, drag to confirm and you see who else has. Only the confirmed ones show, which is the answer to “people say they go and then they don't”.",

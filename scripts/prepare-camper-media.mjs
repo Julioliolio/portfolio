@@ -2,7 +2,7 @@
  * Camper's page media, cut from the film's 1080p master
  * (docs/media-plan.md): the cast as short loops, one per person; the
  * still and the shot for "board → still → shot", on a moment the shot
- * visibly moves (the kick at the crates); and a keeper still for the
+ * visibly moves (a hand reaching down to press the velcro shut); and a keeper still for the
  * choosing, of someone the cast grid doesn't show.
  * Times are the film's, between its cuts (scene changes at 4.7, 7.6,
  * 10.5, 15.0, 18.9, 23.1, 27.4, 30.2, 33.1, 35.9, 38.8, 41.6, 46.9, 50.7,
@@ -23,12 +23,9 @@ const OUT = new URL("../apps/web/public/media/camper/", import.meta.url).pathnam
 
 // One person each, in the film's order.
 const CAST = [
-  ["velcro", 1.0],
   ["heels", 7.9],
   ["broom", 11.2],
   ["reader", 23.6],
-  ["market", 30.5],
-  ["kitchen", 36.2],
   ["sofa", 39.0],
   ["beach", 47.2],
   ["step", 51.0],
@@ -38,8 +35,8 @@ const CAST = [
 const made = [];
 for (const [name, start] of CAST)
   made.push(await loopClip({ src: SRC, start, dur: 2.8, width: 768, out: `${OUT}cast-${name}.mp4` }));
-made.push(await loopClip({ src: SRC, start: 33.2, dur: 2.6, fade: 0.3, width: 1280, out: `${OUT}shot-kick.mp4` }));
-made.push(await still({ src: SRC, at: 33.3, width: 1280, out: `${OUT}still-kick.webp` }));
+made.push(await loopClip({ src: SRC, start: 0.3, dur: 3.6, fade: 0.4, width: 1280, out: `${OUT}shot-velcro.mp4` }));
+made.push(await still({ src: SRC, at: 0.4, width: 1280, out: `${OUT}still-velcro.webp` }));
 made.push(await still({ src: SRC, at: 28.6, width: 1280, out: `${OUT}still-ledge.webp` }));
 
 for (const p of made) console.log(`${kb(p).toString().padStart(5)} KB  ${p.slice(OUT.length)}`);

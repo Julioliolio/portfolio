@@ -56,7 +56,7 @@ export const camper: Project = {
         },
         {
           type: "p",
-          text: "Three rules make that true on screen. The camera stays at shin height. It never shows a face, so no one is the star. And every shot shares one light and one grain, a sunny afternoon on 35mm, so the cuts feel like one street. It ends with the shoes off: bare feet in the water beside a pair of Campers, the one frame where everyone really is equal.",
+          text: "Three rules make that true on screen. The camera stays at shin height. It never shows a face, so no one is the star. And every shot shares one light and one grain, a sunny afternoon on 35mm, so the cuts feel like one street. Its last shots take the shoes off, bare feet in the water and then in a doorway, a pair of Campers beside them: the frames where everyone really is equal.",
         },
         {
           // The cast, one loop per person, cut from the film
@@ -65,14 +65,11 @@ export const camper: Project = {
           type: "bento",
           row: 2.25,
           cells: [
-            cast("beach", 8, 2, "Bare feet at the water's edge, a pair of red Camper sandals beside them, the film's last shot"),
-            cast("velcro", 4, 1, "A kid's hand pressing the velcro of a white sneaker shut"),
+            cast("beach", 8, 2, "Bare feet at the water's edge, a pair of red Camper sandals beside them"),
             cast("heels", 4, 1, "Black heels at the foot of a café bar"),
-            cast("broom", 4, 1, "Green sneakers and a broom on a terrace"),
             cast("reader", 4, 1, "Green suede sneakers under someone reading on the pavement"),
+            cast("broom", 4, 1, "Green sneakers and a broom on a terrace"),
             cast("sofa", 4, 1, "Black sandals, feet up on a sofa by an open window"),
-            cast("market", 4, 1, "Sandals at a market stall"),
-            cast("kitchen", 4, 1, "Black shoes on a tiled kitchen floor"),
             cast("step", 4, 1, "Two kids' sneakers on a doorstep"),
           ],
         },
@@ -93,15 +90,15 @@ export const camper: Project = {
             {
               kind: "slot",
               w: 12,
-              h: 2,
+              h: 4,
               awaits: "photo",
-              need: "The whole storyboard as one strip, every frame in order: the film's structure at a glance.",
+              need: "The whole storyboard in two or three rows, every frame in order: the film's structure at a glance.",
             },
           ],
         },
         {
-          // Board → still → shot, for one moment of the film: the kick at
-          // the crates, where the shot visibly does what the still can't.
+          // Board → still → shot, for one moment of the film: the velcro,
+          // where the shot visibly does what the still can't.
           type: "bento",
           row: 2.25,
           cells: [
@@ -111,7 +108,7 @@ export const camper: Project = {
               h: 1,
               awaits: "photo",
               label: "Board",
-              need: "The storyboard frame for the kick at the crates.",
+              need: "The storyboard frame for the velcro.",
             },
             {
               kind: "shot",
@@ -119,9 +116,9 @@ export const camper: Project = {
               h: 1,
               label: "Still",
               frame: "bare",
-              src: "/media/camper/still-kick.webp",
+              src: "/media/camper/still-velcro.webp",
               aspect: 16 / 9,
-              alt: "The still: someone in shorts and grey trainers, a stack of crates on a pallet behind",
+              alt: "The still: a kid's hand reaching down to a white sneaker with coloured velcro straps",
             },
             {
               kind: "shot",
@@ -129,22 +126,10 @@ export const camper: Project = {
               h: 1,
               label: "Shot",
               frame: "bare",
-              src: "/media/camper/shot-kick.mp4",
-              poster: "/media/camper/shot-kick.webp",
+              src: "/media/camper/shot-velcro.mp4",
+              poster: "/media/camper/shot-velcro.webp",
               aspect: 16 / 9,
-              alt: "The shot: the same moment moving, a leg swinging back to kick the crates",
-            },
-          ],
-        },
-        {
-          type: "bento",
-          cells: [
-            {
-              kind: "slot",
-              w: 12,
-              h: 2,
-              awaits: "photo",
-              need: "The Flora canvas: one branch close, from prompt to the still that became a shot, with the whole canvas small beside it for scale.",
+              alt: "The shot: the hand presses the velcro shut and the foot settles into the shoe",
             },
           ],
         },
@@ -175,6 +160,29 @@ export const camper: Project = {
               src: "/media/camper/still-ledge.webp",
               aspect: 16 / 9,
               alt: "The one that was kept: black trousers and polished black shoes, someone sitting on a ledge with a phone",
+            },
+          ],
+        },
+        {
+          // The brand's question: how the shoe stayed a Camper.
+          type: "bento",
+          row: 2.25,
+          cells: [
+            {
+              kind: "slot",
+              w: 8,
+              h: 1,
+              awaits: "photo",
+              label: "The shoe",
+              need: "A Camper catalogue shot, the generated frame of the same shoe, and a generation where the sole or strap went wrong, with one line on how it was kept right.",
+            },
+            {
+              kind: "slot",
+              w: 4,
+              h: 1,
+              awaits: "photo",
+              label: "Flora",
+              need: "One branch of the Flora canvas, prompt to the still that became a shot.",
             },
           ],
         },

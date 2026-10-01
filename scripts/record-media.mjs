@@ -13,7 +13,7 @@
 import { mkdirSync } from "node:fs";
 import { chromium } from "playwright";
 import { spawnSync } from "node:child_process";
-import { kb, loopClip, poster } from "./lib/media.mjs";
+import { kb, loopClip } from "./lib/media.mjs";
 import { TOUCH_DOT, clayCursor, encode, screencast } from "./lib/record.mjs";
 
 const BASE = process.env.BASE ?? "http://localhost:3000/portfolio";
@@ -163,50 +163,6 @@ async function walkOnboarding(f, until) {
 }
 
 /**
- * A box on LocalPal's design-system page (…?ds), recorded while it is
- * played with. `find` returns the crop (CSS px, viewport) once the box
- * is on screen; `act` plays it.
- */
-function ds(name, { find, act, width = 720, start = 0.2, tail = 0.2 }) {
-  return {
-    name: `localpal/${name}`,
-    async run(browser) {
-      const page = await open(browser, { width: 1440, height: 900 }, TOUCH_DOT, 3);
-      await page.goto(`${BASE}/demos/localpal/index.html?ds`);
-      await page.waitForTimeout(2000);
-      const crop = await find(page);
-      await page.waitForTimeout(800);
-      const f = fingers(page);
-      const rec = await screencast(page, () => act(f, crop));
-      await page.close();
-      const master = await encode(rec, { out: `${MASTERS}localpal-${name}.mp4`, crop });
-      return loopClip({ src: master, start, dur: rec.t1 - rec.t0 - start - tail, fade: 0, width, out: `${MEDIA}localpal/${name}.mp4` });
-    },
-  };
-}
-
-/** A motion tile's stage (the part above its caption), on screen. */
-async function motionTile(page, title, full = false) {
-  const tile = page.locator("article.dsw-motion-tile", { has: page.getByText(title, { exact: true }) }).first();
-  await tile.scrollIntoViewIfNeeded();
-  await page.waitForTimeout(600);
-  const t = await tile.boundingBox();
-  const m = await tile.locator(".dsw-motion-tile-meta").boundingBox();
-  // Its middle, 4:3: the tile is wide and the shape small.
-  const h = m.y - t.y - 2;
-  const w = full ? t.width - 2 : Math.min(t.width - 2, (h * 4) / 3);
-  return [w, h, t.x + (t.width - w) / 2, t.y + 1].map(Math.round);
-}
-
-/** Tap the middle of a crop, `n` times, `gap` ms apart. */
-async function tapCrop(f, [w, h, x, y], n = 3, gap = 1700) {
-  for (let i = 0; i < n; i++) {
-    await f.tap(x + w / 2, y + h / 2);
-    await f.wait(gap);
-  }
-}
-
-/**
  * Convertr, the whole window (…/demos/convertr/), at 1280×800 with the
  * clay cursor. The X clips Julio picked are served to the page from
  * source-assets/convertr-footage/ under /__footage/, so a "file" can be
@@ -278,7 +234,7 @@ const JOBS = [
   stage("venue-pin", { aspect: "4x5", bg: "EFE9E1", seconds: 9.4, boxH: 400, dpr: 5, zoom: 2.6, width: 720 }),
   stage("bubbles", { aspect: "4x5", bg: "F4EFE7", seconds: 9, boxH: 560, dpr: 3 }),
   // Tight on the card, and only the drag and the list opening.
-  stage("rsvp", { aspect: "4x5", bg: "EFE9E1", seconds: 9, boxH: 460, dpr: 4, zoom: 1.35, start: 0.4, posterAt: 1.6 }),
+  stage("rsvp", { aspect: "4x5", bg: "EFE9E1", seconds: 9, boxH: 460, dpr: 4, zoom: 1.12, start: 0.4, posterAt: 1.6 }),
   stage("locate", { aspect: "1x1", bg: "ECEEF2", seconds: 6, boxH: 360, dpr: 5, zoom: 2.2, cy: 0.52, width: 640 }),
   phone("onboarding-interests", "onboarding", {
     posterAt: 5.5,
@@ -371,34 +327,11 @@ const JOBS = [
       await f.wait(2600);
     },
   }),
-  ds("ds-press", { find: (p) => motionTile(p, "Press"), act: (f, c) => tapCrop(f, c) }),
-  // Snap slides the tile across: the whole tile, or it leaves the frame.
-  ds("ds-snap", { find: (p) => motionTile(p, "Snap", true), act: (f, c) => tapCrop(f, c) }),
-  ds("ds-inform", { find: (p) => motionTile(p, "Inform"), act: (f, c) => tapCrop(f, c, 2, 2600) }),
 
 ];
 
 JOBS.push(
-  // The whole idea in one take: the empty box, a file dropped, the
-  // settings, a format, convert, the bricks, the result stepping out.
-  desk("every-state", {
-    posterAt: 19,
-    act: async (f) => {
-      await f.wait(2600);
-      await dropFile(f, PORTRAIT, "clouds.mp4");
-      await f.wait(5200);
-      await press(f, "[title=Settings]");
-      await f.wait(1600);
-      await press(f, "[title='Output format']");
-      await f.wait(900);
-      await press(f, "text=GIF");
-      await f.wait(1400);
-      await press(f, "text=PROCESS");
-      await f.wait(5200);
-      await f.glide(700, 600, 600);
-      await f.wait(1200);
-    },
-  }),
+
   // The two shapes a video can give the app: portrait opens its
   // settings beside it, landscape below.
   desk("landscape-settings", {
@@ -431,9 +364,10 @@ JOBS.push(
     act: async (f) => {
       await f.wait(500);
       await dropFile(f, PORTRAIT, "clouds.mp4");
-      await f.wait(4600);
+      // Through the bricks to the box snapping to the video's shape.
+      await f.wait(7600);
     },
-    crop: async () => [880, 520, 200, 140],
+    crop: async () => [880, 660, 200, 70],
     width: 1100,
     posterAt: 1.2,
   }),
@@ -456,7 +390,8 @@ JOBS.push(
   // The result: the box steps out, chips on the corners; the download
   // dragged out of the window, the way the desktop app hands it over.
   desk("result-drag", {
-    posterAt: 5.5,
+    start: 3.6,
+    posterAt: 2,
     prep: async (f) => {
       await dropFile(f, PORTRAIT, "clouds.mp4");
       await f.wait(7000);
@@ -505,7 +440,7 @@ JOBS.push(
         const [a, z] = hs;
         const w = z[0] - a[0] + 120;
         // The timeline and a sliver of the video above it.
-        box = [w, w / 6, a[0] - 60, a[1] - w / 6 + 34].map(Math.round);
+        box = [w, w / 8, a[0] - 60, a[1] - w / 8 + 30].map(Math.round);
         await f.wait(300);
         await f.drag(a[0], a[1], a[0] + (z[0] - a[0]) * 0.28, a[1], 900);
         await f.wait(500);
@@ -563,8 +498,11 @@ JOBS.push(
         const c = await page.getByText(/expected size/i).first().boundingBox();
         // The width slider alone, and the expected-size chip alone: two
         // cells side by side, cut from the same seconds so they agree.
-        slider = [range.width + 40, 80, range.x - 20, range.y - 16].map(Math.round);
-        chip = [200, 110, c.x - 30, c.y - 30].map(Math.round);
+        // One strip, cause and effect together: the size chip on the
+        // video at its left, the width slider at its right.
+        const top = Math.min(c.y, range.y) - 14;
+        slider = [range.x + range.width + 20 - (c.x - 20), range.y + range.height / 2 + 26 - top, c.x - 20, top].map(Math.round);
+        chip = slider;
         await f.wait(300);
         await f.drag(range.x + range.width * 0.2, y, range.x + range.width * 0.62, y, 1300);
         await f.wait(900);
@@ -578,34 +516,20 @@ JOBS.push(
       const mw = Number(spawnSync("ffprobe", ["-v", "error", "-show_entries", "stream=width", "-of", "csv=p=0", master]).stdout);
       const px = (c) => c.map((v) => Math.round((v * mw) / 1280)).join(":");
       await loopClip({ src: master, start: 0, dur: tPick, fade: 0, width: 1200, crop: px(picker), posterAt: 1.6, out: `${MEDIA}convertr/format.mp4` });
-      await loopClip({ src: master, start: tPick - 0.2, dur: tSlide - tPick, fade: 0, width: 600, crop: px(chip), posterAt: 2, out: `${MEDIA}convertr/gif-size.mp4` });
-      return loopClip({ src: master, start: tPick - 0.2, dur: tSlide - tPick, fade: 0, width: 1600, crop: px(slider), posterAt: 2, out: `${MEDIA}convertr/gif-width.mp4` });
+      return loopClip({ src: master, start: tPick - 0.2, dur: tSlide - tPick, fade: 0, width: 1600, crop: px(slider), posterAt: 2, out: `${MEDIA}convertr/gif.mp4` });
     },
   },
 );
 
-// The reel: the phone takes back to back, a short dissolve between
-// each (silent for now — Julio, 2026-10-01). Run after the takes.
+// Close crops of two phone takes, where the whole phone is too small to
+// read in a cell: the search sheet (query, filters, why-it-fits rows) and
+// the venue's going-together list. Cut from the masters (2×, 780 wide);
+// run after the takes.
 JOBS.push({
-  name: "localpal/reel",
+  name: "localpal/crops",
   async run() {
-    const parts = ["search", "venue", "dayof", "onboarding-interests", "onboarding-flythrough"].map((n) => `${MEDIA}localpal/${n}.mp4`);
-    const durs = parts.map((p) => Number(spawnSync("ffprobe", ["-v", "error", "-show_entries", "format=duration", "-of", "csv=p=0", p]).stdout));
-    const X = 0.35;
-    let chain = "";
-    let acc = durs[0];
-    let last = "[0:v]";
-    for (let i = 1; i < parts.length; i++) {
-      const out = i === parts.length - 1 ? "[v]" : `[x${i}]`;
-      chain += `${last}[${i}:v]xfade=transition=fade:duration=${X}:offset=${(acc - X).toFixed(3)}${out};`;
-      acc += durs[i] - X;
-      last = out;
-    }
-    const out = `${MEDIA}localpal/reel.mp4`;
-    const r = spawnSync("ffmpeg", ["-v", "error", "-y", ...parts.flatMap((p) => ["-i", p]), "-filter_complex", chain.slice(0, -1), "-map", "[v]", "-an", "-c:v", "libx264", "-preset", "slow", "-crf", "26", "-pix_fmt", "yuv420p", "-movflags", "+faststart", out], { stdio: "inherit" });
-    if (r.status) throw new Error("reel failed");
-    await poster(out, 7);
-    return out;
+    await loopClip({ src: `${MASTERS}localpal-search.mp4`, start: 0.6, crop: "716:700:32:260", width: 716, fade: 0, posterAt: 8.5, out: `${MEDIA}localpal/search-sheet.mp4` });
+    return loopClip({ src: `${MASTERS}localpal-venue.mp4`, start: 4.4, dur: 3.2, crop: "716:900:32:680", width: 716, fade: 0, posterAt: 2.4, out: `${MEDIA}localpal/going-together.mp4` });
   },
 });
 

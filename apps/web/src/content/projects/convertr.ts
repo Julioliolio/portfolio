@@ -29,7 +29,7 @@ export const convertr: Project = {
   summary:
     "A desktop app that turns any video into a GIF, MP4, WebM, MOV, AVI, MKV or MP3. Drop it, trim it, drag the result out. Designed and built on my own, and the real interface runs on this page.",
   meta: [
-    { label: "Type", value: "Side project · 2026" },
+    { label: "Type", value: "Side project · spring 2026" },
     {
       label: "Fields",
       value: "Product design, interaction design, desktop, build",
@@ -59,18 +59,6 @@ export const convertr: Project = {
           type: "p",
           text: "Convertr takes any video, dropped in or pasted as a link, and gives you back a GIF, an MP4, a WebM or whatever you need, trimmed to the bit you wanted. I made it because I was doing this by hand every week for moodboards: online tools gave no control over size, frame rate or the exact cut, and Premiere turned a ten-second job into a project. [fill in — one line of use: how many files you've run through it since June.] It's also the first app I built with AI, and a bit of an experiment: could the interface keep an idea that would normally get simplified away in a handoff?",
         },
-        {
-          // Spring 2026 as the copy tells it: the design, the build, then
-          // the simulated engine that runs it on this page.
-          type: "timeline",
-          months: ["Mar", "Apr", "May", "Jun"],
-          phases: [
-            { label: "Design", from: 0, to: 1.5 },
-            { label: "Build", from: 1, to: 3 },
-            { label: "Web demo", from: 3, to: 4 },
-          ],
-          note: "A side project over a spring.",
-        },
       ],
     },
     {
@@ -87,8 +75,12 @@ export const convertr: Project = {
           type: "bento",
           row: 1,
           cells: [
-            cell(12, 4, cv("drop", "A file carried in and dropped on the empty box; a row of bricks loads it", 1100 / 650, { frame: "bare", fit: "contain" }), PAPER),
+            cell(12, 6, cv("drop", "A file carried in and dropped on the empty box; a row of bricks loads it, and the box snaps to the video's own shape", 1100 / 826, { frame: "bare", fit: "contain" }), PAPER),
           ],
+        },
+        {
+          type: "p",
+          text: "Open the settings and the box gives up a side to make room, cropping the video instead of shrinking it: a portrait video keeps its height and hands over its right, a landscape one hands over its bottom.",
         },
         {
           type: "figure",
@@ -101,31 +93,34 @@ export const convertr: Project = {
           },
         },
         {
-          type: "p",
-          text: "Open the settings and the box gives up a side to make room, cropping the video instead of shrinking it: a portrait video keeps its height and hands over its right, a landscape one hands over its bottom.",
-        },
-        {
           type: "bento",
           row: 1,
           cells: [
             cell(6, 4, cv("portrait-settings", "A vertical video dropped in; the settings open beside it", 1.6)),
             cell(6, 4, cv("landscape-settings", "A landscape video dropped in; the settings open below it", 1.6)),
+            {
+              kind: "slot",
+              w: 12,
+              h: 4,
+              awaits: "photo",
+              label: "Tried first",
+              need: "Two or three early layouts from the design file that didn't survive, with a line on why each one died.",
+            },
           ],
         },
         {
           type: "p",
-          text: "Press convert and it collapses into a bar with a row of little bricks carrying the progress. When the result is ready the box steps outward and three chips hang off the corners: output size, how much smaller it got, and download, which you drag.",
+          text: "Press convert and it collapses into a bar with a row of little bricks carrying the progress. When the result is ready the box steps outward and three chips hang off the corners: output size, how much it changed against the original, and download, which you drag.",
         },
         {
           type: "bento",
           row: 1,
           cells: [
-            cell(12, 3, cv("converting", "Convert pressed: the video collapses into a bar and pink bricks carry the progress across", 1100 / 306, { frame: "bare" })),
-            cell(12, 6, cv("result-drag", "Convert: the bricks run, the box steps out with chips on its corners, and the converted file is dragged out by its download chip", 1.25, { fit: "contain" }), PAPER),
+            cell(7, 6, cv("result-drag", "The last bricks land, the box steps out with chips on its corners, and the converted file is dragged out by its download chip", 1.25)),
             {
               kind: "slot",
-              w: 12,
-              h: 4,
+              w: 5,
+              h: 6,
               need: "In the desktop app: the result chip dragged out of Convertr and dropped into a Figma canvas, where the GIF starts playing.",
             },
           ],
@@ -155,20 +150,6 @@ export const convertr: Project = {
         {
           type: "p",
           text: "Everything else follows the box: one accent colour, a dotted paper grid, mono labels that scramble into place, and a little spring on anything you touch.",
-        },
-        {
-          type: "bento",
-          row: 1,
-          cells: [
-            {
-              kind: "slot",
-              w: 12,
-              h: 4,
-              awaits: "photo",
-              label: "Tried first",
-              need: "Two or three early layouts from the design file that didn't survive, with a line on why each one died.",
-            },
-          ],
         },
       ],
     },
@@ -201,20 +182,18 @@ export const convertr: Project = {
         },
         {
           type: "bento",
-          row: 1,
+          row: 0.5,
           cells: [
-            cell(12, 2, cv("trim", "The in handle dragged right and the out handle left on the timeline", 6, { frame: "bare" })),
-            cell(6, 3, cv("format", "The format picker opening, the cursor running down the list, GIF picked", 1200 / 660, { frame: "bare" })),
-            cell(6, 3, cv("gif-size", "The expected size on the video changing as the GIF's width is dragged", 600 / 330, { frame: "bare" })),
-            cell(12, 1, cv("gif-width", "The GIF width slider dragged from 640 up to 1252 pixels and back", 1600 / 150, { frame: "bare" })),
+            cell(12, 3, cv("trim", "The in handle dragged right and the out handle left on the timeline", 8, { frame: "bare" })),
+            cell(12, 2, cv("gif", "The GIF's width dragged from 640 to 1252 pixels and back; the expected size on the video follows", 1600 / 88, { frame: "bare", fit: "contain" }), PAPER),
+            cell(6, 7, cv("format", "The format picker opening, the cursor running down the list, GIF picked", 1200 / 660, { frame: "bare" })),
+            {
+              kind: "slot",
+              w: 6,
+              h: 7,
+              need: "Pasting an X link in the desktop app: yt-dlp fetches it and it lands in the box like a file.",
+            },
           ],
-        },
-        {
-          type: "field",
-          aspect: 16 / 9,
-          device: "laptop",
-          need: "the Convertr window on a laptop, on a soft neutral.",
-          screens: [cv("every-state", "Convertr on a laptop, going through every state: drop, settings, a format, convert, the result", 1.6)],
         },
       ],
     },

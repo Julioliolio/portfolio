@@ -94,6 +94,7 @@ function curve() {
   <text x="${x(16)}" y="${y(.9) - 40}" text-anchor="end" class="s">a climbing partner, a small show, a Sunday run</text>
   <path d="M${x(0)},${B + 128} v-12 H${x(5.5)} v12" fill="none" stroke="${C.muted}" stroke-width="2"/>
   <text x="${x(0)}" y="${B + 166}" class="s">sign-ups happen here: universities, ESN, arrival networks</text>
+  <text x="${x(16)}" y="${B + 166}" text-anchor="end" class="s">a model drawn from 6 interviews and 526 posts, not a measurement</text>
 </svg></div>`];
 }
 

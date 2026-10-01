@@ -55,7 +55,28 @@ export const BENTO_CSS = `
 .bn-laptop > .bn-screen { width: 100%; height: 100%; border-radius: 5px; overflow: hidden; }
 `;
 
+/**
+ * Each cell's span on a phone, where the bento is two columns: a cell
+ * half the grid or more (or a slot, for its words) takes both; a half
+ * cell that would sit alone on its row — before a wide one, or last —
+ * takes both too, so no row ends in a hole.
+ */
+function phoneSpans(cells: Cell[]) {
+  const spans = cells.map((c) => (c.w >= 6 || c.kind === "slot" ? 2 : 1));
+  let open = -1; // index of a half cell waiting for a partner
+  spans.forEach((s, i) => {
+    if (s === 1) open = open === -1 ? i : -1;
+    else if (open !== -1) {
+      spans[open] = 2;
+      open = -1;
+    }
+  });
+  if (open !== -1) spans[open] = 2;
+  return spans;
+}
+
 export function Bento({ cells, row = 2 }: { cells: Cell[]; row?: number }) {
+  const wm = phoneSpans(cells);
   return (
     <div className="cs-wide bn">
       <div
@@ -71,9 +92,7 @@ export function Bento({ cells, row = 2 }: { cells: Cell[]; row?: number }) {
               {
                 "--bn-w": cell.w,
                 "--bn-h": cell.h,
-                // A slot's words need the room; a cell half the grid or
-                // more stays wide.
-                "--bn-wm": cell.w >= 6 || cell.kind === "slot" ? 2 : 1,
+                "--bn-wm": wm[i],
                 // Its proportions on a phone, where rows are not shared.
                 "--bn-ar": `${cell.w} / ${cell.h * row}`,
                 "--bn-ground": cell.ground,
