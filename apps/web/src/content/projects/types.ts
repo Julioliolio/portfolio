@@ -34,6 +34,8 @@ export type Figure =
       /** A chart too fine to shrink: below this width (px) it keeps the
        *  width and scrolls sideways instead. */
       minWidth?: number;
+      /** On transparency, with edges of its own: no box behind it. */
+      plain?: boolean;
     }
   | {
       kind: "video";
@@ -119,6 +121,9 @@ export type Cell = {
   /** A small label in the cell's corner: what this one shows, where the
    *  cells only make sense named (Board / Still / Shot). */
   label?: string;
+  /** No cell at all: the picture already has its own edge (a drawing on
+   *  transparency, an app's own screen), so it sits on the paper. */
+  plain?: boolean;
 } & (
   | ({ kind: "shot" } & Shot)
   | { kind: "slot"; need: string; awaits?: "video" | "photo" }

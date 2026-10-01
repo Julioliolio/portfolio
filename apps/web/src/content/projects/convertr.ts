@@ -18,9 +18,9 @@ function cv(name: string, alt: string, aspect: number, more: Partial<Shot> = {})
   return { src: `${M}/${name}.mp4`, poster: `${M}/${name}.webp`, frame: "screen", alt, aspect, ...more };
 }
 const cell = (w: number, h: number, shot: Shot, ground?: string): Cell => ({ kind: "shot", w, h, ground, ...shot });
+/** An app recording with its own screen as its edge: no cell around it. */
+const plain = (c: Cell): Cell => ({ ...c, plain: true });
 
-/** The app's own paper, behind a recording fitted whole into its cell. */
-const PAPER = "#f6f6f4";
 
 export const convertr: Project = {
   slug: "convertr",
@@ -75,7 +75,7 @@ export const convertr: Project = {
           type: "bento",
           row: 1,
           cells: [
-            cell(12, 6, cv("drop", "A file carried in and dropped on the empty box; a row of bricks loads it, and the box snaps to the video's own shape", 1100 / 826, { frame: "bare", fit: "contain" }), PAPER),
+            plain(cell(12, 6, cv("drop", "A file carried in and dropped on the empty box; a row of bricks loads it, and the box snaps to the video's own shape", 1100 / 826, { frame: "bare", fit: "contain" }))),
           ],
         },
         {
@@ -87,6 +87,7 @@ export const convertr: Project = {
           figure: {
             kind: "image",
             src: `${M}/fig-compare.webp`,
+            plain: true,
             aspect: 2000 / 900,
             minWidth: 640,
             alt: "The same vertical video in a typical converter, shrunk into a preview between fixed panels, and in Convertr, where the box is the video and the settings take its other side.",
@@ -185,7 +186,7 @@ export const convertr: Project = {
           row: 0.5,
           cells: [
             cell(12, 3, cv("trim", "The in handle dragged right and the out handle left on the timeline", 8, { frame: "bare" })),
-            cell(12, 2, cv("gif", "The GIF's width dragged from 640 to 1252 pixels and back; the expected size on the video follows", 1600 / 88, { frame: "bare", fit: "contain" }), PAPER),
+            plain(cell(12, 2, cv("gif", "The GIF's width dragged from 640 to 1252 pixels and back; the expected size on the video follows", 1600 / 88, { frame: "bare", fit: "contain" }))),
             cell(6, 7, cv("format", "The format picker opening, the cursor running down the list, GIF picked", 1200 / 660, { frame: "bare" })),
             {
               kind: "slot",

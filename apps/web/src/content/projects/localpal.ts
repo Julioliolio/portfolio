@@ -54,6 +54,12 @@ const bare = (
   alt: string,
 ): Cell => cell(w, h, lp(name, "bare", alt, { aspect }), ground);
 
+/** A picture with its own edge (on transparency): no cell, on the paper. */
+const drawing = (w: number, h: number, name: string, aspect: number, alt: string): Cell => ({
+  ...cell(w, h, lp(name, "bare", alt, { aspect, still: true, fit: "contain" })),
+  plain: true,
+});
+
 /** One of the drawn figures, or a picture from the thesis. */
 const pic = (w: number, h: number, name: string, aspect: number, alt: string, ground?: string): Cell =>
   cell(w, h, lp(name, "bare", alt, { aspect, still: true, ...(ground ? { fit: "contain" as const } : {}) }), ground);
@@ -116,6 +122,7 @@ export const localpal: Project = {
           figure: {
             kind: "image",
             src: `${M}/fig-moment.webp`,
+            plain: true,
             aspect: 16 / 9,
             alt: "Four numbers: 35% of Europeans feel lonely at least some of the time; UK nightclubs down 37% in four years; 71.6 million gym members in Europe in 2024, a record; running clubs on Strava up 59% in 2024.",
           },
@@ -129,6 +136,7 @@ export const localpal: Project = {
           figure: {
             kind: "image",
             src: `${M}/fig-platforms.webp`,
+            plain: true,
             aspect: 4 / 3,
             alt: "Five platforms that tried, scored 0 to 5 on niche plans, anyone can propose, and trust and safety. Each gets one or two of the three; none gets all of them.",
           },
@@ -170,6 +178,7 @@ export const localpal: Project = {
           figure: {
             kind: "image",
             src: `${M}/fig-relevance-curve.webp`,
+            plain: true,
             aspect: 16 / 9,
             alt: "The relevance curve: over sixteen weeks after arriving, the obvious plans fall and the specific ones rise; they cross at week nine, inside LocalPal's window from week six to twelve. Sign-ups happen in the first five weeks, through universities and ESN.",
           },
@@ -223,9 +232,9 @@ export const localpal: Project = {
           type: "bento",
           row: 1,
           cells: [
-            { ...pic(4, 4, "storyboard-1", 1400 / 1233, "Marco dancing alone to music in his room.", "#ffffff"), label: "Wants to do something" },
-            { ...pic(4, 4, "storyboard-4", 1400 / 1287, "A shrug under a cloud of question marks.", "#ffffff"), label: "Can't pin it down" },
-            { ...pic(4, 4, "storyboard-5", 1400 / 782, "Three people sitting together with drinks: the plan happened.", "#ffffff"), label: "With LocalPal, he goes" },
+            { ...drawing(4, 4, "storyboard-1", 1400 / 1233, "Marco dancing alone to music in his room."), label: "Wants to do something" },
+            { ...drawing(4, 4, "storyboard-4", 1400 / 1287, "A shrug under a cloud of question marks."), label: "Can't pin it down" },
+            { ...drawing(4, 4, "storyboard-5", 1400 / 782, "Three people sitting together with drinks: the plan happened."), label: "With LocalPal, he goes" },
           ],
         },
         {
@@ -233,6 +242,7 @@ export const localpal: Project = {
           figure: {
             kind: "image",
             src: `${M}/fig-journey.webp`,
+            plain: true,
             aspect: 16 / 9,
             alt: "The same six steps, from feeling like doing something to going: today the line ends at its lowest, the plan dies in the chat; the LocalPal line, dashed because it's designed for and untested, ends at the top.",
           },
@@ -253,9 +263,9 @@ export const localpal: Project = {
           type: "bento",
           row: 1,
           cells: [
-            pic(5, 8, "brand-sample", 972 / 1501, "The brand sample: a portrait with the LocalPal sticker and the line, map stickers, the mark on blue, the type."),
+            drawing(5, 8, "brand-sample", 972 / 1501, "The brand sample: a portrait with the LocalPal sticker and the line, map stickers, the mark on blue, the type."),
             pic(7, 5, "fig-brand-type", 4 / 3, "“Stop scrolling. Start showing up.” set in PP Neue Montreal on the blue."),
-            { ...pic(7, 3, "moodboard", 1600 / 886, "The first moodboard, darker and more angular than where the brand ended up.", "#fefefe"), label: "First direction, dropped" },
+            { ...drawing(7, 3, "moodboard", 1600 / 886, "The first moodboard, darker and more angular than where the brand ended up."), label: "First direction, dropped" },
           ],
         },
         {
@@ -266,7 +276,7 @@ export const localpal: Project = {
           type: "bento",
           row: 1,
           cells: [
-            pic(12, 6, "fig-brand-colours", 16 / 9, "The colours: the brand blue, its deep and pressed shades, lavender and ink; and the map, inverted: land, water, park, road.", "#f4f2ee"),
+            drawing(12, 7, "fig-brand-colours", 16 / 9, "The colours: the brand blue, its deep and pressed shades, lavender and ink; and the map, inverted: land, water, park, road."),
           ],
         },
       ],

@@ -3,7 +3,8 @@
  * here in English from the thesis's data (source-assets/localpal-tfm/
  * REPORT.md) in LocalPal's own type and colours, and rendered to webp at
  * 2×. The thesis's figures are Spanish and A3-page sized; these are
- * set for a bento cell.
+ * set for a bento cell. Rendered on transparency, so a figure sits on
+ * the page's paper rather than in a box of its own.
  *
  *   node scripts/make-figures.mjs [name ...]
  *
@@ -44,7 +45,7 @@ ${face("Medium", 500)}
 ${face("SemiBold", 600)}
 * { box-sizing: border-box; margin: 0; padding: 0; }
 html, body { width: 100%; height: 100%; }
-body { font-family: M, sans-serif; font-weight: 500; color: ${C.ink}; background: ${C.paper}; -webkit-font-smoothing: antialiased; letter-spacing: -0.01em; }
+body { font-family: M, sans-serif; font-weight: 500; color: ${C.ink}; background: transparent; -webkit-font-smoothing: antialiased; letter-spacing: -0.01em; }
 .fig { position: relative; width: 100vw; height: 100vh; overflow: hidden; }
 .src { font-size: 13px; color: ${C.muted}; font-weight: 400; letter-spacing: 0; }
 `;
@@ -221,7 +222,7 @@ function compare() {
   const frame = uri(`${ROOT}source-assets/recordings/clouds-frame.png`);
   const g = "#d9d6d0", g2 = "#ebe8e3";
   return [2000, 900, `<style>
-  body { background: #f4f2ee; font-family: M; }
+  body { background: transparent; font-family: M; }
   .w { position: absolute; inset: 48px; display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); gap: 40px; }
   .p { display: flex; flex-direction: column; gap: 18px; }
   .t { font-size: 38px; line-height: 1.15; color: #77716a; } .t b { color: #2b2722; font-weight: 500; }
@@ -258,8 +259,10 @@ const FIGURES = {
 };
 
 // The thesis's own pictures, as they are: [out name, source, width].
+// Transparency kept — the storyboard from its vector, the collages with
+// their rounded corners — so they sit on the page's paper, no box.
 const STILLS = [
-  ...[1, 4, 5].map((n) => [`storyboard-${n}`, `storyboard-frame${n}.png`, 1400]),
+  ...[1, 4, 5].map((n) => [`storyboard-${n}`, `storyboard-frame${n}.svg`, 1400]),
   ["brand-sample", "fig11-brand-sample.png", 972],
   ["moodboard", "fig09-moodboard.png", 1600],
 ];
@@ -280,7 +283,8 @@ for (const [name, make] of Object.entries(FIGURES)) {
     await document.fonts.ready;
   });
   await page.waitForTimeout(150);
-  const png = await page.screenshot();
+  // Transparent: the figure sits on the page's paper, no box around it.
+  const png = await page.screenshot({ omitBackground: true });
   await sharp(png).webp({ quality: 88 }).toFile(`${OUT}${name}.webp`);
   await page.close();
   console.log(`${name}.webp  ${w}×${h}`);
@@ -289,6 +293,7 @@ await browser.close();
 
 for (const [name, src, width] of STILLS) {
   if (!pick(name) || !existsSync(TFM + src)) continue;
-  await sharp(TFM + src).flatten({ background: "#ffffff" }).resize({ width, withoutEnlargement: true }).webp({ quality: 86 }).toFile(`${OUT}${name}.webp`);
+  const input = src.endsWith(".svg") ? sharp(TFM + src, { density: 300 }) : sharp(TFM + src);
+  await input.resize({ width, withoutEnlargement: !src.endsWith(".svg") }).webp({ quality: 86, alphaQuality: 90 }).toFile(`${OUT}${name}.webp`);
   console.log(`${name}.webp`);
 }

@@ -160,6 +160,7 @@ const CSS = `
 .cs-figs { display: grid; grid-template-columns: repeat(auto-fit, minmax(min(100%, 220px), 1fr)); gap: calc(.5 * var(--ty-u)); align-items: start; }
 .cs-figs.is-tall { grid-template-columns: repeat(auto-fit, minmax(min(100%, 160px), 1fr)); }
 .cs-media { position: relative; width: 100%; overflow: hidden; border-radius: calc(.5 * var(--ty-u)); background: ${GREY}; }
+.cs-media.is-plain { background: none; border-radius: 0; overflow: visible; }
 .cs-media img, .cs-media video { display: block; width: 100%; height: 100%; object-fit: cover; }
 .cs-media video { background: #000; }
 .cs-scroll { overflow-x: auto; scrollbar-width: none; }
@@ -581,7 +582,10 @@ function FigureView({ figure }: { figure: Figure }) {
       );
     case "image": {
       const media = (
-        <div className="cs-media" style={{ aspectRatio: figure.aspect }}>
+        <div
+          className={figure.plain ? "cs-media is-plain" : "cs-media"}
+          style={{ aspectRatio: figure.aspect }}
+        >
           {/* Plain <img>: the static export has no image optimizer, and
               every public/ path goes through asset() for the basePath.
               Lazy, or React preloads it in the page head (the budget). */}
