@@ -69,7 +69,7 @@ export const localpal: Project = {
   title: "LocalPal",
   tagline: "Finding and organising the plans a city doesn't show you.",
   summary:
-    "A map app for finding the small plans a city doesn't show you, and the people to do them with. Research, brand, design and a working prototype, all on my own.",
+    "Research, brand, design and a working prototype, all on my own.",
   meta: [
     {
       label: "Fields",
@@ -99,12 +99,12 @@ export const localpal: Project = {
       heading: "For when the welcome weeks are over",
       blocks: [
         {
-          type: "p",
-          text: "LocalPal is a map for young adults in European cities who want to do things, not just go out: the small climbing session, the running club, the gallery opening nobody posts about. The plans and the people going are on the same map.",
-        },
-        {
           type: "lede",
           text: "Around week nine in a new city, the welcome runs out and people want something specific. Nothing serves that moment. LocalPal is built for it.",
+        },
+        {
+          type: "p",
+          text: "A map of the small plans, a climbing session, a running club, the gallery opening nobody posts about, and the people going.",
         },
       ],
     },
@@ -129,7 +129,7 @@ export const localpal: Project = {
         },
         {
           type: "p",
-          text: "The catch: there's nowhere to find them. Instagram and Google Maps cover the big bars; the climbing session on Thursday lives in a WhatsApp group you're not in. The apps that tried turned into dating apps or businesses. In the interviews, nobody named a single one of them.",
+          text: "The catch: there's nowhere to find them. Instagram and Google Maps cover the big bars; the climbing session on Thursday lives in a WhatsApp group you're not in. In the interviews, nobody named a single app for it.",
         },
         {
           type: "figure",
@@ -163,10 +163,6 @@ export const localpal: Project = {
           ],
         },
         {
-          type: "p",
-          text: "Three things came out. People blame the plan, never the coordination. Meeting strangers worries them in very specific ways. And nobody needs this in their first weeks.",
-        },
-        {
           type: "figure",
           figure: {
             kind: "image",
@@ -179,7 +175,7 @@ export const localpal: Project = {
         },
         {
           type: "p",
-          text: "I call it the relevance curve. It means LocalPal has to be signed up for in week one, and still be on your phone in week nine.",
+          text: "I call it the relevance curve. So LocalPal has to get you in week one and still matter in week nine.",
         },
       ],
     },
@@ -190,7 +186,7 @@ export const localpal: Project = {
       blocks: [
         {
           type: "p",
-          text: "Venues post their events, so there's something to do from day one; people post their own plans, which is why you stay. Five rules, each learned from an app that failed:",
+          text: "Five rules, each learned from an app that failed:",
         },
         {
           type: "list",
@@ -232,11 +228,11 @@ export const localpal: Project = {
       id: "brand",
       label: "Brand",
       heading:
-        "A blue that means connection, and shapes that make you feel at ease",
+        "Soft, a bit tilted, link blue",
       blocks: [
         {
           type: "p",
-          text: "It talks like a friend with good judgement, and its blue is the colour of a web link: connection. The first moodboard was angular; on a phone that read cold, so it went soft, with stickers and things slightly tilted.",
+          text: "It talks like a friend with good judgement. The blue is the colour of a web link: connection.",
         },
         {
           type: "bento",
@@ -249,7 +245,7 @@ export const localpal: Project = {
         },
         {
           type: "p",
-          text: "One rule for motion: animate what you touch, never what the system reports. A bouncing progress bar would lie.",
+          text: "Things you tap bounce. Things that load never do: a bouncy loading bar would lie.",
         },
         {
           type: "bento",
@@ -270,7 +266,7 @@ export const localpal: Project = {
         { type: "subhead", text: "01 · The map is the feed" },
         {
           type: "p",
-          text: "No list to scroll. Sheets sit on the map and pull down to it. Zoom out and the city gathers into a count.",
+          text: "No feed to scroll. Everything opens on top of the map.",
         },
         {
           type: "bento",
@@ -297,7 +293,7 @@ export const localpal: Project = {
         { type: "subhead", text: "03 · Going together" },
         {
           type: "p",
-          text: "Big events show the small plans of people going, so you join someone's plan, not an anonymous crowd of 62.",
+          text: "Big events show the small plans of people going: join someone's plan, not a crowd of 62.",
         },
         {
           type: "bento",
@@ -309,7 +305,7 @@ export const localpal: Project = {
         { type: "subhead", text: "04 · Showing up" },
         {
           type: "p",
-          text: "Verify with a university email, only when you want in. On the day, slide to confirm and see who else did.",
+          text: "Verify with a uni email when you want in. On the day, slide to confirm and see who else did.",
         },
         {
           type: "bento",
@@ -335,7 +331,7 @@ export const localpal: Project = {
         { type: "subhead", text: "06 · The loop" },
         {
           type: "p",
-          text: "The app has to be opened before it's needed. After every plan: did you go? Want to go again? By week nine, the map knows you. Designed, not built yet.",
+          text: "After every plan: did you go? Want to go again? By week nine, the map knows you. Designed, not built yet.",
         },
         {
           type: "figure",
@@ -348,15 +344,11 @@ export const localpal: Project = {
           },
         },
         {
-          type: "p",
-          text: "And the small things: pull the screen's edge to zoom with one thumb; your profile leads with a QR for the people you just met.",
-        },
-        {
           type: "bento",
           row: 1,
           cells: [
-            phone(6, 7, "edge", "A thumb at the right edge pulls a black goo out of it and slides up and down to zoom the map."),
-            phone(6, 7, "profile", "The own profile: the tag card, friends, plans, and the QR that opens to add someone."),
+            { ...phone(6, 7, "edge", "A thumb at the right edge pulls a black goo out of it and slides up and down to zoom the map."), label: "Pull the edge to zoom, one thumb" },
+            { ...phone(6, 7, "profile", "The own profile: the tag card, friends, plans, and the QR that opens to add someone."), label: "A QR for people you just met" },
           ],
         },
       ],
@@ -364,15 +356,15 @@ export const localpal: Project = {
     {
       id: "learnings",
       label: "Learnings",
-      heading: "What doing the whole thing by yourself really means",
+      heading: "The thesis wasn't the hard part",
       blocks: [
         {
           type: "p",
-          text: "I thought the thesis would be the hard part. It was the product, and it only became real when I stopped writing about it and built it.",
+          text: "The product was, and it only became real when I stopped writing about it and built it.",
         },
         {
           type: "p",
-          text: "It's never been in a stranger's hands. The riskiest bet is that seeing who confirmed makes people show up. The first test: of those who say they'll go, how many confirm, and how many arrive.",
+          text: "It's never been in a stranger's hands. The riskiest bet: do people who say yes actually turn up?",
         },
         {
           type: "p",

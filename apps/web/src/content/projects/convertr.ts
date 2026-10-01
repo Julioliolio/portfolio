@@ -25,7 +25,7 @@ const plain = (c: Cell): Cell => ({ ...c, plain: true });
 export const convertr: Project = {
   slug: "convertr",
   title: "Convertr",
-  tagline: "A video converter where the box is the whole interface.",
+  tagline: "A video converter that takes the shape of your video.",
   summary:
     "A desktop app that turns any video into the GIF or file you need. Drop it, trim it, drag the result out. I designed and built it, and the real app runs on this page.",
   meta: [
@@ -45,7 +45,7 @@ export const convertr: Project = {
     title: "Convertr",
     variant: "desktop",
     query: "?autosample",
-    label: "Live: the real app. Only the conversion is faked",
+    label: "Live: the real app, with a pretend conversion",
     caption:
       "The real interface. Drop a video or a GIF on it, trim, convert, drag the result out. The conversion is simulated on this page, so the file you get is a stand-in; everything you see and touch is the app.",
   },
@@ -58,15 +58,11 @@ export const convertr: Project = {
       blocks: [
         {
           type: "p",
-          text: "Every week I turned clips into GIFs for moodboards. Online tools gave me no control, and Premiere turned a ten-second job into a project. So I built my own.",
+          text: "Every week I turned clips into GIFs for moodboards. Online tools gave me no control, and Premiere turned a ten-second job into a project. So I built my own. [fill in — I've run N files through it since June.]",
         },
         {
           type: "p",
-          text: "[fill in — how many files you've run through it since June.]",
-        },
-        {
-          type: "p",
-          text: "It was also my first app built with AI, and a test: can a design idea survive when the designer also writes the code?",
+          text: "It was also my first app built with AI, and a test: does an odd design idea last longer when the designer writes the code?",
         },
       ],
     },
@@ -74,7 +70,7 @@ export const convertr: Project = {
       id: "box",
       label: "The box",
       heading:
-        "The video decides the shape of the app, not the other way round",
+        "One box, every shape",
       blocks: [
         {
           type: "p",
@@ -94,10 +90,6 @@ export const convertr: Project = {
               need: "Two or three early layouts from the design file that didn't survive, with a line on why each one died.",
             },
           ],
-        },
-        {
-          type: "p",
-          text: "Open the settings and the video doesn't shrink. It crops, and the settings take the space.",
         },
         {
           type: "figure",
@@ -121,7 +113,7 @@ export const convertr: Project = {
           type: "bento",
           row: 1,
           cells: [
-            { ...cell(7, 6, cv("result-drag", "The last bricks land, the box steps out with chips on its corners, and the converted file is dragged out by its download chip", 1.25)), label: "Convert, then drag the file out" },
+            { ...cell(7, 6, cv("result-drag", "The last bricks land, the box steps out with chips on its corners, and the converted file is dragged out by its download chip", 1.25)), label: "The download is a drag" },
             {
               kind: "slot",
               w: 5,
@@ -132,25 +124,7 @@ export const convertr: Project = {
         },
         {
           type: "p",
-          text: "Nothing pops in or slides over. Every screen is the same box changing shape.",
-        },
-        {
-          type: "list",
-          style: "numbered",
-          items: [
-            {
-              title: "Crop, don't shrink.",
-              body: "The video keeps its size; the settings take the leftover space.",
-            },
-            {
-              title: "No second screen.",
-              body: "No settings page, no results page. Just the box.",
-            },
-            {
-              title: "The download is a drag.",
-              body: "Pull the file straight into a folder, Figma or a chat.",
-            },
-          ],
+          text: "Nothing pops in or slides over. There's no settings page and no results page: every screen is the same box changing shape.",
         },
       ],
     },
@@ -167,14 +141,6 @@ export const convertr: Project = {
               title: "Three ways in.",
               body: "Drop a file, paste a video, or paste a YouTube or X link.",
             },
-            {
-              title: "Trim on the timeline.",
-              body: "Because the bit you want is never the whole clip.",
-            },
-            {
-              title: "Seven formats, one picker.",
-              body: "For a GIF, set the size and frame rate and watch the file size update.",
-            },
           ],
         },
         {
@@ -188,7 +154,7 @@ export const convertr: Project = {
               need: "Pasting an X link in the desktop app: yt-dlp fetches it and it lands in the box like a file.",
             },
             { ...cell(6, 7, cv("format", "The format picker opening, the cursor running down the list, GIF picked", 1200 / 660, { frame: "bare" })), label: "Seven formats, one picker" },
-            { ...cell(12, 3, cv("trim", "The in handle dragged right and the out handle left on the timeline", 8, { frame: "bare" })), label: "Trim" },
+            { ...cell(12, 3, cv("trim", "The in handle dragged right and the out handle left on the timeline", 8, { frame: "bare" })), label: "Trim: the bit you want is never the whole clip" },
           ],
         },
       ],
@@ -200,11 +166,11 @@ export const convertr: Project = {
       blocks: [
         {
           type: "p",
-          text: "Holding the code meant the box never got flattened into a normal layout. Half the feel is in numbers tuned by watching it move, and none of that was in the design file.",
+          text: "If I did it again I'd build the fake converter first, the one running on this page, so every idea could be tried in seconds.",
         },
         {
           type: "p",
-          text: "If I did it again I'd build the simulated engine first. It's what runs this page, and it would have made every iteration faster.",
+          text: "Because I wrote the code, nobody could quietly turn the box back into a normal layout. Half the feel came from tweaking timings while watching it move, and none of that was in the design file.",
         },
       ],
     },

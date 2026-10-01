@@ -24,15 +24,15 @@ export const camper: Project = {
   title: "Camper",
   tagline: "Everyone is equal in their feet.",
   summary:
-    "An unofficial one-minute ad for Camper, made entirely with AI: the idea, the storyboard, every shot and the edit.",
+    "An unofficial one-minute ad for Camper, made entirely with AI.",
   meta: [
-    { label: "Type", value: "Spec film · 2894 Studio, 2026" },
+    { label: "Type", value: "Unofficial ad, made at 2894 Studio · 2026" },
     {
       label: "Fields",
       value: "Concept, art direction, AI image and video generation, edit",
     },
       // Draft: only Flora is from the copy; Julio to correct.
-    { label: "Tools", value: "Flora, After Effects, Premiere" },
+    { label: "Tools", value: "Flora (AI image and video), After Effects, Premiere" },
     { label: "Length", value: "60 seconds" },
   ],
   hero: {
@@ -48,11 +48,11 @@ export const camper: Project = {
     {
       id: "idea",
       label: "The idea",
-      heading: "One brand, every kind of feet",
+      heading: "Different people, same shoes",
       blocks: [
         {
           type: "p",
-          text: "Everyone wears Camper. The film cuts between people who'd never share a frame, and the only constant is their shoes. Three rules:",
+          text: "The premise: everyone wears Camper. The film cuts between people who'd never share a frame, and the only constant is their shoes. Three rules:",
         },
         {
           type: "list",
@@ -64,17 +64,13 @@ export const camper: Project = {
           ],
         },
         {
-          type: "p",
-          text: "It ends barefoot, the shoes set aside: the one frame where everyone really is equal.",
-        },
-        {
           // The cast, one loop per person, cut from the film
           // (scripts/prepare-camper-media.mjs). A row is 2.25 columns
           // tall, so a four-wide cell is the film's 16:9.
           type: "bento",
           row: 2.25,
           cells: [
-            cast("beach", 8, 2, "Bare feet at the water's edge, a pair of red Camper sandals beside them"),
+            { ...cast("beach", 8, 2, "Bare feet at the water's edge, a pair of red Camper sandals beside them"), label: "The last shots: shoes off, everyone equal" },
             cast("reader", 4, 1, "Green suede sneakers under someone reading on the pavement"),
             cast("step", 4, 1, "Two kids' sneakers on a doorstep"),
           ],
@@ -108,7 +104,7 @@ export const camper: Project = {
       blocks: [
         {
           type: "p",
-          text: "Storyboard first, so every generation had a target. Then drawing, still, moving shot.",
+          text: "Storyboard first, so every generation had a target. Each moment went from sketch, to still, to moving shot. Here's one:",
         },
         {
           type: "bento",
@@ -214,7 +210,11 @@ export const camper: Project = {
       blocks: [
         {
           type: "p",
-          text: "The sentence was the tagline: everyone is equal in their feet. Every time a shot drifted, it was because I had lost it, not because the model was wrong.",
+          text: "Every time a shot felt off, it was because I'd lost sight of the tagline, not because the AI got it wrong.",
+        },
+        {
+          type: "p",
+          text: "[fill in — roughly how many generations the 16 shots took, and what came of the film.]",
         },
       ],
     },
