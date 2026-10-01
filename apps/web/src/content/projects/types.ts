@@ -36,6 +36,8 @@ export type Figure =
       minWidth?: number;
       /** On transparency, with edges of its own: no box behind it. */
       plain?: boolean;
+      /** A version laid out for a phone (≤700px), swapped in there. */
+      narrow?: { src: `/${string}`; aspect: number };
     }
   | {
       kind: "video";

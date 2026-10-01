@@ -637,6 +637,26 @@ const IdleView: Component<{ onVideoSelected: (info: VideoInfo) => void }> = (
     setTimeout(() => setFetchStatus(null), 3000);
   };
 
+  // …?autosample (the portfolio's hero): load the sample by itself a beat
+  // after the page opens, so a visitor sees the box take a video's shape
+  // without having to find a file. Once only; the visitor takes over.
+  const loadSample = async () => {
+    const blob = await (await fetch(sampleUrl)).blob();
+    handleFile(new File([blob], "camper.mp4", { type: "video/mp4" }));
+  };
+  onMount(() => {
+    if (!new URLSearchParams(location.search).has("autosample")) return;
+    try {
+      if (sessionStorage.getItem("convertr-autosample")) return;
+      sessionStorage.setItem("convertr-autosample", "1");
+    } catch {
+      // Storage blocked: run it anyway, once per load.
+    }
+    const t = setTimeout(() => {
+      if (isIdle()) void loadSample();
+    }, 1600);
+    onCleanup(() => clearTimeout(t));
+  });
   onMount(() => document.addEventListener("paste", handlePaste));
   onCleanup(() => document.removeEventListener("paste", handlePaste));
 
@@ -834,10 +854,9 @@ const IdleView: Component<{ onVideoSelected: (info: VideoInfo) => void }> = (
       <Show when={isIdle() && !fetchStatus()}>
         <button
           type="button"
-          onClick={async (e) => {
+          onClick={(e) => {
             e.stopPropagation();
-            const blob = await (await fetch(sampleUrl)).blob();
-            handleFile(new File([blob], "camper.mp4", { type: "video/mp4" }));
+            void loadSample();
           }}
           style={{
             position: "absolute",

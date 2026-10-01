@@ -56,9 +56,9 @@ const W = 17;
 const mainstream = [.92, .90, .88, .85, .80, .75, .69, .63, .57, .50, .43, .36, .30, .26, .22, .19, .18];
 const niche = [.12, .13, .14, .15, .18, .22, .27, .33, .41, .50, .61, .70, .77, .83, .87, .89, .90];
 
-function curve() {
-  const w = 1600, h = 900;
-  const L = 150, R = 1500, T = 210, B = 700;
+function curve(narrow = false) {
+  const [w, h] = narrow ? [900, 1000] : [1600, 900];
+  const [L, R, T, B] = narrow ? [96, 860, 330, 760] : [150, 1500, 210, 700];
   const x = (wk) => L + (wk / 16) * (R - L);
   const y = (v) => B - v * (B - T);
   // Catmull-Rom through the samples, as a smooth path.
@@ -75,10 +75,10 @@ function curve() {
   };
   const ticks = [0, 4, 8, 12, 16].map((wk) => `<text x="${x(wk)}" y="${B + 40}" text-anchor="middle" class="t">${wk}</text>`).join("");
   return [w, h, `<div class="fig"><svg viewBox="0 0 ${w} ${h}" width="100%" height="100%">
-  <style>text{font-family:M} .t{font-weight:500;font-size:24px;fill:${C.muted}} .l{font-weight:600;font-size:30px} .s{font-weight:500;font-size:23px;fill:${C.muted}}</style>
+  <style>text{font-family:M} .t{font-weight:500;font-size:${narrow ? 30 : 24}px;fill:${C.muted}} .l{font-weight:600;font-size:${narrow ? 36 : 30}px} .s{font-weight:500;font-size:${narrow ? 28 : 23}px;fill:${C.muted}}</style>
   <rect x="${x(6)}" y="${T - 40}" width="${x(12) - x(6)}" height="${B - T + 40}" fill="${C.lav}" opacity=".28" rx="14"/>
-  <text x="${x(6) + 24}" y="${B - 56}" class="l" fill="${C.brand}">LocalPal's</text>
-  <text x="${x(6) + 24}" y="${B - 22}" class="l" fill="${C.brand}">window</text>
+  <text x="${x(6) + 16}" y="${narrow ? T : B - 56}" class="l" fill="${C.brand}">LocalPal's</text>
+  <text x="${x(6) + 16}" y="${narrow ? T + 38 : B - 22}" class="l" fill="${C.brand}">window</text>
   <line x1="${L}" y1="${B}" x2="${R}" y2="${B}" stroke="${C.ink}" stroke-opacity=".25" stroke-width="2"/>
   ${[0, 4, 12, 16].map((wk) => `<text x="${x(wk)}" y="${B + 40}" text-anchor="middle" class="t">${wk}</text>`).join("")}
   <line x1="${x(9)}" y1="${y(.5) + 18}" x2="${x(9)}" y2="${B}" stroke="${C.brand}" stroke-width="3" stroke-dasharray="3 9" stroke-linecap="round"/>
@@ -89,13 +89,18 @@ function curve() {
   <path d="${path(mainstream)}" fill="none" stroke="${C.ink}" stroke-width="7" stroke-linecap="round"/>
   <path d="${path(niche)}" fill="none" stroke="${C.brand}" stroke-width="7" stroke-linecap="round"/>
   <circle cx="${x(9)}" cy="${y(.5)}" r="15" fill="${C.white}" stroke="${C.brand}" stroke-width="6"/>
+  ${narrow ? `
+  <text x="${L - 60}" y="70" class="l" fill="${C.ink}">— The obvious plans</text>
+  <text x="${L - 60}" y="108" class="s">welcome weeks, flat dinners, the big bars</text>
+  <text x="${L - 60}" y="170" class="l" fill="${C.brand}">— The specific ones, and company</text>
+  <text x="${L - 60}" y="208" class="s">a climbing partner, a small show, a Sunday run</text>` : `
   <text x="${x(0)}" y="${y(.92) - 74}" class="l" fill="${C.ink}">The obvious plans</text>
   <text x="${x(0)}" y="${y(.92) - 40}" class="s">welcome weeks, flat dinners, the big bars</text>
   <text x="${x(16)}" y="${y(.9) - 74}" text-anchor="end" class="l" fill="${C.brand}">The specific ones, and someone to go with</text>
-  <text x="${x(16)}" y="${y(.9) - 40}" text-anchor="end" class="s">a climbing partner, a small show, a Sunday run</text>
+  <text x="${x(16)}" y="${y(.9) - 40}" text-anchor="end" class="s">a climbing partner, a small show, a Sunday run</text>`}
   <path d="M${x(0)},${B + 128} v-12 H${x(5.5)} v12" fill="none" stroke="${C.muted}" stroke-width="2"/>
-  <text x="${x(0)}" y="${B + 166}" class="s">sign-ups happen here: universities, ESN, arrival networks</text>
-  <text x="${x(16)}" y="${B + 166}" text-anchor="end" class="s">a model drawn from 6 interviews and 526 posts, not a measurement</text>
+  <text x="${x(0)}" y="${B + 166}" class="s">sign-ups happen here${narrow ? "" : ": universities, ESN, arrival networks"}</text>
+  <text x="${narrow ? x(0) : x(16)}" y="${narrow ? B + 214 : B + 166}" text-anchor="${narrow ? "start" : "end"}" class="s">a model from 6 interviews and 526 posts, not a measurement</text>
 </svg></div>`];
 }
 
@@ -118,10 +123,10 @@ function moment() {
 
 /**
  * Five platforms that tried, on the three things LocalPal needs at once
- * (scores 0–5 from Julio's May radar, from the research). LocalPal isn't
- * scored against them: the chart is the gap, small enough for a phone.
+ * (scores 0–5 from Julio's May radar, from the research), and LocalPal's
+ * intended row, dashed: designed for, untested. `narrow` is the phone cut.
  */
-function platforms() {
+function platforms(narrow = false) {
   const factors = ["Niche plans", "Anyone can propose", "Trust and safety"];
   const rows = [
     ["Nomadtable", [1, 4, 1], "drifted into dating"],
@@ -130,24 +135,69 @@ function platforms() {
     ["Timeleft", [0, 0, 3], "dinners assigned by algorithm"],
     ["Luma", [3, 2, 1], "organisers, not people"],
   ];
-  const cell = (v) => `<td><span class="d" style="width:${14 + v * 14}px;height:${14 + v * 14}px;opacity:${v ? 0.85 : 0.14}"></span><span class="v">${v}</span></td>`;
-  return [1200, 900, `<style>
-  .w { position: absolute; inset: 52px 60px 48px; display: flex; flex-direction: column; justify-content: center; }
+  const me = ["LocalPal", [4, 4, 4], "designed for, untested"];
+  const k = narrow ? 1.35 : 1;
+  const cell = (v, mine) => `<td><span class="d${mine ? " me" : ""}" style="width:${(14 + v * 14) * k}px;height:${(14 + v * 14) * k}px;opacity:${v ? 0.85 : 0.14}"></span><span class="v">${v}</span></td>`;
+  const [W, H] = narrow ? [900, 1240] : [1200, 960];
+  return [W, H, `<style>
+  .w { position: absolute; inset: ${narrow ? "40px 28px" : "52px 60px 48px"}; display: flex; flex-direction: column; justify-content: center; }
   table { border-collapse: separate; border-spacing: 0; width: 100%; }
-  th { font-size: 26px; font-weight: 500; color: ${C.brand}; text-align: center; vertical-align: bottom; padding: 0 6px 22px; line-height: 1.1; width: 18%; }
-  th:first-child { width: 46%; }
-  td { height: 112px; text-align: center; border-top: 1px solid rgba(0,29,51,.1); position: relative; }
+  th { font-size: ${26 * k}px; font-weight: 500; color: ${C.brand}; text-align: center; vertical-align: bottom; padding: 0 6px 22px; line-height: 1.1; width: ${narrow ? 17 : 18}%; }
+  th:first-child { width: ${narrow ? 49 : 46}%; }
+  td { height: ${narrow ? 136 : 108}px; text-align: center; border-top: 1px solid rgba(0,29,51,.1); position: relative; }
   td:not(:first-child) { background: rgba(165,159,255,.16); }
-  td:first-child { text-align: left; font-size: 34px; letter-spacing: -0.02em; }
-  td:first-child small { display: block; font-size: 22px; color: ${C.muted}; margin-top: 4px; letter-spacing: 0; }
+  td:first-child { text-align: left; font-size: ${34 * k}px; letter-spacing: -0.02em; line-height: 1.05; }
+  td:first-child small { display: block; font-size: ${22 * k}px; color: ${C.muted}; margin-top: 4px; letter-spacing: 0; }
+  tr.me td { border-top: 2px dashed ${C.brand}; }
+  tr.me td:first-child { color: ${C.brand}; }
   .d { display: inline-block; border-radius: 50%; vertical-align: middle; background: ${C.ink}; }
-  .v { position: absolute; right: 12px; bottom: 8px; font-size: 18px; color: ${C.muted}; }
-  .k { margin-top: 30px; font-size: 34px; line-height: 1.18; letter-spacing: -0.015em; }
+  .d.me { background: none; border: 3px dashed ${C.brand}; box-sizing: border-box; opacity: 1 !important; }
+  .v { position: absolute; right: 10px; bottom: 8px; font-size: ${18 * k}px; color: ${C.muted}; }
+  .k { margin-top: 30px; font-size: ${34 * k}px; line-height: 1.18; letter-spacing: -0.015em; }
   .k b { color: ${C.brand}; font-weight: 600; }
-  .k small { display: block; margin-top: 10px; font-size: 21px; color: ${C.muted}; letter-spacing: 0; }
+  .k small { display: block; margin-top: 10px; font-size: ${21 * k}px; color: ${C.muted}; letter-spacing: 0; }
   </style><div class="fig"><div class="w"><table><tr><th></th>${factors.map((f) => `<th>${f}</th>`).join("")}</tr>
-  ${rows.map(([n, vs, note]) => `<tr><td>${n}<small>${note}</small></td>${vs.map(cell).join("")}</tr>`).join("")}
-  </table><div class="k"><b>The gap.</b> Each gets one or two of the three. None gets all of them.<small>Scored 0–5 from the research; bigger dot, better.</small></div></div></div>`];
+  ${rows.map(([n, vs, note]) => `<tr><td>${n}<small>${note}</small></td>${vs.map((v) => cell(v)).join("")}</tr>`).join("")}
+  <tr class="me"><td>${me[0]}<small>${me[2]}</small></td>${me[1].map((v) => cell(v, true)).join("")}</tr>
+  </table><div class="k"><b>The gap.</b> Each gets one or two of the three. None gets all of them.<small>Scored 0–5 from the research; bigger dot, better. LocalPal's row is what it's designed for, not a measurement.</small></div></div></div>`];
+}
+
+/**
+ * The answer to week nine, from the thesis's service blueprint: a loop
+ * that closes every plan with a check-in and feeds the map. Not built in
+ * the prototype — the figure says so.
+ */
+function loop() {
+  const w = 1600, h = 900, cx = 800, cy = 420, rx = 540, ry = 290;
+  const steps = [
+    ["Week one", "sign up through the university or ESN"],
+    ["The map", "venues from day one, then people's plans"],
+    ["Join a plan", "a group, never one-to-one"],
+    ["Go", "confirm on the day; see who else did"],
+    ["Check in", "“did you go?” — no penalty if not"],
+    ["Again?", "“want to go again?” tunes the map"],
+  ];
+  const pts = steps.map((_, i) => {
+    const a = -Math.PI / 2 + (i / steps.length) * Math.PI * 2;
+    return [cx + rx * Math.cos(a), cy + ry * Math.sin(a)];
+  });
+  const arrows = pts.map(([x1, y1], i) => {
+    const [x2, y2] = pts[(i + 1) % pts.length];
+    const mx = (x1 + x2) / 2, my = (y1 + y2) / 2;
+    const ox = (mx - cx) * 0.16, oy = (my - cy) * 0.16;
+    return `<path d="M${x1},${y1} Q${mx + ox},${my + oy} ${x2},${y2}" fill="none" stroke="${C.lav}" stroke-width="5" stroke-linecap="round" marker-end="url(#a)"/>`;
+  });
+  return [w, h, `<div class="fig"><svg viewBox="0 0 ${w} ${h}" width="100%" height="100%">
+  <style>text{font-family:M} .h{font-weight:600;font-size:42px} .b{font-weight:500;font-size:27px;fill:${C.muted}} .c{font-weight:600;font-size:54px;fill:${C.brand}} .n{font-weight:500;font-size:24px;fill:${C.muted}}</style>
+  <defs><marker id="a" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="5" markerHeight="5" orient="auto-start-reverse"><path d="M0,0 L10,5 L0,10 z" fill="${C.lav}"/></marker></defs>
+  ${arrows.join("")}
+  <text x="${cx}" y="${cy - 10}" text-anchor="middle" class="c">Week nine</text>
+  <text x="${cx}" y="${cy + 36}" text-anchor="middle" class="b">the map already knows what you like</text>
+  ${pts.map(([x, y], i) => `<g><rect x="${x - 245}" y="${y - 64}" width="490" height="128" rx="38" fill="${i === 4 || i === 5 ? C.brand : C.white}" stroke="rgba(0,29,51,.08)"/>
+    <text x="${x}" y="${y - 4}" text-anchor="middle" class="h" fill="${i === 4 || i === 5 ? C.white : C.ink}">${steps[i][0]}</text>
+    <text x="${x}" y="${y + 36}" text-anchor="middle" class="b" style="${i === 4 || i === 5 ? `fill:${C.lav}` : ""}">${steps[i][1]}</text></g>`).join("")}
+  <text x="${w - 40}" y="${h - 24}" text-anchor="end" class="n">From the service blueprint in the thesis; the check-in isn't built in the prototype.</text>
+</svg></div>`];
 }
 
 function quote(i) {
@@ -215,17 +265,17 @@ function type() {
  * neutral wireframe, no product named — and in Convertr (the end frame
  * of the portrait-settings recording, scripts/record-media.mjs).
  */
-function compare() {
+function compare(narrow = false) {
   const shot = `${ROOT}source-assets/recordings/convertr-portrait-settings-end.png`;
   const uri = (f) => (existsSync(f) ? `data:image/png;base64,${readFileSync(f).toString("base64")}` : "");
   const src = uri(shot);
   const frame = uri(`${ROOT}source-assets/recordings/clouds-frame.png`);
   const g = "#d9d6d0", g2 = "#ebe8e3";
-  return [2000, 900, `<style>
+  return [narrow ? 1000 : 2000, narrow ? 1500 : 900, `<style>
   body { background: transparent; font-family: M; }
-  .w { position: absolute; inset: 48px; display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); gap: 40px; }
+  .w { position: absolute; inset: ${narrow ? 24 : 48}px; display: grid; ${narrow ? "grid-template-rows: 1fr 1fr" : "grid-template-columns: minmax(0, 1fr) minmax(0, 1fr)"}; gap: 40px; }
   .p { display: flex; flex-direction: column; gap: 18px; }
-  .t { font-size: 38px; line-height: 1.15; color: #77716a; } .t b { color: #2b2722; font-weight: 500; }
+  .t { font-size: ${narrow ? 44 : 38}px; line-height: 1.15; color: #77716a; } .t b { color: #2b2722; font-weight: 500; }
   .win { flex: 1; min-height: 0; border-radius: 18px; overflow: hidden; background: #fff; box-shadow: 0 0 0 1px rgba(0,0,0,.08), 0 18px 40px -20px rgba(0,0,0,.3); display: flex; flex-direction: column; }
   .bar { height: 34px; background: ${g2}; display: flex; gap: 8px; align-items: center; padding: 0 14px; }
   .bar i { width: 11px; height: 11px; border-radius: 50%; background: ${g}; }
@@ -249,6 +299,10 @@ function compare() {
 
 const FIGURES = {
   "../convertr/fig-compare": compare,
+  "../convertr/fig-compare-narrow": () => compare(true),
+  "fig-loop": loop,
+  "fig-platforms-narrow": () => platforms(true),
+  "fig-relevance-curve-narrow": () => curve(true),
   "fig-relevance-curve": curve,
   "fig-moment": moment,
   "fig-platforms": platforms,

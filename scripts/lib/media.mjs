@@ -71,7 +71,9 @@ export async function loopClip({ src, start = 0, dur, crop, width, fade = 0.4, f
       out,
     ]);
   }
-  await poster(out, posterAt);
+  // A poster past the clip's end decodes to black: keep it inside.
+  const len = Number(spawnSync("ffprobe", ["-v", "error", "-show_entries", "format=duration", "-of", "csv=p=0", out]).stdout);
+  await poster(out, Math.max(0, Math.min(posterAt, len - 0.15)));
   return out;
 }
 
@@ -112,6 +114,11 @@ function frame(args, look = "") {
 /** A frame of the clip (its first, by default) as a webp next to it. */
 export async function poster(mp4, at = 0) {
   await frame([...(at ? ["-ss", String(at)] : []), "-i", mp4]).webp({ quality: 78 }).toFile(mp4.replace(/\.mp4$/, ".webp"));
+}
+
+/** A frame as a sharp image (BT.709), for composing contact sheets. */
+export function frameAt({ src, at, width }) {
+  return frame(["-ss", String(at), "-i", src], `scale=${width}:-2:flags=lanczos`);
 }
 
 /** A single frame as a webp still. */

@@ -152,6 +152,15 @@ async function walkOnboarding(f, until) {
   await f.wait(900);
   await tapText("skip for now");
   if (until === "interests") return;
+  if (until === "verify") {
+    for (const [x, y] of [[82, 365], [232, 395], [267, 473]]) {
+      await f.tap(x, y);
+      await f.wait(300);
+    }
+    await f.tap(195, 765);
+    await f.wait(4200);
+    return;
+  }
   for (const [x, y] of [[82, 365], [232, 395], [267, 473]]) {
     await f.tap(x, y);
     await f.wait(300);
@@ -232,7 +241,6 @@ async function open(browser, viewport, init, dpr = DPR) {
 
 const JOBS = [
   stage("venue-pin", { aspect: "4x5", bg: "EFE9E1", seconds: 9.4, boxH: 400, dpr: 5, zoom: 2.6, width: 720 }),
-  stage("bubbles", { aspect: "4x5", bg: "F4EFE7", seconds: 9, boxH: 560, dpr: 3 }),
   // Tight on the card, and only the drag and the list opening.
   stage("rsvp", { aspect: "4x5", bg: "EFE9E1", seconds: 9, boxH: 460, dpr: 4, zoom: 1.12, start: 0.4, posterAt: 1.6 }),
   stage("locate", { aspect: "1x1", bg: "ECEEF2", seconds: 6, boxH: 360, dpr: 5, zoom: 2.2, cy: 0.52, width: 640 }),
@@ -310,15 +318,23 @@ const JOBS = [
       await f.wait(1100);
     },
   }),
-  // The day of a plan: drag the slider on the plans sheet to confirm.
-  phone("dayof", "dayOfPlan", {
-    posterAt: 3,
+  // Verifying, decision 4: a university email, a code, done.
+  phone("verify", "onboarding", {
+    posterAt: 2.4,
+    prep: (f) => walkOnboarding(f, "verify"),
     act: async (f) => {
-      await f.wait(1200);
-      await f.drag(75, 354, 342, 354, 1000);
-      await f.wait(3000);
+      await f.wait(500);
+      await f.tap(195, 268);
+      await f.wait(900);
+      await f.tap(208, 289);
+      await f.wait(250);
+      await f.type("lucia@ucm.es", 80);
+      await f.wait(400);
+      await f.tap(195, 365);
+      await f.wait(3200);
     },
   }),
+
   phone("profile", "profile", {
     posterAt: 2.5,
     act: async (f) => {
@@ -346,18 +362,7 @@ JOBS.push(
       await f.wait(3200);
     },
   }),
-  desk("portrait-settings", {
-    posterAt: 3,
-    prep: async (f) => {
-      await dropFile(f, PORTRAIT, "clouds.mp4");
-      await f.wait(7000);
-    },
-    act: async (f) => {
-      await f.wait(400);
-      await press(f, "[title=Settings]");
-      await f.wait(2000);
-    },
-  }),
+
 
   // A file carried in and dropped: the box takes it, the bricks load it.
   desk("drop", {
@@ -521,15 +526,24 @@ JOBS.push(
   },
 );
 
-// Close crops of two phone takes, where the whole phone is too small to
-// read in a cell: the search sheet (query, filters, why-it-fits rows) and
-// the venue's going-together list. Cut from the masters (2×, 780 wide);
+// The motion rule, from the design-system page's tiles (recorded before;
+// cut again from their masters): what you touch springs, what the
+// system reports never bounces.
+JOBS.push({
+  name: "localpal/rule",
+  async run() {
+    await loopClip({ src: `${MASTERS}localpal-ds-press.mp4`, start: 0.2, fade: 0, width: 720, posterAt: 0.3, out: `${MEDIA}localpal/ds-press.mp4` });
+    return loopClip({ src: `${MASTERS}localpal-ds-inform.mp4`, start: 0.2, fade: 0, width: 720, posterAt: 1.2, out: `${MEDIA}localpal/ds-inform.mp4` });
+  },
+});
+
+// A close crop of the search take, where the whole phone is too small to
+// read in a cell: the sheet (query, filters, why-it-fits rows). Cut from the masters (2×, 780 wide);
 // run after the takes.
 JOBS.push({
   name: "localpal/crops",
   async run() {
-    await loopClip({ src: `${MASTERS}localpal-search.mp4`, start: 3.2, crop: "716:700:32:260", width: 716, fade: 0, posterAt: 5.4, out: `${MEDIA}localpal/search-sheet.mp4` });
-    return loopClip({ src: `${MASTERS}localpal-venue.mp4`, start: 4.4, dur: 3.2, crop: "716:900:32:680", width: 716, fade: 0, posterAt: 2.4, out: `${MEDIA}localpal/going-together.mp4` });
+    return loopClip({ src: `${MASTERS}localpal-search.mp4`, start: 3.2, crop: "716:700:32:260", width: 716, fade: 0, posterAt: 5.4, out: `${MEDIA}localpal/search-sheet.mp4` });
   },
 });
 

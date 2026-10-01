@@ -161,6 +161,8 @@ const CSS = `
 .cs-figs.is-tall { grid-template-columns: repeat(auto-fit, minmax(min(100%, 160px), 1fr)); }
 .cs-media { position: relative; width: 100%; overflow: hidden; border-radius: calc(.5 * var(--ty-u)); background: ${GREY}; }
 .cs-media.is-plain { background: none; border-radius: 0; overflow: visible; }
+.cs-media.has-narrow { aspect-ratio: var(--cs-ar); }
+@media (max-width: 700px) { .cs-media.has-narrow { aspect-ratio: var(--cs-ar-n); } }
 .cs-media img, .cs-media video { display: block; width: 100%; height: 100%; object-fit: cover; }
 .cs-media video { background: #000; }
 .cs-scroll { overflow-x: auto; scrollbar-width: none; }
@@ -583,14 +585,34 @@ function FigureView({ figure }: { figure: Figure }) {
     case "image": {
       const media = (
         <div
-          className={figure.plain ? "cs-media is-plain" : "cs-media"}
-          style={{ aspectRatio: figure.aspect }}
+          className={[
+            "cs-media",
+            figure.plain && "is-plain",
+            figure.narrow && "has-narrow",
+          ]
+            .filter(Boolean)
+            .join(" ")}
+          style={
+            figure.narrow
+              ? ({
+                  "--cs-ar": figure.aspect,
+                  "--cs-ar-n": figure.narrow.aspect,
+                } as CSSProperties)
+              : { aspectRatio: figure.aspect }
+          }
         >
           {/* Plain <img>: the static export has no image optimizer, and
               every public/ path goes through asset() for the basePath.
               Lazy, or React preloads it in the page head (the budget). */}
-          {/* eslint-disable-next-line @next/next/no-img-element */}
-          <img src={asset(figure.src)} alt={figure.alt} loading="lazy" decoding="async" />
+          <picture>
+            {figure.narrow && (
+              <source
+                media="(max-width: 700px)"
+                srcSet={asset(figure.narrow.src)}
+              />
+            )}
+            <img src={asset(figure.src)} alt={figure.alt} loading="lazy" decoding="async" />
+          </picture>
         </div>
       );
       return (

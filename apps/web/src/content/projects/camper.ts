@@ -66,12 +66,21 @@ export const camper: Project = {
           row: 2.25,
           cells: [
             cast("beach", 8, 2, "Bare feet at the water's edge, a pair of red Camper sandals beside them"),
-            cast("heels", 4, 1, "Black heels at the foot of a café bar"),
             cast("reader", 4, 1, "Green suede sneakers under someone reading on the pavement"),
-            cast("broom", 4, 1, "Green sneakers and a broom on a terrace"),
-            cast("sofa", 4, 1, "Black sandals, feet up on a sofa by an open window"),
             cast("step", 4, 1, "Two kids' sneakers on a doorstep"),
           ],
+        },
+        {
+          // Every shot of the cut, one frame each, in order: the rules,
+          // checkable (scripts/prepare-camper-media.mjs).
+          type: "figure",
+          figure: {
+            kind: "image",
+            plain: true,
+            src: "/media/camper/every-shot.webp",
+            aspect: 1962 / 1122,
+            alt: "Every shot of the film, one frame each, in order: sixteen frames, all at shin height, no faces, the same warm afternoon light and grain.",
+          },
         },
       ],
     },
@@ -90,7 +99,7 @@ export const camper: Project = {
             {
               kind: "slot",
               w: 12,
-              h: 4,
+              h: 2,
               awaits: "photo",
               need: "The whole storyboard in two or three rows, every frame in order: the film's structure at a glance.",
             },
@@ -129,7 +138,7 @@ export const camper: Project = {
               src: "/media/camper/shot-velcro.mp4",
               poster: "/media/camper/shot-velcro.webp",
               aspect: 16 / 9,
-              alt: "The shot: the hand presses the velcro shut and the foot settles into the shoe",
+              alt: "The shot: the same moment moving, the hand at the strap and the socked foot swinging beside the shoes",
             },
           ],
         },
@@ -141,7 +150,7 @@ export const camper: Project = {
           // The choosing, made visible: the rejects for one person next
           // to the one that made the film.
           type: "bento",
-          row: 2.25,
+          row: 3,
           cells: [
             {
               kind: "slot",
@@ -164,25 +173,18 @@ export const camper: Project = {
           ],
         },
         {
-          // The brand's question: how the shoe stayed a Camper.
+          // The brand's question: how the shoe stayed a Camper. Three
+          // frames wide enough to see a sole or a strap.
           type: "bento",
-          row: 2.25,
+          row: 1.5,
           cells: [
             {
               kind: "slot",
-              w: 8,
-              h: 1,
+              w: 12,
+              h: 2,
               awaits: "photo",
               label: "The shoe",
-              need: "A Camper catalogue shot, the generated frame of the same shoe, and a generation where the sole or strap went wrong, with one line on how it was kept right.",
-            },
-            {
-              kind: "slot",
-              w: 4,
-              h: 1,
-              awaits: "photo",
-              label: "Flora",
-              need: "One branch of the Flora canvas, prompt to the still that became a shot.",
+              need: "Three frames side by side, a line under each: a Camper catalogue shot, the generated frame of the same shoe, and a generation where the sole or strap went wrong, with how it was fixed.",
             },
           ],
         },

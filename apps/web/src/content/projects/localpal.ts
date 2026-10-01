@@ -137,8 +137,9 @@ export const localpal: Project = {
             kind: "image",
             src: `${M}/fig-platforms.webp`,
             plain: true,
-            aspect: 4 / 3,
-            alt: "Five platforms that tried, scored 0 to 5 on niche plans, anyone can propose, and trust and safety. Each gets one or two of the three; none gets all of them.",
+            aspect: 1200 / 960,
+            narrow: { src: `${M}/fig-platforms-narrow.webp`, aspect: 900 / 1240 },
+            alt: "Five platforms that tried, scored 0 to 5 on niche plans, anyone can propose, and trust and safety. Each gets one or two of the three; none gets all of them. LocalPal's row, dashed, is what it's designed for, untested.",
           },
         },
       ],
@@ -170,16 +171,13 @@ export const localpal: Project = {
           text: "The first month in a new city is covered. Welcome weeks, flatmate dinners, the big bars; everyone is new and everyone is available, and an app for niche plans has nothing to add. Somewhere between week six and week twelve that runs out. The novelty wears off, the friend group has settled, and people start wanting the specific things: a climbing partner, a small gallery show, a run on Sunday. That is the moment nothing serves.",
         },
         {
-          type: "lede",
-          text: "Around week nine, what everyone does stops being enough, and what you'd specifically like to do takes over. That's where LocalPal lives.",
-        },
-        {
           type: "figure",
           figure: {
             kind: "image",
             src: `${M}/fig-relevance-curve.webp`,
             plain: true,
             aspect: 16 / 9,
+            narrow: { src: `${M}/fig-relevance-curve-narrow.webp`, aspect: 900 / 1000 },
             alt: "The relevance curve: over sixteen weeks after arriving, the obvious plans fall and the specific ones rise; they cross at week nine, inside LocalPal's window from week six to twelve. Sign-ups happen in the first five weeks, through universities and ESN.",
           },
         },
@@ -276,7 +274,9 @@ export const localpal: Project = {
           type: "bento",
           row: 1,
           cells: [
-            drawing(12, 7, "fig-brand-colours", 16 / 9, "The colours: the brand blue, its deep and pressed shades, lavender and ink; and the map, inverted: land, water, park, road."),
+            { ...bare(6, 4, "ds-press", 4 / 3, "#f0f3fd", "A tile pressed: it squishes and springs back."), label: "You touch it: it springs" },
+            { ...bare(6, 4, "ds-inform", 4 / 3, "#f0f3fd", "A progress line filling, calm, with no bounce at all."), label: "The system reports: it never bounces" },
+            drawing(12, 5, "fig-brand-colours", 16 / 9, "The colours: the brand blue, its deep and pressed shades, lavender and ink; and the map, inverted: land, water, park, road."),
           ],
         },
       ],
@@ -288,7 +288,7 @@ export const localpal: Project = {
       blocks: [
         {
           type: "p",
-          text: "How the decisions show up in the app, each as it works in the prototype. The answer to week nine lives in the service design more than in one screen: in the blueprint, every plan ends with a check-in (“did you go?”, then “want to go again?”) that tunes what the map shows you next, so the app earns a reason to be opened before you need it.",
+          text: "How the decisions show up in the app, each as it works in the prototype, and at the end, the loop that answers week nine.",
         },
         { type: "subhead", text: "01 · The map is the feed (decision 1: venues fill it)" },
         {
@@ -326,21 +326,20 @@ export const localpal: Project = {
           type: "bento",
           row: 1,
           cells: [
-            phone(5, 8, "venue", "Opening Rita's, then its live music night, then the plans of the people going together."),
-            cell(7, 8, lp("going-together", "bare", "Going together: four small plans inside one big event, each with its host and how many are going.", { aspect: 716 / 900 })),
+            phone(12, 8, "venue", "Opening Rita's, then its live music night, then the plans of the people going together."),
           ],
         },
-        { type: "subhead", text: "04 · The confirm slider (decision 4: a sign you'll show up)" },
+        { type: "subhead", text: "04 · Showing up (decision 4: a sign you'll show up)" },
         {
           type: "p",
-          text: "On the day, drag to confirm and you see who else has. Only the confirmed ones show, which is the answer to “people say they go and then they don't”.",
+          text: "Verifying is a university email and a code, offered at the moment you want in, never forced. Then, on the day, you drag to confirm and see who else has. Only the confirmed ones show, which is the answer to “people say they go and then they don't”.",
         },
         {
           type: "bento",
           row: 1,
           cells: [
+            phone(5, 8, "verify", "Verifying with a university email: the address typed, the code filled in, “You're verified”."),
             bare(7, 8, "rsvp", 900 / 1126, "#eee8df", "Dragging the knob across: the chevron turns into a check, the countdown lands, and the list of people on their way opens."),
-            phone(5, 8, "dayof", "The day of a plan: sliding to RSVP on the plans sheet, in the app."),
           ],
         },
         { type: "subhead", text: "05 · Onboarding you play" },
@@ -352,10 +351,24 @@ export const localpal: Project = {
           type: "bento",
           row: 1,
           cells: [
-            bare(5, 6, "bubbles", 900 / 1126, "#f2efe5", "Interest bubbles popping out, pushing each other apart and jostling on every tap."),
-            phone(4, 6, "onboarding-interests", "Picking four interests: each one drops a sticker on the profile."),
-            phone(3, 6, "onboarding-flythrough", "Allowing location: the camera flies from the toy city into the real map and the tour starts."),
+            phone(6, 7, "onboarding-interests", "Picking four interests: each one drops a sticker on the profile."),
+            phone(6, 7, "onboarding-flythrough", "Allowing location: the camera flies from the toy city into the real map and the tour starts."),
           ],
+        },
+        { type: "subhead", text: "06 · The loop (the answer to week nine)" },
+        {
+          type: "p",
+          text: "The app has to be opened before it's needed. In the service blueprint every plan closes with a check-in, “did you go?” with no penalty for no, and “want to go again?”, and each answer tunes what the map shows you. By week nine it already knows what you'd go to. It's designed, not built: the prototype stops at the plan.",
+        },
+        {
+          type: "figure",
+          figure: {
+            kind: "image",
+            plain: true,
+            src: `${M}/fig-loop.webp`,
+            aspect: 16 / 9,
+            alt: "The loop: week one, sign up through the university or ESN; the map, venues from day one; join a plan, a group; go, confirm on the day; check in, did you go; again, want to go again tunes the map. In the middle: week nine, the map already knows what you like. From the service blueprint, not built in the prototype.",
+          },
         },
         {
           type: "p",

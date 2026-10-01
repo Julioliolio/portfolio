@@ -44,7 +44,8 @@ export const convertr: Project = {
     demo: "convertr",
     title: "Convertr",
     variant: "desktop",
-    label: "Live: the real app. Drop a video, or try the sample",
+    query: "?autosample",
+    label: "Live: the real app. It loads a sample; drop your own",
     caption:
       "The real interface. Drop a video or a GIF on it, trim, convert, drag the result out. The conversion is simulated on this page, so the file you get is a stand-in; everything you see and touch is the app.",
   },
@@ -76,29 +77,6 @@ export const convertr: Project = {
           row: 1,
           cells: [
             plain(cell(12, 6, cv("drop", "A file carried in and dropped on the empty box; a row of bricks loads it, and the box snaps to the video's own shape", 1100 / 826, { frame: "bare", fit: "contain" }))),
-          ],
-        },
-        {
-          type: "p",
-          text: "Open the settings and the box gives up a side to make room, cropping the video instead of shrinking it: a portrait video keeps its height and hands over its right, a landscape one hands over its bottom.",
-        },
-        {
-          type: "figure",
-          figure: {
-            kind: "image",
-            src: `${M}/fig-compare.webp`,
-            plain: true,
-            aspect: 2000 / 900,
-            minWidth: 640,
-            alt: "The same vertical video in a typical converter, shrunk into a preview between fixed panels, and in Convertr, where the box is the video and the settings take its other side.",
-          },
-        },
-        {
-          type: "bento",
-          row: 1,
-          cells: [
-            cell(6, 4, cv("portrait-settings", "A vertical video dropped in; the settings open beside it", 1.6)),
-            cell(6, 4, cv("landscape-settings", "A landscape video dropped in; the settings open below it", 1.6)),
             {
               kind: "slot",
               w: 12,
@@ -107,6 +85,28 @@ export const convertr: Project = {
               label: "Tried first",
               need: "Two or three early layouts from the design file that didn't survive, with a line on why each one died.",
             },
+          ],
+        },
+        {
+          type: "p",
+          text: "Open the settings and the box gives up a side to make room, cropping the video instead of shrinking it: a portrait video keeps its height and hands over its right, a landscape one hands over its bottom. The small frame inside the settings is the output preview: the file at the size, frame rate and dithering it will have, before you convert.",
+        },
+        {
+          type: "figure",
+          figure: {
+            kind: "image",
+            src: `${M}/fig-compare.webp`,
+            plain: true,
+            aspect: 2000 / 900,
+            narrow: { src: `${M}/fig-compare-narrow.webp`, aspect: 1000 / 1500 },
+            alt: "The same vertical video in a typical converter, shrunk into a preview between fixed panels, and in Convertr, where the box is the video and the settings take its other side.",
+          },
+        },
+        {
+          type: "bento",
+          row: 1,
+          cells: [
+            cell(12, 7, cv("landscape-settings", "A landscape video dropped in; the settings open below it", 1.6)),
           ],
         },
         {
@@ -176,8 +176,8 @@ export const convertr: Project = {
               body: "MP3 keeps the sound and drops the video. GIF lets you set width and frame rate, and the estimated size updates as you change them.",
             },
             {
-              title: "FFmpeg underneath.",
-              body: "Wrapped through a local server, shipped as an Electron build for Windows and Mac. This page swaps the engine for a simulation so it runs with nothing to install.",
+              title: "FFmpeg underneath,",
+              body: "in an Electron app for Windows and Mac; this page runs a simulation instead.",
             },
           ],
         },
@@ -185,15 +185,14 @@ export const convertr: Project = {
           type: "bento",
           row: 0.5,
           cells: [
-            cell(12, 3, cv("trim", "The in handle dragged right and the out handle left on the timeline", 8, { frame: "bare" })),
-            plain(cell(12, 2, cv("gif", "The GIF's width dragged from 640 to 1252 pixels and back; the expected size on the video follows", 1600 / 88, { frame: "bare", fit: "contain" }))),
-            cell(6, 7, cv("format", "The format picker opening, the cursor running down the list, GIF picked", 1200 / 660, { frame: "bare" })),
             {
               kind: "slot",
               w: 6,
               h: 7,
               need: "Pasting an X link in the desktop app: yt-dlp fetches it and it lands in the box like a file.",
             },
+            cell(6, 7, cv("format", "The format picker opening, the cursor running down the list, GIF picked", 1200 / 660, { frame: "bare" })),
+            cell(12, 3, cv("trim", "The in handle dragged right and the out handle left on the timeline", 8, { frame: "bare" })),
           ],
         },
       ],
