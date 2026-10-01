@@ -16,9 +16,6 @@ import type { Cell, Project, Shot } from "./types";
 
 const M = "/media/localpal";
 
-/** The ground a phone sits on: the paper, a shade warmer. */
-const FIELD = "#e7e3dc";
-
 /** A clip or still from public/media/localpal. */
 function lp(
   name: string,
@@ -41,9 +38,9 @@ const cell = (w: number, h: number, shot: Shot, ground?: string): Cell => ({
   ...shot,
 });
 
-/** A whole screen of the app, in a phone. */
+/** A whole screen of the app, in a phone, straight on the paper. */
 const phone = (w: number, h: number, name: string, alt: string): Cell =>
-  cell(w, h, lp(name, "phone", alt, { aspect: 600 / 1298 }), FIELD);
+  cell(w, h, lp(name, "phone", alt, { aspect: 600 / 1298 }));
 
 /** A component alone, filling its cell: the cell crops only the flat
  *  background it was recorded on, so the cell's shape is free as long

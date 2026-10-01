@@ -21,7 +21,9 @@ import type { Cell, Shot } from "@/content/projects";
  * - A clip plays only while it is on screen, and not at all for readers
  *   who asked for reduced motion (they get the poster).
  * - A phone is drawn here, not recorded: the clip is the screen alone,
- *   so every phone on the site is the same phone. The phone is a size
+ *   so every phone on the site is the same phone. In a bento it sits
+ *   straight on the paper — the phone is its own frame, so its cell has
+ *   no ground (Julio, 2026-10-01). The phone is a size
  *   container and its bezel a child, so the bezel's cqw are the phone's.
  */
 
@@ -32,6 +34,8 @@ export const BENTO_CSS = `
 .bn-cell { position: relative; grid-column: span var(--bn-w); grid-row: span var(--bn-h); overflow: hidden; border-radius: calc(.5 * var(--ty-u)); background: var(--bn-ground, #ecebe8); }
 .bn-cell > video, .bn-cell > img { position: absolute; inset: 0; display: block; width: 100%; height: 100%; object-fit: cover; }
 .bn-cell.is-screen { box-shadow: inset 0 0 0 1px rgba(43, 39, 34, .08); }
+.bn-cell.is-phone { background: none; overflow: visible; }
+.bn-cell.is-phone .bn-phone { height: 100%; max-width: 100%; }
 .bn-center { position: absolute; inset: 0; display: grid; place-items: center; }
 @container (max-width: 520px) {
   .bn-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); grid-auto-rows: auto; }
@@ -87,7 +91,11 @@ export function Bento({ cells, row = 2 }: { cells: Cell[]; row?: number }) {
           <Reveal
             key={i}
             delay={i * 50}
-            className={cell.kind === "shot" && cell.frame === "screen" ? "bn-cell is-screen" : "bn-cell"}
+            className={
+              cell.kind === "shot" && cell.frame !== "bare"
+                ? `bn-cell is-${cell.frame}`
+                : "bn-cell"
+            }
             style={
               {
                 "--bn-w": cell.w,
